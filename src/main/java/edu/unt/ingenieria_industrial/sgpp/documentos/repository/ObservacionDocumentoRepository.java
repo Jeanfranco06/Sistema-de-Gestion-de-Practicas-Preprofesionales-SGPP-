@@ -1,0 +1,13 @@
+package edu.unt.ingenieria_industrial.sgpp.documentos.repository;
+
+import edu.unt.ingenieria_industrial.sgpp.documentos.model.ObservacionDocumento;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface ObservacionDocumentoRepository extends JpaRepository<ObservacionDocumento, Long> {
+    List<ObservacionDocumento> findByDocumentoIdAndResueltaFalse(Long documentoId);
+    List<ObservacionDocumento> findByDocumentoIdOrderByFechaObservacionDesc(Long documentoId);
+}
