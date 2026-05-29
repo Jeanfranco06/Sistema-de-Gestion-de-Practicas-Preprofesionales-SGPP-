@@ -34,7 +34,9 @@ const NAV_ITEMS_DOCENTE = [
 const NAV_ITEMS_ADMIN = [
   { label: 'Dashboard', icon: <Dashboard />, path: '/admin/dashboard' },
   { label: 'Expedientes', icon: <Assignment />, path: '/admin/expedientes' },
+  { label: 'Empresas', icon: <Business />, path: '/admin/empresas' },
   { label: 'Sedes', icon: <Business />, path: '/admin/sedes' },
+  { label: 'Convenios', icon: <Description />, path: '/admin/convenios' },
   { label: 'Reportes', icon: <BarChart />, path: '/admin/reportes' },
 ];
 

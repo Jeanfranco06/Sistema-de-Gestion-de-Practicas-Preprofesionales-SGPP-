@@ -42,6 +42,8 @@ public class SecurityConfig {
                         .requestMatchers("/admin/**").hasAnyRole("SECRETARIA", "COMITE_PRACTICAS", "COORDINADOR", "DIRECTOR")
                         .requestMatchers("/estudiante/**").hasRole("ESTUDIANTE")
                         .requestMatchers("/docente/**").hasRole("DOCENTE_ASESOR")
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/empresas/**", "/api/sedes/**", "/api/convenios/**").hasAnyRole("ESTUDIANTE", "SECRETARIA", "COMITE_PRACTICAS", "COORDINADOR", "DIRECTOR", "DOCENTE_ASESOR")
+                        .requestMatchers("/api/empresas/**", "/api/sedes/**", "/api/convenios/**").hasAnyRole("SECRETARIA", "COMITE_PRACTICAS", "COORDINADOR", "DIRECTOR")
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
