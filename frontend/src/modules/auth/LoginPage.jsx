@@ -10,6 +10,7 @@ import {
 import { useAuth } from '../../auth/AuthContext';
 
 const ROLE_HOME = {
+  ADMINISTRADOR: '/admin/dashboard',
   ESTUDIANTE: '/estudiante/dashboard',
   DOCENTE_ASESOR: '/docente/dashboard',
   TUTOR_EXTERNO: '/tutor/dashboard',
@@ -20,8 +21,9 @@ const ROLE_HOME = {
 };
 
 function getHomeRoute(roles = []) {
+  const roleNames = roles.map(r => typeof r === 'string' ? r : r.authority || r.nombre);
   for (const r of Object.keys(ROLE_HOME)) {
-    if (roles.includes(r)) return ROLE_HOME[r];
+    if (roleNames.some(rn => rn === r || rn === `ROLE_${r}`)) return ROLE_HOME[r];
   }
   return '/dashboard';
 }
@@ -43,9 +45,10 @@ export default function LoginPage() {
       errors.username = 'El usuario es requerido';
     } else if (
       form.username.includes('@') &&
-      !form.username.endsWith('@unitru.edu.pe')
+      !form.username.endsWith('@unitru.edu.pe') &&
+      !form.username.endsWith('@unt.edu.pe')
     ) {
-      errors.username = 'Solo se permiten correos institucionales @unitru.edu.pe';
+      errors.username = 'Solo se permiten correos institucionales (@unitru.edu.pe o @unt.edu.pe)';
     }
     if (!form.password) errors.password = 'La contraseña es requerida';
     return errors;
@@ -135,7 +138,7 @@ export default function LoginPage() {
               value={form.username}
               onChange={handleChange('username')}
               error={!!fieldErrors.username}
-              helperText={fieldErrors.username || 'Solo cuentas @unitru.edu.pe'}
+              helperText={fieldErrors.username || 'Solo cuentas @unitru.edu.pe o @unt.edu.pe'}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">

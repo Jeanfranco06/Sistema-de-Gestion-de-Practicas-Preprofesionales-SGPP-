@@ -17,6 +17,9 @@ import { CatalogoSedes } from './modules/sedes/pages/CatalogoSedes';
 import { GestionSedes } from './modules/sedes/pages/GestionSedes';
 import { GestionEmpresas } from './modules/sedes/pages/GestionEmpresas';
 import { GestionConvenios } from './modules/sedes/pages/GestionConvenios';
+import { GestionUsuarios } from './modules/admin/pages/GestionUsuarios';
+import { GestionTutores } from './modules/admin/pages/GestionTutores';
+import { ValidarRequisitos } from './modules/secretaria/pages/ValidarRequisitos';
 
 export default function App() {
   return (
@@ -76,8 +79,32 @@ export default function App() {
               <Route
                 path="/admin/dashboard"
                 element={
-                  <ProtectedRoute allowedRoles={['SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR']}>
+                  <ProtectedRoute allowedRoles={['ADMINISTRADOR', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR']}>
                     <PaginaEnConstruccion titulo="Dashboard Administrativo" />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/usuarios"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMINISTRADOR', 'COORDINADOR', 'DIRECTOR']}>
+                    <GestionUsuarios />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/tutores"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMINISTRADOR', 'COORDINADOR', 'DIRECTOR']}>
+                    <GestionTutores />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/validar-requisitos"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMINISTRADOR', 'SECRETARIA']}>
+                    <ValidarRequisitos />
                   </ProtectedRoute>
                 }
               />
@@ -85,7 +112,7 @@ export default function App() {
               <Route
                 path="/admin/sedes"
                 element={
-                  <ProtectedRoute allowedRoles={['COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR']}>
+                  <ProtectedRoute allowedRoles={['ADMINISTRADOR', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR']}>
                     <GestionSedes />
                   </ProtectedRoute>
                 }
@@ -93,7 +120,7 @@ export default function App() {
               <Route
                 path="/admin/empresas"
                 element={
-                  <ProtectedRoute allowedRoles={['COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR']}>
+                  <ProtectedRoute allowedRoles={['ADMINISTRADOR', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR']}>
                     <GestionEmpresas />
                   </ProtectedRoute>
                 }
@@ -101,7 +128,7 @@ export default function App() {
               <Route
                 path="/admin/convenios"
                 element={
-                  <ProtectedRoute allowedRoles={['COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR']}>
+                  <ProtectedRoute allowedRoles={['ADMINISTRADOR', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR']}>
                     <GestionConvenios />
                   </ProtectedRoute>
                 }

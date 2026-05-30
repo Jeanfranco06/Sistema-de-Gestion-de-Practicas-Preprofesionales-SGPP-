@@ -9,6 +9,7 @@ import {
   Dashboard, Assignment, Description, Assessment,
   Business, Notifications, AccountCircle, Logout, ChevronLeft,
   School, AccessTime, CheckCircle, BarChart, ViewSidebar,
+  People, SupervisorAccount, FactCheck
 } from '@mui/icons-material';
 import { useAuth } from '../../../auth/AuthContext';
 import PageContainer from '../../../shared/components/PageContainer';
@@ -33,6 +34,9 @@ const NAV_ITEMS_DOCENTE = [
 
 const NAV_ITEMS_ADMIN = [
   { label: 'Dashboard', icon: <Dashboard />, path: '/admin/dashboard' },
+  { label: 'Validar Requisitos', icon: <FactCheck />, path: '/admin/validar-requisitos' },
+  { label: 'Usuarios', icon: <People />, path: '/admin/usuarios' },
+  { label: 'Tutores Externos', icon: <SupervisorAccount />, path: '/admin/tutores' },
   { label: 'Expedientes', icon: <Assignment />, path: '/admin/expedientes' },
   { label: 'Empresas', icon: <Business />, path: '/admin/empresas' },
   { label: 'Sedes', icon: <Business />, path: '/admin/sedes' },
@@ -40,9 +44,30 @@ const NAV_ITEMS_ADMIN = [
   { label: 'Reportes', icon: <BarChart />, path: '/admin/reportes' },
 ];
 
+const NAV_ITEMS_SECRETARIA = [
+  { label: 'Dashboard', icon: <Dashboard />, path: '/admin/dashboard' },
+  { label: 'Validar Requisitos', icon: <FactCheck />, path: '/admin/validar-requisitos' },
+  { label: 'Expedientes', icon: <Assignment />, path: '/admin/expedientes' },
+  { label: 'Empresas', icon: <Business />, path: '/admin/empresas' },
+  { label: 'Sedes', icon: <Business />, path: '/admin/sedes' },
+];
+
 function getNavItems(roles = []) {
-  if (roles.includes('ESTUDIANTE')) return NAV_ITEMS_ESTUDIANTE;
-  if (roles.includes('DOCENTE_ASESOR')) return NAV_ITEMS_DOCENTE;
+  const roleNames = roles.map(r => typeof r === 'string' ? r : r.authority || r.nombre || '');
+  
+  if (roleNames.some(rn => rn === 'ADMINISTRADOR' || rn === 'ROLE_ADMINISTRADOR')) return NAV_ITEMS_ADMIN;
+  if (roleNames.some(rn => rn === 'ESTUDIANTE' || rn === 'ROLE_ESTUDIANTE')) return NAV_ITEMS_ESTUDIANTE;
+  if (roleNames.some(rn => rn === 'DOCENTE_ASESOR' || rn === 'ROLE_DOCENTE_ASESOR')) return NAV_ITEMS_DOCENTE;
+  
+  // Para roles administrativos, combinamos si es necesario o priorizamos
+  const isAdminRole = roleNames.some(rn => 
+    ['SECRETARIA', 'COORDINADOR', 'DIRECTOR', 'COMITE_PRACTICAS'].some(adminR => rn === adminR || rn === `ROLE_${adminR}`)
+  );
+
+  if (isAdminRole) {
+    return roleNames.some(rn => rn === 'SECRETARIA' || rn === 'ROLE_SECRETARIA') ? NAV_ITEMS_SECRETARIA : NAV_ITEMS_ADMIN;
+  }
+  
   return NAV_ITEMS_ADMIN;
 }
 

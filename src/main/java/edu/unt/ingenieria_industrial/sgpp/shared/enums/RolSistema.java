@@ -7,7 +7,8 @@ public enum RolSistema {
     SECRETARIA("Secretaría"),
     COMITE_PRACTICAS("Comité de Prácticas"),
     COORDINADOR("Coordinador"),
-    DIRECTOR("Director");
+    DIRECTOR("Director"),
+    ADMINISTRADOR("Administrador");
 
     private final String descripcion;
 
