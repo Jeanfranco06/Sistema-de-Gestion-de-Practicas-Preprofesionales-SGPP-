@@ -40,6 +40,10 @@ public class Practica extends BaseEntity {
     @JoinColumn(name = "id_estado", nullable = false)
     private EstadoPractica estado;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_tipo_practica")
+    private TipoPractica tipoPractica;
+
     @Column(name = "fecha_inicio", nullable = false)
     private LocalDate fechaInicio;
 
