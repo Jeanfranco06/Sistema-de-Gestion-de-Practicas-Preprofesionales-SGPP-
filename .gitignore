@@ -95,3 +95,15 @@ application-prod.yml
 
 # Spring Boot
 spring-boot-*.log
+
+# Environment Variables (sensible)
+.env
+!.env.example
+
+# Docker
+docker-compose.override.yml
+
+# Node / Frontend
+node_modules/
+frontend/dist/
+frontend/.env

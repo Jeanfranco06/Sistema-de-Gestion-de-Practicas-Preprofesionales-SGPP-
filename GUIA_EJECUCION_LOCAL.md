@@ -1,468 +1,316 @@
-# SGPP Backend Base - Guía de Ejecución Local
+# SGPP - Guía de Ejecución Local
+
+Esta guía te permitirá levantar el proyecto completo (Base de Datos, Backend y Frontend) en tu máquina local en menos de 10 minutos.
+
+---
 
 ## Requisitos Previos
 
-### Software Necesario
-- **Java 17** o superior (JDK)
-- **Maven 3.8+** 
-- **PostgreSQL 15+** (o superior)
-- **Git** (opcional, para control de versiones)
+| Herramienta     | Versión mínima | Verificar con            | ¿Obligatorio?         |
+| --------------- | -------------- | ------------------------ | ---------------------- |
+| **Docker**      | 20+            | `docker --version`       | ✅ Sí                  |
+| **Docker Compose** | 2.x         | `docker compose version` | ✅ Sí                  |
+| **Java (JDK)**  | 17             | `java -version`          | ✅ Sí                  |
+| **Maven**       | 3.8+           | `mvn -version`           | ✅ Sí                  |
+| **Node.js**     | 18+            | `node -v`                | ✅ Sí                  |
+| **npm**         | 9+             | `npm -v`                 | ✅ Sí (viene con Node) |
+| **Git**         | 2.x            | `git --version`          | Recomendado            |
 
-### Verificación de Requisitos
+---
+
+## Paso 1 · Clonar el Repositorio
 
 ```bash
-# Verificar Java
-java -version
-# Debe mostrar: openjdk version "17.x.x" o similar
-
-# Verificar Maven
-mvn -version
-# Debe mostrar: Apache Maven 3.8.x o superior
-
-# Verificar PostgreSQL
-psql --version
-# Debe mostrar: psql (PostgreSQL) 15.x o superior
+git clone <url-del-repositorio>
+cd "SG de Practicas Pre profesionales"
 ```
 
 ---
 
-## Paso 1: Crear la Base de Datos PostgreSQL
+## Paso 2 · Configurar Variables de Entorno
 
-### 1.1 Iniciar PostgreSQL
+El proyecto utiliza un archivo `.env` centralizado en la raíz para definir credenciales y puertos. **Nunca** subas este archivo al repositorio (ya está en `.gitignore`).
 
-**Windows:**
-- Asegúrate de que PostgreSQL esté instalado y el servicio esté corriendo
-- Puedes verificar usando pgAdmin o el servicio de Windows
+### 2.1 Crear tu archivo `.env`
 
-**Linux/Mac:**
 ```bash
-sudo systemctl start postgresql
-# o
-sudo service postgresql start
+# Linux / Mac / Git Bash
+cp .env.example .env
+
+# Windows CMD
+copy .env.example .env
+
+# Windows PowerShell
+Copy-Item .env.example .env
 ```
 
-### 1.2 Crear la Base de Datos
+### 2.2 (Opcional) Personalizar valores
 
-Abre una terminal o usa pgAdmin y ejecuta:
+Abre `.env` con tu editor favorito y ajusta los valores si lo necesitas. Los valores por defecto están pensados para funcionar sin modificaciones:
 
-```sql
--- Conectarse a PostgreSQL como usuario postgres
-psql -U postgres
+```env
+# Base de Datos
+POSTGRES_DB=sgpp_db
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_PORT=5432
 
--- Crear la base de datos
-CREATE DATABASE sgpp_db;
+# pgAdmin
+PGADMIN_DEFAULT_EMAIL=admin@sgpp.local
+PGADMIN_DEFAULT_PASSWORD=admin
 
--- Verificar que se creó
-\l
+# Backend
+JWT_SECRET=SGPPSECRETKEY2024UNT...
+JWT_EXPIRATION=86400000
 
--- Salir
-\q
+# Frontend
+VITE_API_BASE_URL=http://localhost:8080/api/v1
 ```
 
-**Alternativa usando pgAdmin:**
-1. Abre pgAdmin
-2. Conéctate al servidor PostgreSQL
-3. Clic derecho en "Databases" → "Create" → "Database"
-4. Nombre: `sgpp_db`
-5. Clic en "Save"
+### 2.3 Crear `.env` del Frontend
+
+```bash
+# Linux / Mac / Git Bash
+cp frontend/.env.example frontend/.env
+
+# Windows PowerShell
+Copy-Item frontend\.env.example frontend\.env
+```
 
 ---
 
-## Paso 2: Configurar el Proyecto
+## Paso 3 · Levantar la Base de Datos con Docker
 
-### 2.1 Clonar o Navegar al Proyecto
+Este comando levanta PostgreSQL y pgAdmin de forma automática usando Docker Compose:
 
 ```bash
-# Si estás usando Git
-cd "d:\Proyects\SG de Practicas Pre profesionales"
-
-# O simplemente navega a la carpeta del proyecto
+docker-compose up -d
 ```
 
-### 2.2 Verificar application-local.yml
+Verifica que los contenedores estén corriendo:
 
-El archivo `src/main/resources/application-local.yml` ya está configurado con:
-
-```yaml
-spring:
-  datasource:
-    url: jdbc:postgresql://localhost:5432/sgpp_db
-    username: postgres
-    password: postgres
+```bash
+docker-compose ps
 ```
 
-**Si tu configuración de PostgreSQL es diferente, modifica estos valores:**
+Deberías ver algo como:
 
-```yaml
-spring:
-  datasource:
-    url: jdbc:postgresql://localhost:5432/sgpp_db
-    username: tu_usuario_postgres
-    password: tu_password_postgres
+```
+NAME              STATUS          PORTS
+sgpp-postgres     Up (healthy)    0.0.0.0:5432->5432/tcp
+sgpp-pgadmin      Up              0.0.0.0:5050->80/tcp
 ```
 
-### 2.3 Verificar Dependencias
-
-El archivo `pom.xml` ya incluye todas las dependencias necesarias:
-- Spring Boot 3.2.0
-- Spring Security
-- Spring Data JPA
-- PostgreSQL Driver
-- Flyway
-- JWT (jjwt)
-- Lombok
-- MapStruct
-- OpenAPI/Swagger
+> **💡 Tip:** Puedes acceder a pgAdmin en [http://localhost:5050](http://localhost:5050) con las credenciales definidas en tu `.env` (`admin@sgpp.local` / `admin`). Para conectar al servidor PostgreSQL desde pgAdmin, usa el host `db`, puerto `5432`, y las credenciales de tu `.env`.
 
 ---
 
-## Paso 3: Compilar el Proyecto
+## Paso 4 · Ejecutar el Backend (Spring Boot)
 
-### 3.1 Limpiar y Compilar
-
-```bash
-cd "d:\Proyects\SG de Practicas Pre profesionales"
-
-# Limpiar compilaciones anteriores
-mvn clean
-
-# Compilar el proyecto
-mvn compile
-```
-
-**Si hay errores de compilación:**
-- Verifica que Java 17 esté instalado
-- Verifica que las dependencias se descargaron correctamente
-- Ejecuta `mvn dependency:resolve` para descargar dependencias
-
----
-
-## Paso 4: Ejecutar el Proyecto
-
-### 4.1 Opción A: Usar Maven
+### Opción A: Desde la terminal (Maven)
 
 ```bash
-cd "d:\Proyects\SG de Practicas Pre profesionales"
-
-# Ejecutar con perfil local
-mvn spring-boot:run -Dspring-boot.run.profiles=local
+cd backend
+mvn clean install -DskipTests
+mvn -pl sgpp-api spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
-### 4.2 Opción B: Usar el JAR compilado
+### Opción B: Desde IntelliJ IDEA (Recomendado para desarrollo)
 
-```bash
-# Primero empaquetar
-mvn clean package -DskipTests
+1. Abre la carpeta `backend/` como proyecto en IntelliJ IDEA.
+2. IntelliJ detectará automáticamente los módulos Maven (`sgpp-api`, `sgpp-core`, `sgpp-shared`).
+3. Busca la clase `SgppApplication.java` dentro de `sgpp-api`.
+4. Clic derecho → **Run 'SgppApplication'**.
+5. Configura el **Active Profile** como `local` en la configuración de ejecución:
+   - Run → Edit Configurations → Active Profiles: `local`
 
-# Ejecutar el JAR
-java -jar target/sgpp-backend-1.0.0.jar --spring.profiles.active=local
-```
+### Verificar que el Backend inició correctamente
 
-### 4.3 Opción C: Desde tu IDE (IntelliJ IDEA / Eclipse)
-
-**IntelliJ IDEA:**
-1. Abre el proyecto
-2. Busca `SgppApplication.java`
-3. Clic derecho → "Run 'SgppApplication'"
-4. Configura el active profile: `local`
-
-**Eclipse / STS:**
-1. Importa como proyecto Maven
-2. Busca `SgppApplication.java`
-3. Run As → Java Application
-4. Configura el active profile: `local`
-
----
-
-## Paso 5: Verificar que el Proyecto Corra Correctamente
-
-### 5.1 Verificar Logs de Inicio
-
-El proyecto debería mostrar logs similares a:
+Deberías ver en la consola:
 
 ```
 Started SgppApplication in X.XXX seconds
-Flyway Community Edition 10.0.1 by Redgate
-Successfully baselined schema with version: 1
-Successfully applied 2 migrations to schema `public`
-Creating schema history table `public`.`flyway_schema_history` ...
+Flyway: Successfully applied 2 migrations
 ```
 
-**Si Flyway ejecuta las migraciones correctamente, verás:**
-```
-Successfully applied V1__create_usuario_rol_tables.sql
-Successfully applied V2__insert_seed_data.sql
-```
+Endpoints disponibles:
 
-### 5.2 Verificar que el Servidor esté Corriendo
-
-Abre tu navegador y navega a:
-- **Health Check:** http://localhost:8080/api/v1/public/health
-- **Swagger UI:** http://localhost:8080/api/v1/swagger-ui.html
-
-Deberías ver respuestas JSON exitosas.
+| Recurso          | URL                                                |
+| ---------------- | -------------------------------------------------- |
+| API Base         | http://localhost:8080/api/v1                        |
+| Swagger UI       | http://localhost:8080/api/v1/swagger-ui.html        |
+| OpenAPI JSON     | http://localhost:8080/api/v1/api-docs               |
+| Health Check     | http://localhost:8080/api/v1/actuator/health        |
 
 ---
 
-## Paso 6: Probar la Autenticación
-
-### 6.1 Probar Login Exitoso
+## Paso 5 · Ejecutar el Frontend (React + Vite)
 
 ```bash
-curl -X POST http://localhost:8080/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "estudiante1",
-    "password": "password123"
-  }'
+cd frontend
+npm install
+npm run dev
 ```
 
-**Respuesta esperada:** JSON con token JWT y datos del usuario.
+El servidor de desarrollo estará disponible en [http://localhost:5173](http://localhost:5173).
 
-### 6.2 Probar Obtener Perfil
-
-```bash
-# Primero obtener el token
-TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username": "estudiante1", "password": "password123"}' \
-  | jq -r '.token')
-
-# Luego usar el token
-curl -X GET http://localhost:8080/api/v1/auth/me \
-  -H "Authorization: Bearer $TOKEN"
-```
-
-### 6.3 Probar RBAC (Control de Acceso por Roles)
-
-```bash
-# Login como estudiante (NO tiene rol administrativo)
-TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username": "estudiante1", "password": "password123"}' \
-  | jq -r '.token')
-
-# Intentar acceder a endpoint administrativo (debería fallar con 403)
-curl -X GET http://localhost:8080/api/v1/admin/dashboard \
-  -H "Authorization: Bearer $TOKEN"
-```
-
-**Respuesta esperada:** 403 Forbidden
+> **Nota:** El frontend se conectará automáticamente al Backend usando la variable `VITE_API_BASE_URL` definida en `frontend/.env`.
 
 ---
 
-## Paso 7: Verificar Swagger UI
+## Paso 6 · Verificar que Todo Funciona
 
-1. Abre tu navegador
-2. Navega a: http://localhost:8080/api/v1/swagger-ui.html
-3. Deberías ver la documentación de la API con los siguientes grupos:
-   - Autenticación
-   - Validación de Roles
-   - Endpoints Administrativos
-   - Endpoints Estudiantes
-   - Endpoints Docentes
-   - Endpoints Autenticados
+### 6.1 Probar Login desde la terminal
 
-4. Prueba los endpoints directamente desde Swagger:
-   - Expande "Autenticación"
-   - Clic en POST /auth/login
-   - Clic en "Try it out"
-   - Ingresa credenciales: `{"username": "estudiante1", "password": "password123"}`
-   - Clic en "Execute"
-   - Deberías ver el token JWT en la respuesta
+```bash
+curl -X POST http://localhost:8080/api/v1/auth/login ^
+  -H "Content-Type: application/json" ^
+  -d "{\"username\": \"estudiante1\", \"password\": \"password123\"}"
+```
+
+Deberías recibir un JSON con el token JWT y los datos del usuario.
+
+### 6.2 Usuarios de prueba disponibles
+
+Flyway inserta automáticamente estos usuarios la primera vez que se ejecuta el backend. Todos usan la contraseña `password123`:
+
+| Username       | Rol              |
+| -------------- | ---------------- |
+| estudiante1    | ESTUDIANTE       |
+| docente1       | DOCENTE_ASESOR   |
+| tutor1         | TUTOR_EXTERNO    |
+| secretaria1    | SECRETARIA       |
+| comite1        | COMITE_PRACTICAS |
+| coordinador1   | COORDINADOR      |
+| director1      | DIRECTOR         |
 
 ---
 
-## Paso 8: Verificar Base de Datos
+## Comandos Útiles
 
-### 8.1 Conectarse a la Base de Datos
-
-```bash
-psql -U postgres -d sgpp_db
-```
-
-### 8.2 Verificar Tablas Creadas
-
-```sql
-\dt
-```
-
-Deberías ver las siguientes tablas:
-- `rol`
-- `usuario`
-- `usuario_rol`
-- `estudiante`
-- `docente`
-- `tutor_externo`
-- `flyway_schema_history`
-
-### 8.3 Verificar Datos de Prueba
-
-```sql
--- Ver roles
-SELECT * FROM rol;
-
--- Ver usuarios
-SELECT id, username, email, nombres, apellido_paterno, activo FROM usuario;
-
--- Ver asignación de roles
-SELECT u.username, r.nombre as rol 
-FROM usuario u 
-JOIN usuario_rol ur ON u.id = ur.id_usuario 
-JOIN rol r ON ur.id_rol = r.id;
-
--- Ver estudiantes
-SELECT e.codigo_estudiantil, u.nombres, u.apellido_paterno 
-FROM estudiante e 
-JOIN usuario u ON e.id_usuario = u.id;
-
--- Ver docentes
-SELECT d.codigo_docente, u.nombres, u.apellido_paterno 
-FROM docente d 
-JOIN usuario u ON d.id_usuario = u.id;
-```
+| Acción                                | Comando                                            |
+| ------------------------------------- | -------------------------------------------------- |
+| Levantar infraestructura              | `docker-compose up -d`                             |
+| Detener infraestructura               | `docker-compose down`                              |
+| Detener y **borrar datos**            | `docker-compose down -v`                           |
+| Ver logs de PostgreSQL                | `docker-compose logs -f db`                        |
+| Compilar backend                      | `cd backend && mvn clean install -DskipTests`      |
+| Ejecutar backend                      | `cd backend && mvn -pl sgpp-api spring-boot:run -Dspring-boot.run.profiles=local` |
+| Instalar dependencias frontend        | `cd frontend && npm install`                       |
+| Ejecutar frontend                     | `cd frontend && npm run dev`                       |
 
 ---
 
 ## Solución de Problemas Comunes
 
-### Problema: "Connection refused" a PostgreSQL
+### ❌ `Connection refused` al conectar a PostgreSQL
 
-**Causa:** PostgreSQL no está corriendo o el puerto es incorrecto.
+- Verifica que Docker esté corriendo: `docker-compose ps`
+- Verifica que el puerto `5432` no esté ocupado por otra instancia de PostgreSQL local.
+- Si tienes PostgreSQL instalado localmente, detén el servicio y usa el de Docker.
 
-**Solución:**
-1. Verifica que PostgreSQL esté corriendo
-2. Verifica que el puerto sea 5432 (o modifica en application-local.yml)
-3. Verifica que el usuario y contraseña sean correctos
+### ❌ `Flyway validation failed`
 
-### Problema: "Flyway validation failed"
+Necesitas recrear la base de datos. La forma más limpia es:
 
-**Causa:** Las migraciones ya se ejecutaron pero hay cambios.
-
-**Solución:**
 ```bash
-# Limpiar la base de datos y recrear
-DROP DATABASE sgpp_db;
-CREATE DATABASE sgpp_db;
-# Reiniciar la aplicación
+docker-compose down -v
+docker-compose up -d
 ```
 
-### Problema: "Port 8080 already in use"
+Esto elimina los volúmenes (datos) y crea la base de datos desde cero.
 
-**Causa:** Otro servicio está usando el puerto 8080.
+### ❌ `Port 8080 already in use`
 
-**Solución:**
-1. Cambia el puerto en `application.yml`:
+Otro proceso está usando el puerto. Cambia el puerto en `application.yml`:
+
 ```yaml
 server:
   port: 8081
 ```
-2. O detén el servicio que usa el puerto 8080
 
-### Problema: "JWT token invalid"
+O busca y detén el proceso que ocupa el puerto:
 
-**Causa:** El secret JWT no coincide o el token expiró.
+```bash
+# Windows
+netstat -ano | findstr :8080
+taskkill /PID <PID> /F
+```
 
-**Solución:**
-1. Verifica que el secret en `application-local.yml` sea el mismo
-2. Genera un nuevo token haciendo login nuevamente
+### ❌ `JAVA_HOME is not defined`
 
-### Problema: "403 Forbidden" en endpoints protegidos
+Configura la variable de entorno `JAVA_HOME`:
 
-**Causa:** El usuario no tiene el rol requerido.
+```powershell
+# PowerShell (ejemplo, ajusta la ruta a tu JDK)
+$env:JAVA_HOME = "C:\Program Files\Java\jdk-17"
+```
 
-**Solución:**
-1. Verifica que el usuario tenga el rol correcto en la base de datos
-2. Usa un usuario con el rol apropiado (ver tabla de usuarios de prueba)
+Para hacerlo permanente, agrégalo en las Variables de Entorno del Sistema de Windows.
 
----
+### ❌ El frontend no se conecta al backend
 
-## Resumen de Usuarios de Prueba
-
-| Username | Password | Roles |
-|----------|----------|-------|
-| estudiante1 | password123 | ESTUDIANTE |
-| docente1 | password123 | DOCENTE_ASESOR |
-| tutor1 | password123 | TUTOR_EXTERNO |
-| secretaria1 | password123 | SECRETARIA |
-| comite1 | password123 | COMITE_PRACTICAS |
-| coordinador1 | password123 | COORDINADOR |
-| director1 | password123 | DIRECTOR |
+- Verifica que `frontend/.env` exista y contenga `VITE_API_BASE_URL=http://localhost:8080/api/v1`.
+- Verifica que el backend esté corriendo y accesible.
+- Reinicia el servidor de Vite después de cambiar el `.env`: `npm run dev`.
 
 ---
 
 ## Estructura del Proyecto
 
+```text
+SGPP/
+├── .env.example            # Plantilla de variables de entorno
+├── docker-compose.yml      # Infraestructura de desarrollo (DB + pgAdmin)
+├── .gitignore
+├── README.md
+│
+├── backend/                # Backend - Spring Boot (Multi-Módulo Maven)
+│   ├── pom.xml             # POM Padre
+│   ├── sgpp-api/           # Módulo de ensamblaje y configuración REST
+│   │   ├── pom.xml
+│   │   └── src/main/
+│   │       ├── java/.../api/
+│   │       │   ├── config/        # SecurityConfig, OpenApiConfig, CorsConfig
+│   │       │   ├── security/      # JwtService, AuthenticationController
+│   │       │   └── SgppApplication.java
+│   │       └── resources/
+│   │           ├── application.yml
+│   │           ├── application-local.yml
+│   │           └── db/migration/  # Scripts SQL de Flyway
+│   ├── sgpp-core/          # Módulo de lógica de dominio
+│   │   ├── pom.xml
+│   │   └── src/main/java/.../core/
+│   │       ├── seguridad/         # Usuarios, Roles, Perfiles
+│   │       ├── empresarial/       # Empresas, Sedes, Convenios
+│   │       ├── practicas/         # Gestión de prácticas
+│   │       ├── documental/        # Expedientes y documentos
+│   │       ├── evaluacion/        # Rúbricas y evaluaciones
+│   │       └── ...                # (monitoreo, notificaciones, reportes, auditoria)
+│   └── sgpp-shared/        # Módulo compartido
+│       ├── pom.xml
+│       └── src/main/java/.../shared/
+│           ├── common/            # ApiResponse, BaseEntity
+│           ├── exception/         # Excepciones globales
+│           └── enums/             # Enumeraciones del sistema
+│
+└── frontend/               # Frontend - React + Vite
+    ├── .env.example
+    ├── package.json
+    └── src/
+        ├── components/
+        ├── pages/
+        ├── services/
+        └── context/
 ```
-sgpp-backend/
-├── src/
-│   ├── main/
-│   │   ├── java/
-│   │   │   └── edu/unt/ingenieria_industrial/sgpp/
-│   │   │       ├── SgppApplication.java
-│   │   │       ├── common/
-│   │   │       │   ├── BaseEntity.java
-│   │   │       │   └── ApiResponse.java
-│   │   │       ├── config/
-│   │   │       │   ├── SecurityConfig.java
-│   │   │       │   ├── JpaAuditingConfig.java
-│   │   │       │   ├── AuditorAwareImpl.java
-│   │   │       │   └── OpenApiConfig.java
-│   │   │       ├── security/
-│   │   │       │   ├── JwtService.java
-│   │   │       │   ├── JwtAuthenticationFilter.java
-│   │   │       │   ├── UserDetailsServiceImpl.java
-│   │   │       │   ├── UserDetailsImpl.java
-│   │   │       │   ├── AuthenticationController.java
-│   │   │       │   ├── RoleValidationController.java
-│   │   │       │   └── dto/
-│   │   │       ├── usuarios/
-│   │   │       │   ├── model/
-│   │   │       │   │   ├── Usuario.java
-│   │   │       │   │   ├── Rol.java
-│   │   │       │   │   ├── UsuarioRol.java
-│   │   │       │   │   ├── Estudiante.java
-│   │   │       │   │   ├── Docente.java
-│   │   │       │   │   └── TutorExterno.java
-│   │   │       │   └── repository/
-│   │   │       ├── shared/
-│   │   │       │   └── enums/
-│   │   │       │       ├── TipoDocumento.java
-│   │   │       │       ├── EstadoAcademico.java
-│   │   │       │       └── RolSistema.java
-│   │   │       └── exception/
-│   │   └── resources/
-│   │       ├── application.yml
-│   │       ├── application-local.yml
-│   │       ├── application-dev.yml
-│   │       └── db/
-│   │           └── migration/
-│   │               ├── V1__create_usuario_rol_tables.sql
-│   │               └── V2__insert_seed_data.sql
-├── pom.xml
-├── API_TEST_EXAMPLES.md
-└── README.md
-```
-
----
-
-## Próximos Pasos
-
-Una vez que el backend base esté corriendo correctamente:
-
-1. **Revisar la documentación en Swagger:** http://localhost:8080/api/v1/swagger-ui.html
-2. **Probar los ejemplos de API:** Ver `API_TEST_EXAMPLES.md`
-3. **Verificar el cumplimiento de RF-01 y RF-02** (ver README.md)
-4. **Preparar la entrega formal del backend base**
 
 ---
 
 ## Soporte
 
-Si encuentras problemas:
+Si encuentras problemas que no están cubiertos en esta guía:
 
-1. Revisa los logs de la aplicación en la consola
-2. Verifica que PostgreSQL esté corriendo
-3. Verifica que las migraciones Flyway se ejecutaron correctamente
-4. Revisa la configuración en `application-local.yml`
-5. Consulta la documentación de Spring Boot y Spring Security
+1. Revisa los logs del backend en la consola de tu IDE o terminal.
+2. Revisa los logs de Docker: `docker-compose logs -f`
+3. Consulta la documentación en Swagger UI: http://localhost:8080/api/v1/swagger-ui.html
+4. Revisa el archivo `API_TEST_EXAMPLES.md` para ejemplos detallados de requests.

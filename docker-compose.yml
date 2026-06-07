@@ -1,0 +1,53 @@
+# ============================================================
+# SGPP - Docker Compose (Entorno de Desarrollo)
+# ============================================================
+# Levanta la infraestructura de desarrollo (DB + pgAdmin).
+# Uso:
+#   docker-compose up -d          (iniciar en segundo plano)
+#   docker-compose down           (detener)
+#   docker-compose down -v        (detener y borrar volúmenes/datos)
+# ============================================================
+
+services:
+
+  # ---- Base de Datos PostgreSQL ----
+  db:
+    image: postgres:15-alpine
+    container_name: sgpp-postgres
+    restart: unless-stopped
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-sgpp_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-sgpp_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ---- pgAdmin (Interfaz gráfica para PostgreSQL) ----
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: sgpp-pgadmin
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@sgpp.dev}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+volumes:
+  pgdata:
+    driver: local
+  pgadmin_data:
+    driver: local
