@@ -109,6 +109,7 @@ Flyway inserta usuarios predefinidos la primera vez que se ejecuta. Todos usan l
 
 | Username       | Rol              |
 | -------------- | ---------------- |
+| adminsys1      | ADMIN_SISTEMA    |
 | estudiante1    | ESTUDIANTE       |
 | docente1       | DOCENTE_ASESOR   |
 | tutor1         | TUTOR_EXTERNO    |
