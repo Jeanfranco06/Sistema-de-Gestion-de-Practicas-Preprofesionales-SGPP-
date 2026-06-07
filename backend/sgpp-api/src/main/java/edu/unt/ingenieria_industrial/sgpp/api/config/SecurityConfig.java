@@ -39,9 +39,10 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**", "/public/**", "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/actuator/**", "/webjars/**").permitAll()
-                        .requestMatchers("/admin/**").hasAnyRole("SECRETARIA", "COMITE_PRACTICAS", "COORDINADOR", "DIRECTOR")
+                        .requestMatchers("/admin/**").hasAnyRole("ADMIN_SISTEMA", "SECRETARIA", "COMITE_PRACTICAS", "COORDINADOR", "DIRECTOR")
                         .requestMatchers("/estudiante/**").hasRole("ESTUDIANTE")
                         .requestMatchers("/docente/**").hasRole("DOCENTE_ASESOR")
+                        .requestMatchers("/parametros/**").authenticated()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/empresas/**", "/api/sedes/**", "/api/convenios/**").hasAnyRole("ESTUDIANTE", "SECRETARIA", "COMITE_PRACTICAS", "COORDINADOR", "DIRECTOR", "DOCENTE_ASESOR")
                         .requestMatchers("/api/empresas/**", "/api/sedes/**", "/api/convenios/**").hasAnyRole("SECRETARIA", "COMITE_PRACTICAS", "COORDINADOR", "DIRECTOR")
                         .anyRequest().authenticated()

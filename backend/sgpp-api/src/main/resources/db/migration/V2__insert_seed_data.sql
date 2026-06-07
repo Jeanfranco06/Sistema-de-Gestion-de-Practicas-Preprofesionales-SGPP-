@@ -5,8 +5,9 @@ INSERT INTO rol (nombre, descripcion, activo, creado_por) VALUES
 ('TUTOR_EXTERNO', 'Rol para tutores externos de empresas', TRUE, 'SYSTEM'),
 ('SECRETARIA', 'Rol para personal de secretaría', TRUE, 'SYSTEM'),
 ('COMITE_PRACTICAS', 'Rol para miembros del comité de prácticas', TRUE, 'SYSTEM'),
-('COORDINADOR', 'Rol para coordinador de la escuela', TRUE, 'SYSTEM'),
-('DIRECTOR', 'Rol para director de la escuela', TRUE, 'SYSTEM')
+('COORDINADOR', 'Coordinador de Prácticas: docente responsable de coordinar prácticas, gestionar convenios, asignar asesores y ver reportes globales', TRUE, 'SYSTEM'),
+('DIRECTOR', 'Rol para director de la escuela', TRUE, 'SYSTEM'),
+('ADMIN_SISTEMA', 'Administrador del Sistema: usuario interno de TI para gestionar parámetros generales del SGPP (catálogos, parámetros de horas, plazos, etc.)', TRUE, 'SYSTEM')
 ON CONFLICT (nombre) DO NOTHING;
 
 -- Inserción de usuarios de prueba (password: password123 encriptado con bcrypt)
@@ -18,7 +19,8 @@ INSERT INTO usuario (username, password, email, nombres, apellido_paterno, apell
 ('secretaria1', '$2a$10$fRo6lB0DnWyxSLZjhqfPIuzF9oS2Lq031lfzSeIPCaptSm8X/A3dG', 'secretaria1@unt.edu.pe', 'Ana María', 'González', 'Sánchez', '33445566', 'DNI', '987654324', TRUE, 'SYSTEM'),
 ('comite1', '$2a$10$fRo6lB0DnWyxSLZjhqfPIuzF9oS2Lq031lfzSeIPCaptSm8X/A3dG', 'comite1@unt.edu.pe', 'Luis Fernando', 'Torres', 'Ramírez', '44556677', 'DNI', '987654325', TRUE, 'SYSTEM'),
 ('coordinador1', '$2a$10$fRo6lB0DnWyxSLZjhqfPIuzF9oS2Lq031lfzSeIPCaptSm8X/A3dG', 'coordinador1@unt.edu.pe', 'Roberto Carlos', 'Díaz', 'Morales', '55667788', 'DNI', '987654326', TRUE, 'SYSTEM'),
-('director1', '$2a$10$fRo6lB0DnWyxSLZjhqfPIuzF9oS2Lq031lfzSeIPCaptSm8X/A3dG', 'director1@unt.edu.pe', 'Jorge Luis', 'Ruiz', 'Herrera', '66778899', 'DNI', '987654327', TRUE, 'SYSTEM')
+('director1', '$2a$10$fRo6lB0DnWyxSLZjhqfPIuzF9oS2Lq031lfzSeIPCaptSm8X/A3dG', 'director1@unt.edu.pe', 'Jorge Luis', 'Ruiz', 'Herrera', '66778899', 'DNI', '987654327', TRUE, 'SYSTEM'),
+('adminsys1', '$2a$10$fRo6lB0DnWyxSLZjhqfPIuzF9oS2Lq031lfzSeIPCaptSm8X/A3dG', 'adminsys1@unt.edu.pe', 'Sistema', 'TI', 'Admin', '77889900', 'DNI', '987654328', TRUE, 'SYSTEM')
 ON CONFLICT (username) DO NOTHING;
 
 -- Asignación de roles a usuarios
@@ -62,6 +64,12 @@ INSERT INTO usuario_rol (id_usuario, id_rol, asignado_por)
 SELECT u.id, r.id, 'SYSTEM'
 FROM usuario u, rol r
 WHERE u.username = 'director1' AND r.nombre = 'DIRECTOR'
+ON CONFLICT (id_usuario, id_rol) DO NOTHING;
+
+INSERT INTO usuario_rol (id_usuario, id_rol, asignado_por) 
+SELECT u.id, r.id, 'SYSTEM'
+FROM usuario u, rol r
+WHERE u.username = 'adminsys1' AND r.nombre = 'ADMIN_SISTEMA'
 ON CONFLICT (id_usuario, id_rol) DO NOTHING;
 
 -- Inserción de perfil de estudiante

@@ -6,9 +6,10 @@ public enum RolSistema {
     TUTOR_EXTERNO("Tutor Externo"),
     SECRETARIA("Secretaría"),
     COMITE_PRACTICAS("Comité de Prácticas"),
-    COORDINADOR("Coordinador"),
+    COORDINADOR("Coordinador de Prácticas"),
     DIRECTOR("Director"),
-    ADMINISTRADOR("Administrador");
+    ADMINISTRADOR("Administrador"),
+    ADMIN_SISTEMA("Administrador del Sistema");
 
     private final String descripcion;
 
