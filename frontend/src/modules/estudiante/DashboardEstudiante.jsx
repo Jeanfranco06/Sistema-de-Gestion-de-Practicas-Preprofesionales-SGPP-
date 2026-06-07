@@ -14,23 +14,28 @@ import { useAuth } from '../../auth/AuthContext';
 
 // ── Datos de prueba realistas (se sustituirán por llamadas a la API) ──────────
 const MOCK_PRACTICA = {
-  tipo: 'Prácticas Iniciales',
+  tipo: 'INICIAL', // INICIAL, FINAL, PROFESIONAL
+  tipoNombre: 'Prácticas Iniciales',
   empresa: 'Empresa Agroindustrial Casa Grande S.A.A.',
   sede: 'Sede Trujillo – Área de Producción',
   fechaInicio: '2025-04-01',
   fechaFin: '2025-06-24',
   horasEjecutadas: 210,
   horasTotales: 320,
+  horasMinimas: 120,
   etapaActual: 2,
   estado: 'EN_PROGRESO',
+  plazoPresentacionPlan: '2025-04-15', // Plazo para presentar plan
+  modalidadEvaluacion: 'INFORME', // INFORME, PRESENTACION, AMBAS
 };
 
 const MOCK_EXPEDIENTE = {
-  planPracticas: { estado: 'APROBADO', fecha: '2025-04-12' },
-  cartaPresentacion: { estado: 'APROBADO', fecha: '2025-03-28' },
-  informeParcial1: { estado: 'PENDIENTE', fecha: null },
-  informeParcial2: { estado: 'PENDIENTE', fecha: null },
-  informeFinal: { estado: 'PENDIENTE', fecha: null },
+  planPracticas: { estado: 'APROBADO', fecha: '2025-04-12', obligatorio: true },
+  cartaPresentacion: { estado: 'APROBADO', fecha: '2025-03-28', obligatorio: true },
+  informeParcial1: { estado: 'PENDIENTE', fecha: null, obligatorio: true },
+  informeParcial2: { estado: 'PENDIENTE', fecha: null, obligatorio: false }, // Solo para final/profesional
+  informeFinal: { estado: 'PENDIENTE', fecha: null, obligatorio: true },
+  presentacionFinal: { estado: 'PENDIENTE', fecha: null, obligatorio: false }, // Solo para final/profesional
 };
 
 const MOCK_OBSERVACIONES = [
@@ -120,20 +125,20 @@ export default function DashboardEstudiante() {
       {/* ── Tarjetas de métricas ── */}
       <Grid container spacing={2.5} sx={{ mb: 3 }}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard icon={<AccessTime />} label="Horas Acumuladas"
+          <StatCard icon={<Assignment />} label="Tipo de Práctica"
+            value={MOCK_PRACTICA.tipoNombre} subtext={`Mínimo: ${MOCK_PRACTICA.horasMinimas} horas`} color="primary.main" />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <StatCard icon={<AccessTime />} label="Horas Registradas"
             value={MOCK_PRACTICA.horasEjecutadas} subtext={`de ${MOCK_PRACTICA.horasTotales} horas requeridas`} color="primary.main" />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard icon={<Description />} label="Documentos Aprobados"
-            value={`${docsAprobados}/${docsTotales}`} subtext="Plan y Carta aprobados" color="success.main" />
+          <StatCard icon={<HourglassEmpty />} label="Plazo Plan"
+            value={diasRestantes(MOCK_PRACTICA.plazoPresentacionPlan)} subtext={`días restantes`} color={diasRestantes(MOCK_PRACTICA.plazoPresentacionPlan) < 5 ? 'error.main' : 'warning.main'} />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard icon={<Warning />} label="Observaciones Activas"
-            value={obsActivas.length} subtext="Requieren atención" color={obsActivas.length > 0 ? 'warning.main' : 'success.main'} />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard icon={<CheckCircle />} label="Avance del Trámite"
-            value={`${pct}%`} subtext="Etapa: En Ejecución" color="secondary.main" />
+          <StatCard icon={<Description />} label="Documentos"
+            value={`${docsAprobados}/${docsTotales}`} subtext="obligatorios aprobados" color="success.main" />
         </Grid>
       </Grid>
 
@@ -188,21 +193,27 @@ export default function DashboardEstudiante() {
             <CardContent sx={{ p: 3 }}>
               <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>Estado del Expediente</Typography>
               <List dense disablePadding>
-                {[
-                  { key: 'Carta de Presentación', data: MOCK_EXPEDIENTE.cartaPresentacion },
-                  { key: 'Plan de Prácticas', data: MOCK_EXPEDIENTE.planPracticas },
-                  { key: 'Informe Parcial 1', data: MOCK_EXPEDIENTE.informeParcial1 },
-                  { key: 'Informe Parcial 2', data: MOCK_EXPEDIENTE.informeParcial2 },
-                  { key: 'Informe Final', data: MOCK_EXPEDIENTE.informeFinal },
-                ].map(({ key, data }) => (
-                  <ListItem key={key} disablePadding sx={{ py: 0.75 }}>
-                    <ListItemText
-                      primary={key}
-                      primaryTypographyProps={{ fontSize: '0.82rem' }}
-                    />
-                    <EstadoChip estado={data.estado} />
-                  </ListItem>
-                ))}
+                {Object.entries(MOCK_EXPEDIENTE)
+                  .filter(([_, data]) => data.obligatorio || MOCK_PRACTICA.tipo !== 'INICIAL')
+                  .map(([key, data]) => {
+                    const nombres = {
+                      planPracticas: 'Plan de Prácticas',
+                      cartaPresentacion: 'Carta de Presentación',
+                      informeParcial1: 'Informe Parcial 1',
+                      informeParcial2: 'Informe Parcial 2',
+                      informeFinal: 'Informe Final',
+                      presentacionFinal: 'Presentación Final',
+                    };
+                    return (
+                      <ListItem key={key} disablePadding sx={{ py: 0.75 }}>
+                        <ListItemText
+                          primary={nombres[key]}
+                          primaryTypographyProps={{ fontSize: '0.82rem' }}
+                        />
+                        <EstadoChip estado={data.estado} />
+                      </ListItem>
+                    );
+                  })}
               </List>
             </CardContent>
           </Card>
@@ -273,32 +284,52 @@ export default function DashboardEstudiante() {
         <CardContent sx={{ p: 3 }}>
           <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>Accesos Rápidos</Typography>
           <Grid container spacing={2}>
-            {[
-              { label: 'Subir Informe Parcial', icon: <UploadFile />, color: '#1a3a5c', path: '/estudiante/documentos' },
-              { label: 'Ver mis Documentos', icon: <Visibility />, color: '#2e7d32', path: '/estudiante/documentos' },
-              { label: 'Registro de Horas', icon: <AccessTime />, color: '#ed6c02', path: '/estudiante/horas' },
-              { label: 'Mi Empresa / Sede', icon: <Business />, color: '#0288d1', path: '/estudiante/sedes' },
-              { label: 'Ver Evaluación', icon: <TrendingUp />, color: '#c8a951', path: '/estudiante/evaluacion' },
-              { label: 'Mi Docente Asesor', icon: <School />, color: '#7b1fa2', path: '/estudiante/practica' },
-            ].map((acc) => (
-              <Grid size={{ xs: 6, sm: 4, md: 2 }} key={acc.label}>
-                <Paper
-                  sx={{
-                    p: 2, textAlign: 'center', cursor: 'pointer', borderRadius: 2,
-                    border: '1px solid #e0e0e0', transition: 'all 0.2s',
-                    '&:hover': { boxShadow: 4, transform: 'translateY(-2px)', borderColor: acc.color },
-                  }}
-                  onClick={() => {}}
-                >
-                  <Avatar sx={{ bgcolor: acc.color, mx: 'auto', mb: 1, width: 42, height: 42 }}>
-                    {acc.icon}
-                  </Avatar>
-                  <Typography variant="caption" fontWeight={600} display="block" sx={{ lineHeight: 1.3 }}>
-                    {acc.label}
-                  </Typography>
-                </Paper>
-              </Grid>
-            ))}
+            {(() => {
+              const accesosBase = [
+                { label: 'Ver mis Documentos', icon: <Visibility />, color: '#2e7d32', path: '/estudiante/documentos' },
+                { label: 'Registro de Horas', icon: <AccessTime />, color: '#ed6c02', path: '/estudiante/horas' },
+                { label: 'Mi Empresa / Sede', icon: <Business />, color: '#0288d1', path: '/estudiante/sedes' },
+                { label: 'Mi Docente Asesor', icon: <School />, color: '#7b1fa2', path: '/estudiante/practica' },
+              ];
+
+              const accesosPorTipo = {
+                INICIAL: [
+                  { label: 'Subir Informe Parcial', icon: <UploadFile />, color: '#1a3a5c', path: '/estudiante/documentos' },
+                  { label: 'Ver Evaluación', icon: <TrendingUp />, color: '#c8a951', path: '/estudiante/evaluacion' },
+                ],
+                FINAL: [
+                  { label: 'Subir Informe Parcial 1', icon: <UploadFile />, color: '#1a3a5c', path: '/estudiante/documentos' },
+                  { label: 'Subir Informe Parcial 2', icon: <UploadFile />, color: '#1a3a5c', path: '/estudiante/documentos' },
+                  { label: 'Subir Informe Final', icon: <Description />, color: '#1a3a5c', path: '/estudiante/documentos' },
+                  { label: 'Ver Evaluación', icon: <TrendingUp />, color: '#c8a951', path: '/estudiante/evaluacion' },
+                ],
+                PROFESIONAL: [
+                  { label: 'Subir Informe Final', icon: <Description />, color: '#1a3a5c', path: '/estudiante/documentos' },
+                  { label: 'Presentación Final', icon: <School />, color: '#7b1fa2', path: '/estudiante/presentacion' },
+                  { label: 'Ver Evaluación', icon: <TrendingUp />, color: '#c8a951', path: '/estudiante/evaluacion' },
+                ],
+              };
+
+              return [...accesosBase, ...(accesosPorTipo[MOCK_PRACTICA.tipo] || accesosPorTipo.INICIAL)].map((acc) => (
+                <Grid size={{ xs: 6, sm: 4, md: 2 }} key={acc.label}>
+                  <Paper
+                    sx={{
+                      p: 2, textAlign: 'center', cursor: 'pointer', borderRadius: 2,
+                      border: '1px solid #e0e0e0', transition: 'all 0.2s',
+                      '&:hover': { boxShadow: 4, transform: 'translateY(-2px)', borderColor: acc.color },
+                    }}
+                    onClick={() => {}}
+                  >
+                    <Avatar sx={{ bgcolor: acc.color, mx: 'auto', mb: 1, width: 42, height: 42 }}>
+                      {acc.icon}
+                    </Avatar>
+                    <Typography variant="caption" fontWeight={600} display="block" sx={{ lineHeight: 1.3 }}>
+                      {acc.label}
+                    </Typography>
+                  </Paper>
+                </Grid>
+              ));
+            })()}
           </Grid>
         </CardContent>
       </Card>
