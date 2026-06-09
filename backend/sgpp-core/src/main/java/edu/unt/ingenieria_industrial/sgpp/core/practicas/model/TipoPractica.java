@@ -1,12 +1,9 @@
 package edu.unt.ingenieria_industrial.sgpp.core.practicas.model;
 
 import edu.unt.ingenieria_industrial.sgpp.core.common.BaseEntity;
+import edu.unt.ingenieria_industrial.sgpp.core.practicas.model.TipoPractica;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Data
 @Entity
@@ -33,4 +30,3 @@ public class TipoPractica extends BaseEntity {
     @Builder.Default
     private Boolean activo = true;
 }
-

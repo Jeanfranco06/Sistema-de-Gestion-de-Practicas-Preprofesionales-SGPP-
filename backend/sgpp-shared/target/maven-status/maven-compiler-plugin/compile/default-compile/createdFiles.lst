@@ -1,0 +1,13 @@
+edu\unt\ingenieria_industrial\sgpp\shared\enums\EstadoAcademico.class
+edu\unt\ingenieria_industrial\sgpp\shared\enums\RolSistema.class
+edu\unt\ingenieria_industrial\sgpp\shared\common\ApiResponse$ApiResponseBuilder.class
+edu\unt\ingenieria_industrial\sgpp\shared\enums\TipoDocumento.class
+edu\unt\ingenieria_industrial\sgpp\shared\enums\TipoDocumentoEnum.class
+edu\unt\ingenieria_industrial\sgpp\shared\exception\GlobalExceptionHandler.class
+edu\unt\ingenieria_industrial\sgpp\shared\enums\EstadoPractica.class
+edu\unt\ingenieria_industrial\sgpp\shared\enums\AccionAuditoria.class
+edu\unt\ingenieria_industrial\sgpp\shared\exception\ResourceNotFoundException.class
+edu\unt\ingenieria_industrial\sgpp\shared\enums\TipoUsuario.class
+edu\unt\ingenieria_industrial\sgpp\shared\exception\BusinessException.class
+edu\unt\ingenieria_industrial\sgpp\shared\common\ApiResponse.class
+edu\unt\ingenieria_industrial\sgpp\shared\enums\EstadoDocumento.class

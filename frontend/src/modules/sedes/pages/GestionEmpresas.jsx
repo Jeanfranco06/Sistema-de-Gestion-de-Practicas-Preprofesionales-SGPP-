@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
     Container, Typography, Box, Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, 
     Chip, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Grid, InputAdornment, Tooltip,
@@ -191,6 +191,10 @@ export const GestionEmpresas = () => {
         setPage(0);
     };
 
+    const handleSearchChange = useCallback((e) => {
+        setSearchTerm(e.target.value);
+    }, []);
+
     const filteredEmpresas = useMemo(() => {
         let filtered = empresas.filter(emp => {
             const matchesSearch = emp.razonSocial?.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -219,7 +223,7 @@ export const GestionEmpresas = () => {
 
     return (
         <Container maxWidth="xl" sx={{ mt: 4, mb: 6 }}>
-            <Box display="flex" alignItems="center" gap={2} mb={3}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
                 <BusinessCenterIcon sx={{ fontSize: 40, color: 'primary.main' }} />
                 <Box>
                     <Typography variant="h4" fontWeight="bold" color="primary">
@@ -239,29 +243,29 @@ export const GestionEmpresas = () => {
                             variant="outlined" 
                             placeholder="Buscar empresa (Nombre o RUC)..." 
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            InputProps={{
+                             onChange={handleSearchChange}
+                            slotProps={{ input: {
                                 startAdornment: (
                                     <InputAdornment position="start">
                                         <SearchIcon color="action" fontSize="small" />
                                     </InputAdornment>
                                 ),
                                 sx: { bgcolor: '#fff', borderRadius: 2, minWidth: { xs: '100%', sm: '400px' } }
-                            }}
+                            }}}
                         />
                         <TextField
                             select
                             size="small"
                             value={filterEstado}
                             onChange={(e) => setFilterEstado(e.target.value)}
-                            InputProps={{
+                            slotProps={{ input: {
                                 startAdornment: (
                                     <InputAdornment position="start">
                                         <FilterListIcon color="action" fontSize="small" />
                                     </InputAdornment>
                                 ),
                                 sx: { bgcolor: '#fff', borderRadius: 2 }
-                            }}
+                            }}}
                         >
                             <MenuItem value="todos">Todos los Estados</MenuItem>
                             <MenuItem value="validadas">Empresas Validadas</MenuItem>
@@ -369,7 +373,7 @@ export const GestionEmpresas = () => {
                 labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`}
             />
 
-            <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="md" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+            <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="md" fullWidth slotProps={{ paper: { sx: { borderRadius: 3 } } }}>
                 <DialogTitle sx={{ bgcolor: 'primary.main', color: '#fff', pb: 2 }}>
                     {isEditing ? 'Editar Empresa' : 'Registrar Nueva Empresa'}
                 </DialogTitle>

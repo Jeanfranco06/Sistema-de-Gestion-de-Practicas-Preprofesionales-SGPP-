@@ -208,7 +208,7 @@ export default function DashboardEstudiante() {
                       <ListItem key={key} disablePadding sx={{ py: 0.75 }}>
                         <ListItemText
                           primary={nombres[key]}
-                          primaryTypographyProps={{ fontSize: '0.82rem' }}
+                          slotProps={{ primary: { fontSize: '0.82rem' } }}
                         />
                         <EstadoChip estado={data.estado} />
                       </ListItem>
@@ -235,8 +235,10 @@ export default function DashboardEstudiante() {
                       <ListItemText
                         primary={t.tarea}
                         secondary={`${t.limite} · ${dias >= 0 ? `${dias} días` : 'vencido'}`}
-                        primaryTypographyProps={{ fontSize: '0.82rem', fontWeight: t.urgente ? 600 : 400 }}
-                        secondaryTypographyProps={{ fontSize: '0.72rem', color: dias < 5 ? 'error.main' : 'text.secondary' }}
+                        slotProps={{
+                          primary: { fontSize: '0.82rem', fontWeight: t.urgente ? 600 : 400 },
+                          secondary: { fontSize: '0.72rem', color: dias < 5 ? 'error.main' : 'text.secondary' }
+                        }}
                       />
                     </ListItem>
                   );
@@ -266,8 +268,10 @@ export default function DashboardEstudiante() {
                       <ListItemText
                         primary={n.texto}
                         secondary={n.fecha}
-                        primaryTypographyProps={{ fontSize: '0.8rem' }}
-                        secondaryTypographyProps={{ fontSize: '0.72rem' }}
+                        slotProps={{
+                          primary: { fontSize: '0.8rem' },
+                          secondary: { fontSize: '0.72rem' }
+                        }}
                       />
                     </ListItem>
                     <Divider component="li" />

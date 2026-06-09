@@ -1,0 +1,28 @@
+package edu.unt.ingenieria_industrial.sgpp.core.expediente.service;
+
+import edu.unt.ingenieria_industrial.sgpp.core.expediente.dto.*;
+import java.time.LocalDate;
+import java.util.List;
+
+public interface ExpedienteService {
+    ExpedienteResponse crear(CrearExpedienteRequest request, Long idUsuario);
+    ExpedienteResponse asignarEmpresaSede(Long idExpediente, AsignarEmpresaSedeRequest request, Long idUsuario);
+    ExpedienteResponse asignarAsesor(Long idExpediente, AsignarAsesorRequest request, Long idUsuario);
+    ExpedienteResponse asignarComite(Long idExpediente, AsignarComiteRequest request, Long idUsuario);
+    ExpedienteResponse presentarPlan(Long idExpediente, PresentarPlanRequest request, Long idUsuario);
+    ExpedienteResponse agregarObservacion(Long idExpediente, AgregarObservacionRequest request, Long idUsuario);
+    ExpedienteResponse subsanarObservaciones(Long idExpediente, SubsanarObservacionesRequest request, Long idUsuario);
+    ExpedienteResponse aprobarPlan(Long idExpediente, Long idUsuario);
+    ExpedienteResponse iniciarEjecucion(Long idExpediente, Long idUsuario, LocalDate fechaInicio, Integer duracionSemanas);
+    ExpedienteResponse presentarInformeParcial(Long idExpediente, Long idUsuario);
+    ExpedienteResponse presentarInformeFinal(Long idExpediente, Long idUsuario);
+    ExpedienteResponse evaluar(Long idExpediente, EvaluarExpedienteRequest request, Long idUsuario);
+    ExpedienteResponse cerrar(Long idExpediente, Long idUsuario, String observacion);
+    ExpedienteResponse cambiarEstado(Long idExpediente, CambioEstadoRequest request, Long idUsuario);
+    ExpedienteResponse findById(Long id);
+    List<ExpedienteResponse> findAll();
+    List<ExpedienteResponse> findByEstudianteId(Long estudianteId);
+    List<ExpedienteResponse> findByEstado(String estado);
+    List<ExpedienteResponse> findByTutorEmpresaId(Long tutorEmpresaId);
+    void disable(Long id, Long idUsuario);
+}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
     Container, Typography, Box, Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, 
     Chip, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Select, MenuItem, InputLabel, 
@@ -322,6 +322,10 @@ export const GestionSedes = () => {
         }
     };
 
+    const handleSearchChange = useCallback((e) => {
+        setSearchTerm(e.target.value);
+    }, []);
+
     const limpiarFiltros = () => {
         setSearchTerm('');
         setFiltroEstadoSede('todos');
@@ -412,8 +416,8 @@ export const GestionSedes = () => {
     }
 
     return (
-        <Container component={motion.div} initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} maxWidth="xl" sx={{ mt: 4, mb: 6 }}>
-            <Box display="flex" alignItems="center" gap={2} mb={4} sx={{ p: 4, borderRadius: 4, bgcolor: 'primary.main', color: 'white', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', position: 'relative', overflow: 'hidden' }}>
+        <Container maxWidth="xl" sx={{ mt: 4, mb: 6 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 4, p: 4, borderRadius: 4, bgcolor: 'primary.main', color: 'white', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', position: 'relative', overflow: 'hidden' }}>
                 <Box sx={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 2 }}>
                     <LocationCityIcon sx={{ fontSize: 48, color: 'rgba(255,255,255,0.9)' }} />
                     <Box>
@@ -450,15 +454,15 @@ export const GestionSedes = () => {
                             variant="outlined" 
                             placeholder="Buscar sede, empresa o distrito..." 
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            InputProps={{
+                            onChange={handleSearchChange}
+                            slotProps={{ input: {
                                 startAdornment: (
                                     <InputAdornment position="start">
                                         <SearchIcon color="action" fontSize="small" />
                                     </InputAdornment>
                                 ),
                                 sx: { bgcolor: '#fff', borderRadius: 1.2 }
-                            }}
+                            }}}
                         />
                         <FormControl size="small" fullWidth>
                             <InputLabel>Estado</InputLabel>
@@ -517,7 +521,7 @@ export const GestionSedes = () => {
                 </Box>
             </Paper>
 
-            <TableContainer component={motion.div} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.2 }} elevation={0} sx={{ borderRadius: 4, border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)', overflow: 'hidden', bgcolor: '#fff' }}>
+            <TableContainer elevation={0} sx={{ borderRadius: 4, border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)', overflow: 'hidden', bgcolor: '#fff' }}>
                 <Table>
                     <TableHead sx={{ bgcolor: 'primary.main' }}>
                         <TableRow>
@@ -656,7 +660,7 @@ export const GestionSedes = () => {
                 labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`}
             />
 
-            <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="md" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+            <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="md" fullWidth slotProps={{ paper: { sx: { borderRadius: 3 } } }}>
                 <DialogTitle sx={{ bgcolor: 'primary.main', color: '#fff', pb: 2 }}>
                     {isEditing ? 'Editar Sede' : 'Registrar Nueva Sede'}
                 </DialogTitle>
@@ -960,7 +964,7 @@ export const GestionSedes = () => {
             </Drawer>
 
             {/* Validación Dialog */}
-            <Dialog open={validacionDialogOpen} onClose={() => setValidacionDialogOpen(false)} maxWidth="md" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+            <Dialog open={validacionDialogOpen} onClose={() => setValidacionDialogOpen(false)} maxWidth="md" fullWidth slotProps={{ paper: { sx: { borderRadius: 3 } } }}>
                 <DialogTitle sx={{ bgcolor: validacionActual?.resultadoValidacion === 'APROBADA' ? 'success.main' : validacionActual?.resultadoValidacion === 'RECHAZADA' ? 'error.main' : 'warning.main', color: '#fff', display: 'flex', alignItems: 'center', gap: 1 }}>
                     <AssignmentIcon />
                     Validación de Sede: {validacionSede?.nombreSede}

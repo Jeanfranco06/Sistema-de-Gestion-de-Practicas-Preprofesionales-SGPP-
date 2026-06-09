@@ -1,0 +1,17 @@
+D:\Proyects\SG de Practicas Pre profesionales\backend\sgpp-api\src\main\java\edu\unt\ingenieria_industrial\sgpp\api\config\OpenApiConfig.java
+D:\Proyects\SG de Practicas Pre profesionales\backend\sgpp-api\src\main\java\edu\unt\ingenieria_industrial\sgpp\api\security\JwtAuthenticationFilter.java
+D:\Proyects\SG de Practicas Pre profesionales\backend\sgpp-api\src\main\java\edu\unt\ingenieria_industrial\sgpp\api\security\EstudianteValidationController.java
+D:\Proyects\SG de Practicas Pre profesionales\backend\sgpp-api\src\main\java\edu\unt\ingenieria_industrial\sgpp\api\security\AuthenticatedValidationController.java
+D:\Proyects\SG de Practicas Pre profesionales\backend\sgpp-api\src\main\java\edu\unt\ingenieria_industrial\sgpp\api\security\UserDetailsImpl.java
+D:\Proyects\SG de Practicas Pre profesionales\backend\sgpp-api\src\main\java\edu\unt\ingenieria_industrial\sgpp\api\config\SecurityConfig.java
+D:\Proyects\SG de Practicas Pre profesionales\backend\sgpp-api\src\main\java\edu\unt\ingenieria_industrial\sgpp\api\security\AuthenticationController.java
+D:\Proyects\SG de Practicas Pre profesionales\backend\sgpp-api\src\main\java\edu\unt\ingenieria_industrial\sgpp\api\security\dto\LoginRequest.java
+D:\Proyects\SG de Practicas Pre profesionales\backend\sgpp-api\src\main\java\edu\unt\ingenieria_industrial\sgpp\api\security\dto\LoginResponse.java
+D:\Proyects\SG de Practicas Pre profesionales\backend\sgpp-api\src\main\java\edu\unt\ingenieria_industrial\sgpp\api\security\JwtService.java
+D:\Proyects\SG de Practicas Pre profesionales\backend\sgpp-api\src\main\java\edu\unt\ingenieria_industrial\sgpp\api\security\UserDetailsServiceImpl.java
+D:\Proyects\SG de Practicas Pre profesionales\backend\sgpp-api\src\main\java\edu\unt\ingenieria_industrial\sgpp\api\security\DocenteValidationController.java
+D:\Proyects\SG de Practicas Pre profesionales\backend\sgpp-api\src\main\java\edu\unt\ingenieria_industrial\sgpp\api\SgppApplication.java
+D:\Proyects\SG de Practicas Pre profesionales\backend\sgpp-api\src\main\java\edu\unt\ingenieria_industrial\sgpp\api\security\AdminValidationController.java
+D:\Proyects\SG de Practicas Pre profesionales\backend\sgpp-api\src\main\java\edu\unt\ingenieria_industrial\sgpp\api\sistema\ParametroSistemaController.java
+D:\Proyects\SG de Practicas Pre profesionales\backend\sgpp-api\src\main\java\edu\unt\ingenieria_industrial\sgpp\api\config\AuditorAwareImpl.java
+D:\Proyects\SG de Practicas Pre profesionales\backend\sgpp-api\src\main\java\edu\unt\ingenieria_industrial\sgpp\api\config\JpaAuditingConfig.java
