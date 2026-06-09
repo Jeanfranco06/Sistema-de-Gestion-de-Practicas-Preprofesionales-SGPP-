@@ -1,8 +1,9 @@
 package edu.unt.ingenieria_industrial.sgpp.core.seguridad.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import edu.unt.ingenieria_industrial.sgpp.shared.common.BaseEntity;
+import edu.unt.ingenieria_industrial.sgpp.core.common.BaseEntity;
 import edu.unt.ingenieria_industrial.sgpp.shared.enums.TipoDocumento;
+import edu.unt.ingenieria_industrial.sgpp.shared.enums.TipoUsuario;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -66,6 +67,19 @@ public class Usuario extends BaseEntity {
     @Column(name = "intentos_fallidos")
     @Builder.Default
     private Integer intentosFallidos = 0;
+
+    @Column(name = "codigo_institucional", length = 50)
+    private String codigoInstitucional;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_usuario", length = 20)
+    private TipoUsuario tipoUsuario;
+
+    @Column(name = "fecha_registro")
+    private LocalDateTime fechaRegistro;
+
+    @Column(name = "fecha_actualizacion")
+    private LocalDateTime fechaActualizacion;
 
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default

@@ -1,7 +1,7 @@
 package edu.unt.ingenieria_industrial.sgpp.core.seguridad.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import edu.unt.ingenieria_industrial.sgpp.shared.common.BaseEntity;
+import edu.unt.ingenieria_industrial.sgpp.core.common.BaseEntity;
 import edu.unt.ingenieria_industrial.sgpp.shared.enums.RolSistema;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

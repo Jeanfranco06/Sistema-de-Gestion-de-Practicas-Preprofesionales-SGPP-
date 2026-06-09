@@ -19,7 +19,7 @@ import java.util.List;
 @RequestMapping("/tutores-externos")
 @RequiredArgsConstructor
 @Tag(name = "GestiÃ³n de Tutores Externos", description = "Endpoints para la administraciÃ³n de tutores externos")
-@PreAuthorize("hasAnyRole('ADMINISTRADOR', 'COORDINADOR', 'DIRECTOR')")
+@PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COORDINADOR', 'DIRECTOR')")
 public class TutorExternoController {
 
     private final TutorExternoService tutorExternoService;
@@ -86,6 +86,112 @@ public class TutorExternoController {
                 ApiResponse.<Void>builder()
                         .success(true)
                         .message("Tutor externo deshabilitado exitosamente")
+                        .timestamp(LocalDateTime.now())
+                        .build()
+        );
+    }
+
+    @GetMapping("/empresa/{empresaId}")
+    @Operation(summary = "Listar tutores externos por empresa")
+    public ResponseEntity<ApiResponse<List<TutorExternoDTO>>> findByEmpresaId(@PathVariable Long empresaId) {
+        List<TutorExternoDTO> tutores = tutorExternoService.findByEmpresaId(empresaId);
+        return ResponseEntity.ok(
+                ApiResponse.<List<TutorExternoDTO>>builder()
+                        .success(true)
+                        .data(tutores)
+                        .timestamp(LocalDateTime.now())
+                        .build()
+        );
+    }
+
+    @GetMapping("/sede/{sedeId}")
+    @Operation(summary = "Listar tutores externos por sede")
+    public ResponseEntity<ApiResponse<List<TutorExternoDTO>>> findBySedeId(@PathVariable Long sedeId) {
+        List<TutorExternoDTO> tutores = tutorExternoService.findBySedeId(sedeId);
+        return ResponseEntity.ok(
+                ApiResponse.<List<TutorExternoDTO>>builder()
+                        .success(true)
+                        .data(tutores)
+                        .timestamp(LocalDateTime.now())
+                        .build()
+        );
+    }
+
+    @GetMapping("/empresa/{empresaId}/estado/{estadoTutor}")
+    @Operation(summary = "Listar tutores externos por empresa y estado")
+    public ResponseEntity<ApiResponse<List<TutorExternoDTO>>> findByEmpresaIdAndEstadoTutor(
+            @PathVariable Long empresaId, @PathVariable String estadoTutor) {
+        List<TutorExternoDTO> tutores = tutorExternoService.findByEmpresaIdAndEstadoTutor(empresaId, estadoTutor);
+        return ResponseEntity.ok(
+                ApiResponse.<List<TutorExternoDTO>>builder()
+                        .success(true)
+                        .data(tutores)
+                        .timestamp(LocalDateTime.now())
+                        .build()
+        );
+    }
+
+    @GetMapping("/sede/{sedeId}/estado/{estadoTutor}")
+    @Operation(summary = "Listar tutores externos por sede y estado")
+    public ResponseEntity<ApiResponse<List<TutorExternoDTO>>> findBySedeIdAndEstadoTutor(
+            @PathVariable Long sedeId, @PathVariable String estadoTutor) {
+        List<TutorExternoDTO> tutores = tutorExternoService.findBySedeIdAndEstadoTutor(sedeId, estadoTutor);
+        return ResponseEntity.ok(
+                ApiResponse.<List<TutorExternoDTO>>builder()
+                        .success(true)
+                        .data(tutores)
+                        .timestamp(LocalDateTime.now())
+                        .build()
+        );
+    }
+
+    @GetMapping("/empresa/{empresaId}/activos")
+    @Operation(summary = "Listar tutores externos activos por empresa")
+    public ResponseEntity<ApiResponse<List<TutorExternoDTO>>> findActiveByEmpresaId(@PathVariable Long empresaId) {
+        List<TutorExternoDTO> tutores = tutorExternoService.findActiveByEmpresaId(empresaId);
+        return ResponseEntity.ok(
+                ApiResponse.<List<TutorExternoDTO>>builder()
+                        .success(true)
+                        .data(tutores)
+                        .timestamp(LocalDateTime.now())
+                        .build()
+        );
+    }
+
+    @GetMapping("/sede/{sedeId}/activos")
+    @Operation(summary = "Listar tutores externos activos por sede")
+    public ResponseEntity<ApiResponse<List<TutorExternoDTO>>> findActiveBySedeId(@PathVariable Long sedeId) {
+        List<TutorExternoDTO> tutores = tutorExternoService.findActiveBySedeId(sedeId);
+        return ResponseEntity.ok(
+                ApiResponse.<List<TutorExternoDTO>>builder()
+                        .success(true)
+                        .data(tutores)
+                        .timestamp(LocalDateTime.now())
+                        .build()
+        );
+    }
+
+    @GetMapping("/{id}/activos")
+    @Operation(summary = "Listar tutores externos activos por empresa o sede")
+    public ResponseEntity<ApiResponse<List<TutorExternoDTO>>> findActiveByEmpresaOrSedeId(@PathVariable Long id) {
+        List<TutorExternoDTO> tutores = tutorExternoService.findActiveByEmpresaOrSedeId(id);
+        return ResponseEntity.ok(
+                ApiResponse.<List<TutorExternoDTO>>builder()
+                        .success(true)
+                        .data(tutores)
+                        .timestamp(LocalDateTime.now())
+                        .build()
+        );
+    }
+
+    @PutMapping("/{id}/estado")
+    @Operation(summary = "Cambiar estado de un tutor externo")
+    public ResponseEntity<ApiResponse<Void>> cambiarEstado(@PathVariable Long id, @RequestBody String estadoTutor) {
+        tutorExternoService.cambiarEstado(id, estadoTutor);
+        return ResponseEntity.ok(
+                ApiResponse.<Void>builder()
+                        .success(true)
+                        .message("Estado del tutor externo actualizado exitosamente")
                         .timestamp(LocalDateTime.now())
                         .build()
         );

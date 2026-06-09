@@ -1,7 +1,7 @@
 package edu.unt.ingenieria_industrial.sgpp.api.sistema;
 
 import edu.unt.ingenieria_industrial.sgpp.core.sistema.service.ParametroSistemaService;
-import edu.unt.ingenieria_industrial.sgpp.shared.model.ParametroSistema;
+import edu.unt.ingenieria_industrial.sgpp.core.model.ParametroSistema;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;

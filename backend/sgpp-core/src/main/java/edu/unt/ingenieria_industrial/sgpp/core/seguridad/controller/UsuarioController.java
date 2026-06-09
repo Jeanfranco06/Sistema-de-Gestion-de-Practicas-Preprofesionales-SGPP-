@@ -1,10 +1,10 @@
 package edu.unt.ingenieria_industrial.sgpp.core.seguridad.controller;
 
 import edu.unt.ingenieria_industrial.sgpp.shared.common.ApiResponse;
-import edu.unt.ingenieria_industrial.sgpp.core.seguridad.dto.UsuarioCreateDTO;
-import edu.unt.ingenieria_industrial.sgpp.core.seguridad.dto.UsuarioDTO;
+import edu.unt.ingenieria_industrial.sgpp.core.seguridad.dto.*;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.service.UsuarioService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,8 +20,8 @@ import java.util.Set;
 @RestController
 @RequestMapping("/usuarios")
 @RequiredArgsConstructor
-@Tag(name = "GestiÃ³n de Usuarios", description = "Endpoints para la administraciÃ³n de usuarios y roles")
-@PreAuthorize("hasAnyRole('ADMINISTRADOR', 'COORDINADOR', 'DIRECTOR')")
+@Tag(name = "Gestión de Usuarios", description = "Endpoints para la administración de usuarios y roles")
+@PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COORDINADOR', 'DIRECTOR')")
 public class UsuarioController {
 
     private final UsuarioService usuarioService;
@@ -53,12 +53,43 @@ public class UsuarioController {
         );
     }
 
+    @GetMapping(params = {"nombre", "correo", "estado", "rol", "tipoUsuario"})
+    @Operation(summary = "Listar usuarios con filtros")
+    public ResponseEntity<ApiResponse<List<UsuarioDTO>>> findAllWithFilters(
+            @Parameter(description = "Filtro por nombre") @RequestParam(required = false) String nombre,
+            @Parameter(description = "Filtro por correo") @RequestParam(required = false) String correo,
+            @Parameter(description = "Filtro por estado (ACTIVO, INACTIVO, BLOQUEADO)") @RequestParam(required = false) String estado,
+            @Parameter(description = "Filtro por rol") @RequestParam(required = false) String rol,
+            @Parameter(description = "Filtro por tipo de usuario (INTERNO, EXTERNO)") @RequestParam(required = false) String tipoUsuario) {
+        List<UsuarioDTO> usuarios = usuarioService.findAllWithFilters(nombre, correo, estado, rol, tipoUsuario);
+        return ResponseEntity.ok(
+                ApiResponse.<List<UsuarioDTO>>builder()
+                        .success(true)
+                        .data(usuarios)
+                        .timestamp(LocalDateTime.now())
+                        .build()
+        );
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "Obtener un usuario por ID")
     public ResponseEntity<ApiResponse<UsuarioDTO>> findById(@PathVariable Long id) {
         UsuarioDTO usuario = usuarioService.findById(id);
         return ResponseEntity.ok(
                 ApiResponse.<UsuarioDTO>builder()
+                        .success(true)
+                        .data(usuario)
+                        .timestamp(LocalDateTime.now())
+                        .build()
+        );
+    }
+
+    @GetMapping("/{id}/detalle")
+    @Operation(summary = "Obtener detalle completo de un usuario")
+    public ResponseEntity<ApiResponse<UsuarioDetalleResponse>> findDetalleById(@PathVariable Long id) {
+        UsuarioDetalleResponse usuario = usuarioService.findDetalleById(id);
+        return ResponseEntity.ok(
+                ApiResponse.<UsuarioDetalleResponse>builder()
                         .success(true)
                         .data(usuario)
                         .timestamp(LocalDateTime.now())
@@ -75,6 +106,19 @@ public class UsuarioController {
                         .success(true)
                         .message("Usuario actualizado exitosamente")
                         .data(updated)
+                        .timestamp(LocalDateTime.now())
+                        .build()
+        );
+    }
+
+    @PatchMapping("/{id}/estado")
+    @Operation(summary = "Actualizar estado de un usuario (ACTIVO, INACTIVO, BLOQUEADO)")
+    public ResponseEntity<ApiResponse<Void>> updateEstado(@PathVariable Long id, @Valid @RequestBody EstadoUsuarioRequest request) {
+        usuarioService.updateEstado(id, request);
+        return ResponseEntity.ok(
+                ApiResponse.<Void>builder()
+                        .success(true)
+                        .message("Estado de usuario actualizado exitosamente")
                         .timestamp(LocalDateTime.now())
                         .build()
         );
@@ -106,6 +150,19 @@ public class UsuarioController {
         );
     }
 
+    @GetMapping("/{id}/roles")
+    @Operation(summary = "Obtener roles de un usuario")
+    public ResponseEntity<ApiResponse<List<RolDTO>>> getRolesByUsuarioId(@PathVariable Long id) {
+        List<RolDTO> roles = usuarioService.getRolesByUsuarioId(id);
+        return ResponseEntity.ok(
+                ApiResponse.<List<RolDTO>>builder()
+                        .success(true)
+                        .data(roles)
+                        .timestamp(LocalDateTime.now())
+                        .build()
+        );
+    }
+
     @PostMapping("/{id}/roles")
     @Operation(summary = "Asignar roles a un usuario")
     public ResponseEntity<ApiResponse<Void>> assignRoles(@PathVariable Long id, @RequestBody Set<String> roles) {
@@ -114,6 +171,19 @@ public class UsuarioController {
                 ApiResponse.<Void>builder()
                         .success(true)
                         .message("Roles asignados exitosamente")
+                        .timestamp(LocalDateTime.now())
+                        .build()
+        );
+    }
+
+    @DeleteMapping("/{id}/roles/{rolId}")
+    @Operation(summary = "Revocar un rol de un usuario")
+    public ResponseEntity<ApiResponse<Void>> revokeRol(@PathVariable Long id, @PathVariable Long rolId) {
+        usuarioService.revokeRol(id, rolId);
+        return ResponseEntity.ok(
+                ApiResponse.<Void>builder()
+                        .success(true)
+                        .message("Rol revocado exitosamente")
                         .timestamp(LocalDateTime.now())
                         .build()
         );

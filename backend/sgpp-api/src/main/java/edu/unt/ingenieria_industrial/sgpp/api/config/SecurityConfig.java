@@ -8,6 +8,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -26,6 +27,7 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -40,12 +42,16 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**", "/public/**", "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/actuator/**", "/webjars/**").permitAll()
                         .requestMatchers("/admin/**").hasAnyRole("ADMIN_SISTEMA", "SECRETARIA", "COMITE_PRACTICAS", "COORDINADOR", "DIRECTOR")
-                        .requestMatchers("/estudiante/**").hasRole("ESTUDIANTE")
-                        .requestMatchers("/docente/**").hasRole("DOCENTE_ASESOR")
+                        .requestMatchers("/estudiante/**").hasAnyRole("ADMIN_SISTEMA", "ESTUDIANTE")
+                        .requestMatchers("/docente/**").hasAnyRole("ADMIN_SISTEMA", "DOCENTE_ASESOR")
+                        .requestMatchers("/tutor/**").hasAnyRole("ADMIN_SISTEMA", "TUTOR_EXTERNO")
                         .requestMatchers("/parametros/**").authenticated()
-                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/empresas/**", "/api/sedes/**", "/api/convenios/**").hasAnyRole("ESTUDIANTE", "SECRETARIA", "COMITE_PRACTICAS", "COORDINADOR", "DIRECTOR", "DOCENTE_ASESOR")
-                        .requestMatchers("/api/empresas/**", "/api/sedes/**", "/api/convenios/**").hasAnyRole("SECRETARIA", "COMITE_PRACTICAS", "COORDINADOR", "DIRECTOR")
-                        .anyRequest().authenticated()
+                        .requestMatchers("/tutores-externos/**").hasAnyRole("ADMIN_SISTEMA", "SECRETARIA", "COMITE_PRACTICAS", "COORDINADOR", "DIRECTOR")
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/expedientes/tutor-empresa/**").hasAnyRole("ADMIN_SISTEMA", "TUTOR_EXTERNO", "COORDINADOR", "COMITE_PRACTICAS", "DIRECTOR")
+                        .requestMatchers("/expedientes/**").hasAnyRole("ADMIN_SISTEMA", "COORDINADOR", "COMITE_PRACTICAS", "DIRECTOR")
+                        .requestMatchers("/sedes/catalogo", "/sedes/*/detalle").authenticated()
+                        .requestMatchers("/empresas/**", "/sedes/**", "/convenios/**").authenticated()
+                        .anyRequest().hasRole("ADMIN_SISTEMA")
                 )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)

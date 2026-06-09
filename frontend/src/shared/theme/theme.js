@@ -3,19 +3,19 @@ import { createTheme } from '@mui/material/styles';
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#1a3a5c',
-      light: '#2e5f8a',
-      dark: '#0f2238',
+      main: '#0f172a', // Slate 900
+      light: '#334155',
+      dark: '#020617',
       contrastText: '#ffffff',
     },
     secondary: {
-      main: '#c8a951',
-      light: '#dfc170',
-      dark: '#a38838',
+      main: '#3b82f6', // Blue 500
+      light: '#60a5fa',
+      dark: '#2563eb',
       contrastText: '#ffffff',
     },
     background: {
-      default: '#f4f6f8',
+      default: '#f8fafc', // Slate 50
       paper: '#ffffff',
     },
     success: { main: '#2e7d32' },
@@ -24,20 +24,23 @@ const theme = createTheme({
     info: { main: '#0288d1' },
   },
   typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-    h5: { fontWeight: 700 },
-    h6: { fontWeight: 600 },
+    fontFamily: '"Inter", "Helvetica", "Arial", sans-serif',
+    h4: { fontWeight: 700, letterSpacing: '-0.02em' },
+    h5: { fontWeight: 700, letterSpacing: '-0.01em' },
+    h6: { fontWeight: 600, letterSpacing: '-0.01em' },
+    subtitle1: { fontWeight: 500 },
+    button: { fontWeight: 600, textTransform: 'none' },
   },
   shape: { borderRadius: 10 },
   components: {
     MuiButton: {
       styleOverrides: {
-        root: { textTransform: 'none', fontWeight: 600, borderRadius: 8 },
+        root: { textTransform: 'none', fontWeight: 600, borderRadius: 8, boxShadow: 'none', '&:hover': { boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' } },
       },
     },
     MuiCard: {
       styleOverrides: {
-        root: { borderRadius: 12, boxShadow: '0 2px 10px rgba(0,0,0,0.08)' },
+        root: { borderRadius: 16, boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05)', border: '1px solid #e2e8f0' },
       },
     },
     MuiDrawer: {

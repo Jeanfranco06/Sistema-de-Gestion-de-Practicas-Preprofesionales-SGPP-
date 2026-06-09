@@ -1,9 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, CssBaseline } from '@mui/material';
-import '@fontsource/roboto/300.css';
-import '@fontsource/roboto/400.css';
-import '@fontsource/roboto/500.css';
-import '@fontsource/roboto/700.css';
+import '@fontsource/inter/300.css';
+import '@fontsource/inter/400.css';
+import '@fontsource/inter/500.css';
+import '@fontsource/inter/600.css';
+import '@fontsource/inter/700.css';
 
 import theme from './shared/theme/theme';
 import { AuthProvider } from './auth/AuthContext';
@@ -79,7 +80,7 @@ export default function App() {
               <Route
                 path="/admin/dashboard"
                 element={
-                  <ProtectedRoute allowedRoles={['ADMINISTRADOR', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR']}>
+                  <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR']}>
                     <PaginaEnConstruccion titulo="Dashboard Administrativo" />
                   </ProtectedRoute>
                 }
@@ -87,7 +88,7 @@ export default function App() {
               <Route
                 path="/admin/usuarios"
                 element={
-                  <ProtectedRoute allowedRoles={['ADMINISTRADOR', 'COORDINADOR', 'DIRECTOR']}>
+                  <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMINISTRADOR', 'COORDINADOR', 'DIRECTOR']}>
                     <GestionUsuarios />
                   </ProtectedRoute>
                 }
@@ -95,7 +96,7 @@ export default function App() {
               <Route
                 path="/admin/tutores"
                 element={
-                  <ProtectedRoute allowedRoles={['ADMINISTRADOR', 'COORDINADOR', 'DIRECTOR']}>
+                  <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMINISTRADOR', 'COORDINADOR', 'DIRECTOR']}>
                     <GestionTutores />
                   </ProtectedRoute>
                 }
@@ -103,7 +104,7 @@ export default function App() {
               <Route
                 path="/admin/validar-requisitos"
                 element={
-                  <ProtectedRoute allowedRoles={['ADMINISTRADOR', 'SECRETARIA']}>
+                  <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA']}>
                     <ValidarRequisitos />
                   </ProtectedRoute>
                 }
@@ -112,7 +113,7 @@ export default function App() {
               <Route
                 path="/admin/sedes"
                 element={
-                  <ProtectedRoute allowedRoles={['ADMINISTRADOR', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR']}>
+                  <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR']}>
                     <GestionSedes />
                   </ProtectedRoute>
                 }
@@ -120,7 +121,7 @@ export default function App() {
               <Route
                 path="/admin/empresas"
                 element={
-                  <ProtectedRoute allowedRoles={['ADMINISTRADOR', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR']}>
+                  <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR']}>
                     <GestionEmpresas />
                   </ProtectedRoute>
                 }
@@ -128,7 +129,7 @@ export default function App() {
               <Route
                 path="/admin/convenios"
                 element={
-                  <ProtectedRoute allowedRoles={['ADMINISTRADOR', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR']}>
+                  <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR']}>
                     <GestionConvenios />
                   </ProtectedRoute>
                 }

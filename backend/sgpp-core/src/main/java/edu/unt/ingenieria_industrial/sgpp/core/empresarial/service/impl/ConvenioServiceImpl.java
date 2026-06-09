@@ -6,7 +6,8 @@ import edu.unt.ingenieria_industrial.sgpp.core.empresarial.model.Empresa;
 import edu.unt.ingenieria_industrial.sgpp.core.empresarial.repository.ConvenioRepository;
 import edu.unt.ingenieria_industrial.sgpp.core.empresarial.repository.EmpresaRepository;
 import edu.unt.ingenieria_industrial.sgpp.core.empresarial.service.ConvenioService;
-import org.springframework.beans.factory.annotation.Autowired;
+import edu.unt.ingenieria_industrial.sgpp.shared.exception.BusinessException;
+import edu.unt.ingenieria_industrial.sgpp.shared.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,26 +18,43 @@ import java.util.stream.Collectors;
 @Service
 public class ConvenioServiceImpl implements ConvenioService {
 
-    @Autowired
-    private ConvenioRepository convenioRepository;
+    private final ConvenioRepository convenioRepository;
+    private final EmpresaRepository empresaRepository;
 
-    @Autowired
-    private EmpresaRepository empresaRepository;
+    public ConvenioServiceImpl(ConvenioRepository convenioRepository, EmpresaRepository empresaRepository) {
+        this.convenioRepository = convenioRepository;
+        this.empresaRepository = empresaRepository;
+    }
 
     @Override
     @Transactional
     public ConvenioDTO create(ConvenioDTO dto) {
         Empresa empresa = empresaRepository.findById(dto.getEmpresaId())
-                .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Empresa", "id", dto.getEmpresaId()));
 
+        if (dto.getNumeroConvenio() == null || dto.getNumeroConvenio().isBlank()) {
+            throw new BusinessException("El número de convenio es obligatorio");
+        }
         if (convenioRepository.findByNumeroConvenio(dto.getNumeroConvenio()).isPresent()) {
-            throw new RuntimeException("Ya existe un convenio con este nÃºmero");
+            throw new BusinessException("Ya existe un convenio registrado con el número " + dto.getNumeroConvenio());
+        }
+        if (dto.getFechaInicio() == null) {
+            throw new BusinessException("La fecha de inicio es obligatoria");
+        }
+        if (dto.getFechaFin() == null) {
+            throw new BusinessException("La fecha de fin es obligatoria");
+        }
+        if (dto.getFechaFin().isBefore(dto.getFechaInicio())) {
+            throw new BusinessException("La fecha de fin no puede ser anterior a la fecha de inicio");
+        }
+        if (dto.getFechaFin().isEqual(dto.getFechaInicio())) {
+            throw new BusinessException("La fecha de fin debe ser posterior a la fecha de inicio");
         }
 
         Convenio convenio = toEntity(dto);
         convenio.setEmpresa(empresa);
         convenio.setActivo(true);
-        convenio.setVigente(true);
+        convenio.setVigente(!dto.getFechaInicio().isAfter(LocalDate.now()) && dto.getFechaFin().isAfter(LocalDate.now()));
         return toDto(convenioRepository.save(convenio));
     }
 
@@ -44,23 +62,32 @@ public class ConvenioServiceImpl implements ConvenioService {
     @Transactional
     public ConvenioDTO update(Long id, ConvenioDTO dto) {
         Convenio convenio = convenioRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Convenio no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Convenio", "id", id));
 
-        convenio.setFechaInicio(dto.getFechaInicio());
-        convenio.setFechaFin(dto.getFechaFin());
-        convenio.setObjetivo(dto.getObjetivo());
-        
-        // Auto actualizar vigencia
-        convenio.setVigente(dto.getFechaFin().isAfter(LocalDate.now()));
-
+        if (dto.getFechaInicio() != null && dto.getFechaFin() != null) {
+            if (dto.getFechaFin().isBefore(dto.getFechaInicio())) {
+                throw new BusinessException("La fecha de fin no puede ser anterior a la fecha de inicio");
+            }
+            if (dto.getFechaFin().isEqual(dto.getFechaInicio())) {
+                throw new BusinessException("La fecha de fin debe ser posterior a la fecha de inicio");
+            }
+            convenio.setFechaInicio(dto.getFechaInicio());
+            convenio.setFechaFin(dto.getFechaFin());
+            LocalDate hoy = LocalDate.now();
+            convenio.setVigente(!dto.getFechaInicio().isAfter(hoy) && dto.getFechaFin().isAfter(hoy));
+        }
+        if (dto.getObjetivo() != null) {
+            convenio.setObjetivo(dto.getObjetivo());
+        }
         return toDto(convenioRepository.save(convenio));
     }
 
     @Override
     @Transactional(readOnly = true)
     public ConvenioDTO findById(Long id) {
-        return convenioRepository.findById(id).map(this::toDto)
-                .orElseThrow(() -> new RuntimeException("Convenio no encontrado"));
+        return convenioRepository.findById(id)
+                .map(this::toDto)
+                .orElseThrow(() -> new ResourceNotFoundException("Convenio", "id", id));
     }
 
     @Override
@@ -81,7 +108,10 @@ public class ConvenioServiceImpl implements ConvenioService {
     @Transactional
     public void disable(Long id) {
         Convenio convenio = convenioRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Convenio no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Convenio", "id", id));
+        if (!Boolean.TRUE.equals(convenio.getActivo())) {
+            throw new BusinessException("El convenio ya se encuentra desactivado");
+        }
         convenio.setActivo(false);
         convenio.setVigente(false);
         convenioRepository.save(convenio);
@@ -94,6 +124,22 @@ public class ConvenioServiceImpl implements ConvenioService {
         LocalDate end = start.plusDays(daysBeforeExpiration);
         return convenioRepository.findByVigenteTrueAndFechaFinBetween(start, end).stream()
                 .map(this::toDto).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Boolean validarVigencia(Long id) {
+        Convenio convenio = convenioRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Convenio", "id", id));
+        LocalDate hoy = LocalDate.now();
+        boolean vigenteReal = Boolean.TRUE.equals(convenio.getActivo()) &&
+                !convenio.getFechaInicio().isAfter(hoy) &&
+                convenio.getFechaFin().isAfter(hoy);
+        if (vigenteReal != Boolean.TRUE.equals(convenio.getVigente())) {
+            convenio.setVigente(vigenteReal);
+            convenioRepository.save(convenio);
+        }
+        return vigenteReal;
     }
 
     private Convenio toEntity(ConvenioDTO dto) {
@@ -119,4 +165,3 @@ public class ConvenioServiceImpl implements ConvenioService {
                 .build();
     }
 }
-

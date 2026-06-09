@@ -1,6 +1,7 @@
 package edu.unt.ingenieria_industrial.sgpp.shared.enums;
 
 public enum EstadoAcademico {
+    MATRICULADO("Matriculado"),
     ACTIVO("Activo"),
     SUSPENDIDO("Suspendido"),
     EGRESADO("Egresado"),

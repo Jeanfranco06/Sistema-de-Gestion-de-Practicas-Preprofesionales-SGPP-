@@ -11,5 +11,6 @@ public interface ConvenioService {
     List<ConvenioDTO> findByEmpresaId(Long empresaId);
     void disable(Long id);
     List<ConvenioDTO> findExpiringConvenios(int daysBeforeExpiration);
+    Boolean validarVigencia(Long id);
 }
 

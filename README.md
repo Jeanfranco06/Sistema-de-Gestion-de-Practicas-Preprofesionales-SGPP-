@@ -115,7 +115,8 @@ Flyway inserta usuarios predefinidos la primera vez que se ejecuta. Todos usan l
 | tutor1         | TUTOR_EXTERNO    |
 | secretaria1    | SECRETARIA       |
 | comite1        | COMITE_PRACTICAS |
-| coordinador1   | COORDINADOR      |
+|                                                         .3
+
 | director1      | DIRECTOR         |
 
 ---

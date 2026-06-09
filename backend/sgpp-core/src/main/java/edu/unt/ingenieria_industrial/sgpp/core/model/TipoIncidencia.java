@@ -1,6 +1,6 @@
-package edu.unt.ingenieria_industrial.sgpp.shared.model;
+package edu.unt.ingenieria_industrial.sgpp.core.model;
 
-import edu.unt.ingenieria_industrial.sgpp.shared.common.BaseEntity;
+import edu.unt.ingenieria_industrial.sgpp.core.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -33,4 +33,3 @@ public class TipoIncidencia extends BaseEntity {
     @Builder.Default
     private Boolean activo = true;
 }
-

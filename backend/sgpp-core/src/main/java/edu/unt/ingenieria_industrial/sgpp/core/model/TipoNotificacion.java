@@ -1,6 +1,6 @@
-package edu.unt.ingenieria_industrial.sgpp.shared.model;
+package edu.unt.ingenieria_industrial.sgpp.core.model;
 
-import edu.unt.ingenieria_industrial.sgpp.shared.common.BaseEntity;
+import edu.unt.ingenieria_industrial.sgpp.core.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -10,12 +10,12 @@ import lombok.NoArgsConstructor;
 
 @Data
 @Entity
-@Table(name = "estado_practica")
+@Table(name = "tipo_notificacion")
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class EstadoPractica extends BaseEntity {
+public class TipoNotificacion extends BaseEntity {
 
     @Column(name = "codigo", length = 50, unique = true, nullable = false)
     private String codigo;
@@ -30,4 +30,3 @@ public class EstadoPractica extends BaseEntity {
     @Builder.Default
     private Boolean activo = true;
 }
-

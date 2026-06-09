@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 public class SedePracticaDTO {
     private Long id;
     private Long empresaId;
-    private String razonSocialEmpresa; // Ãštil para mostrar en listados
+    private String razonSocialEmpresa; // Útil para mostrar en listados
     private String nombreSede;
     private String direccion;
     private String distrito;
@@ -26,5 +26,17 @@ public class SedePracticaDTO {
     private String emailContacto;
     private Integer capacidadMaxima;
     private Boolean activo;
+
+    // Nuevos campos para perfil de sede
+    private String tipoEntidad;
+    private String areaUnidad;
+    private String descripcionGeneral;
+    private String actividadesPrincipales;
+    private String riesgosRelevantes;
+    private String nombreTutorEmpresa;
+    private String cargoTutorEmpresa;
+    private String correoTutorEmpresa;
+    private String telefonoTutorEmpresa;
+    private String estadoSede;
 }
 

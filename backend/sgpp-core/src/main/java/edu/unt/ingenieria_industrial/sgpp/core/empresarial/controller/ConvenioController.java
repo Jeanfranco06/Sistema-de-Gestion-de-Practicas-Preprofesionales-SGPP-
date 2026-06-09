@@ -12,9 +12,9 @@ import java.util.List;
 import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
-@RequestMapping("/api/convenios")
+@RequestMapping("/convenios")
 @CrossOrigin(origins = "*")
-@PreAuthorize("hasAnyRole('ADMINISTRADOR', 'SECRETARIA', 'COORDINADOR', 'DIRECTOR')")
+@PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR')")
 public class ConvenioController {
 
     @Autowired
@@ -55,6 +55,11 @@ public class ConvenioController {
     public ResponseEntity<List<ConvenioDTO>> getExpiringConvenios(
             @RequestParam(defaultValue = "30") int dias) {
         return ResponseEntity.ok(convenioService.findExpiringConvenios(dias));
+    }
+
+    @GetMapping("/{id}/validar-vigencia")
+    public ResponseEntity<Boolean> validarVigencia(@PathVariable Long id) {
+        return ResponseEntity.ok(convenioService.validarVigencia(id));
     }
 }
 

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
     Container, Typography, Box, Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, 
     Chip, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Select, MenuItem, InputLabel, 
-    FormControl, Grid, InputAdornment, Tooltip, TablePagination, TableSortLabel 
+    FormControl, Grid, InputAdornment, Tooltip, TablePagination, TableSortLabel, Drawer, Divider, Alert, CircularProgress, Checkbox, Stack
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -10,19 +10,56 @@ import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
 import LocationCityIcon from '@mui/icons-material/LocationCity';
 import FilterListIcon from '@mui/icons-material/FilterList';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import SchoolIcon from '@mui/icons-material/School';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import PeopleIcon from '@mui/icons-material/People';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CancelIcon from '@mui/icons-material/Cancel';
+import WarningIcon from '@mui/icons-material/Warning';
+import { motion } from 'framer-motion';
 import { sedeApi, empresaApi } from '../../../api/sedesApi';
+import { validacionApi } from '../../../api/validacionesApi';
+import { useAuth } from '../../../auth/AuthContext';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 
 const MySwal = withReactContent(Swal);
 
 export const GestionSedes = () => {
+    const { user } = useAuth();
     const [sedes, setSedes] = useState([]);
     const [empresas, setEmpresas] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [openDialog, setOpenDialog] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [currentId, setCurrentId] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [selectedSede, setSelectedSede] = useState(null);
+    const [drawerOpen, setDrawerOpen] = useState(false);
+
+    // Filtros administrativos
+    const [filtroEstadoSede, setFiltroEstadoSede] = useState('todos');
+    const [filtroValidacion, setFiltroValidacion] = useState('todos');
+    const [filtroConvenio, setFiltroConvenio] = useState('todos');
+    const [filtroTutor, setFiltroTutor] = useState('todos');
+    const [filtroElegible, setFiltroElegible] = useState('todos');
+
+    // Validation dialog states
+    const [validacionDialogOpen, setValidacionDialogOpen] = useState(false);
+    const [validacionSede, setValidacionSede] = useState(null);
+    const [validacionActual, setValidacionActual] = useState(null);
+    const [historialValidaciones, setHistorialValidaciones] = useState([]);
+    const [validacionForm, setValidacionForm] = useState({
+        sedeId: '', criterioInfraestructuraCumple: false, criterioInfraestructuraObservaciones: '',
+        criterioSeguridadSaludCumple: false, criterioSeguridadSaludObservaciones: '',
+        criterioAfinidadCarreraCumple: false, criterioAfinidadCarreraObservaciones: '',
+        criterioTutorDesignadoCumple: false, criterioTutorDesignadoObservaciones: '',
+        criterioConvenioAcuerdoCumple: false, criterioConvenioAcuerdoObservaciones: '',
+        resultadoValidacion: 'OBSERVADA', observacionesGenerales: '',
+        fechaVigenciaDesde: '', fechaVigenciaHasta: ''
+    });
+    const [loadingValidacion, setLoadingValidacion] = useState(false);
 
     // Pagination and Sorting states
     const [page, setPage] = useState(0);
@@ -34,7 +71,11 @@ export const GestionSedes = () => {
         empresaId: '', nombreSede: '', direccion: '', distrito: '', 
         provincia: '', departamento: '', telefono: '', email: '', 
         nombreContacto: '', cargoContacto: '', telefonoContacto: '', 
-        emailContacto: '', capacidadMaxima: '' 
+        emailContacto: '', capacidadMaxima: '',
+        tipoEntidad: '', areaUnidad: '', descripcionGeneral: '',
+        actividadesPrincipales: '', riesgosRelevantes: '',
+        nombreTutorEmpresa: '', cargoTutorEmpresa: '', correoTutorEmpresa: '',
+        telefonoTutorEmpresa: '', estadoSede: 'ACTIVA'
     };
     const [formData, setFormData] = useState(initialFormState);
     const [errors, setErrors] = useState({});
@@ -46,10 +87,14 @@ export const GestionSedes = () => {
 
     const loadSedes = async () => {
         try {
-            const res = await sedeApi.getAllActive();
+            setLoading(true);
+            const res = await sedeApi.getCatalogo();
             setSedes(res.data);
         } catch (error) {
             console.error("Error loading sedes:", error);
+            MySwal.fire('Error', 'No se pudieron cargar las sedes.', 'error');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -62,25 +107,45 @@ export const GestionSedes = () => {
         }
     };
 
+    const loadSedeById = async (id) => {
+        try {
+            const res = await sedeApi.getDetalle(id);
+            const s = res.data;
+            setFormData({
+                empresaId: s.empresaId || '',
+                nombreSede: s.nombreSede || '',
+                direccion: s.direccion || '',
+                distrito: s.distrito || '',
+                provincia: s.provincia || '',
+                departamento: s.departamento || '',
+                telefono: s.telefono || '',
+                email: s.email || '',
+                nombreContacto: s.nombreContacto || '',
+                cargoContacto: s.cargoContacto || '',
+                telefonoContacto: s.telefonoContacto || '',
+                emailContacto: s.emailContacto || '',
+                capacidadMaxima: s.capacidadMaxima || '',
+                tipoEntidad: s.tipoEntidad || '',
+                areaUnidad: s.areaDisponible || '',
+                descripcionGeneral: s.descripcion || '',
+                actividadesPrincipales: s.actividadesPrincipales || '',
+                riesgosRelevantes: s.riesgosRelevantes || '',
+                nombreTutorEmpresa: s.nombreTutorEmpresa || '',
+                cargoTutorEmpresa: s.cargoTutorEmpresa || '',
+                correoTutorEmpresa: s.correoTutorEmpresa || '',
+                telefonoTutorEmpresa: s.telefonoTutorEmpresa || '',
+                estadoSede: s.estadoSede || 'ACTIVA'
+            });
+        } catch (error) {
+            console.error("Error loading sede details:", error);
+        }
+    };
+
     const handleOpenDialog = (sede = null) => {
         if (sede) {
             setIsEditing(true);
             setCurrentId(sede.id);
-            setFormData({
-                empresaId: sede.empresaId || '',
-                nombreSede: sede.nombreSede || '',
-                direccion: sede.direccion || '',
-                distrito: sede.distrito || '',
-                provincia: sede.provincia || '',
-                departamento: sede.departamento || '',
-                telefono: sede.telefono || '',
-                email: sede.email || '',
-                nombreContacto: sede.nombreContacto || '',
-                cargoContacto: sede.cargoContacto || '',
-                telefonoContacto: sede.telefonoContacto || '',
-                emailContacto: sede.emailContacto || '',
-                capacidadMaxima: sede.capacidadMaxima || ''
-            });
+            loadSedeById(sede.id);
         } else {
             setIsEditing(false);
             setCurrentId(null);
@@ -163,11 +228,142 @@ export const GestionSedes = () => {
         setPage(0);
     };
 
+    const handleVerDetalle = async (sede) => {
+        try {
+            setLoading(true);
+            const response = await sedeApi.getDetalle(sede.id);
+            setSelectedSede(response.data);
+            setDrawerOpen(true);
+        } catch (error) {
+            console.error("Error cargando detalle:", error);
+            MySwal.fire('Error', 'No se pudo cargar el detalle de la sede.', 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleVerExpedientes = (sede) => {
+        MySwal.fire({
+            title: 'Expedientes de la Sede',
+            text: `Funcionalidad para ver expedientes de ${sede.nombreSede} pendiente de implementar.`,
+            icon: 'info'
+        });
+    };
+
+    const handleGestionarTutores = (sede) => {
+        MySwal.fire({
+            title: 'Gestión de Tutores',
+            text: `Funcionalidad para gestionar tutores de ${sede.nombreSede} pendiente de implementar.`,
+            icon: 'info'
+        });
+    };
+
+    const handleGestionarValidacion = async (sede) => {
+        setValidacionSede(sede);
+        setValidacionForm(prev => ({ ...prev, sedeId: sede.id }));
+        setLoadingValidacion(true);
+        setValidacionDialogOpen(true);
+
+        try {
+            const [vigenteRes, historialRes] = await Promise.all([
+                validacionApi.getVigente(sede.id).catch(() => null),
+                validacionApi.getHistorial(sede.id).catch(() => [])
+            ]);
+            const vigente = vigenteRes?.data || null;
+            const historial = Array.isArray(historialRes?.data) ? historialRes.data : [];
+            setValidacionActual(vigente);
+            setHistorialValidaciones(historial);
+
+            if (vigente) {
+                setValidacionForm({
+                    sedeId: sede.id,
+                    criterioInfraestructuraCumple: vigente.criterioInfraestructuraCumple || false,
+                    criterioInfraestructuraObservaciones: vigente.criterioInfraestructuraObservaciones || '',
+                    criterioSeguridadSaludCumple: vigente.criterioSeguridadSaludCumple || false,
+                    criterioSeguridadSaludObservaciones: vigente.criterioSeguridadSaludObservaciones || '',
+                    criterioAfinidadCarreraCumple: vigente.criterioAfinidadCarreraCumple || false,
+                    criterioAfinidadCarreraObservaciones: vigente.criterioAfinidadCarreraObservaciones || '',
+                    criterioTutorDesignadoCumple: vigente.criterioTutorDesignadoCumple || false,
+                    criterioTutorDesignadoObservaciones: vigente.criterioTutorDesignadoObservaciones || '',
+                    criterioConvenioAcuerdoCumple: vigente.criterioConvenioAcuerdoCumple || false,
+                    criterioConvenioAcuerdoObservaciones: vigente.criterioConvenioAcuerdoObservaciones || '',
+                    resultadoValidacion: vigente.resultadoValidacion || 'OBSERVADA',
+                    observacionesGenerales: vigente.observacionesGenerales || '',
+                    fechaVigenciaDesde: vigente.fechaVigenciaDesde || '',
+                    fechaVigenciaHasta: vigente.fechaVigenciaHasta || ''
+                });
+            }
+        } catch (err) {
+            console.error("Error cargando validación:", err);
+        } finally {
+            setLoadingValidacion(false);
+        }
+    };
+
+    const handleValidacionSave = async () => {
+        try {
+            const payload = {
+                ...validacionForm,
+                usuarioValidadorId: user?.id || null
+            };
+
+            if (validacionActual?.id) {
+                await validacionApi.update(validacionActual.id, payload);
+            } else {
+                await validacionApi.create(payload);
+            }
+
+            MySwal.fire({ icon: 'success', title: '¡Validación guardada!', timer: 2000, showConfirmButton: false });
+            setValidacionDialogOpen(false);
+            loadSedes();
+        } catch (err) {
+            console.error("Error guardando validación:", err);
+            MySwal.fire('Error', err.response?.data?.message || 'No se pudo guardar la validación.', 'error');
+        }
+    };
+
+    const limpiarFiltros = () => {
+        setSearchTerm('');
+        setFiltroEstadoSede('todos');
+        setFiltroValidacion('todos');
+        setFiltroConvenio('todos');
+        setFiltroTutor('todos');
+        setFiltroElegible('todos');
+    };
+
     const filteredSedes = useMemo(() => {
         let filtered = sedes.filter(sede => {
-            return sede.nombreSede?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                   sede.razonSocialEmpresa?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                   sede.distrito?.toLowerCase().includes(searchTerm.toLowerCase());
+            // Búsqueda por texto
+            const searchLower = searchTerm.toLowerCase();
+            const matchesSearch = 
+                sede.nombreSede?.toLowerCase().includes(searchLower) || 
+                sede.razonSocialEmpresa?.toLowerCase().includes(searchLower) ||
+                sede.distrito?.toLowerCase().includes(searchLower);
+            
+            if (!matchesSearch) return false;
+
+            // Filtro por estado de sede
+            if (filtroEstadoSede !== 'todos' && sede.estadoSede !== filtroEstadoSede) return false;
+
+            // Filtro por validación
+            if (filtroValidacion === 'aprobada' && sede.resultadoValidacion !== 'APROBADA') return false;
+            if (filtroValidacion === 'observada' && sede.resultadoValidacion !== 'OBSERVADA') return false;
+            if (filtroValidacion === 'rechazada' && sede.resultadoValidacion !== 'RECHAZADA') return false;
+            if (filtroValidacion === 'no_validada' && sede.tieneValidacionVigente) return false;
+
+            // Filtro por convenio
+            if (filtroConvenio === 'vigente' && !sede.tieneConvenioVigente) return false;
+            if (filtroConvenio === 'no_vigente' && sede.tieneConvenioVigente) return false;
+
+            // Filtro por tutor
+            if (filtroTutor === 'con_tutor' && !sede.tieneTutorActivo) return false;
+            if (filtroTutor === 'sin_tutor' && sede.tieneTutorActivo) return false;
+
+            // Filtro por elegibilidad
+            if (filtroElegible === 'elegible' && !sede.esElegible) return false;
+            if (filtroElegible === 'no_elegible' && sede.esElegible) return false;
+
+            return true;
         });
 
         filtered.sort((a, b) => {
@@ -182,27 +378,73 @@ export const GestionSedes = () => {
         });
 
         return filtered;
-    }, [sedes, searchTerm, orderBy, order]);
+    }, [sedes, searchTerm, filtroEstadoSede, filtroValidacion, filtroConvenio, filtroTutor, filtroElegible, orderBy, order]);
 
     const paginatedSedes = filteredSedes.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
+    const getValidacionBadgeColor = (sede) => {
+        if (!sede.tieneValidacionVigente) return 'default';
+        switch (sede.resultadoValidacion) {
+            case 'APROBADA': return 'success';
+            case 'OBSERVADA': return 'warning';
+            case 'RECHAZADA': return 'error';
+            default: return 'default';
+        }
+    };
+
+    const getValidacionIcon = (sede) => {
+        if (!sede.tieneValidacionVigente) return <CancelIcon fontSize="small" />;
+        switch (sede.resultadoValidacion) {
+            case 'APROBADA': return <CheckCircleIcon fontSize="small" />;
+            case 'OBSERVADA': return <WarningIcon fontSize="small" />;
+            case 'RECHAZADA': return <CancelIcon fontSize="small" />;
+            default: return <CancelIcon fontSize="small" />;
+        }
+    };
+
+    if (loading && sedes.length === 0) {
+        return (
+            <Container maxWidth="xl" sx={{ mt: 4, mb: 6, textAlign: 'center' }}>
+                <CircularProgress />
+                <Typography variant="body1" sx={{ mt: 2 }}>Cargando sedes...</Typography>
+            </Container>
+        );
+    }
+
     return (
-        <Container maxWidth="xl" sx={{ mt: 4, mb: 6 }}>
-            <Box display="flex" alignItems="center" gap={2} mb={3}>
-                <LocationCityIcon sx={{ fontSize: 40, color: 'primary.main' }} />
-                <Box>
-                    <Typography variant="h4" fontWeight="bold" color="primary">
-                        Gestión de Sedes
-                    </Typography>
-                    <Typography variant="subtitle2" color="textSecondary">
-                        Administra las sedes operativas vinculadas a las empresas.
-                    </Typography>
+        <Container component={motion.div} initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} maxWidth="xl" sx={{ mt: 4, mb: 6 }}>
+            <Box display="flex" alignItems="center" gap={2} mb={4} sx={{ p: 4, borderRadius: 4, bgcolor: 'primary.main', color: 'white', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', position: 'relative', overflow: 'hidden' }}>
+                <Box sx={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <LocationCityIcon sx={{ fontSize: 48, color: 'rgba(255,255,255,0.9)' }} />
+                    <Box>
+                        <Typography variant="h4" fontWeight="bold">
+                            Gestión de Sedes
+                        </Typography>
+                        <Typography variant="subtitle1" sx={{ opacity: 0.9 }}>
+                            Administra las sedes operativas vinculadas a las empresas.
+                        </Typography>
+                    </Box>
                 </Box>
             </Box>
 
-            <Paper elevation={1} sx={{ p: 2, mb: 3, borderRadius: 3, bgcolor: '#fff', border: '1px solid #e0e0e0' }}>
-                <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' }, alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                    <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' }, width: { xs: '100%', sm: 'auto' }, flex: 1 }}>
+            <Paper 
+                component={motion.div} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}
+                elevation={0} sx={{ p: 4, mb: 4, borderRadius: 4, bgcolor: '#fff', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)' }}
+            >
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+                        <Typography variant="h6" fontWeight="bold" color="primary">Filtros de Búsqueda</Typography>
+                        <Button 
+                            variant="contained" 
+                            color="primary" 
+                            startIcon={<AddIcon />} 
+                            onClick={() => handleOpenDialog()}
+                            sx={{ px: 3, py: 1.2, borderRadius: 1.2, boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', whiteSpace: 'nowrap' }}
+                        >
+                            Nueva Sede
+                        </Button>
+                    </Box>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(3, 1fr)', lg: '2fr 1fr 1fr 1fr 1fr 1fr' }, gap: 2.5 }}>
                         <TextField 
                             size="small"
                             variant="outlined" 
@@ -215,23 +457,67 @@ export const GestionSedes = () => {
                                         <SearchIcon color="action" fontSize="small" />
                                     </InputAdornment>
                                 ),
-                                sx: { bgcolor: '#fff', borderRadius: 2, minWidth: { xs: '100%', sm: '400px' } }
+                                sx: { bgcolor: '#fff', borderRadius: 1.2 }
                             }}
                         />
+                        <FormControl size="small" fullWidth>
+                            <InputLabel>Estado</InputLabel>
+                            <Select value={filtroEstadoSede} label="Estado" onChange={(e) => setFiltroEstadoSede(e.target.value)} sx={{ borderRadius: 1.2, bgcolor: '#fff' }}>
+                                <MenuItem value="todos">Todos</MenuItem>
+                                <MenuItem value="ACTIVA">Activa</MenuItem>
+                                <MenuItem value="INACTIVA">Inactiva</MenuItem>
+                            </Select>
+                        </FormControl>
+                        <FormControl size="small" fullWidth>
+                            <InputLabel>Validación</InputLabel>
+                            <Select value={filtroValidacion} label="Validación" onChange={(e) => setFiltroValidacion(e.target.value)} sx={{ borderRadius: 1.2, bgcolor: '#fff' }}>
+                                <MenuItem value="todos">Todos</MenuItem>
+                                <MenuItem value="aprobada">Aprobada</MenuItem>
+                                <MenuItem value="observada">Observada</MenuItem>
+                                <MenuItem value="rechazada">Rechazada</MenuItem>
+                                <MenuItem value="no_validada">No validada</MenuItem>
+                            </Select>
+                        </FormControl>
+                        <FormControl size="small" fullWidth>
+                            <InputLabel>Convenio</InputLabel>
+                            <Select value={filtroConvenio} label="Convenio" onChange={(e) => setFiltroConvenio(e.target.value)} sx={{ borderRadius: 1.2, bgcolor: '#fff' }}>
+                                <MenuItem value="todos">Todos</MenuItem>
+                                <MenuItem value="vigente">Vigente</MenuItem>
+                                <MenuItem value="no_vigente">No vigente</MenuItem>
+                            </Select>
+                        </FormControl>
+                        <FormControl size="small" fullWidth>
+                            <InputLabel>Tutor</InputLabel>
+                            <Select value={filtroTutor} label="Tutor" onChange={(e) => setFiltroTutor(e.target.value)} sx={{ borderRadius: 1.2, bgcolor: '#fff' }}>
+                                <MenuItem value="todos">Todos</MenuItem>
+                                <MenuItem value="con_tutor">Con tutor</MenuItem>
+                                <MenuItem value="sin_tutor">Sin tutor</MenuItem>
+                            </Select>
+                        </FormControl>
+                        <FormControl size="small" fullWidth>
+                            <InputLabel>Elegible</InputLabel>
+                            <Select value={filtroElegible} label="Elegible" onChange={(e) => setFiltroElegible(e.target.value)} sx={{ borderRadius: 1.2, bgcolor: '#fff' }}>
+                                <MenuItem value="todos">Todos</MenuItem>
+                                <MenuItem value="elegible">Elegible</MenuItem>
+                                <MenuItem value="no_elegible">No elegible</MenuItem>
+                            </Select>
+                        </FormControl>
                     </Box>
-                    <Button 
-                        variant="contained" 
-                        color="primary" 
-                        startIcon={<AddIcon />} 
-                        onClick={() => handleOpenDialog()}
-                        sx={{ px: 3, py: 1, borderRadius: 2, boxShadow: 2, whiteSpace: 'nowrap', width: { xs: '100%', sm: 'auto' }, minHeight: '40px' }}
-                    >
-                        Nueva Sede
-                    </Button>
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+                        <Button 
+                            variant="outlined" 
+                            size="medium" 
+                            onClick={limpiarFiltros}
+                            startIcon={<FilterListIcon />}
+                            sx={{ borderRadius: 1.2, px: 3, fontWeight: 600 }}
+                        >
+                            Limpiar Filtros
+                        </Button>
+                    </Box>
                 </Box>
             </Paper>
 
-            <TableContainer component={Paper} elevation={3} sx={{ borderRadius: 3, overflow: 'hidden' }}>
+            <TableContainer component={motion.div} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.2 }} elevation={0} sx={{ borderRadius: 4, border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)', overflow: 'hidden', bgcolor: '#fff' }}>
                 <Table>
                     <TableHead sx={{ bgcolor: 'primary.main' }}>
                         <TableRow>
@@ -248,14 +534,18 @@ export const GestionSedes = () => {
                                 >Empresa</TableSortLabel>
                             </TableCell>
                             <TableCell sx={{ color: '#fff', fontWeight: 'bold' }}>Ubicación</TableCell>
-                            <TableCell sx={{ color: '#fff', fontWeight: 'bold' }}>Contacto Principal</TableCell>
+                            <TableCell sx={{ color: '#fff', fontWeight: 'bold' }}>Estado</TableCell>
+                            <TableCell sx={{ color: '#fff', fontWeight: 'bold' }}>Validación</TableCell>
+                            <TableCell sx={{ color: '#fff', fontWeight: 'bold' }}>Convenio</TableCell>
+                            <TableCell sx={{ color: '#fff', fontWeight: 'bold' }}>Tutor</TableCell>
+                            <TableCell sx={{ color: '#fff', fontWeight: 'bold' }}>Elegible</TableCell>
                             <TableCell sx={{ color: '#fff', fontWeight: 'bold', width: '100px' }}>Capacidad</TableCell>
                             <TableCell align="center" sx={{ color: '#fff', fontWeight: 'bold' }}>Acciones</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {paginatedSedes.map((sede) => (
-                            <TableRow key={sede.id} hover sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                            <TableRow key={sede.id} hover sx={{ '&:last-child td, &:last-child th': { border: 0 }, bgcolor: !sede.esElegible ? 'rgba(255, 152, 0, 0.05)' : 'inherit' }}>
                                 <TableCell fontWeight="medium">{sede.nombreSede}</TableCell>
                                 <TableCell>
                                     <Typography variant="body2" fontWeight="bold" color="primary">
@@ -267,22 +557,70 @@ export const GestionSedes = () => {
                                     <Chip label={sede.distrito} size="small" variant="outlined" sx={{ mt: 0.5 }} />
                                 </TableCell>
                                 <TableCell>
-                                    {sede.nombreContacto ? (
-                                        <>
-                                            <Typography variant="body2">{sede.nombreContacto}</Typography>
-                                            <Typography variant="caption" color="textSecondary">{sede.telefonoContacto || sede.emailContacto}</Typography>
-                                        </>
+                                    <Chip 
+                                        label={sede.estadoSede || 'ACTIVA'} 
+                                        size="small" 
+                                        color={sede.estadoSede === 'ACTIVA' ? 'success' : 'default'}
+                                    />
+                                </TableCell>
+                                <TableCell>
+                                    <Chip 
+                                        label={sede.resultadoValidacion || 'No validada'} 
+                                        size="small" 
+                                        color={getValidacionBadgeColor(sede)}
+                                        icon={getValidacionIcon(sede)}
+                                    />
+                                </TableCell>
+                                <TableCell>
+                                    <Chip 
+                                        label={sede.tieneConvenioVigente ? 'Vigente' : 'No vigente'} 
+                                        size="small" 
+                                        color={sede.tieneConvenioVigente ? 'success' : 'error'}
+                                    />
+                                </TableCell>
+                                <TableCell>
+                                    <Chip 
+                                        label={sede.tieneTutorActivo ? `Sí (${sede.cantidadTutoresActivos})` : 'No'} 
+                                        size="small" 
+                                        color={sede.tieneTutorActivo ? 'success' : 'error'}
+                                    />
+                                </TableCell>
+                                <TableCell>
+                                    {sede.esElegible ? (
+                                        <Chip label="Sí" size="small" color="success" icon={<CheckCircleIcon fontSize="small" />} />
                                     ) : (
-                                        <Typography variant="caption" color="textSecondary">Sin contacto asignado</Typography>
+                                        <Tooltip title={sede.motivoNoElegible || 'No cumple requisitos'} arrow>
+                                            <Chip label="No" size="small" color="warning" icon={<WarningIcon fontSize="small" />} />
+                                        </Tooltip>
                                     )}
                                 </TableCell>
                                 <TableCell align="center">
                                     <Chip label={sede.capacidadMaxima || 0} color="secondary" size="small" />
                                 </TableCell>
                                 <TableCell align="center">
+                                    <Tooltip title="Ver Detalle">
+                                        <IconButton color="info" onClick={() => handleVerDetalle(sede)}>
+                                            <VisibilityIcon />
+                                        </IconButton>
+                                    </Tooltip>
                                     <Tooltip title="Editar Sede">
                                         <IconButton color="primary" onClick={() => handleOpenDialog(sede)}>
                                             <EditIcon />
+                                        </IconButton>
+                                    </Tooltip>
+                                    <Tooltip title="Gestionar Validación">
+                                        <IconButton color="warning" onClick={() => handleGestionarValidacion(sede)}>
+                                            <AssignmentIcon />
+                                        </IconButton>
+                                    </Tooltip>
+                                    <Tooltip title="Gestionar Tutores">
+                                        <IconButton color="secondary" onClick={() => handleGestionarTutores(sede)}>
+                                            <PeopleIcon />
+                                        </IconButton>
+                                    </Tooltip>
+                                    <Tooltip title="Ver Expedientes">
+                                        <IconButton color="success" onClick={() => handleVerExpedientes(sede)}>
+                                            <SchoolIcon />
                                         </IconButton>
                                     </Tooltip>
                                     {sede.activo && (
@@ -295,10 +633,10 @@ export const GestionSedes = () => {
                                 </TableCell>
                             </TableRow>
                         ))}
-                        {filteredSedes.length === 0 && (
+                        {filteredSedes.length === 0 && !loading && (
                             <TableRow>
-                                <TableCell colSpan={6} align="center" sx={{ py: 5 }}>
-                                    <Typography variant="h6" color="textSecondary">No se encontraron sedes.</Typography>
+                                <TableCell colSpan={10} align="center" sx={{ py: 5 }}>
+                                    <Typography variant="h6" color="textSecondary">No se encontraron sedes con los filtros aplicados.</Typography>
                                 </TableCell>
                             </TableRow>
                         )}
@@ -377,11 +715,353 @@ export const GestionSedes = () => {
                             <TextField sx={{ flex: 1 }} label="Teléfono de Contacto" value={formData.telefonoContacto} onChange={e => setFormData({...formData, telefonoContacto: e.target.value})} />
                             <TextField sx={{ flex: 1 }} label="Email de Contacto" type="email" value={formData.emailContacto} onChange={e => setFormData({...formData, emailContacto: e.target.value})} />
                         </Box>
+
+                        <Typography variant="subtitle2" color="primary" sx={{ borderBottom: '1px solid #e0e0e0', pb: 0.5 }}>
+                            Perfil de Sede
+                        </Typography>
+
+                        <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', md: 'row' } }}>
+                            <TextField
+                                select fullWidth label="Tipo de Entidad *"
+                                value={formData.tipoEntidad}
+                                onChange={e => setFormData({...formData, tipoEntidad: e.target.value})}
+                            >
+                                <MenuItem value="">Seleccione...</MenuItem>
+                                <MenuItem value="PÚBLICA">Pública</MenuItem>
+                                <MenuItem value="PRIVADA">Privada</MenuItem>
+                                <MenuItem value="MIXTA">Mixta</MenuItem>
+                            </TextField>
+                            <TextField sx={{ flex: 1 }} label="Área / Unidad" value={formData.areaUnidad}
+                                onChange={e => setFormData({...formData, areaUnidad: e.target.value})}
+                                placeholder="Ej: Producción, Logística, Administración"
+                            />
+                        </Box>
+
+                        <TextField fullWidth label="Descripción General" multiline rows={3}
+                            value={formData.descripcionGeneral}
+                            onChange={e => setFormData({...formData, descripcionGeneral: e.target.value})}
+                            placeholder="Describir las actividades y funciones de la sede"
+                        />
+                        <TextField fullWidth label="Actividades Principales" multiline rows={2}
+                            value={formData.actividadesPrincipales}
+                            onChange={e => setFormData({...formData, actividadesPrincipales: e.target.value})}
+                        />
+                        <TextField fullWidth label="Riesgos Relevantes" multiline rows={2}
+                            value={formData.riesgosRelevantes}
+                            onChange={e => setFormData({...formData, riesgosRelevantes: e.target.value})}
+                        />
+
+                        <Typography variant="subtitle2" color="primary" sx={{ borderBottom: '1px solid #e0e0e0', pb: 0.5 }}>
+                            Tutor de Empresa (designado por la entidad)
+                        </Typography>
+
+                        <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', md: 'row' } }}>
+                            <TextField sx={{ flex: 2 }} label="Nombre del Tutor" value={formData.nombreTutorEmpresa}
+                                onChange={e => setFormData({...formData, nombreTutorEmpresa: e.target.value})}
+                            />
+                            <TextField sx={{ flex: 1 }} label="Cargo del Tutor" value={formData.cargoTutorEmpresa}
+                                onChange={e => setFormData({...formData, cargoTutorEmpresa: e.target.value})}
+                            />
+                        </Box>
+                        <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', md: 'row' } }}>
+                            <TextField sx={{ flex: 2 }} label="Correo del Tutor" type="email" value={formData.correoTutorEmpresa}
+                                onChange={e => setFormData({...formData, correoTutorEmpresa: e.target.value})}
+                            />
+                            <TextField sx={{ flex: 1 }} label="Teléfono del Tutor" value={formData.telefonoTutorEmpresa}
+                                onChange={e => setFormData({...formData, telefonoTutorEmpresa: e.target.value})}
+                            />
+                        </Box>
+
+                        <TextField select fullWidth label="Estado de la Sede"
+                            value={formData.estadoSede}
+                            onChange={e => setFormData({...formData, estadoSede: e.target.value})}
+                        >
+                            <MenuItem value="ACTIVA">Activa</MenuItem>
+                            <MenuItem value="INACTIVA">Inactiva</MenuItem>
+                        </TextField>
                     </Box>
                 </DialogContent>
                 <DialogActions sx={{ p: 2, px: 3, bgcolor: '#f4f6f8' }}>
                     <Button onClick={() => setOpenDialog(false)} color="inherit" sx={{ fontWeight: 'bold' }}>Cancelar</Button>
                     <Button variant="contained" onClick={handleSave} sx={{ px: 4, borderRadius: 2 }}>{isEditing ? 'Actualizar' : 'Guardar'}</Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Drawer de detalle */}
+            <Drawer
+                anchor="right"
+                open={drawerOpen}
+                onClose={() => setDrawerOpen(false)}
+                sx={{ 
+                    zIndex: (theme) => theme.zIndex.drawer + 2,
+                    '& .MuiDrawer-paper': { width: 700 } 
+                }}
+            >
+                {selectedSede && (
+                    <Box sx={{ p: 3 }}>
+                        <Typography variant="h5" gutterBottom fontWeight="bold">
+                            Detalle de Sede
+                        </Typography>
+                        <Divider sx={{ my: 2 }} />
+
+                        <Typography variant="h6" gutterBottom color="primary">
+                            {selectedSede.razonSocialEmpresa}
+                        </Typography>
+                        <Typography variant="subtitle1" gutterBottom>
+                            {selectedSede.nombreSede}
+                        </Typography>
+
+                        <Divider sx={{ my: 2 }} />
+                        <Typography variant="h6" gutterBottom>
+                            Estado de Habilitación
+                        </Typography>
+                        <Box sx={{ mb: 2 }}>
+                            <Chip 
+                                label={selectedSede.esElegible ? 'ELEGIBLE' : 'NO ELEGIBLE'} 
+                                color={selectedSede.esElegible ? 'success' : 'warning'}
+                                sx={{ mr: 1, fontWeight: 'bold' }}
+                            />
+                            {!selectedSede.esElegible && selectedSede.motivoNoElegible && (
+                                <Typography variant="caption" sx={{ ml: 1 }}>
+                                    ({selectedSede.motivoNoElegible})
+                                </Typography>
+                            )}
+                        </Box>
+
+                        <Divider sx={{ my: 2 }} />
+                        <Typography variant="h6" gutterBottom>
+                            Datos de la Sede
+                        </Typography>
+                        <Typography variant="body2" paragraph>
+                            <strong>Dirección:</strong> {selectedSede.direccion}
+                        </Typography>
+                        <Typography variant="body2" paragraph>
+                            <strong>Ubicación:</strong> {selectedSede.departamento}, {selectedSede.provincia}, {selectedSede.distrito}
+                        </Typography>
+                        <Typography variant="body2" paragraph>
+                            <strong>Tipo de entidad:</strong> {selectedSede.tipoEntidad}
+                        </Typography>
+                        <Typography variant="body2" paragraph>
+                            <strong>Área disponible:</strong> {selectedSede.areaDisponible || 'No especificada'}
+                        </Typography>
+                        <Typography variant="body2" paragraph>
+                            <strong>Descripción:</strong> {selectedSede.descripcion || 'No especificada'}
+                        </Typography>
+                        <Typography variant="body2" paragraph>
+                            <strong>Capacidad máxima:</strong> {selectedSede.capacidadMaxima || 'No especificada'}
+                        </Typography>
+                        <Typography variant="body2" paragraph>
+                            <strong>Vacantes disponibles:</strong> {selectedSede.vacantesDisponibles || 0}
+                        </Typography>
+
+                        <Divider sx={{ my: 2 }} />
+                        <Typography variant="h6" gutterBottom>
+                            Información de Habilitación
+                        </Typography>
+                        <Box sx={{ mb: 2 }}>
+                            <Chip 
+                                label={selectedSede.tieneConvenioVigente ? 'Convenio Vigente' : 'Sin Convenio'} 
+                                color={selectedSede.tieneConvenioVigente ? 'success' : 'error'}
+                                sx={{ mr: 1 }}
+                            />
+                            {selectedSede.fechaVigenciaConvenio && (
+                                <Typography variant="caption" sx={{ ml: 1 }}>
+                                    (Vence: {new Date(selectedSede.fechaVigenciaConvenio).toLocaleDateString()})
+                                </Typography>
+                            )}
+                        </Box>
+                        <Box sx={{ mb: 2 }}>
+                            <Chip 
+                                label={`Validación: ${selectedSede.resultadoValidacion || 'No validada'}`} 
+                                color={getValidacionBadgeColor(selectedSede)}
+                                sx={{ mr: 1 }}
+                            />
+                            {selectedSede.fechaVigenciaValidacion && (
+                                <Typography variant="caption" sx={{ ml: 1 }}>
+                                    (Vigencia hasta: {new Date(selectedSede.fechaVigenciaValidacion).toLocaleDateString()})
+                                </Typography>
+                            )}
+                        </Box>
+
+                        <Divider sx={{ my: 2 }} />
+                        <Typography variant="h6" gutterBottom>
+                            Tutores Activos
+                        </Typography>
+                        {selectedSede.tutoresActivos && selectedSede.tutoresActivos.length > 0 ? (
+                            selectedSede.tutoresActivos.map((tutor, index) => (
+                                <Box key={tutor.id} sx={{ mb: 1, p: 1, bgcolor: 'grey.50', borderRadius: 1 }}>
+                                    <Typography variant="body2" fontWeight="bold">
+                                        {tutor.nombres} {tutor.apellidoPaterno} {tutor.apellidoMaterno}
+                                    </Typography>
+                                    <Typography variant="caption" display="block">
+                                        Cargo: {tutor.cargo}
+                                    </Typography>
+                                    <Typography variant="caption" display="block">
+                                        Correo: {tutor.correo}
+                                    </Typography>
+                                    <Typography variant="caption" display="block">
+                                        Teléfono: {tutor.telefono || 'No especificado'}
+                                    </Typography>
+                                </Box>
+                            ))
+                        ) : (
+                            <Typography variant="body2" color="textSecondary">
+                                No hay tutores activos asignados
+                            </Typography>
+                        )}
+
+                        <Divider sx={{ my: 2 }} />
+                        <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
+                            <Button 
+                                variant="outlined" 
+                                color="warning"
+                                onClick={() => {
+                                    setDrawerOpen(false);
+                                    handleGestionarValidacion(selectedSede);
+                                }}
+                                fullWidth
+                            >
+                                Gestionar Validación
+                            </Button>
+                            <Button 
+                                variant="outlined" 
+                                color="secondary"
+                                onClick={() => {
+                                    setDrawerOpen(false);
+                                    handleGestionarTutores(selectedSede);
+                                }}
+                                fullWidth
+                            >
+                                Gestionar Tutores
+                            </Button>
+                        </Box>
+                        <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
+                            <Button 
+                                variant="outlined" 
+                                color="success"
+                                onClick={() => {
+                                    setDrawerOpen(false);
+                                    handleVerExpedientes(selectedSede);
+                                }}
+                                fullWidth
+                            >
+                                Ver Expedientes
+                            </Button>
+                            <Button 
+                                variant="contained" 
+                                onClick={() => setDrawerOpen(false)}
+                                fullWidth
+                            >
+                                Cerrar
+                            </Button>
+                        </Box>
+                    </Box>
+                )}
+            </Drawer>
+
+            {/* Validación Dialog */}
+            <Dialog open={validacionDialogOpen} onClose={() => setValidacionDialogOpen(false)} maxWidth="md" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+                <DialogTitle sx={{ bgcolor: validacionActual?.resultadoValidacion === 'APROBADA' ? 'success.main' : validacionActual?.resultadoValidacion === 'RECHAZADA' ? 'error.main' : 'warning.main', color: '#fff', display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <AssignmentIcon />
+                    Validación de Sede: {validacionSede?.nombreSede}
+                </DialogTitle>
+                <DialogContent dividers sx={{ p: { xs: 2, md: 4 }, bgcolor: '#fbfbfb' }}>
+                    {loadingValidacion ? (
+                        <Box sx={{ textAlign: 'center', py: 4 }}><CircularProgress /></Box>
+                    ) : (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                            {validacionActual && (
+                                <Alert severity={validacionActual.resultadoValidacion === 'APROBADA' ? 'success' : validacionActual.resultadoValidacion === 'RECHAZADA' ? 'error' : 'warning'} sx={{ borderRadius: 2 }}>
+                                    Validación vigente: <strong>{validacionActual.resultadoValidacion}</strong>
+                                    {validacionActual.fechaVigenciaHasta && ` — Vigente hasta: ${new Date(validacionActual.fechaVigenciaHasta).toLocaleDateString()}`}
+                                </Alert>
+                            )}
+
+                            {historialValidaciones.length > 0 && (
+                                <Box>
+                                    <Typography variant="subtitle2" color="textSecondary" sx={{ mb: 1 }}>Historial de validaciones:</Typography>
+                                    <Stack spacing={1}>
+                                        {historialValidaciones.map(v => (
+                                            <Paper key={v.id} sx={{ p: 1.5, borderRadius: 1, bgcolor: 'grey.50' }}>
+                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                    <Chip label={v.resultadoValidacion} size="small" color={v.resultadoValidacion === 'APROBADA' ? 'success' : v.resultadoValidacion === 'RECHAZADA' ? 'error' : 'warning'} />
+                                                    <Typography variant="caption">{v.nombreValidador} — {v.fechaValidacion ? new Date(v.fechaValidacion).toLocaleDateString() : ''}</Typography>
+                                                </Box>
+                                            </Paper>
+                                        ))}
+                                    </Stack>
+                                </Box>
+                            )}
+
+                            <Typography variant="h6" sx={{ borderBottom: '2px solid', borderColor: 'primary.main', pb: 1 }}>Criterios de Validación</Typography>
+
+                            {[
+                                { key: 'criterioInfraestructuraCumple', obsKey: 'criterioInfraestructuraObservaciones', label: 'Infraestructura adecuada', desc: 'La sede cuenta con espacios físicos adecuados para el desarrollo de prácticas.' },
+                                { key: 'criterioSeguridadSaludCumple', obsKey: 'criterioSeguridadSaludObservaciones', label: 'Seguridad y salud ocupacional', desc: 'Cumple con condiciones de seguridad y salud en el trabajo.' },
+                                { key: 'criterioAfinidadCarreraCumple', obsKey: 'criterioAfinidadCarreraObservaciones', label: 'Afinidad con la carrera', desc: 'Las actividades se relacionan con el perfil profesional de Ingeniería Industrial.' },
+                                { key: 'criterioTutorDesignadoCumple', obsKey: 'criterioTutorDesignadoObservaciones', label: 'Tutor designado', desc: 'La sede ha designado un tutor externo para acompañar al estudiante.' },
+                                { key: 'criterioConvenioAcuerdoCumple', obsKey: 'criterioConvenioAcuerdoObservaciones', label: 'Convenio o acuerdo vigente', desc: 'Existe un convenio o acuerdo formal vigente con la universidad.' }
+                            ].map(criterio => (
+                                <Paper key={criterio.key} sx={{ p: 2, borderRadius: 2 }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                                        <Checkbox
+                                            checked={validacionForm[criterio.key]}
+                                            onChange={e => setValidacionForm({ ...validacionForm, [criterio.key]: e.target.checked })}
+                                            color={validacionForm[criterio.key] ? 'success' : 'default'}
+                                        />
+                                        <Box>
+                                            <Typography variant="subtitle2" fontWeight="bold">{criterio.label}</Typography>
+                                            <Typography variant="caption" color="textSecondary">{criterio.desc}</Typography>
+                                        </Box>
+                                    </Box>
+                                    <TextField
+                                        fullWidth size="small" placeholder="Observaciones (opcional)"
+                                        value={validacionForm[criterio.obsKey]}
+                                        onChange={e => setValidacionForm({ ...validacionForm, [criterio.obsKey]: e.target.value })}
+                                        sx={{ ml: 5 }}
+                                    />
+                                </Paper>
+                            ))}
+
+                            <Typography variant="h6" sx={{ borderBottom: '2px solid', borderColor: 'primary.main', pb: 1 }}>Resultado</Typography>
+
+                            <FormControl fullWidth>
+                                <InputLabel>Resultado de Validación</InputLabel>
+                                <Select
+                                    value={validacionForm.resultadoValidacion}
+                                    label="Resultado de Validación"
+                                    onChange={e => setValidacionForm({ ...validacionForm, resultadoValidacion: e.target.value })}
+                                    sx={{ borderRadius: 1.2 }}
+                                >
+                                    <MenuItem value="APROBADA"><Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}><CheckCircleIcon fontSize="small" color="success" /> Aprobada</Box></MenuItem>
+                                    <MenuItem value="OBSERVADA"><Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}><WarningIcon fontSize="small" color="warning" /> Observada</Box></MenuItem>
+                                    <MenuItem value="RECHAZADA"><Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}><CancelIcon fontSize="small" color="error" /> Rechazada</Box></MenuItem>
+                                </Select>
+                            </FormControl>
+
+                            <TextField fullWidth multiline rows={2} label="Observaciones Generales"
+                                value={validacionForm.observacionesGenerales}
+                                onChange={e => setValidacionForm({ ...validacionForm, observacionesGenerales: e.target.value })}
+                            />
+
+                            <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', md: 'row' } }}>
+                                <TextField fullWidth type="date" label="Vigencia desde" InputLabelProps={{ shrink: true }}
+                                    value={validacionForm.fechaVigenciaDesde}
+                                    onChange={e => setValidacionForm({ ...validacionForm, fechaVigenciaDesde: e.target.value })}
+                                />
+                                <TextField fullWidth type="date" label="Vigencia hasta" InputLabelProps={{ shrink: true }}
+                                    value={validacionForm.fechaVigenciaHasta}
+                                    onChange={e => setValidacionForm({ ...validacionForm, fechaVigenciaHasta: e.target.value })}
+                                />
+                            </Box>
+                        </Box>
+                    )}
+                </DialogContent>
+                <DialogActions sx={{ p: 2, px: 3, bgcolor: '#f4f6f8' }}>
+                    <Button onClick={() => setValidacionDialogOpen(false)} color="inherit" sx={{ fontWeight: 'bold' }}>Cancelar</Button>
+                    <Button variant="contained" onClick={handleValidacionSave} disabled={loadingValidacion} sx={{ px: 4, borderRadius: 2 }}>
+                        {validacionActual?.id ? 'Actualizar Validación' : 'Guardar Validación'}
+                    </Button>
                 </DialogActions>
             </Dialog>
         </Container>

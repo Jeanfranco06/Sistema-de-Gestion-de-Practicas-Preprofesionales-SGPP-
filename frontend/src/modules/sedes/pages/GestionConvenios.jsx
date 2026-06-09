@@ -394,20 +394,14 @@ export const GestionConvenios = () => {
 
                         <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', md: 'row' } }}>
                             <TextField 
-                                sx={{ flex: 1 }} label="Fecha Inicio *" 
-                                type={formData.fechaInicio ? "date" : "text"}
-                                onFocus={(e) => (e.target.type = "date")}
-                                onBlur={(e) => { if (!formData.fechaInicio) e.target.type = "text"; }}
-                                InputLabelProps={{ shrink: !!formData.fechaInicio }} 
+                                sx={{ flex: 1 }} label="Fecha Inicio *" type="date"
+                                InputLabelProps={{ shrink: true }} 
                                 value={formData.fechaInicio} onChange={e => setFormData({...formData, fechaInicio: e.target.value})} 
                                 error={!!errors.fechaInicio} helperText={errors.fechaInicio}
                             />
                             <TextField 
-                                sx={{ flex: 1 }} label="Fecha Fin *" 
-                                type={formData.fechaFin ? "date" : "text"}
-                                onFocus={(e) => (e.target.type = "date")}
-                                onBlur={(e) => { if (!formData.fechaFin) e.target.type = "text"; }}
-                                InputLabelProps={{ shrink: !!formData.fechaFin }} 
+                                sx={{ flex: 1 }} label="Fecha Fin *" type="date"
+                                InputLabelProps={{ shrink: true }} 
                                 value={formData.fechaFin} onChange={e => setFormData({...formData, fechaFin: e.target.value})} 
                                 error={!!errors.fechaFin} helperText={errors.fechaFin}
                             />

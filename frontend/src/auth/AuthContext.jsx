@@ -19,13 +19,18 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = useCallback(async (username, password) => {
-    const { data } = await apiLogin(username, password);
-    const { token: jwt, usuario } = data;
-    localStorage.setItem('sgpp_token', jwt);
-    localStorage.setItem('sgpp_user', JSON.stringify(usuario));
-    setToken(jwt);
-    setUser(usuario);
-    return usuario;
+    setLoading(true);
+    try {
+      const { data } = await apiLogin(username, password);
+      const { token: jwt, usuario } = data;
+      localStorage.setItem('sgpp_token', jwt);
+      localStorage.setItem('sgpp_user', JSON.stringify(usuario));
+      setToken(jwt);
+      setUser(usuario);
+      return usuario;
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   const logout = useCallback(() => {

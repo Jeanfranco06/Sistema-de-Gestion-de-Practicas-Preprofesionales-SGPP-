@@ -1,7 +1,9 @@
 package edu.unt.ingenieria_industrial.sgpp.core.seguridad.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import edu.unt.ingenieria_industrial.sgpp.shared.common.BaseEntity;
+import edu.unt.ingenieria_industrial.sgpp.core.common.BaseEntity;
+import edu.unt.ingenieria_industrial.sgpp.core.empresarial.model.Empresa;
+import edu.unt.ingenieria_industrial.sgpp.core.empresarial.model.SedePractica;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,6 +28,14 @@ public class TutorExterno extends BaseEntity {
     @EqualsAndHashCode.Exclude
     private Usuario usuario;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_empresa")
+    private Empresa empresa;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_sede")
+    private SedePractica sede;
+
     @Column(name = "cargo", nullable = false, length = 100)
     private String cargo;
 
@@ -38,5 +48,9 @@ public class TutorExterno extends BaseEntity {
     @Column(name = "activo", nullable = false)
     @Builder.Default
     private Boolean activo = true;
+
+    @Column(name = "estado_tutor", length = 20)
+    @Builder.Default
+    private String estadoTutor = "ACTIVO";
 }
 

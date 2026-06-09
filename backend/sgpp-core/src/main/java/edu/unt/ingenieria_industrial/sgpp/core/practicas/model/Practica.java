@@ -1,8 +1,8 @@
 package edu.unt.ingenieria_industrial.sgpp.core.practicas.model;
 
-import edu.unt.ingenieria_industrial.sgpp.shared.common.BaseEntity;
+import edu.unt.ingenieria_industrial.sgpp.core.common.BaseEntity;
 import edu.unt.ingenieria_industrial.sgpp.core.empresarial.model.SedePractica;
-import edu.unt.ingenieria_industrial.sgpp.shared.model.EstadoPractica;
+import edu.unt.ingenieria_industrial.sgpp.core.model.EstadoPractica;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.model.Estudiante;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.model.TutorExterno;
 import jakarta.persistence.*;

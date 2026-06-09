@@ -1,7 +1,7 @@
 package edu.unt.ingenieria_industrial.sgpp.core.seguridad.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import edu.unt.ingenieria_industrial.sgpp.shared.common.BaseEntity;
+import edu.unt.ingenieria_industrial.sgpp.core.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,7 +28,7 @@ public class UsuarioRol extends BaseEntity {
     @EqualsAndHashCode.Exclude
     private Usuario usuario;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "id_rol", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude

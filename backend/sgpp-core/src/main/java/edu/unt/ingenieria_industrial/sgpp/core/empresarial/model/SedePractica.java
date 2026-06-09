@@ -1,6 +1,6 @@
 package edu.unt.ingenieria_industrial.sgpp.core.empresarial.model;
 
-import edu.unt.ingenieria_industrial.sgpp.shared.common.BaseEntity;
+import edu.unt.ingenieria_industrial.sgpp.core.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -60,5 +60,37 @@ public class SedePractica extends BaseEntity {
     @Column(name = "activo", nullable = false)
     @Builder.Default
     private Boolean activo = true;
+
+    // Nuevos campos para perfil de sede
+    @Column(name = "tipo_entidad", length = 20)
+    private String tipoEntidad;
+
+    @Column(name = "area_unidad", length = 200)
+    private String areaUnidad;
+
+    @Column(name = "descripcion_general", columnDefinition = "TEXT")
+    private String descripcionGeneral;
+
+    @Column(name = "actividades_principales", columnDefinition = "TEXT")
+    private String actividadesPrincipales;
+
+    @Column(name = "riesgos_relevantes", columnDefinition = "TEXT")
+    private String riesgosRelevantes;
+
+    @Column(name = "nombre_tutor_empresa", length = 200)
+    private String nombreTutorEmpresa;
+
+    @Column(name = "cargo_tutor_empresa", length = 100)
+    private String cargoTutorEmpresa;
+
+    @Column(name = "correo_tutor_empresa", length = 100)
+    private String correoTutorEmpresa;
+
+    @Column(name = "telefono_tutor_empresa", length = 20)
+    private String telefonoTutorEmpresa;
+
+    @Column(name = "estado_sede", length = 20)
+    @Builder.Default
+    private String estadoSede = "ACTIVA";
 }
 

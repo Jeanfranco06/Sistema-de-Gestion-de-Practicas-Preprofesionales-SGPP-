@@ -12,9 +12,9 @@ import java.util.List;
 import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
-@RequestMapping("/api/empresas")
+@RequestMapping("/empresas")
 @CrossOrigin(origins = "*")
-@PreAuthorize("hasAnyRole('ADMINISTRADOR', 'SECRETARIA', 'COORDINADOR', 'DIRECTOR')")
+@PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR')")
 public class EmpresaController {
 
     @Autowired

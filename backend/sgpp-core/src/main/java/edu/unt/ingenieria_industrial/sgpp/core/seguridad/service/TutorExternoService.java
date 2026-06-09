@@ -10,5 +10,13 @@ public interface TutorExternoService {
     TutorExternoDTO findById(Long id);
     List<TutorExternoDTO> findAll();
     void disable(Long id);
+    List<TutorExternoDTO> findByEmpresaId(Long empresaId);
+    List<TutorExternoDTO> findBySedeId(Long sedeId);
+    List<TutorExternoDTO> findByEmpresaIdAndEstadoTutor(Long empresaId, String estadoTutor);
+    List<TutorExternoDTO> findBySedeIdAndEstadoTutor(Long sedeId, String estadoTutor);
+    List<TutorExternoDTO> findActiveByEmpresaId(Long empresaId);
+    List<TutorExternoDTO> findActiveBySedeId(Long sedeId);
+    List<TutorExternoDTO> findActiveByEmpresaOrSedeId(Long id);
+    void cambiarEstado(Long id, String estadoTutor);
 }
 

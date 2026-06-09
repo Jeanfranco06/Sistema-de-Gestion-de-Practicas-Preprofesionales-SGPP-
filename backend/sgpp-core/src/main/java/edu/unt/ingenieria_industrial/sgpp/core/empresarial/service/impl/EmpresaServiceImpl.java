@@ -4,7 +4,8 @@ import edu.unt.ingenieria_industrial.sgpp.core.empresarial.dto.EmpresaDTO;
 import edu.unt.ingenieria_industrial.sgpp.core.empresarial.model.Empresa;
 import edu.unt.ingenieria_industrial.sgpp.core.empresarial.repository.EmpresaRepository;
 import edu.unt.ingenieria_industrial.sgpp.core.empresarial.service.EmpresaService;
-import org.springframework.beans.factory.annotation.Autowired;
+import edu.unt.ingenieria_industrial.sgpp.shared.exception.BusinessException;
+import edu.unt.ingenieria_industrial.sgpp.shared.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,14 +15,23 @@ import java.util.stream.Collectors;
 @Service
 public class EmpresaServiceImpl implements EmpresaService {
 
-    @Autowired
-    private EmpresaRepository empresaRepository;
+    private final EmpresaRepository empresaRepository;
+
+    public EmpresaServiceImpl(EmpresaRepository empresaRepository) {
+        this.empresaRepository = empresaRepository;
+    }
 
     @Override
     @Transactional
     public EmpresaDTO create(EmpresaDTO dto) {
+        if (dto.getRuc() == null || dto.getRuc().isBlank()) {
+            throw new BusinessException("El RUC es obligatorio");
+        }
+        if (dto.getRazonSocial() == null || dto.getRazonSocial().isBlank()) {
+            throw new BusinessException("La razón social es obligatoria");
+        }
         if (empresaRepository.existsByRuc(dto.getRuc())) {
-            throw new RuntimeException("Ya existe una empresa con ese RUC");
+            throw new BusinessException("Ya existe una empresa registrada con el RUC " + dto.getRuc());
         }
         Empresa empresa = toEntity(dto);
         empresa.setActivo(true);
@@ -33,8 +43,14 @@ public class EmpresaServiceImpl implements EmpresaService {
     @Transactional
     public EmpresaDTO update(Long id, EmpresaDTO dto) {
         Empresa empresa = empresaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
-        
+                .orElseThrow(() -> new ResourceNotFoundException("Empresa", "id", id));
+
+        if (dto.getRuc() != null && !dto.getRuc().equals(empresa.getRuc())) {
+            if (empresaRepository.existsByRuc(dto.getRuc())) {
+                throw new BusinessException("Ya existe otra empresa con el RUC " + dto.getRuc());
+            }
+            empresa.setRuc(dto.getRuc());
+        }
         empresa.setRazonSocial(dto.getRazonSocial());
         empresa.setNombreComercial(dto.getNombreComercial());
         empresa.setDireccion(dto.getDireccion());
@@ -47,15 +63,15 @@ public class EmpresaServiceImpl implements EmpresaService {
         empresa.setPaginaWeb(dto.getPaginaWeb());
         empresa.setSectorEconomico(dto.getSectorEconomico());
         empresa.setTamanoEmpresa(dto.getTamanoEmpresa());
-        
         return toDto(empresaRepository.save(empresa));
     }
 
     @Override
     @Transactional(readOnly = true)
     public EmpresaDTO findById(Long id) {
-        return empresaRepository.findById(id).map(this::toDto)
-                .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
+        return empresaRepository.findById(id)
+                .map(this::toDto)
+                .orElseThrow(() -> new ResourceNotFoundException("Empresa", "id", id));
     }
 
     @Override
@@ -68,7 +84,10 @@ public class EmpresaServiceImpl implements EmpresaService {
     @Transactional
     public void disable(Long id) {
         Empresa empresa = empresaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Empresa", "id", id));
+        if (!Boolean.TRUE.equals(empresa.getActivo())) {
+            throw new BusinessException("La empresa ya se encuentra desactivada");
+        }
         empresa.setActivo(false);
         empresaRepository.save(empresa);
     }
@@ -77,7 +96,10 @@ public class EmpresaServiceImpl implements EmpresaService {
     @Transactional
     public void validate(Long id) {
         Empresa empresa = empresaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Empresa", "id", id));
+        if (Boolean.TRUE.equals(empresa.getValidado())) {
+            throw new BusinessException("La empresa ya se encuentra validada");
+        }
         empresa.setValidado(true);
         empresaRepository.save(empresa);
     }
@@ -121,4 +143,3 @@ public class EmpresaServiceImpl implements EmpresaService {
                 .build();
     }
 }
-

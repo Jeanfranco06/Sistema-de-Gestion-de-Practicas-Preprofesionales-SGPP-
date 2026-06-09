@@ -1,6 +1,6 @@
 package edu.unt.ingenieria_industrial.sgpp.core.sistema.repository;
 
-import edu.unt.ingenieria_industrial.sgpp.shared.model.ParametroSistema;
+import edu.unt.ingenieria_industrial.sgpp.core.model.ParametroSistema;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

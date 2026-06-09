@@ -2,20 +2,27 @@ package edu.unt.ingenieria_industrial.sgpp.core.seguridad.service.impl;
 
 import edu.unt.ingenieria_industrial.sgpp.shared.exception.BusinessException;
 import edu.unt.ingenieria_industrial.sgpp.shared.enums.RolSistema;
-import edu.unt.ingenieria_industrial.sgpp.core.seguridad.dto.UsuarioCreateDTO;
-import edu.unt.ingenieria_industrial.sgpp.core.seguridad.dto.UsuarioDTO;
+import edu.unt.ingenieria_industrial.sgpp.shared.enums.TipoUsuario;
+import edu.unt.ingenieria_industrial.sgpp.core.seguridad.dto.*;
+import edu.unt.ingenieria_industrial.sgpp.core.seguridad.model.Docente;
+import edu.unt.ingenieria_industrial.sgpp.core.seguridad.model.Estudiante;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.model.Rol;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.model.Usuario;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.model.UsuarioRol;
+import edu.unt.ingenieria_industrial.sgpp.core.seguridad.repository.DocenteRepository;
+import edu.unt.ingenieria_industrial.sgpp.core.seguridad.repository.EstudianteRepository;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.repository.RolRepository;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.repository.UsuarioRepository;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.repository.UsuarioRolRepository;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.service.UsuarioService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -27,6 +34,8 @@ public class UsuarioServiceImpl implements UsuarioService {
     private final UsuarioRepository usuarioRepository;
     private final RolRepository rolRepository;
     private final UsuarioRolRepository usuarioRolRepository;
+    private final DocenteRepository docenteRepository;
+    private final EstudianteRepository estudianteRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -131,6 +140,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     private void assignRolesToUsuario(Usuario usuario, Set<String> roles) {
+        String asignadoPor = obtenerUsuarioAutenticado();
         for (String rolNombre : roles) {
             Rol rol = rolRepository.findByNombre(RolSistema.valueOf(rolNombre))
                     .orElseThrow(() -> new BusinessException("Rol no encontrado: " + rolNombre));
@@ -138,11 +148,106 @@ public class UsuarioServiceImpl implements UsuarioService {
             UsuarioRol usuarioRol = UsuarioRol.builder()
                     .usuario(usuario)
                     .rol(rol)
-                    .asignadoPor("SYSTEM")
+                    .asignadoPor(asignadoPor)
                     .build();
             
             usuario.getUsuarioRoles().add(usuarioRol);
         }
+        usuarioRepository.save(usuario);
+    }
+
+    private String obtenerUsuarioAutenticado() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName())) {
+            return auth.getName();
+        }
+        return "SYSTEM";
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UsuarioDetalleResponse findDetalleById(Long id) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("Usuario no encontrado"));
+        
+        Docente docente = docenteRepository.findByUsuarioId(id).orElse(null);
+        Estudiante estudiante = estudianteRepository.findByUsuarioId(id).orElse(null);
+        
+        return toDetalleDto(usuario, docente, estudiante);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<UsuarioDTO> findAllWithFilters(String nombre, String correo, String estado, String rol, String tipoUsuario) {
+        List<Usuario> usuarios = usuarioRepository.findAll();
+        
+        return usuarios.stream()
+                .filter(u -> nombre == null || u.getNombres().toLowerCase().contains(nombre.toLowerCase()) ||
+                                   u.getApellidoPaterno().toLowerCase().contains(nombre.toLowerCase()))
+                .filter(u -> correo == null || u.getEmail().toLowerCase().contains(correo.toLowerCase()))
+                .filter(u -> estado == null || 
+                          (estado.equals("ACTIVO") && u.getActivo()) ||
+                          (estado.equals("INACTIVO") && !u.getActivo()) ||
+                          (estado.equals("BLOQUEADO") && u.getCuentaBloqueada()))
+                .filter(u -> rol == null || u.getUsuarioRoles().stream()
+                          .anyMatch(ur -> ur.getRol().getNombre().name().equals(rol)))
+                .filter(u -> tipoUsuario == null || 
+                          (u.getTipoUsuario() != null && u.getTipoUsuario().name().equals(tipoUsuario)))
+                .map(this::toDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public void updateEstado(Long id, EstadoUsuarioRequest request) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("Usuario no encontrado"));
+        
+        switch (request.getEstado()) {
+            case "ACTIVO":
+                usuario.setActivo(true);
+                usuario.setCuentaBloqueada(false);
+                break;
+            case "INACTIVO":
+                usuario.setActivo(false);
+                break;
+            case "BLOQUEADO":
+                usuario.setCuentaBloqueada(true);
+                break;
+        }
+        
+        usuario.setFechaActualizacion(LocalDateTime.now());
+        usuarioRepository.save(usuario);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<RolDTO> getRolesByUsuarioId(Long id) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("Usuario no encontrado"));
+        
+        return usuario.getUsuarioRoles().stream()
+                .map(ur -> RolDTO.builder()
+                        .id(ur.getRol().getId())
+                        .nombre(ur.getRol().getNombre())
+                        .descripcion(ur.getRol().getDescripcion())
+                        .activo(ur.getRol().getActivo())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public void revokeRol(Long usuarioId, Long rolId) {
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new BusinessException("Usuario no encontrado"));
+        
+        UsuarioRol usuarioRol = usuario.getUsuarioRoles().stream()
+                .filter(ur -> ur.getRol().getId().equals(rolId))
+                .findFirst()
+                .orElseThrow(() -> new BusinessException("El usuario no tiene este rol asignado"));
+        
+        usuario.getUsuarioRoles().remove(usuarioRol);
         usuarioRepository.save(usuario);
     }
 
@@ -162,6 +267,51 @@ public class UsuarioServiceImpl implements UsuarioService {
                 .roles(entity.getUsuarioRoles().stream()
                         .map(ur -> ur.getRol().getNombre().name())
                         .collect(Collectors.toList()))
+                .build();
+    }
+
+    private UsuarioDetalleResponse toDetalleDto(Usuario usuario, Docente docente, Estudiante estudiante) {
+        return UsuarioDetalleResponse.builder()
+                .id(usuario.getId())
+                .username(usuario.getUsername())
+                .email(usuario.getEmail())
+                .nombres(usuario.getNombres())
+                .apellidoPaterno(usuario.getApellidoPaterno())
+                .apellidoMaterno(usuario.getApellidoMaterno())
+                .numeroDocumento(usuario.getNumeroDocumento())
+                .tipoDocumento(usuario.getTipoDocumento())
+                .telefono(usuario.getTelefono())
+                .codigoInstitucional(usuario.getCodigoInstitucional())
+                .tipoUsuario(usuario.getTipoUsuario())
+                .activo(usuario.getActivo())
+                .cuentaBloqueada(usuario.getCuentaBloqueada())
+                .fechaUltimoAcceso(usuario.getFechaUltimoAcceso())
+                .fechaRegistro(usuario.getFechaRegistro())
+                .fechaActualizacion(usuario.getFechaActualizacion())
+                .roles(usuario.getUsuarioRoles().stream()
+                        .map(ur -> RolDTO.builder()
+                                .id(ur.getRol().getId())
+                                .nombre(ur.getRol().getNombre())
+                                .descripcion(ur.getRol().getDescripcion())
+                                .activo(ur.getRol().getActivo())
+                                .build())
+                        .collect(Collectors.toList()))
+                .estudiante(estudiante != null ? EstudianteDTO.builder()
+                        .id(estudiante.getId())
+                        .codigoEstudiantil(estudiante.getCodigoEstudiantil())
+                        .semestreActual(estudiante.getSemestreActual())
+                        .estadoAcademico(estudiante.getEstadoAcademico())
+                        .build() : null)
+                .docente(docente != null ? DocenteDTO.builder()
+                        .id(docente.getId())
+                        .codigoDocente(docente.getCodigoDocente())
+                        .categoria(docente.getCategoria())
+                        .especialidad(docente.getEspecialidad())
+                        .departamento(docente.getDepartamento())
+                        .activo(docente.getActivo())
+                        .maxPracticantes(docente.getMaxPracticantes())
+                        .build() : null)
+                .tutorExterno(null)
                 .build();
     }
 }

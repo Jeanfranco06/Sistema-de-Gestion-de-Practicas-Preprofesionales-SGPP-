@@ -1,8 +1,8 @@
 package edu.unt.ingenieria_industrial.sgpp.core.sistema.service;
 
 import edu.unt.ingenieria_industrial.sgpp.core.sistema.repository.ParametroSistemaRepository;
+import edu.unt.ingenieria_industrial.sgpp.core.model.ParametroSistema;
 import edu.unt.ingenieria_industrial.sgpp.shared.exception.ResourceNotFoundException;
-import edu.unt.ingenieria_industrial.sgpp.shared.model.ParametroSistema;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

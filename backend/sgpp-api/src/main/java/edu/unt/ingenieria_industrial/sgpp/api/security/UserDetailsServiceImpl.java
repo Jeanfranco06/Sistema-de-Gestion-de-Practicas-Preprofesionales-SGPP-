@@ -22,9 +22,18 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         Usuario usuario = usuarioRepository.findByUsernameWithRoles(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + username));
 
-        log.info("Usuario encontrado: {}, activo: {}, cuentaBloqueada: {}, roles: {}",
+        log.info("Usuario encontrado: {}, activo: {}, cuentaBloqueada: {}, roles count: {}",
                 username, usuario.getActivo(), usuario.getCuentaBloqueada(),
                 usuario.getUsuarioRoles() != null ? usuario.getUsuarioRoles().size() : 0);
+
+        if (usuario.getUsuarioRoles() != null) {
+            usuario.getUsuarioRoles().forEach(ur -> {
+                log.info("UsuarioRol - Usuario: {}, Rol ID: {}, Rol nombre: {}", 
+                    ur.getUsuario() != null ? ur.getUsuario().getUsername() : "null",
+                    ur.getRol() != null ? ur.getRol().getId() : "null",
+                    ur.getRol() != null ? ur.getRol().getNombre() : "null");
+            });
+        }
 
         if (!usuario.getActivo()) {
             throw new UsernameNotFoundException("Usuario inactivo: " + username);

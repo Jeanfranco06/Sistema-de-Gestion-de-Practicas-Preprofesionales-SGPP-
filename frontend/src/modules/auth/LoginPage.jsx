@@ -11,6 +11,7 @@ import { useAuth } from '../../auth/AuthContext';
 
 const ROLE_HOME = {
   ADMINISTRADOR: '/admin/dashboard',
+  ADMIN_SISTEMA: '/admin/dashboard',
   ESTUDIANTE: '/estudiante/dashboard',
   DOCENTE_ASESOR: '/docente/dashboard',
   TUTOR_EXTERNO: '/tutor/dashboard',

@@ -19,7 +19,7 @@ import java.util.List;
 @RequestMapping("/secretaria")
 @RequiredArgsConstructor
 @Tag(name = "MÃ³dulo de SecretarÃ­a", description = "Endpoints para la validaciÃ³n de requisitos y gestiÃ³n de expedientes")
-@PreAuthorize("hasAnyRole('ADMINISTRADOR', 'SECRETARIA')")
+@PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'SECRETARIA')")
 public class SecretariaController {
 
     private final SecretariaService secretariaService;

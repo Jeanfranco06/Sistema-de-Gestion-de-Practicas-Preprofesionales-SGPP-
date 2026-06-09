@@ -55,11 +55,11 @@ const NAV_ITEMS_SECRETARIA = [
 function getNavItems(roles = []) {
   const roleNames = roles.map(r => typeof r === 'string' ? r : r.authority || r.nombre || '');
   
+  if (roleNames.some(rn => rn === 'ADMIN_SISTEMA' || rn === 'ROLE_ADMIN_SISTEMA')) return NAV_ITEMS_ADMIN;
   if (roleNames.some(rn => rn === 'ADMINISTRADOR' || rn === 'ROLE_ADMINISTRADOR')) return NAV_ITEMS_ADMIN;
   if (roleNames.some(rn => rn === 'ESTUDIANTE' || rn === 'ROLE_ESTUDIANTE')) return NAV_ITEMS_ESTUDIANTE;
   if (roleNames.some(rn => rn === 'DOCENTE_ASESOR' || rn === 'ROLE_DOCENTE_ASESOR')) return NAV_ITEMS_DOCENTE;
   
-  // Para roles administrativos, combinamos si es necesario o priorizamos
   const isAdminRole = roleNames.some(rn => 
     ['SECRETARIA', 'COORDINADOR', 'DIRECTOR', 'COMITE_PRACTICAS'].some(adminR => rn === adminR || rn === `ROLE_${adminR}`)
   );
