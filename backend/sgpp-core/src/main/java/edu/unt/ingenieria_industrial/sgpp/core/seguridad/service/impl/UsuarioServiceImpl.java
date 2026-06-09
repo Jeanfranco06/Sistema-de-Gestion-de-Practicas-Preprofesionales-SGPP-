@@ -2,6 +2,7 @@ package edu.unt.ingenieria_industrial.sgpp.core.seguridad.service.impl;
 
 import edu.unt.ingenieria_industrial.sgpp.shared.exception.BusinessException;
 import edu.unt.ingenieria_industrial.sgpp.shared.enums.RolSistema;
+import edu.unt.ingenieria_industrial.sgpp.shared.enums.TipoDocumento;
 import edu.unt.ingenieria_industrial.sgpp.shared.enums.TipoUsuario;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.dto.*;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.model.Docente;
@@ -61,6 +62,7 @@ public class UsuarioServiceImpl implements UsuarioService {
                 .numeroDocumento(dto.getNumeroDocumento())
                 .tipoDocumento(dto.getTipoDocumento())
                 .telefono(dto.getTelefono())
+                .tipoUsuario(dto.getTipoUsuario() != null ? TipoUsuario.valueOf(dto.getTipoUsuario()) : null)
                 .activo(true)
                 .cuentaBloqueada(false)
                 .intentosFallidos(0)
@@ -85,7 +87,21 @@ public class UsuarioServiceImpl implements UsuarioService {
         usuario.setApellidoPaterno(dto.getApellidoPaterno());
         usuario.setApellidoMaterno(dto.getApellidoMaterno());
         usuario.setTelefono(dto.getTelefono());
-        usuario.setActivo(dto.getActivo());
+        if (dto.getActivo() != null) {
+            usuario.setActivo(dto.getActivo());
+        }
+        if (dto.getEmail() != null) {
+            usuario.setEmail(dto.getEmail());
+        }
+        if (dto.getNumeroDocumento() != null) {
+            usuario.setNumeroDocumento(dto.getNumeroDocumento());
+        }
+        if (dto.getTipoDocumento() != null) {
+            usuario.setTipoDocumento(TipoDocumento.valueOf(dto.getTipoDocumento()));
+        }
+        if (dto.getTipoUsuario() != null) {
+            usuario.setTipoUsuario(TipoUsuario.valueOf(dto.getTipoUsuario()));
+        }
         
         return toDto(usuarioRepository.save(usuario));
     }
@@ -131,9 +147,9 @@ public class UsuarioServiceImpl implements UsuarioService {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new BusinessException("Usuario no encontrado"));
         
-        // Eliminar roles actuales
+        // Limpiar roles actuales y forzar flush para que DELETE ocurra antes de INSERT
         usuario.getUsuarioRoles().clear();
-        usuarioRepository.save(usuario);
+        usuarioRepository.saveAndFlush(usuario);
         
         // Asignar nuevos roles
         assignRolesToUsuario(usuario, roles);
@@ -182,8 +198,14 @@ public class UsuarioServiceImpl implements UsuarioService {
         List<Usuario> usuarios = usuarioRepository.findAll();
         
         return usuarios.stream()
-                .filter(u -> nombre == null || u.getNombres().toLowerCase().contains(nombre.toLowerCase()) ||
-                                   u.getApellidoPaterno().toLowerCase().contains(nombre.toLowerCase()))
+                .filter(u -> {
+                    if (nombre == null) return true;
+                    String q = nombre.toLowerCase();
+                    return (u.getNombres() != null && u.getNombres().toLowerCase().contains(q)) ||
+                           (u.getApellidoPaterno() != null && u.getApellidoPaterno().toLowerCase().contains(q)) ||
+                           (u.getEmail() != null && u.getEmail().toLowerCase().contains(q)) ||
+                           (u.getNumeroDocumento() != null && u.getNumeroDocumento().contains(q));
+                })
                 .filter(u -> correo == null || u.getEmail().toLowerCase().contains(correo.toLowerCase()))
                 .filter(u -> estado == null || 
                           (estado.equals("ACTIVO") && u.getActivo()) ||
@@ -262,6 +284,7 @@ public class UsuarioServiceImpl implements UsuarioService {
                 .numeroDocumento(entity.getNumeroDocumento())
                 .tipoDocumento(entity.getTipoDocumento().name())
                 .telefono(entity.getTelefono())
+                .tipoUsuario(entity.getTipoUsuario() != null ? entity.getTipoUsuario().name() : null)
                 .activo(entity.getActivo())
                 .cuentaBloqueada(entity.getCuentaBloqueada())
                 .roles(entity.getUsuarioRoles().stream()

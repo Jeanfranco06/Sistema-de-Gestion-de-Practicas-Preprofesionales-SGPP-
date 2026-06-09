@@ -1,12 +1,14 @@
 import api from './axios';
 
 export const usuariosApi = {
-    getAll: () => api.get('/usuarios'),
+    getAll: (config) => api.get('/usuarios', config),
     getById: (id) => api.get(`/usuarios/${id}`),
+    getDetalle: (id) => api.get(`/usuarios/${id}/detalle`),
     create: (data) => api.post('/usuarios', data),
     update: (id, data) => api.put(`/usuarios/${id}`, data),
     disable: (id) => api.delete(`/usuarios/${id}`),
     unlock: (id) => api.post(`/usuarios/${id}/unlock`),
+    cambiarEstado: (id, data) => api.patch(`/usuarios/${id}/estado`, data),
     assignRoles: (id, roles) => api.post(`/usuarios/${id}/roles`, roles)
 };
 

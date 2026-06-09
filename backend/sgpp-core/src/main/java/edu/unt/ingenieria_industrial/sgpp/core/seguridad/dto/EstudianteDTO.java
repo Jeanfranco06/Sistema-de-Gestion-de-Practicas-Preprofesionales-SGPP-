@@ -17,6 +17,9 @@ public class EstudianteDTO {
     private Long id;
     private Long idUsuario;
     private String codigoEstudiantil;
+    private String nombres;
+    private String apellidoPaterno;
+    private String apellidoMaterno;
     private Integer semestreActual;
     private Integer creditosAprobados;
     private Integer creditosRequeridosPractica;

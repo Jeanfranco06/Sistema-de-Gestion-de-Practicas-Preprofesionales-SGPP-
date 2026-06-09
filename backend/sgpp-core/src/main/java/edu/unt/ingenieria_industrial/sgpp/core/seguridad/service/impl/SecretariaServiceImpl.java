@@ -67,10 +67,14 @@ public class SecretariaServiceImpl implements SecretariaService {
     }
 
     private EstudianteDTO toDto(Estudiante entity) {
+        var usuario = entity.getUsuario();
         return EstudianteDTO.builder()
                 .id(entity.getId())
-                .idUsuario(entity.getUsuario().getId())
+                .idUsuario(usuario != null ? usuario.getId() : null)
                 .codigoEstudiantil(entity.getCodigoEstudiantil())
+                .nombres(usuario != null ? usuario.getNombres() : null)
+                .apellidoPaterno(usuario != null ? usuario.getApellidoPaterno() : null)
+                .apellidoMaterno(usuario != null ? usuario.getApellidoMaterno() : null)
                 .semestreActual(entity.getSemestreActual())
                 .creditosAprobados(entity.getCreditosAprobados())
                 .creditosRequeridosPractica(entity.getCreditosRequeridosPractica())

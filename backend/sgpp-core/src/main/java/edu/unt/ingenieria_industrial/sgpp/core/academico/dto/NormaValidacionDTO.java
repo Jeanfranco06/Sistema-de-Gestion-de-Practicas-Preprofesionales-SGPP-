@@ -20,4 +20,5 @@ public class NormaValidacionDTO {
     private LocalDate fechaVigenciaInicio;
     private LocalDate fechaVigenciaFin;
     private Boolean activo;
+    private Boolean vigente;
 }

@@ -10,22 +10,26 @@ import edu.unt.ingenieria_industrial.sgpp.core.practicas.repository.PracticaRepo
 import edu.unt.ingenieria_industrial.sgpp.core.practicas.repository.TipoPracticaRepository;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.model.Estudiante;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.repository.EstudianteRepository;
-
 import edu.unt.ingenieria_industrial.sgpp.shared.enums.EstadoAcademico;
 import edu.unt.ingenieria_industrial.sgpp.shared.exception.BusinessException;
 import edu.unt.ingenieria_industrial.sgpp.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class ValidacionAcademicaServiceImpl implements ValidacionAcademicaService {
+
+    private static final Logger log = LoggerFactory.getLogger(ValidacionAcademicaServiceImpl.class);
 
     private final EstudianteRepository estudianteRepository;
     private final TipoPracticaRepository tipoPracticaRepository;
@@ -35,9 +39,6 @@ public class ValidacionAcademicaServiceImpl implements ValidacionAcademicaServic
     private final ParametroReglaRepository parametroRepository;
     private final ResultadoValidacionRepository resultadoRepository;
     private final DetalleValidacionRepository detalleRepository;
-
-    private static final String NORMA_REGLAMENTO_II = "REGLAMENTO_II";
-    private static final String NORMA_LINEAMIENTOS_UNT_2025 = "LINEAMIENTOS_UNT_2025";
 
     @Override
     @Transactional
@@ -49,43 +50,46 @@ public class ValidacionAcademicaServiceImpl implements ValidacionAcademicaServic
                 .orElseThrow(() -> new BusinessException(
                         "Tipo de práctica no encontrado: " + request.getCodigoTipoPractica()));
 
-        List<NormaValidacion> normasAplicables = determinarNormasAplicables(estudiante, tipoPractica);
+        List<NormaValidacion> normasAplicables = determinarNormasAplicables(
+                request.getCodigoTipoPractica());
 
         if (normasAplicables.isEmpty()) {
             throw new BusinessException(
                     "No hay normas de validación vigentes para " + tipoPractica.getNombre());
         }
 
-        List<ReglaValidacion> reglas = new ArrayList<>();
-        NormaValidacion normaPrincipal = normasAplicables.get(0);
-
-        for (NormaValidacion norma : normasAplicables) {
-            List<ReglaValidacion> reglasNorma = reglaRepository
-                    .findByTipoPracticaCodigoAndNormaCodigoAndActivoTrueOrderByOrdenAsc(
-                            request.getCodigoTipoPractica(), norma.getCodigo());
-            reglas.addAll(reglasNorma);
-        }
+        List<ReglaValidacion> reglas = cargarReglasConNormas(
+                request.getCodigoTipoPractica(), normasAplicables);
 
         if (reglas.isEmpty()) {
             throw new BusinessException(
                     "No hay reglas de validación configuradas para " + tipoPractica.getNombre());
         }
 
+        Map<Long, List<ParametroRegla>> parametrosPorRegla = cargarParametrosBatch(reglas);
+
         List<DetalleValidacionDTO> detalles = new ArrayList<>();
-        boolean habilitado = true;
+        boolean apto = true;
         List<String> observaciones = new ArrayList<>();
+        List<String> requisitosFaltantes = new ArrayList<>();
 
         for (ReglaValidacion regla : reglas) {
-            List<ParametroRegla> parametros = parametroRepository
-                    .findByReglaValidacionIdAndActivoTrue(regla.getId());
+            List<ParametroRegla> parametros = parametrosPorRegla
+                    .getOrDefault(regla.getId(), Collections.emptyList());
 
-            boolean cumplido = evaluarRegla(estudiante, regla, parametros);
+            ResultadoEvaluacion resultado = evaluarRegla(estudiante, regla, parametros);
 
-            String obsRegla = generarObservacion(regla, cumplido);
-            if (!cumplido) {
-                observaciones.add(obsRegla);
+            if (!resultado.cumplido()) {
+                observaciones.add(resultado.observacion());
+                if (resultado.esErrorEvaluacion()) {
+                    log.warn("Regla {} (id={}) no pudo evaluarse: {}",
+                            regla.getCodigo(), regla.getId(), resultado.observacion());
+                }
                 if (regla.getObligatorio()) {
-                    habilitado = false;
+                    apto = false;
+                    if (resultado.requisitoFaltante() != null) {
+                        requisitosFaltantes.add(resultado.requisitoFaltante());
+                    }
                 }
             }
 
@@ -94,68 +98,49 @@ public class ValidacionAcademicaServiceImpl implements ValidacionAcademicaServic
                     .nombreRegla(regla.getNombre())
                     .descripcion(regla.getDescripcion())
                     .obligatorio(regla.getObligatorio())
-                    .cumplido(cumplido)
-                    .observaciones(obsRegla)
+                    .cumplido(resultado.cumplido())
+                    .observaciones(resultado.observacion())
                     .orden(regla.getOrden())
                     .build());
         }
 
-        String observacionesGenerales = observaciones.isEmpty()
-                ? "El estudiante cumple con todos los requisitos académicos para " + tipoPractica.getNombre()
-                : "El estudiante no cumple con los siguientes requisitos: " + String.join("; ", observaciones);
+        String observacionesGenerales = compilarObservaciones(apto, observaciones, tipoPractica.getNombre());
 
-        if (habilitado && !observaciones.isEmpty()) {
-            observacionesGenerales = "El estudiante cumple los requisitos obligatorios, pero presenta observaciones en reglas no obligatorias: "
-                    + String.join("; ", observaciones);
-        }
-
-        String periodo = request.getPeriodoAcademico() != null
-                ? request.getPeriodoAcademico()
-                : String.valueOf(LocalDate.now().getYear());
-
-        ResultadoValidacion resultado = ResultadoValidacion.builder()
+        ResultadoValidacion resultadoEntidad = ResultadoValidacion.builder()
                 .estudiante(estudiante)
                 .tipoPractica(tipoPractica)
-                .norma(normaPrincipal)
-                .habilitado(habilitado)
-                .periodoAcademico(periodo)
+                .norma(normasAplicables.get(0))
+                .habilitado(apto)
+                .periodoAcademico(request.getPeriodoAcademico())
                 .fechaValidacion(LocalDateTime.now())
                 .observacionesGenerales(observacionesGenerales)
                 .build();
 
-        resultado = resultadoRepository.save(resultado);
+        resultadoEntidad = resultadoRepository.save(resultadoEntidad);
 
-        int orden = 0;
-        for (DetalleValidacionDTO detalleDTO : detalles) {
-            ReglaValidacion regla = reglas.get(orden);
+        List<ReglaValidacion> finalReglas = reglas;
+        List<DetalleValidacionDTO> finalDetalles = detalles;
+        guardarDetalles(resultadoEntidad, reglas, detalles);
 
-            DetalleValidacion detalle = DetalleValidacion.builder()
-                    .resultadoValidacion(resultado)
-                    .reglaValidacion(regla)
-                    .cumplido(detalleDTO.getCumplido())
-                    .observaciones(detalleDTO.getObservaciones())
-                    .orden(orden)
-                    .build();
+        List<String> normasNombres = normasAplicables.stream()
+                .map(NormaValidacion::getNombre)
+                .collect(Collectors.toList());
 
-            detalleRepository.save(detalle);
-            orden++;
-        }
-
-        return buildResponse(resultado, detalles);
+        return buildResponse(resultadoEntidad, normasNombres, detalles, requisitosFaltantes);
     }
 
     @Override
     @Transactional(readOnly = true)
     public ValidacionAcademicaResponse obtenerResultadoPorId(Long id) {
-        ResultadoValidacion resultado = resultadoRepository.findById(id)
+        ResultadoValidacion resultado = resultadoRepository.findWithRelationsById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("ResultadoValidacion", "id", id));
 
         List<DetalleValidacion> detalles = detalleRepository
-                .findByResultadoValidacionIdOrderByOrdenAsc(id);
+                .findWithReglaByResultadoValidacionIdOrderByOrdenAsc(id);
 
-        return buildResponse(resultado, detalles.stream()
-                .map(this::toDetalleDTO)
-                .collect(Collectors.toList()));
+        return buildResponse(resultado, Collections.singletonList(resultado.getNorma().getNombre()),
+                detalles.stream().map(this::toDetalleDTO).collect(Collectors.toList()),
+                extraerRequisitosFaltantes(detalles));
     }
 
     @Override
@@ -164,15 +149,13 @@ public class ValidacionAcademicaServiceImpl implements ValidacionAcademicaServic
         List<ResultadoValidacion> resultados = resultadoRepository
                 .findByEstudianteIdOrderByFechaValidacionDesc(estudianteId);
 
-        return resultados.stream()
-                .map(r -> {
-                    List<DetalleValidacion> detalles = detalleRepository
-                            .findByResultadoValidacionIdOrderByOrdenAsc(r.getId());
-                    return buildResponse(r, detalles.stream()
-                            .map(this::toDetalleDTO)
-                            .collect(Collectors.toList()));
-                })
-                .collect(Collectors.toList());
+        return resultados.stream().map(r -> {
+            List<DetalleValidacion> detalles = detalleRepository
+                    .findWithReglaByResultadoValidacionIdOrderByOrdenAsc(r.getId());
+            return buildResponse(r, Collections.singletonList(r.getNorma().getNombre()),
+                    detalles.stream().map(this::toDetalleDTO).collect(Collectors.toList()),
+                    extraerRequisitosFaltantes(detalles));
+        }).collect(Collectors.toList());
     }
 
     @Override
@@ -189,11 +172,11 @@ public class ValidacionAcademicaServiceImpl implements ValidacionAcademicaServic
                         estudianteId + "/" + codigoTipoPractica));
 
         List<DetalleValidacion> detalles = detalleRepository
-                .findByResultadoValidacionIdOrderByOrdenAsc(resultado.getId());
+                .findWithReglaByResultadoValidacionIdOrderByOrdenAsc(resultado.getId());
 
-        return buildResponse(resultado, detalles.stream()
-                .map(this::toDetalleDTO)
-                .collect(Collectors.toList()));
+        return buildResponse(resultado, Collections.singletonList(resultado.getNorma().getNombre()),
+                detalles.stream().map(this::toDetalleDTO).collect(Collectors.toList()),
+                extraerRequisitosFaltantes(detalles));
     }
 
     @Override
@@ -211,6 +194,9 @@ public class ValidacionAcademicaServiceImpl implements ValidacionAcademicaServic
                         .idNorma(r.getNorma().getId())
                         .nombreNorma(r.getNorma().getNombre())
                         .codigoNorma(r.getNorma().getCodigo())
+                        .idTipoPractica(r.getTipoPractica().getId())
+                        .codigoTipoPractica(r.getTipoPractica().getCodigo())
+                        .nombreTipoPractica(r.getTipoPractica().getNombre())
                         .build())
                 .collect(Collectors.toList());
     }
@@ -218,6 +204,7 @@ public class ValidacionAcademicaServiceImpl implements ValidacionAcademicaServic
     @Override
     @Transactional(readOnly = true)
     public List<NormaValidacionDTO> listarNormasActivas() {
+        LocalDate hoy = LocalDate.now();
         return normaRepository.findByActivoTrue().stream()
                 .map(n -> NormaValidacionDTO.builder()
                         .id(n.getId())
@@ -227,140 +214,234 @@ public class ValidacionAcademicaServiceImpl implements ValidacionAcademicaServic
                         .fechaVigenciaInicio(n.getFechaVigenciaInicio())
                         .fechaVigenciaFin(n.getFechaVigenciaFin())
                         .activo(n.getActivo())
+                        .vigente(esVigente(n, hoy))
                         .build())
                 .collect(Collectors.toList());
     }
 
-    private List<NormaValidacion> determinarNormasAplicables(Estudiante estudiante, TipoPractica tipoPractica) {
-        LocalDate hoy = LocalDate.now();
-        List<NormaValidacion> vigentes = normaRepository
-                .findByActivoTrueAndFechaVigenciaInicioLessThanEqualAndFechaVigenciaFinIsNullOrFechaVigenciaFinGreaterThanEqual(
-                        hoy, hoy);
+    private boolean esVigente(NormaValidacion n, LocalDate hoy) {
+        return Boolean.TRUE.equals(n.getActivo())
+                && !hoy.isBefore(n.getFechaVigenciaInicio())
+                && (n.getFechaVigenciaFin() == null || !hoy.isAfter(n.getFechaVigenciaFin()));
+    }
 
-        if (vigentes.isEmpty()) {
+    private List<NormaValidacion> determinarNormasAplicables(String codigoTipoPractica) {
+        List<String> codigosNormas = reglaRepository
+                .findDistinctNormaCodigosByTipoPracticaCodigo(codigoTipoPractica);
+
+        if (codigosNormas.isEmpty()) {
             return Collections.emptyList();
         }
 
-        Map<String, NormaValidacion> mapa = vigentes.stream()
-                .collect(Collectors.toMap(NormaValidacion::getCodigo, n -> n));
-
-        List<NormaValidacion> aplicables = new ArrayList<>();
-        if (mapa.containsKey(NORMA_REGLAMENTO_II)) {
-            aplicables.add(mapa.get(NORMA_REGLAMENTO_II));
-        }
-        if (mapa.containsKey(NORMA_LINEAMIENTOS_UNT_2025)) {
-            aplicables.add(mapa.get(NORMA_LINEAMIENTOS_UNT_2025));
-        }
-
-        return aplicables;
+        return normaRepository.findVigentesPorCodigos(codigosNormas, LocalDate.now());
     }
 
-    private boolean evaluarRegla(Estudiante estudiante, ReglaValidacion regla,
-                                  List<ParametroRegla> parametros) {
-        switch (regla.getCodigo()) {
-            case "MATRICULA_ACTIVA":
-                return evaluarMatriculaActiva(estudiante);
-            case "PRERREQUISITOS_APROBADOS":
-                return evaluarPrerrequisitos(estudiante, parametros);
-            case "PPI_APROBADAS":
-                return evaluarPPIAprobadas(estudiante);
-            case "CURSOS_HASTA_OCTAVO":
-                return evaluarSemestreMinimo(estudiante, parametros, 8);
-            case "CURSOS_HASTA_NOVENO":
-                return evaluarSemestreMinimo(estudiante, parametros, 9);
-            case "CREDITOS_MINIMOS":
-                return evaluarCreditosMinimos(estudiante, parametros);
-            default:
-                throw new BusinessException("Regla de validación no implementada: " + regla.getCodigo());
+    private List<ReglaValidacion> cargarReglasConNormas(
+            String codigoTipoPractica, List<NormaValidacion> normas) {
+        Set<String> codigosNormas = normas.stream()
+                .map(NormaValidacion::getCodigo)
+                .collect(Collectors.toSet());
+
+        return reglaRepository.findWithNormaByTipoPracticaAndNormas(codigoTipoPractica, codigosNormas);
+    }
+
+    private Map<Long, List<ParametroRegla>> cargarParametrosBatch(List<ReglaValidacion> reglas) {
+        Set<Long> reglaIds = reglas.stream()
+                .map(ReglaValidacion::getId)
+                .collect(Collectors.toSet());
+
+        List<ParametroRegla> todos = parametroRepository
+                .findByReglaValidacionIdInAndActivoTrue(reglaIds);
+
+        return todos.stream()
+                .collect(Collectors.groupingBy(
+                        p -> p.getReglaValidacion().getId()));
+    }
+
+    private ResultadoEvaluacion evaluarRegla(Estudiante estudiante, ReglaValidacion regla,
+                                              List<ParametroRegla> parametros) {
+        try {
+            return switch (regla.getCodigo()) {
+                case "MATRICULA_ACTIVA" -> evaluarMatriculaActiva(estudiante);
+                case "PRERREQUISITOS_APROBADOS" -> evaluarPrerrequisitos(estudiante, parametros);
+                case "PPI_APROBADAS" -> evaluarPPIAprobadas(estudiante);
+                case "CURSOS_HASTA_OCTAVO" -> evaluarSemestreMinimo(estudiante, parametros, 8);
+                case "CURSOS_HASTA_NOVENO" -> evaluarSemestreMinimo(estudiante, parametros, 9);
+                case "CREDITOS_MINIMOS" -> evaluarCreditosMinimos(estudiante, parametros);
+                default -> {
+                    log.warn("Regla de validación no reconocida: {} (id={})", regla.getCodigo(), regla.getId());
+                    yield new ResultadoEvaluacion(false, true,
+                            "Regla no implementada en el sistema: " + regla.getCodigo(),
+                            "Configuración pendiente: " + regla.getNombre());
+                }
+            };
+        } catch (Exception e) {
+            log.error("Error al evaluar regla {} (id={}): {}", regla.getCodigo(), regla.getId(), e.getMessage(), e);
+            return new ResultadoEvaluacion(false, true,
+                    "Error interno al evaluar: " + e.getMessage(),
+                    "Error de sistema en: " + regla.getNombre());
         }
     }
 
-    private boolean evaluarMatriculaActiva(Estudiante estudiante) {
-        return estudiante.getEstadoAcademico() != null
+    private ResultadoEvaluacion evaluarMatriculaActiva(Estudiante estudiante) {
+        boolean matriculado = estudiante.getEstadoAcademico() != null
                 && (EstadoAcademico.MATRICULADO.equals(estudiante.getEstadoAcademico())
                     || EstadoAcademico.ACTIVO.equals(estudiante.getEstadoAcademico()));
+
+        return new ResultadoEvaluacion(matriculado, false,
+                matriculado
+                        ? "Matrícula activa verificada (" + estudiante.getEstadoAcademico().getDescripcion() + ")"
+                        : "El estudiante no tiene matrícula activa. Estado actual: "
+                                + (estudiante.getEstadoAcademico() != null
+                                    ? estudiante.getEstadoAcademico().getDescripcion()
+                                    : "Sin estado registrado"),
+                matriculado ? null : "Matricularse en el curso de Prácticas Pre Profesionales");
     }
 
-    private boolean evaluarPrerrequisitos(Estudiante estudiante, List<ParametroRegla> parametros) {
-        Optional<String> optCreditos = buscarParametro(parametros, "CREDITOS_MINIMOS");
-        int creditosMinimos = optCreditos.map(Integer::parseInt).orElse(0);
+    private ResultadoEvaluacion evaluarPrerrequisitos(Estudiante estudiante, List<ParametroRegla> parametros) {
+        int creditosMinimos = buscarParametroInt(parametros, "CREDITOS_MINIMOS", 0);
+        int creditos = estudiante.getCreditosAprobados() != null ? estudiante.getCreditosAprobados() : 0;
+        boolean cumple = creditos >= creditosMinimos;
 
-        return estudiante.getCreditosAprobados() != null
-                && estudiante.getCreditosAprobados() >= creditosMinimos;
+        return new ResultadoEvaluacion(cumple, false,
+                cumple
+                        ? "Prerrequisitos aprobados: " + creditos + " créditos (mínimo " + creditosMinimos + ")"
+                        : "Créditos insuficientes: " + creditos + " de " + creditosMinimos + " requeridos",
+                cumple ? null : "Aprobar " + (creditosMinimos - creditos) + " créditos adicionales");
     }
 
-    private boolean evaluarPPIAprobadas(Estudiante estudiante) {
+    private ResultadoEvaluacion evaluarPPIAprobadas(Estudiante estudiante) {
         List<Practica> practicas = practicaRepository.findByEstudianteId(estudiante.getId());
-        if (practicas.isEmpty()) {
-            return false;
-        }
 
         TipoPractica tipoInicial = tipoPracticaRepository.findByCodigo("INICIAL").orElse(null);
         if (tipoInicial == null) {
-            return false;
+            log.warn("Tipo de práctica con código 'INICIAL' no configurado en BD");
+            return new ResultadoEvaluacion(false, true,
+                    "No se pudo verificar prácticas iniciales: tipo INICIAL no configurado",
+                    "Configurar tipo de práctica INICIAL en el sistema");
         }
 
-        return practicas.stream()
-                .filter(p -> p.getActivo())
+        boolean tienePPIAprobada = practicas.stream()
+                .filter(p -> Boolean.TRUE.equals(p.getActivo()))
                 .filter(p -> p.getTipoPractica() != null)
                 .anyMatch(p -> p.getTipoPractica().getId().equals(tipoInicial.getId())
                         && p.getEstado() != null
                         && "COMPLETADA".equals(p.getEstado().getCodigo()));
+
+        return new ResultadoEvaluacion(tienePPIAprobada, false,
+                tienePPIAprobada
+                        ? "Prácticas Pre Profesionales Iniciales aprobadas"
+                        : "No se encontraron Prácticas Pre Profesionales Iniciales completadas",
+                tienePPIAprobada ? null : "Completar y aprobar las Prácticas Pre Profesionales Iniciales");
     }
 
-    private boolean evaluarSemestreMinimo(Estudiante estudiante, List<ParametroRegla> parametros,
-                                           int semestreDefault) {
-        Optional<String> optSemestre = buscarParametro(parametros, "SEMESTRE_MINIMO");
-        int semestreMinimo = optSemestre.map(Integer::parseInt).orElse(semestreDefault);
+    private ResultadoEvaluacion evaluarSemestreMinimo(Estudiante estudiante, List<ParametroRegla> parametros,
+                                                       int semestreDefault) {
+        int semestreMinimo = buscarParametroInt(parametros, "SEMESTRE_MINIMO", semestreDefault);
+        int semestre = estudiante.getSemestreActual() != null ? estudiante.getSemestreActual() : 0;
+        boolean cumple = semestre >= semestreMinimo;
 
-        return estudiante.getSemestreActual() != null
-                && estudiante.getSemestreActual() >= semestreMinimo;
+        return new ResultadoEvaluacion(cumple, false,
+                cumple
+                        ? "Semestre cursado: " + semestre + " (mínimo requerido: " + semestreMinimo + ")"
+                        : "Semestre insuficiente: " + semestre + " de " + semestreMinimo + " requeridos",
+                cumple ? null : "Cursar hasta el " + semestreMinimo + "° ciclo");
     }
 
-    private boolean evaluarCreditosMinimos(Estudiante estudiante, List<ParametroRegla> parametros) {
-        Optional<String> optCreditos = buscarParametro(parametros, "CREDITOS_MINIMOS");
-        int creditosMinimos = optCreditos.map(Integer::parseInt).orElse(0);
+    private ResultadoEvaluacion evaluarCreditosMinimos(Estudiante estudiante, List<ParametroRegla> parametros) {
+        int creditosMinimos = buscarParametroInt(parametros, "CREDITOS_MINIMOS", 0);
+        int creditos = estudiante.getCreditosAprobados() != null ? estudiante.getCreditosAprobados() : 0;
+        boolean cumple = creditos >= creditosMinimos;
 
-        return estudiante.getCreditosAprobados() != null
-                && estudiante.getCreditosAprobados() >= creditosMinimos;
+        return new ResultadoEvaluacion(cumple, false,
+                cumple
+                        ? "Créditos aprobados: " + creditos + " (mínimo " + creditosMinimos + ")"
+                        : "Créditos insuficientes: " + creditos + " de " + creditosMinimos,
+                cumple ? null : "Aprobar " + (creditosMinimos - creditos) + " créditos más");
     }
 
-    private Optional<String> buscarParametro(List<ParametroRegla> parametros, String clave) {
+    private int buscarParametroInt(List<ParametroRegla> parametros, String clave, int defaultValue) {
         return parametros.stream()
-                .filter(p -> p.getClave().equals(clave))
-                .map(ParametroRegla::getValor)
-                .findFirst();
+                .filter(p -> p.getClave().equals(clave) && p.getValor() != null)
+                .findFirst()
+                .map(p -> {
+                    try {
+                        return Integer.parseInt(p.getValor().trim());
+                    } catch (NumberFormatException e) {
+                        log.warn("Parámetro '{}' con valor no numérico: '{}'", clave, p.getValor());
+                        return defaultValue;
+                    }
+                })
+                .orElse(defaultValue);
     }
 
-    private String generarObservacion(ReglaValidacion regla, boolean cumplido) {
-        if (cumplido) {
-            return "OK: " + regla.getNombre();
+    private String compilarObservaciones(boolean apto, List<String> observaciones, String nombreTipoPractica) {
+        if (observaciones.isEmpty()) {
+            return "El estudiante cumple con todos los requisitos académicos para " + nombreTipoPractica;
         }
-        return "INCUMPLE: " + regla.getNombre()
-                + (regla.getDescripcion() != null ? " — " + regla.getDescripcion() : "");
+        if (apto) {
+            return "El estudiante cumple los requisitos obligatorios, pero presenta observaciones: "
+                    + String.join("; ", observaciones);
+        }
+        return "El estudiante NO cumple los requisitos obligatorios: " + String.join("; ", observaciones);
+    }
+
+    private void guardarDetalles(ResultadoValidacion resultado, List<ReglaValidacion> reglas,
+                                  List<DetalleValidacionDTO> detallesDTO) {
+        List<DetalleValidacion> detalles = new ArrayList<>(detallesDTO.size());
+        for (int i = 0; i < detallesDTO.size(); i++) {
+            DetalleValidacionDTO dto = detallesDTO.get(i);
+            detalles.add(DetalleValidacion.builder()
+                    .resultadoValidacion(resultado)
+                    .reglaValidacion(reglas.get(i))
+                    .cumplido(dto.getCumplido())
+                    .observaciones(dto.getObservaciones())
+                    .orden(i)
+                    .build());
+        }
+        detalleRepository.saveAll(detalles);
+    }
+
+    private List<String> extraerRequisitosFaltantes(List<DetalleValidacion> detalles) {
+        return detalles.stream()
+                .filter(d -> !Boolean.TRUE.equals(d.getCumplido()))
+                .filter(d -> Boolean.TRUE.equals(d.getReglaValidacion().getObligatorio()))
+                .map(d -> d.getReglaValidacion().getNombre())
+                .collect(Collectors.toList());
     }
 
     private ValidacionAcademicaResponse buildResponse(ResultadoValidacion resultado,
-                                                       List<DetalleValidacionDTO> detalles) {
+                                                       List<String> normasAplicadas,
+                                                       List<DetalleValidacionDTO> detalles,
+                                                       List<String> requisitosFaltantes) {
         int cumplidas = (int) detalles.stream().filter(DetalleValidacionDTO::getCumplido).count();
         int total = detalles.size();
+
+        String nombreEstudiante = Optional.ofNullable(resultado.getEstudiante())
+                .map(Estudiante::getUsuario)
+                .map(u -> u.getNombres() + " " + u.getApellidoPaterno())
+                .orElse("Desconocido");
+
+        String codigoEstudiantil = Optional.ofNullable(resultado.getEstudiante())
+                .map(Estudiante::getCodigoEstudiantil)
+                .orElse("N/A");
 
         return ValidacionAcademicaResponse.builder()
                 .idResultado(resultado.getId())
                 .estudianteId(resultado.getEstudiante().getId())
-                .nombreEstudiante(resultado.getEstudiante().getUsuario().getNombres()
-                        + " " + resultado.getEstudiante().getUsuario().getApellidoPaterno())
-                .codigoEstudiantil(resultado.getEstudiante().getCodigoEstudiantil())
+                .nombreEstudiante(nombreEstudiante)
+                .codigoEstudiantil(codigoEstudiantil)
                 .tipoPractica(resultado.getTipoPractica().getNombre())
-                .normaAplicada(resultado.getNorma().getNombre())
+                .normasAplicadas(normasAplicadas)
                 .periodoAcademico(resultado.getPeriodoAcademico())
-                .habilitado(resultado.getHabilitado())
+                .apto(resultado.getHabilitado())
                 .fechaValidacion(resultado.getFechaValidacion())
                 .detalles(detalles)
                 .observacionesGenerales(resultado.getObservacionesGenerales())
                 .reglasCumplidas(cumplidas)
                 .reglasIncumplidas(total - cumplidas)
                 .totalReglas(total)
+                .requisitosFaltantes(requisitosFaltantes)
                 .build();
     }
 
@@ -375,4 +456,11 @@ public class ValidacionAcademicaServiceImpl implements ValidacionAcademicaServic
                 .orden(detalle.getOrden())
                 .build();
     }
+
+    private record ResultadoEvaluacion(
+            boolean cumplido,
+            boolean esErrorEvaluacion,
+            String observacion,
+            String requisitoFaltante
+    ) {}
 }

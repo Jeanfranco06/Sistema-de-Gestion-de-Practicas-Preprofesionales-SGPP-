@@ -19,13 +19,14 @@ public class ValidacionAcademicaResponse {
     private String nombreEstudiante;
     private String codigoEstudiantil;
     private String tipoPractica;
-    private String normaAplicada;
+    private List<String> normasAplicadas;
     private String periodoAcademico;
-    private Boolean habilitado;
+    private Boolean apto;
     private LocalDateTime fechaValidacion;
     private List<DetalleValidacionDTO> detalles;
     private String observacionesGenerales;
     private int reglasCumplidas;
     private int reglasIncumplidas;
     private int totalReglas;
+    private List<String> requisitosFaltantes;
 }

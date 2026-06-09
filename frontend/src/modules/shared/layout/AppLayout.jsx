@@ -156,7 +156,7 @@ export default function AppLayout() {
                 </ListItemIcon>
                 <ListItemText
                   primary={item.label}
-                  primaryTypographyProps={{ fontSize: '0.875rem', fontWeight: active ? 600 : 400 }}
+                  slotProps={{ primaryTypography: { fontSize: '0.875rem', fontWeight: active ? 600 : 400 } }}
                 />
               </ListItemButton>
             </ListItem>
@@ -171,7 +171,7 @@ export default function AppLayout() {
             <ListItemIcon sx={{ minWidth: 38, color: 'error.main' }}>
               <Logout />
             </ListItemIcon>
-            <ListItemText primary="Cerrar sesión" primaryTypographyProps={{ fontSize: '0.875rem' }} />
+            <ListItemText primary="Cerrar sesión" slotProps={{ primaryTypography: { fontSize: '0.875rem' } }} />
           </ListItemButton>
         </ListItem>
       </List>
@@ -239,7 +239,7 @@ export default function AppLayout() {
               onClose={() => setNotifAnchor(null)}
               anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
               transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-              PaperProps={{ sx: { width: 300, borderRadius: 2, mt: 1 } }}
+              slotProps={{ paper: { sx: { width: 300, borderRadius: 2, mt: 1 } } }}
             >
               {[
                 'Plan de Prácticas pendiente de revisión',
@@ -269,7 +269,7 @@ export default function AppLayout() {
               onClose={() => setAnchorEl(null)}
               anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
               transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-              PaperProps={{ sx: { borderRadius: 2, mt: 1, minWidth: 200 } }}
+              slotProps={{ paper: { sx: { borderRadius: 2, mt: 1, minWidth: 200 } } }}
             >
               <MenuItem disabled>
                 <Box>

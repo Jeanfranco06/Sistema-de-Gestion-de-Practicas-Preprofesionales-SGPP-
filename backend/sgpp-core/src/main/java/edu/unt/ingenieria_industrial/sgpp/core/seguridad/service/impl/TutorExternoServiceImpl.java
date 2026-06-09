@@ -84,8 +84,12 @@ public class TutorExternoServiceImpl implements TutorExternoService {
         tutor.setCargo(dto.getCargo());
         tutor.setArea(dto.getArea());
         tutor.setEmpresaNombre(dto.getEmpresaNombre());
-        tutor.setActivo(dto.getActivo());
-        tutor.setEstadoTutor(dto.getEstadoTutor());
+        if (dto.getActivo() != null) {
+            tutor.setActivo(dto.getActivo());
+        }
+        if (dto.getEstadoTutor() != null) {
+            tutor.setEstadoTutor(dto.getEstadoTutor());
+        }
 
         return toDto(tutorExternoRepository.save(tutor));
     }

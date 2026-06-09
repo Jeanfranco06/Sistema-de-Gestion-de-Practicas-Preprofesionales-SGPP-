@@ -7,9 +7,13 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -56,15 +60,28 @@ public class ValidacionAcademicaController {
 
     @GetMapping("/estudiantes/{estudianteId}/resultados")
     @Operation(summary = "Listar resultados de validación de un estudiante")
-    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COORDINADOR', 'COMITE_PRACTICAS', 'SECRETARIA', 'ESTUDIANTE')")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COORDINADOR', 'COMITE_PRACTICAS', 'SECRETARIA') or "
+            + "(hasRole('ESTUDIANTE') and #estudianteId == authentication.principal.id)")
     public ResponseEntity<ApiResponse<List<ValidacionAcademicaResponse>>> listarResultadosPorEstudiante(
-            @PathVariable Long estudianteId) {
+            @PathVariable Long estudianteId,
+            Pageable pageable) {
         List<ValidacionAcademicaResponse> resultados = validacionAcademicaService
                 .listarResultadosPorEstudiante(estudianteId);
+
+        Page<ValidacionAcademicaResponse> page = new PageImpl<>(
+                resultados.stream()
+                        .skip(pageable.getOffset())
+                        .limit(pageable.getPageSize())
+                        .toList(),
+                pageable, resultados.size());
+
         return ResponseEntity.ok(
                 ApiResponse.<List<ValidacionAcademicaResponse>>builder()
                         .success(true)
-                        .data(resultados)
+                        .data(page.getContent())
+                        .message("Página " + pageable.getPageNumber()
+                                + " de " + page.getTotalPages()
+                                + " | Total: " + page.getTotalElements())
                         .timestamp(LocalDateTime.now())
                         .build()
         );

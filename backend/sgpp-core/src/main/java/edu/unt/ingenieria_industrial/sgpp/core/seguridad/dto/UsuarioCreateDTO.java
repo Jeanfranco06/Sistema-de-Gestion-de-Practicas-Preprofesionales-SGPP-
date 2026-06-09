@@ -42,6 +42,8 @@ public class UsuarioCreateDTO {
 
     private String telefono;
 
+    private String tipoUsuario;
+
     private Set<String> roles;
 }
 

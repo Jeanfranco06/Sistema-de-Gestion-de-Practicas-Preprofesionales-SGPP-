@@ -51,6 +51,7 @@ public class SecurityConfig {
                         .requestMatchers("/expedientes/**").hasAnyRole("ADMIN_SISTEMA", "COORDINADOR", "COMITE_PRACTICAS", "DIRECTOR")
                         .requestMatchers("/sedes/catalogo", "/sedes/*/detalle").authenticated()
                         .requestMatchers("/empresas/**", "/sedes/**", "/convenios/**").authenticated()
+                        .requestMatchers("/usuarios/**").hasAnyRole("ADMIN_SISTEMA", "COORDINADOR", "DIRECTOR")
                         .anyRequest().hasRole("ADMIN_SISTEMA")
                 )
                 .sessionManagement(session -> session
@@ -84,7 +85,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of("*"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(false);
         

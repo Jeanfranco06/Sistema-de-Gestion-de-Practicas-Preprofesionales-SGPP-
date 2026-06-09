@@ -20,4 +20,7 @@ public class ReglaValidacionDTO {
     private Long idNorma;
     private String nombreNorma;
     private String codigoNorma;
+    private Long idTipoPractica;
+    private String codigoTipoPractica;
+    private String nombreTipoPractica;
 }

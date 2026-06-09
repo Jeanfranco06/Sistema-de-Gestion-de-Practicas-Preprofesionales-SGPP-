@@ -42,20 +42,7 @@ public class UsuarioController {
 
     @GetMapping
     @Operation(summary = "Listar todos los usuarios")
-    public ResponseEntity<ApiResponse<List<UsuarioDTO>>> findAll() {
-        List<UsuarioDTO> usuarios = usuarioService.findAll();
-        return ResponseEntity.ok(
-                ApiResponse.<List<UsuarioDTO>>builder()
-                        .success(true)
-                        .data(usuarios)
-                        .timestamp(LocalDateTime.now())
-                        .build()
-        );
-    }
-
-    @GetMapping(params = {"nombre", "correo", "estado", "rol", "tipoUsuario"})
-    @Operation(summary = "Listar usuarios con filtros")
-    public ResponseEntity<ApiResponse<List<UsuarioDTO>>> findAllWithFilters(
+    public ResponseEntity<ApiResponse<List<UsuarioDTO>>> findAll(
             @Parameter(description = "Filtro por nombre") @RequestParam(required = false) String nombre,
             @Parameter(description = "Filtro por correo") @RequestParam(required = false) String correo,
             @Parameter(description = "Filtro por estado (ACTIVO, INACTIVO, BLOQUEADO)") @RequestParam(required = false) String estado,

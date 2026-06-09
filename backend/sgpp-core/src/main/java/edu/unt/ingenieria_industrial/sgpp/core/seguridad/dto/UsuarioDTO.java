@@ -19,6 +19,7 @@ public class UsuarioDTO {
     private String numeroDocumento;
     private String tipoDocumento;
     private String telefono;
+    private String tipoUsuario;
     private Boolean activo;
     private Boolean cuentaBloqueada;
     private java.util.List<String> roles;

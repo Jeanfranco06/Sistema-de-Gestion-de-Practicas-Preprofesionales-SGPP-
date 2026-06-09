@@ -16,8 +16,9 @@ public class ValidacionAcademicaRequest {
     @NotNull(message = "El ID del estudiante es obligatorio")
     private Long estudianteId;
 
-    @NotBlank(message = "El código del tipo de práctica es obligatorio")
+    @NotBlank(message = "El código del tipo de práctica es obligatorio (INICIAL, FINAL)")
     private String codigoTipoPractica;
 
+    @NotBlank(message = "El periodo académico es obligatorio (ej: 2025-II)")
     private String periodoAcademico;
 }

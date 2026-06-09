@@ -31,4 +31,10 @@ public interface ComiteIntegranteRepository extends JpaRepository<ComiteIntegran
 
     @Query("SELECT ci FROM ComiteIntegrante ci WHERE ci.estado = 'ACTIVO' ORDER BY ci.rolComite DESC, ci.fechaInicio DESC")
     List<ComiteIntegrante> findAllActive();
+
+    @Query("SELECT ci FROM ComiteIntegrante ci WHERE ci.estado = 'ACTIVO' "
+            + "AND ci.fechaInicio <= :fecha "
+            + "AND (ci.fechaFin IS NULL OR ci.fechaFin >= :fecha) "
+            + "ORDER BY ci.rolComite DESC, ci.fechaInicio DESC")
+    List<ComiteIntegrante> findVigentes(LocalDate fecha);
 }
