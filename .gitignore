@@ -73,6 +73,8 @@ bin/
 # VS Code
 .vscode/
 
+.devin/
+
 # Mac
 .DS_Store
 
