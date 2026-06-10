@@ -23,8 +23,9 @@
 hs_err_pid*
 replay_pid*
 
-# Maven
+# Maven / Java build outputs
 target/
+**/target/
 pom.xml.tag
 pom.xml.releaseBackup
 pom.xml.versionsBackup
@@ -98,14 +99,18 @@ application-prod.yml
 # Spring Boot
 spring-boot-*.log
 
-# Environment Variables (sensible)
+# Environment variables
 .env
 !.env.example
+**/.env
+!**/.env.example
 
 # Docker
 docker-compose.override.yml
 
-# Node / Frontend
+# Node / Frontend build outputs
 node_modules/
+**/node_modules/
+dist/
 frontend/dist/
 frontend/.env
