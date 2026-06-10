@@ -42,6 +42,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**", "/public/**", "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/actuator/**", "/webjars/**").permitAll()
                         .requestMatchers("/admin/**").hasAnyRole("ADMIN_SISTEMA", "SECRETARIA", "COMITE_PRACTICAS", "COORDINADOR", "DIRECTOR")
+                        .requestMatchers("/secretaria/**").hasAnyRole("ADMIN_SISTEMA", "SECRETARIA")
                         .requestMatchers("/estudiante/**").hasAnyRole("ADMIN_SISTEMA", "ESTUDIANTE")
                         .requestMatchers("/docente/**").hasAnyRole("ADMIN_SISTEMA", "DOCENTE_ASESOR")
                         .requestMatchers("/tutor/**").hasAnyRole("ADMIN_SISTEMA", "TUTOR_EXTERNO")

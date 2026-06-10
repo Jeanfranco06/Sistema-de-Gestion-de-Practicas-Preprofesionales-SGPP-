@@ -296,13 +296,15 @@ export const CatalogoSedes = () => {
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         size="medium"
-                        InputProps={{
-                            startAdornment: <Search sx={{ mr: 1, color: 'primary.main' }} />,
-                            endAdornment: searchTerm && (
-                                <IconButton onClick={() => setSearchTerm('')} size="small">
-                                    <Clear />
-                                </IconButton>
-                            )
+                        slotProps={{
+                            input: {
+                                startAdornment: <Search sx={{ mr: 1, color: 'primary.main' }} />,
+                                endAdornment: searchTerm && (
+                                    <IconButton onClick={() => setSearchTerm('')} size="small">
+                                        <Clear />
+                                    </IconButton>
+                                )
+                            }
                         }}
                         sx={{ 
                             '& .MuiOutlinedInput-root': {
@@ -464,9 +466,9 @@ export const CatalogoSedes = () => {
                 </Box>
             </Box>
 
-            <Grid container spacing={3}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }, gap: 3 }}>
                 {filteredSedes.map((sede, index) => (
-                    <Grid item xs={12} md={6} lg={4} key={sede.id}>
+                    <Box key={sede.id}>
                         <motion.div 
                             initial={{ opacity: 0, y: 20 }} 
                             animate={{ opacity: 1, y: 0 }} 
@@ -615,10 +617,10 @@ export const CatalogoSedes = () => {
                                 </CardActions>
                             </Card>
                         </motion.div>
-                    </Grid>
+                    </Box>
                 ))}
                 {filteredSedes.length === 0 && !loading && (
-                    <Grid item xs={12}>
+                    <Box>
                         <Paper sx={{ p: 6, textAlign: 'center', borderRadius: 3 }}>
                             <Business sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
                             <Typography variant="h6" gutterBottom fontWeight="bold">
@@ -636,9 +638,9 @@ export const CatalogoSedes = () => {
                                 Limpiar filtros
                             </Button>
                         </Paper>
-                    </Grid>
+                    </Box>
                 )}
-            </Grid>
+            </Box>
 
             {/* Drawer de detalle */}
             <Drawer

@@ -385,40 +385,40 @@ export const GestionEmpresas = () => {
                                 onChange={e => handleChange('ruc', e.target.value.replace(/\D/g, '').slice(0, 11))} 
                                 error={!!errors.ruc || (formData.ruc.length > 0 && formData.ruc.length < 11)} 
                                 helperText={errors.ruc || (formData.ruc.length > 0 && formData.ruc.length < 11 ? "El RUC debe tener 11 dígitos" : "Ingrese el RUC (11 dígitos)")}
-                                inputProps={{ maxLength: 11 }}
+                                slotProps={{ htmlInput: { maxLength: 11 } }}
                             />
                             <TextField 
                                 sx={{ flex: 2 }} label="Razón Social *" value={formData.razonSocial} 
                                 onChange={e => handleChange('razonSocial', e.target.value)} 
                                 error={!!errors.razonSocial} helperText={errors.razonSocial}
-                                inputProps={{ maxLength: 200 }}
+                                slotProps={{ htmlInput: { maxLength: 200 } }}
                             />
                         </Box>
                         <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', md: 'row' } }}>
-                            <TextField sx={{ flex: 1 }} label="Nombre Comercial" value={formData.nombreComercial} onChange={e => handleChange('nombreComercial', e.target.value)} inputProps={{ maxLength: 200 }} />
-                            <TextField sx={{ flex: 1 }} label="Sector Económico *" value={formData.sectorEconomico} onChange={e => handleChange('sectorEconomico', e.target.value)} error={!!errors.sectorEconomico} helperText={errors.sectorEconomico} inputProps={{ maxLength: 100 }} />
+                            <TextField sx={{ flex: 1 }} label="Nombre Comercial" value={formData.nombreComercial} onChange={e => handleChange('nombreComercial', e.target.value)} slotProps={{ htmlInput: { maxLength: 200 } }} />
+                            <TextField sx={{ flex: 1 }} label="Sector Económico *" value={formData.sectorEconomico} onChange={e => handleChange('sectorEconomico', e.target.value)} error={!!errors.sectorEconomico} helperText={errors.sectorEconomico} slotProps={{ htmlInput: { maxLength: 100 } }} />
                         </Box>
 
                         <Typography variant="subtitle2" color="primary" sx={{ borderBottom: '1px solid #e0e0e0', pb: 0.5, mt: 1 }}>
                             Contacto y Ubicación
                         </Typography>
 
-                        <TextField fullWidth label="Dirección" value={formData.direccion} onChange={e => handleChange('direccion', e.target.value)} inputProps={{ maxLength: 300 }} sx={{ mb: 1 }} />
+                        <TextField fullWidth label="Dirección" value={formData.direccion} onChange={e => handleChange('direccion', e.target.value)} slotProps={{ htmlInput: { maxLength: 300 } }} sx={{ mb: 1 }} />
                         
                         <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', md: 'row' } }}>
-                            <TextField sx={{ flex: 1 }} label="Distrito" value={formData.distrito} onChange={e => handleChange('distrito', e.target.value)} inputProps={{ maxLength: 100 }} />
-                            <TextField sx={{ flex: 1 }} label="Provincia" value={formData.provincia} onChange={e => handleChange('provincia', e.target.value)} inputProps={{ maxLength: 100 }} />
-                            <TextField sx={{ flex: 1 }} label="Departamento" value={formData.departamento} onChange={e => handleChange('departamento', e.target.value)} inputProps={{ maxLength: 100 }} />
+                            <TextField sx={{ flex: 1 }} label="Distrito" value={formData.distrito} onChange={e => handleChange('distrito', e.target.value)} slotProps={{ htmlInput: { maxLength: 100 } }} />
+                            <TextField sx={{ flex: 1 }} label="Provincia" value={formData.provincia} onChange={e => handleChange('provincia', e.target.value)} slotProps={{ htmlInput: { maxLength: 100 } }} />
+                            <TextField sx={{ flex: 1 }} label="Departamento" value={formData.departamento} onChange={e => handleChange('departamento', e.target.value)} slotProps={{ htmlInput: { maxLength: 100 } }} />
                         </Box>
 
                         <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', md: 'row' } }}>
-                            <TextField sx={{ flex: 1 }} label="Teléfono" value={formData.telefono} onChange={e => handleChange('telefono', e.target.value.replace(/\D/g, '').slice(0, 20))} inputProps={{ maxLength: 20 }} />
-                            <TextField sx={{ flex: 1 }} label="Email" type="email" value={formData.email} onChange={e => handleChange('email', e.target.value)} inputProps={{ maxLength: 100 }} />
+                            <TextField sx={{ flex: 1 }} label="Teléfono" value={formData.telefono} onChange={e => handleChange('telefono', e.target.value.replace(/\D/g, '').slice(0, 20))} slotProps={{ htmlInput: { maxLength: 20 } }} />
+                            <TextField sx={{ flex: 1 }} label="Email" type="email" value={formData.email} onChange={e => handleChange('email', e.target.value)} slotProps={{ htmlInput: { maxLength: 100 } }} />
                         </Box>
 
                         <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', md: 'row' } }}>
-                            <TextField sx={{ flex: 1 }} label="Página Web" value={formData.paginaWeb} onChange={e => handleChange('paginaWeb', e.target.value)} inputProps={{ maxLength: 200 }} />
-                            <TextField sx={{ flex: 1 }} label="Tamaño Empresa (Ej. Grande, Pyme)" value={formData.tamanoEmpresa} onChange={e => handleChange('tamanoEmpresa', e.target.value)} inputProps={{ maxLength: 50 }} />
+                            <TextField sx={{ flex: 1 }} label="Página Web" value={formData.paginaWeb} onChange={e => handleChange('paginaWeb', e.target.value)} slotProps={{ htmlInput: { maxLength: 200 } }} />
+                            <TextField sx={{ flex: 1 }} label="Tamaño Empresa (Ej. Grande, Pyme)" value={formData.tamanoEmpresa} onChange={e => handleChange('tamanoEmpresa', e.target.value)} slotProps={{ htmlInput: { maxLength: 50 } }} />
                         </Box>
                     </Box>
                 </DialogContent>

@@ -99,6 +99,7 @@ public class ValidacionAcademicaController {
                 ApiResponse.<ValidacionAcademicaResponse>builder()
                         .success(true)
                         .data(response)
+                        .message(response != null ? "Último resultado obtenido" : "Sin resultados de validación para el tipo de práctica solicitado")
                         .timestamp(LocalDateTime.now())
                         .build()
         );

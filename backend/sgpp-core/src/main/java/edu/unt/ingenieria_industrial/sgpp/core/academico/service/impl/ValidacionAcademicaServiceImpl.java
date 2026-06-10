@@ -167,9 +167,11 @@ public class ValidacionAcademicaServiceImpl implements ValidacionAcademicaServic
         ResultadoValidacion resultado = resultadoRepository
                 .findTopByEstudianteIdAndTipoPracticaIdAndActivoTrueOrderByFechaValidacionDesc(
                         estudianteId, tipoPractica.getId())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "ResultadoValidacion", "estudianteId/tipoPracticaId",
-                        estudianteId + "/" + codigoTipoPractica));
+                .orElse(null);
+
+        if (resultado == null) {
+            return null;
+        }
 
         List<DetalleValidacion> detalles = detalleRepository
                 .findWithReglaByResultadoValidacionIdOrderByOrdenAsc(resultado.getId());

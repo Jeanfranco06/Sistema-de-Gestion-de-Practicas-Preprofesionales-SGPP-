@@ -3,16 +3,17 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
   Box, Drawer, AppBar, Toolbar, Typography, IconButton, Avatar,
   List, ListItem, ListItemButton, ListItemIcon, ListItemText,
-  Divider, Menu, MenuItem, Badge, Tooltip, useTheme, useMediaQuery,
+  Divider, Menu, MenuItem, Tooltip, useTheme, useMediaQuery,
 } from '@mui/material';
 import {
   Dashboard, Assignment, Description, Assessment,
-  Business, Notifications, AccountCircle, Logout, ChevronLeft,
+  Business, AccountCircle, Logout, ChevronLeft,
   School, AccessTime, CheckCircle, BarChart, ViewSidebar,
   People, SupervisorAccount, FactCheck
 } from '@mui/icons-material';
 import { useAuth } from '../../../auth/AuthContext';
 import PageContainer from '../../../shared/components/PageContainer';
+import { NotificationsMenu } from '../components/NotificationsMenu';
 
 const DRAWER_WIDTH = 240;
 
@@ -20,6 +21,7 @@ const NAV_ITEMS_ESTUDIANTE = [
   { label: 'Dashboard', icon: <Dashboard />, path: '/estudiante/dashboard' },
   { label: 'Mi Práctica', icon: <Assignment />, path: '/estudiante/practica' },
   { label: 'Documentos', icon: <Description />, path: '/estudiante/documentos' },
+  { label: 'Informes Periódicos', icon: <Assessment />, path: '/estudiante/informes' },
   { label: 'Registro de Horas', icon: <AccessTime />, path: '/estudiante/horas' },
   { label: 'Evaluación', icon: <CheckCircle />, path: '/estudiante/evaluacion' },
   { label: 'Sedes / Empresas', icon: <Business />, path: '/estudiante/sedes' },
@@ -33,6 +35,17 @@ const NAV_ITEMS_DOCENTE = [
 ];
 
 const NAV_ITEMS_ADMIN = [
+  { label: 'Dashboard', icon: <Dashboard />, path: '/admin/dashboard' },
+  { label: 'Validar Requisitos', icon: <FactCheck />, path: '/admin/validar-requisitos' },
+  { label: 'Tutores Externos', icon: <SupervisorAccount />, path: '/admin/tutores' },
+  { label: 'Expedientes', icon: <Assignment />, path: '/admin/expedientes' },
+  { label: 'Empresas', icon: <Business />, path: '/admin/empresas' },
+  { label: 'Sedes', icon: <Business />, path: '/admin/sedes' },
+  { label: 'Convenios', icon: <Description />, path: '/admin/convenios' },
+  { label: 'Reportes', icon: <BarChart />, path: '/admin/reportes' },
+];
+
+const NAV_ITEMS_ADMIN_SISTEMA = [
   { label: 'Dashboard', icon: <Dashboard />, path: '/admin/dashboard' },
   { label: 'Validar Requisitos', icon: <FactCheck />, path: '/admin/validar-requisitos' },
   { label: 'Usuarios', icon: <People />, path: '/admin/usuarios' },
@@ -55,7 +68,7 @@ const NAV_ITEMS_SECRETARIA = [
 function getNavItems(roles = []) {
   const roleNames = roles.map(r => typeof r === 'string' ? r : r.authority || r.nombre || '');
   
-  if (roleNames.some(rn => rn === 'ADMIN_SISTEMA' || rn === 'ROLE_ADMIN_SISTEMA')) return NAV_ITEMS_ADMIN;
+  if (roleNames.some(rn => rn === 'ADMIN_SISTEMA' || rn === 'ROLE_ADMIN_SISTEMA')) return NAV_ITEMS_ADMIN_SISTEMA;
   if (roleNames.some(rn => rn === 'ADMINISTRADOR' || rn === 'ROLE_ADMINISTRADOR')) return NAV_ITEMS_ADMIN;
   if (roleNames.some(rn => rn === 'ESTUDIANTE' || rn === 'ROLE_ESTUDIANTE')) return NAV_ITEMS_ESTUDIANTE;
   if (roleNames.some(rn => rn === 'DOCENTE_ASESOR' || rn === 'ROLE_DOCENTE_ASESOR')) return NAV_ITEMS_DOCENTE;
@@ -84,14 +97,13 @@ export default function AppLayout() {
 
   const [drawerOpen, setDrawerOpen] = useState(!isMobile);
   const [anchorEl, setAnchorEl] = useState(null);
-  const [notifAnchor, setNotifAnchor] = useState(null);
 
   const navItems = getNavItems(user?.roles);
   const sidebarVisible = drawerOpen && !isMobile;
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate('/login', { replace: true, state: null });
   };
 
   const drawerContent = (
@@ -222,35 +234,7 @@ export default function AppLayout() {
 
           {/* Acciones alineadas a la derecha */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0, ml: 'auto' }}>
-            <Tooltip title="Notificaciones">
-              <IconButton
-                onClick={(e) => setNotifAnchor(e.currentTarget)}
-                sx={{ color: 'text.primary' }}
-                aria-label="Ver notificaciones"
-              >
-                <Badge badgeContent={3} color="error">
-                  <Notifications />
-                </Badge>
-              </IconButton>
-            </Tooltip>
-            <Menu
-              anchorEl={notifAnchor}
-              open={Boolean(notifAnchor)}
-              onClose={() => setNotifAnchor(null)}
-              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-              slotProps={{ paper: { sx: { width: 300, borderRadius: 2, mt: 1 } } }}
-            >
-              {[
-                'Plan de Prácticas pendiente de revisión',
-                'Informe Parcial – plazo en 3 días',
-                'Observación recibida en Documento #2',
-              ].map((msg, i) => (
-                <MenuItem key={i} onClick={() => setNotifAnchor(null)} sx={{ whiteSpace: 'normal', py: 1.5 }}>
-                  <Typography variant="body2">{msg}</Typography>
-                </MenuItem>
-              ))}
-            </Menu>
+            <NotificationsMenu />
 
             <Tooltip title={user?.username}>
               <IconButton
