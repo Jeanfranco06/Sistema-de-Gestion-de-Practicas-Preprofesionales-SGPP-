@@ -17,7 +17,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/horas")
+@RequestMapping("/horas")
 @RequiredArgsConstructor
 @Tag(name = "Control de Horas de Práctica", description = "Endpoints para el control y registro de horas de práctica")
 public class ControlHoraController {

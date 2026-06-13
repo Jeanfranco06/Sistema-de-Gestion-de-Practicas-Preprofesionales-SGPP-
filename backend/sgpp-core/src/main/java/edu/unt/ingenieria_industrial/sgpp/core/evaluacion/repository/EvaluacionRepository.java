@@ -12,5 +12,6 @@ public interface EvaluacionRepository extends JpaRepository<Evaluacion, Long> {
     Optional<Evaluacion> findByPracticaIdAndTipoEvaluador(Long practicaId, String tipoEvaluador);
     List<Evaluacion> findByPracticaId(Long practicaId);
     List<Evaluacion> findByActivoTrue();
+    List<Evaluacion> findByPracticaIdAndActivoTrue(Long practicaId);
 }
 

@@ -24,6 +24,8 @@ import { ValidarRequisitos } from './modules/secretaria/pages/ValidarRequisitos'
 import { GestionDocumental } from './modules/estudiante/pages/GestionDocumental';
 import { InformesPeriodicos } from './modules/estudiante/pages/InformesPeriodicos';
 import { RevisionDocumental } from './modules/shared/pages/RevisionDocumental';
+import { EvaluacionTutorExterno } from './modules/evaluacion/EvaluacionTutorExterno';
+import { EvaluacionDocenteAsesor } from './modules/evaluacion/EvaluacionDocenteAsesor';
 
 export default function App() {
   return (
@@ -90,7 +92,11 @@ export default function App() {
                   <RevisionDocumental />
                 </ProtectedRoute>
               } />
-              <Route path="/docente/evaluaciones" element={<PaginaEnConstruccion titulo="Evaluaciones" />} />
+              <Route path="/docente/evaluaciones" element={
+                <ProtectedRoute allowedRoles={['DOCENTE_ASESOR']}>
+                  <EvaluacionDocenteAsesor />
+                </ProtectedRoute>
+              } />
 
               {/* Admin / otros roles */}
               <Route
@@ -162,6 +168,14 @@ export default function App() {
                 element={
                   <ProtectedRoute allowedRoles={['TUTOR_EXTERNO']}>
                     <PaginaEnConstruccion titulo="Panel Tutor Externo" />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/tutor/evaluaciones"
+                element={
+                  <ProtectedRoute allowedRoles={['TUTOR_EXTERNO']}>
+                    <EvaluacionTutorExterno />
                   </ProtectedRoute>
                 }
               />
