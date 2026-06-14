@@ -26,6 +26,8 @@ import { InformesPeriodicos } from './modules/estudiante/pages/InformesPeriodico
 import { RevisionDocumental } from './modules/shared/pages/RevisionDocumental';
 import { EvaluacionTutorExterno } from './modules/evaluacion/EvaluacionTutorExterno';
 import { EvaluacionDocenteAsesor } from './modules/evaluacion/EvaluacionDocenteAsesor';
+import { PanelComite } from './modules/comite/pages/PanelComite';
+import { RecepcionAdministrativa } from './modules/secretaria/pages/RecepcionAdministrativa';
 
 export default function App() {
   return (
@@ -161,6 +163,16 @@ export default function App() {
                 }
               />
               <Route path="/admin/reportes" element={<PaginaEnConstruccion titulo="Reportes" />} />
+              <Route path="/comite/panel" element={
+                <ProtectedRoute allowedRoles={['COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR']}>
+                  <PanelComite />
+                </ProtectedRoute>
+              } />
+              <Route path="/secretaria/recepcion" element={
+                <ProtectedRoute allowedRoles={['SECRETARIA', 'ADMINISTRADOR', 'ADMIN_SISTEMA']}>
+                  <RecepcionAdministrativa />
+                </ProtectedRoute>
+              } />
 
               {/* Tutor externo */}
               <Route

@@ -299,6 +299,22 @@ public class ExpedienteServiceImpl implements ExpedienteService {
     }
 
     @Override
+    public ExpedienteResponse aprobarInformeFinal(Long idExpediente, Long idUsuario) {
+        Expediente expediente = findExpediente(idExpediente);
+
+        validarTransicionManual(expediente.getEstado(), "INFORME_FINAL_APROBADO", expediente.getTipoPractica().getCodigo());
+
+        String estadoAnterior = expediente.getEstado();
+        expediente.setEstado("INFORME_FINAL_APROBADO");
+        expediente = expedienteRepository.save(expediente);
+
+        registrarCambioEstado(expediente, estadoAnterior, "INFORME_FINAL_APROBADO", idUsuario,
+                "Informe final aprobado por comité/coordinación", "APROBACION_INFORME");
+
+        return toResponse(expediente);
+    }
+
+    @Override
     public ExpedienteResponse iniciarEjecucion(Long idExpediente, Long idUsuario,
                                                 LocalDate fechaInicio, Integer duracionSemanas) {
         Expediente expediente = findExpediente(idExpediente);
@@ -409,6 +425,36 @@ public class ExpedienteServiceImpl implements ExpedienteService {
             log.warn("No se pudo validar el cumplimiento de horas para expediente {}: {}", idExpediente, e.getMessage());
         }
 
+        // Validar Calificación Final
+        if (expediente.getCalificacionFinal() == null) {
+            throw new BusinessException("No se puede cerrar el expediente: no cuenta con una calificación final");
+        }
+        if (expediente.getCalificacionFinal().compareTo(new BigDecimal("13.5")) < 0) {
+            throw new BusinessException("No se puede cerrar el expediente: la calificación final es desaprobatoria (" + expediente.getCalificacionFinal() + ")");
+        }
+
+        // Validar Documentos requeridos
+        Set<String> documentosSubidos = expediente.getDocumentos().stream()
+                .map(edu.unt.ingenieria_industrial.sgpp.core.expediente.model.ExpedienteDocumento::getTipoDocumento)
+                .collect(Collectors.toSet());
+
+        String tipoCodigo = expediente.getTipoPractica().getCodigo();
+        if (TIPO_INICIAL.equals(tipoCodigo)) {
+            List<String> obligatoriosInicial = Arrays.asList("PLAN_PRACTICA", "INFORME_PARCIAL", "INFORME_FINAL", "CONSTANCIA_CULMINACION", "VISTO_BUENO_ASESOR", "DICTAMEN_FINAL");
+            for (String doc : obligatoriosInicial) {
+                if (!documentosSubidos.contains(doc)) {
+                    throw new BusinessException("No se puede cerrar el expediente: falta el documento obligatorio " + doc);
+                }
+            }
+        } else {
+            List<String> obligatoriosFinal = Arrays.asList("CARTA_ACEPTACION", "PLAN_PRACTICA", "INFORME_FINAL", "CONSTANCIA_CULMINACION", "FICHA_EVALUACION_EMPRESA", "DICTAMEN_FINAL");
+            for (String doc : obligatoriosFinal) {
+                if (!documentosSubidos.contains(doc)) {
+                    throw new BusinessException("No se puede cerrar el expediente: falta el documento obligatorio " + doc);
+                }
+            }
+        }
+
         String estadoAnterior = expediente.getEstado();
         expediente.setEstado("CERRADO");
         if (observacion != null) {
@@ -486,6 +532,24 @@ public class ExpedienteServiceImpl implements ExpedienteService {
         expedienteRepository.save(expediente);
         registrarCambioEstado(expediente, expediente.getEstado(), expediente.getEstado(),
                 idUsuario, "Expediente deshabilitado", "DESHABILITACION");
+    }
+
+    @Override
+    public void emitirDictamen(Long idExpediente, String dictamenTexto, Long idUsuario) {
+        Expediente expediente = findExpediente(idExpediente);
+        Usuario usuario = usuarioRepository.getReferenceById(idUsuario);
+
+        ExpedienteDocumento doc = ExpedienteDocumento.builder()
+                .expediente(expediente)
+                .tipoDocumento("DICTAMEN_FINAL")
+                .nombreArchivo("Dictamen_" + expediente.getCodigoExpediente() + ".pdf")
+                .observaciones(dictamenTexto)
+                .usuario(usuario)
+                .build();
+        documentoRepository.save(doc);
+
+        registrarCambioEstado(expediente, expediente.getEstado(), expediente.getEstado(), idUsuario,
+                "Dictamen final emitido", "EMISION_DICTAMEN");
     }
 
     // --- Métodos privados ---

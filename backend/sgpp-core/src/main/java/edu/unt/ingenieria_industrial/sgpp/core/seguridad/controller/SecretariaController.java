@@ -63,5 +63,25 @@ public class SecretariaController {
                         .build()
         );
     }
-}
 
+    @PostMapping("/expediente/{expedienteId}/emitir-carta-presentacion")
+    @Operation(summary = "Emitir carta de presentación")
+    public ResponseEntity<ApiResponse<Void>> emitirCartaPresentacion(@PathVariable Long expedienteId, @RequestAttribute(value = "idUsuario", required = false) Long idUsuario) {
+        secretariaService.emitirCartaPresentacion(expedienteId, idUsuario != null ? idUsuario : 1L);
+        return ResponseEntity.ok(ApiResponse.<Void>builder().success(true).message("Carta de presentación emitida").timestamp(LocalDateTime.now()).build());
+    }
+
+    @PostMapping("/expediente/{expedienteId}/emitir-constancia")
+    @Operation(summary = "Emitir constancia de culminación")
+    public ResponseEntity<ApiResponse<Void>> emitirConstancia(@PathVariable Long expedienteId, @RequestAttribute(value = "idUsuario", required = false) Long idUsuario) {
+        secretariaService.emitirConstancia(expedienteId, idUsuario != null ? idUsuario : 1L);
+        return ResponseEntity.ok(ApiResponse.<Void>builder().success(true).message("Constancia de culminación emitida").timestamp(LocalDateTime.now()).build());
+    }
+
+    @PostMapping("/expediente/{expedienteId}/registrar-incidencia")
+    @Operation(summary = "Registrar incidencia en el expediente")
+    public ResponseEntity<ApiResponse<Void>> registrarIncidencia(@PathVariable Long expedienteId, @RequestParam String incidencia, @RequestAttribute(value = "idUsuario", required = false) Long idUsuario) {
+        secretariaService.registrarIncidencia(expedienteId, incidencia, idUsuario != null ? idUsuario : 1L);
+        return ResponseEntity.ok(ApiResponse.<Void>builder().success(true).message("Incidencia registrada").timestamp(LocalDateTime.now()).build());
+    }
+}
