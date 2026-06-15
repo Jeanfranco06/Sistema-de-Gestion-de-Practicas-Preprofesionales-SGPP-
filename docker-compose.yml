@@ -1,16 +1,17 @@
 # ============================================================
-# SGPP - Docker Compose (Entorno de Desarrollo)
+# SGPP - Docker Compose (Entorno Completo)
 # ============================================================
-# Levanta la infraestructura de desarrollo (DB + pgAdmin).
+# Levanta todo el sistema (DB + pgAdmin + Backend + Frontend
 # Uso:
+#   docker-compose up -d --build   (iniciar y construir)
 #   docker-compose up -d          (iniciar en segundo plano)
-#   docker-compose down           (detener)
-#   docker-compose down -v        (detener y borrar volúmenes/datos)
+#   docker-compose down         (detener)
+#   docker-compose down -v      (detener y borrar volúmenes/datos)
 # ============================================================
 
 services:
 
-  # ---- Base de Datos PostgreSQL ----
+  # ----- Base de Datos PostgreSQL -----
   db:
     image: postgres:15-alpine
     container_name: sgpp-postgres
@@ -29,7 +30,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # ---- pgAdmin (Interfaz gráfica para PostgreSQL) ----
+  # ----- pgAdmin (Interfaz gráfica para PostgreSQL) -----
   pgadmin:
     image: dpage/pgadmin4:latest
     container_name: sgpp-pgadmin
@@ -45,6 +46,38 @@ services:
       PGADMIN_CONFIG_SERVER_MODE: "False"
     volumes:
       - pgadmin_data:/var/lib/pgadmin
+
+  # ----- Backend (Spring Boot) -----
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: sgpp-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      POSTGRES_DB: ${POSTGRES_DB:-sgpp_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      JWT_SECRET: ${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+
+  # ----- Frontend (React + Vite + Nginx -----
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: sgpp-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
 
 volumes:
   pgdata:
