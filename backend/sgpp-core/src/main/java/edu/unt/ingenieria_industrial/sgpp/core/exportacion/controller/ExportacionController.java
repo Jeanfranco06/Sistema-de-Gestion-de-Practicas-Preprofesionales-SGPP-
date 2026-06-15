@@ -1,0 +1,77 @@
+package edu.unt.ingenieria_industrial.sgpp.core.exportacion.controller;
+
+import edu.unt.ingenieria_industrial.sgpp.core.exportacion.dto.ArchivoExportadoDTO;
+import edu.unt.ingenieria_industrial.sgpp.core.exportacion.dto.GenerarDocumentoInternoRequest;
+import edu.unt.ingenieria_industrial.sgpp.core.exportacion.dto.RegistroGeneracionDTO;
+import edu.unt.ingenieria_industrial.sgpp.core.exportacion.service.ExportacionService;
+import edu.unt.ingenieria_industrial.sgpp.core.reporte.dto.ReporteFiltroDTO;
+import edu.unt.ingenieria_industrial.sgpp.shared.common.ApiResponse;
+import edu.unt.ingenieria_industrial.sgpp.shared.enums.FormatoExportacion;
+import edu.unt.ingenieria_industrial.sgpp.shared.enums.TipoReporte;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+@RestController
+@RequestMapping("/admin/exportacion")
+@RequiredArgsConstructor
+@Tag(name = "Exportación Documental", description = "Renderización y exportación institucional a PDF/CSV y documentos internos")
+@PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR')")
+public class ExportacionController {
+
+    private final ExportacionService exportacionService;
+
+    @GetMapping("/reportes/{tipoReporte}")
+    @Operation(summary = "Exportar reporte consolidado a PDF o CSV")
+    public ResponseEntity<byte[]> exportarReporte(
+            @PathVariable TipoReporte tipoReporte,
+            @RequestParam FormatoExportacion formato,
+            @ModelAttribute ReporteFiltroDTO filtros) {
+
+        ArchivoExportadoDTO archivo = exportacionService.exportarReporte(tipoReporte, formato, filtros);
+        return respuestaArchivo(archivo);
+    }
+
+    @PostMapping("/documentos-internos")
+    @Operation(summary = "Generar documento interno institucional (constancia, acta, carta)")
+    public ResponseEntity<byte[]> generarDocumentoInterno(
+            @Valid @RequestBody GenerarDocumentoInternoRequest request) {
+
+        ArchivoExportadoDTO archivo = exportacionService.generarDocumentoInterno(request);
+        return respuestaArchivo(archivo);
+    }
+
+    @GetMapping("/historial")
+    @Operation(summary = "Consultar trazabilidad de documentos generados")
+    public ResponseEntity<ApiResponse<List<RegistroGeneracionDTO>>> historial(
+            @RequestParam(required = false) Long idExpediente,
+            @RequestParam(required = false) Long idUsuario) {
+
+        List<RegistroGeneracionDTO> historial = exportacionService.consultarHistorial(idExpediente, idUsuario);
+        return ResponseEntity.ok(ApiResponse.<List<RegistroGeneracionDTO>>builder()
+                .success(true)
+                .message("Historial de generación documental")
+                .data(historial)
+                .timestamp(LocalDateTime.now())
+                .build());
+    }
+
+    private ResponseEntity<byte[]> respuestaArchivo(ArchivoExportadoDTO archivo) {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + archivo.getNombreArchivo() + "\"")
+                .header("X-SGPP-Trazabilidad", archivo.getCodigoTrazabilidad())
+                .header("X-SGPP-Registro-Id", String.valueOf(archivo.getIdRegistro()))
+                .contentType(MediaType.parseMediaType(archivo.getContentType()))
+                .body(archivo.getContenido());
+    }
+}
