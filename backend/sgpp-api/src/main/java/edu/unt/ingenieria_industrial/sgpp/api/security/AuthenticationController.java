@@ -38,7 +38,7 @@ public class AuthenticationController {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         String token = jwtService.generateToken(userDetails);
 
-        Usuario usuario = usuarioRepository.findByUsername(request.getUsername())
+        Usuario usuario = usuarioRepository.findByUsernameWithRoles(request.getUsername())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         // Actualizar Ãºltimo acceso

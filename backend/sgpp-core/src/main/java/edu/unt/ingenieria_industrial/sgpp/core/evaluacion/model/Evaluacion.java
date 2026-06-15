@@ -30,6 +30,9 @@ public class Evaluacion extends BaseEntity {
     @Column(name = "evaluador_id")
     private Long evaluadorId;
 
+    @Column(name = "unidad", length = 20)
+    private String unidad; // U1, U2, U3
+
     @Column(name = "puntaje_asistencia")
     private Integer puntajeAsistencia;
 
@@ -50,6 +53,17 @@ public class Evaluacion extends BaseEntity {
 
     @Column(name = "fecha_evaluacion", nullable = false)
     private LocalDate fechaEvaluacion;
+
+    @Column(name = "horas_registradas")
+    @Builder.Default
+    private Integer horasRegistradas = 0;
+
+    @Column(name = "ruta_constancia", length = 500)
+    private String rutaConstancia;
+
+    @Column(name = "tipo_calificacion", length = 20)
+    @Builder.Default
+    private String tipoCalificacion = "VIGESIMAL"; // VIGESIMAL, CUALITATIVA
 
     @Column(name = "activo", nullable = false)
     @Builder.Default

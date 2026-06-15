@@ -581,7 +581,7 @@ export const ValidarRequisitos = () => {
                         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2 }}>
                             <TextField fullWidth label="Créditos Requeridos" type="number" value={editForm.creditosRequeridosPractica}
                                 onChange={e => setEditForm({ ...editForm, creditosRequeridosPractica: e.target.value })} />
-                            <TextField fullWidth label="Promedio Ponderado" type="number" inputProps={{ step: 0.01 }}
+                            <TextField fullWidth label="Promedio Ponderado" type="number" slotProps={{ htmlInput: { step: 0.01 } }}
                                 value={editForm.promedioPonderado}
                                 onChange={e => setEditForm({ ...editForm, promedioPonderado: e.target.value })} />
                         </Box>

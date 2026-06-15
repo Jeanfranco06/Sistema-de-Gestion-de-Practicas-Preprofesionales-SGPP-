@@ -1,0 +1,13 @@
+**/target/
+**/node_modules/
+**/.git/
+**/.gitignore
+**/.env
+**/.env.*
+**/README.md
+**/docker-compose.yml
+**/.idea/
+**/.vscode/
+**/*.iml
+**/*.iws
+**/*.ipr

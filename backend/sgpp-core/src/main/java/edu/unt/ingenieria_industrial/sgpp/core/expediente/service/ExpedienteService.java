@@ -13,6 +13,7 @@ public interface ExpedienteService {
     ExpedienteResponse agregarObservacion(Long idExpediente, AgregarObservacionRequest request, Long idUsuario);
     ExpedienteResponse subsanarObservaciones(Long idExpediente, SubsanarObservacionesRequest request, Long idUsuario);
     ExpedienteResponse aprobarPlan(Long idExpediente, Long idUsuario);
+    ExpedienteResponse aprobarInformeFinal(Long idExpediente, Long idUsuario);
     ExpedienteResponse iniciarEjecucion(Long idExpediente, Long idUsuario, LocalDate fechaInicio, Integer duracionSemanas);
     ExpedienteResponse presentarInformeParcial(Long idExpediente, Long idUsuario);
     ExpedienteResponse presentarInformeFinal(Long idExpediente, Long idUsuario);
@@ -25,4 +26,5 @@ public interface ExpedienteService {
     List<ExpedienteResponse> findByEstado(String estado);
     List<ExpedienteResponse> findByTutorEmpresaId(Long tutorEmpresaId);
     void disable(Long id, Long idUsuario);
+    void emitirDictamen(Long idExpediente, String dictamenTexto, Long idUsuario);
 }

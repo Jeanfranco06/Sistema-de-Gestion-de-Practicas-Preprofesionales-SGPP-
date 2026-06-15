@@ -29,6 +29,27 @@ function getHomeRoute(roles = []) {
   return '/dashboard';
 }
 
+function canAccessRoute(pathname, roles = []) {
+  if (!pathname || pathname === '/login' || pathname === '/no-autorizado') {
+    return false;
+  }
+
+  const roleNames = roles.map(r => typeof r === 'string' ? r : r.authority || r.nombre);
+  const hasRole = (role) => roleNames.some(rn => rn === role || rn === `ROLE_${role}`);
+
+  if (pathname.startsWith('/estudiante/')) return hasRole('ESTUDIANTE');
+  if (pathname.startsWith('/docente/')) return hasRole('DOCENTE_ASESOR');
+  if (pathname.startsWith('/tutor/')) return hasRole('TUTOR_EXTERNO');
+  if (pathname.startsWith('/admin/usuarios')) return hasRole('ADMIN_SISTEMA');
+  if (pathname.startsWith('/admin/')) {
+    return ['ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR']
+      .some(hasRole);
+  }
+  if (pathname === '/perfil') return true;
+
+  return false;
+}
+
 export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -65,7 +86,8 @@ export default function LoginPage() {
     try {
       const usuario = await login(form.username, form.password);
       const from = location.state?.from?.pathname;
-      navigate(from || getHomeRoute(usuario.roles), { replace: true });
+      const destination = canAccessRoute(from, usuario.roles) ? from : getHomeRoute(usuario.roles);
+      navigate(destination, { replace: true });
     } catch (err) {
       const status = err.response?.status;
       if (status === 401) setError('Usuario o contraseña incorrectos.');
@@ -140,12 +162,14 @@ export default function LoginPage() {
               onChange={handleChange('username')}
               error={!!fieldErrors.username}
               helperText={fieldErrors.username || 'Solo cuentas @unitru.edu.pe o @unt.edu.pe'}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <AccountCircleOutlined color="action" />
-                  </InputAdornment>
-                ),
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <AccountCircleOutlined color="action" />
+                    </InputAdornment>
+                  ),
+                },
               }}
               sx={{ mb: 2 }}
               autoComplete="username"
@@ -160,19 +184,21 @@ export default function LoginPage() {
               onChange={handleChange('password')}
               error={!!fieldErrors.password}
               helperText={fieldErrors.password}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <LockOutlined color="action" />
-                  </InputAdornment>
-                ),
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton onClick={() => setShowPassword((p) => !p)} edge="end">
-                      {showPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <LockOutlined color="action" />
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton onClick={() => setShowPassword((p) => !p)} edge="end">
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                },
               }}
               sx={{ mb: 3 }}
               autoComplete="current-password"
@@ -191,7 +217,7 @@ export default function LoginPage() {
           </Box>
 
           <Divider sx={{ my: 3 }} />
-          <Typography variant="caption" color="text.secondary" display="block" textAlign="center">
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center' }}>
             ¿Problemas para ingresar? Contacta a{' '}
             <Box component="span" sx={{ color: 'primary.main', fontWeight: 600 }}>
               Secretaría Académica

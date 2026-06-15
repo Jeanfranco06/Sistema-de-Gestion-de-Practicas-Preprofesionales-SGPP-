@@ -21,6 +21,13 @@ import { GestionConvenios } from './modules/sedes/pages/GestionConvenios';
 import { GestionUsuarios } from './modules/admin/pages/GestionUsuarios';
 import { GestionTutores } from './modules/admin/pages/GestionTutores';
 import { ValidarRequisitos } from './modules/secretaria/pages/ValidarRequisitos';
+import { GestionDocumental } from './modules/estudiante/pages/GestionDocumental';
+import { InformesPeriodicos } from './modules/estudiante/pages/InformesPeriodicos';
+import { RevisionDocumental } from './modules/shared/pages/RevisionDocumental';
+import { EvaluacionTutorExterno } from './modules/evaluacion/EvaluacionTutorExterno';
+import { EvaluacionDocenteAsesor } from './modules/evaluacion/EvaluacionDocenteAsesor';
+import { PanelComite } from './modules/comite/pages/PanelComite';
+import { RecepcionAdministrativa } from './modules/secretaria/pages/RecepcionAdministrativa';
 
 export default function App() {
   return (
@@ -51,7 +58,16 @@ export default function App() {
                 }
               />
               <Route path="/estudiante/practica" element={<PaginaEnConstruccion titulo="Mi Práctica" />} />
-              <Route path="/estudiante/documentos" element={<PaginaEnConstruccion titulo="Documentos" />} />
+              <Route path="/estudiante/documentos" element={
+                <ProtectedRoute allowedRoles={['ESTUDIANTE']}>
+                  <GestionDocumental />
+                </ProtectedRoute>
+              } />
+              <Route path="/estudiante/informes" element={
+                <ProtectedRoute allowedRoles={['ESTUDIANTE']}>
+                  <InformesPeriodicos />
+                </ProtectedRoute>
+              } />
               <Route path="/estudiante/horas" element={<PaginaEnConstruccion titulo="Registro de Horas" />} />
               <Route path="/estudiante/evaluacion" element={<PaginaEnConstruccion titulo="Evaluación" />} />
               <Route
@@ -73,8 +89,16 @@ export default function App() {
                 }
               />
               <Route path="/docente/practicantes" element={<PaginaEnConstruccion titulo="Mis Practicantes" />} />
-              <Route path="/docente/documentos" element={<PaginaEnConstruccion titulo="Documentos" />} />
-              <Route path="/docente/evaluaciones" element={<PaginaEnConstruccion titulo="Evaluaciones" />} />
+              <Route path="/docente/documentos" element={
+                <ProtectedRoute allowedRoles={['DOCENTE_ASESOR']}>
+                  <RevisionDocumental />
+                </ProtectedRoute>
+              } />
+              <Route path="/docente/evaluaciones" element={
+                <ProtectedRoute allowedRoles={['DOCENTE_ASESOR']}>
+                  <EvaluacionDocenteAsesor />
+                </ProtectedRoute>
+              } />
 
               {/* Admin / otros roles */}
               <Route
@@ -88,7 +112,7 @@ export default function App() {
               <Route
                 path="/admin/usuarios"
                 element={
-                  <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMINISTRADOR', 'COORDINADOR', 'DIRECTOR']}>
+                  <ProtectedRoute allowedRoles={['ADMIN_SISTEMA']}>
                     <GestionUsuarios />
                   </ProtectedRoute>
                 }
@@ -109,7 +133,11 @@ export default function App() {
                   </ProtectedRoute>
                 }
               />
-              <Route path="/admin/expedientes" element={<PaginaEnConstruccion titulo="Expedientes" />} />
+              <Route path="/admin/expedientes" element={
+                <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR']}>
+                  <RevisionDocumental />
+                </ProtectedRoute>
+              } />
               <Route
                 path="/admin/sedes"
                 element={
@@ -135,6 +163,16 @@ export default function App() {
                 }
               />
               <Route path="/admin/reportes" element={<PaginaEnConstruccion titulo="Reportes" />} />
+              <Route path="/comite/panel" element={
+                <ProtectedRoute allowedRoles={['COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR']}>
+                  <PanelComite />
+                </ProtectedRoute>
+              } />
+              <Route path="/secretaria/recepcion" element={
+                <ProtectedRoute allowedRoles={['SECRETARIA', 'ADMINISTRADOR', 'ADMIN_SISTEMA']}>
+                  <RecepcionAdministrativa />
+                </ProtectedRoute>
+              } />
 
               {/* Tutor externo */}
               <Route
@@ -142,6 +180,14 @@ export default function App() {
                 element={
                   <ProtectedRoute allowedRoles={['TUTOR_EXTERNO']}>
                     <PaginaEnConstruccion titulo="Panel Tutor Externo" />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/tutor/evaluaciones"
+                element={
+                  <ProtectedRoute allowedRoles={['TUTOR_EXTERNO']}>
+                    <EvaluacionTutorExterno />
                   </ProtectedRoute>
                 }
               />

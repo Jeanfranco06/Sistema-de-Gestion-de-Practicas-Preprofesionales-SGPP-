@@ -157,6 +157,17 @@ public class ExpedienteController {
                 .success(true).message("Informe final registrado").data(response).timestamp(LocalDateTime.now()).build());
     }
 
+    @PutMapping("/{id}/aprobar-informe-final")
+    @Operation(summary = "Aprobar el informe final por el comité")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR')")
+    public ResponseEntity<ApiResponse<ExpedienteResponse>> aprobarInformeFinal(
+            @PathVariable Long id,
+            @RequestAttribute(value = "idUsuario", required = false) Long idUsuario) {
+        ExpedienteResponse response = expedienteService.aprobarInformeFinal(id, idUsuario != null ? idUsuario : 1L);
+        return ResponseEntity.ok(ApiResponse.<ExpedienteResponse>builder()
+                .success(true).message("Informe final aprobado").data(response).timestamp(LocalDateTime.now()).build());
+    }
+
     @PutMapping("/{id}/evaluar")
     @Operation(summary = "Evaluar expediente y registrar calificación")
     @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR', 'DOCENTE_ASESOR')")
@@ -242,5 +253,17 @@ public class ExpedienteController {
             @RequestAttribute(value = "idUsuario", required = false) Long idUsuario) {
         expedienteService.disable(id, idUsuario != null ? idUsuario : 1L);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
+    @PostMapping("/{id}/emitir-dictamen")
+    @Operation(summary = "Emitir dictamen final del expediente")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR')")
+    public ResponseEntity<ApiResponse<Void>> emitirDictamen(
+            @PathVariable Long id,
+            @RequestParam String dictamen,
+            @RequestAttribute(value = "idUsuario", required = false) Long idUsuario) {
+        expedienteService.emitirDictamen(id, dictamen, idUsuario != null ? idUsuario : 1L);
+        return ResponseEntity.ok(ApiResponse.<Void>builder()
+                .success(true).message("Dictamen final emitido").timestamp(LocalDateTime.now()).build());
     }
 }
