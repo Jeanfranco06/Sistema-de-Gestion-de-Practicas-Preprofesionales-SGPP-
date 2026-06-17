@@ -28,6 +28,11 @@ import { EvaluacionTutorExterno } from './modules/evaluacion/EvaluacionTutorExte
 import { EvaluacionDocenteAsesor } from './modules/evaluacion/EvaluacionDocenteAsesor';
 import { PanelComite } from './modules/comite/pages/PanelComite';
 import { RecepcionAdministrativa } from './modules/secretaria/pages/RecepcionAdministrativa';
+import { DashboardCoordinacion } from './modules/coordinacion/pages/DashboardCoordinacion';
+import { ReportesCoordinacion } from './modules/coordinacion/pages/Reportes';
+import { DetalleExpediente } from './modules/coordinacion/pages/DetalleExpediente';
+import AdminDashboardPage from './modules/admin/pages/AdminDashboardPage';
+import AdminReportesPage from './modules/admin/pages/AdminReportesPage';
 
 export default function App() {
   return (
@@ -105,7 +110,7 @@ export default function App() {
                 path="/admin/dashboard"
                 element={
                   <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR']}>
-                    <PaginaEnConstruccion titulo="Dashboard Administrativo" />
+                    <AdminDashboardPage />
                   </ProtectedRoute>
                 }
               />
@@ -138,6 +143,24 @@ export default function App() {
                   <RevisionDocumental />
                 </ProtectedRoute>
               } />
+
+              {/* Coordinador / Director */}
+              <Route path="/coordinacion/dashboard" element={
+                <ProtectedRoute allowedRoles={['COORDINADOR', 'DIRECTOR', 'ADMIN_SISTEMA', 'SECRETARIA', 'COMITE_PRACTICAS']}>
+                  <DashboardCoordinacion />
+                </ProtectedRoute>
+              } />
+              <Route path="/coordinacion/reportes" element={
+                <ProtectedRoute allowedRoles={['COORDINADOR', 'DIRECTOR', 'ADMIN_SISTEMA', 'SECRETARIA', 'COMITE_PRACTICAS']}>
+                  <ReportesCoordinacion />
+                </ProtectedRoute>
+              } />
+              <Route path="/coordinacion/expedientes/:id" element={
+                <ProtectedRoute allowedRoles={['COORDINADOR', 'DIRECTOR', 'ADMIN_SISTEMA', 'COMITE_PRACTICAS']}>
+                  <DetalleExpediente />
+                </ProtectedRoute>
+              } />
+
               <Route
                 path="/admin/sedes"
                 element={
@@ -162,7 +185,14 @@ export default function App() {
                   </ProtectedRoute>
                 }
               />
-              <Route path="/admin/reportes" element={<PaginaEnConstruccion titulo="Reportes" />} />
+              <Route
+                path="/admin/reportes"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR']}>
+                    <AdminReportesPage />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/comite/panel" element={
                 <ProtectedRoute allowedRoles={['COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR']}>
                   <PanelComite />

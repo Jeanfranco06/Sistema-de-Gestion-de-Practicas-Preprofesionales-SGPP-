@@ -8,39 +8,29 @@ import {
   Visibility, VisibilityOff, School, LockOutlined, AccountCircleOutlined,
 } from '@mui/icons-material';
 import { useAuth } from '../../auth/AuthContext';
-
-const ROLE_HOME = {
-  ADMINISTRADOR: '/admin/dashboard',
-  ADMIN_SISTEMA: '/admin/dashboard',
-  ESTUDIANTE: '/estudiante/dashboard',
-  DOCENTE_ASESOR: '/docente/dashboard',
-  TUTOR_EXTERNO: '/tutor/dashboard',
-  SECRETARIA: '/admin/dashboard',
-  COMITE_PRACTICAS: '/admin/dashboard',
-  COORDINADOR: '/admin/dashboard',
-  DIRECTOR: '/admin/dashboard',
-};
-
-function getHomeRoute(roles = []) {
-  const roleNames = roles.map(r => typeof r === 'string' ? r : r.authority || r.nombre);
-  for (const r of Object.keys(ROLE_HOME)) {
-    if (roleNames.some(rn => rn === r || rn === `ROLE_${r}`)) return ROLE_HOME[r];
-  }
-  return '/dashboard';
-}
+import { getHomeRoute, hasAnyRole } from '../../shared/utils/roleRoutes';
 
 function canAccessRoute(pathname, roles = []) {
   if (!pathname || pathname === '/login' || pathname === '/no-autorizado') {
     return false;
   }
 
-  const roleNames = roles.map(r => typeof r === 'string' ? r : r.authority || r.nombre);
-  const hasRole = (role) => roleNames.some(rn => rn === role || rn === `ROLE_${role}`);
+  const hasRole = (role) => hasAnyRole(roles, [role]);
 
   if (pathname.startsWith('/estudiante/')) return hasRole('ESTUDIANTE');
   if (pathname.startsWith('/docente/')) return hasRole('DOCENTE_ASESOR');
   if (pathname.startsWith('/tutor/')) return hasRole('TUTOR_EXTERNO');
   if (pathname.startsWith('/admin/usuarios')) return hasRole('ADMIN_SISTEMA');
+  if (pathname.startsWith('/coordinacion/')) {
+    return ['COORDINADOR', 'DIRECTOR', 'ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COMITE_PRACTICAS']
+      .some(hasRole);
+  }
+  if (pathname.startsWith('/comite/')) {
+    return ['COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR'].some(hasRole);
+  }
+  if (pathname.startsWith('/secretaria/')) {
+    return ['SECRETARIA', 'ADMINISTRADOR', 'ADMIN_SISTEMA'].some(hasRole);
+  }
   if (pathname.startsWith('/admin/')) {
     return ['ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR']
       .some(hasRole);
