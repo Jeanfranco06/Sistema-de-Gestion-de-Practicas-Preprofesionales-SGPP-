@@ -4,8 +4,8 @@ import edu.unt.ingenieria_industrial.sgpp.core.evaluacion.dto.*;
 import edu.unt.ingenieria_industrial.sgpp.core.evaluacion.model.*;
 import edu.unt.ingenieria_industrial.sgpp.core.evaluacion.repository.*;
 import edu.unt.ingenieria_industrial.sgpp.core.evaluacion.service.EvaluacionService;
-import edu.unt.ingenieria_industrial.sgpp.core.practicas.model.Practica;
-import edu.unt.ingenieria_industrial.sgpp.core.practicas.repository.PracticaRepository;
+import edu.unt.ingenieria_industrial.sgpp.core.expediente.model.Expediente;
+import edu.unt.ingenieria_industrial.sgpp.core.expediente.repository.ExpedienteRepository;
 import edu.unt.ingenieria_industrial.sgpp.shared.exception.BusinessException;
 import edu.unt.ingenieria_industrial.sgpp.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -29,38 +29,31 @@ public class EvaluacionServiceImpl implements EvaluacionService {
     private final CriterioEvaluacionRepository criterioEvaluacionRepository;
     private final DetalleEvaluacionRepository detalleEvaluacionRepository;
     private final RubricaRepository rubricaRepository;
-    private final PracticaRepository practicaRepository;
+    private final ExpedienteRepository expedienteRepository;
 
-    // Reglas de peso por unidad
-    private static final Map<String, Double> PESOS_UNIDAD = Map.of(
-            "U1", 0.30,  // U1: 30%
-            "U2", 0.30,  // U2: 30%
-            "U3", 0.40   // U3: 40%
-    );
-
-    // Mapeo de puntaje a calificación cualitativa
     private static final String[] CALIFICACIONES_CUALITATIVAS = {"Deficiente", "Regular", "Bueno", "Muy Bueno", "Excelente"};
 
     @Override
     public EvaluacionResponseDTO crearEvaluacion(EvaluacionRequestDTO request, Long idUsuario) {
-        Practica practica = practicaRepository.findById(request.getIdPractica())
-                .orElseThrow(() -> new ResourceNotFoundException("Práctica", "id", request.getIdPractica()));
+        Expediente expediente = expedienteRepository.findById(request.getIdExpediente())
+                .orElseThrow(() -> new ResourceNotFoundException("Expediente", "id", request.getIdExpediente()));
 
-        // Calcular puntaje total
+        // Calcular puntaje ponderado de la evaluacion
+        // El puntaje ingresado por el usuario es sobre 20. El puntaje máximo del criterio es el peso (%)
         int puntajeTotal = request.getDetalles().stream()
                 .mapToInt(DetalleEvaluacionRequestDTO::getPuntajeObtenido)
-                .sum();
+                .sum(); // Suma simple de notas para tracking o estadisticas
 
         // Determinar tipo de calificación
-        String tipoPractica = practica.getTipoPractica() != null ? practica.getTipoPractica().getCodigo() : "FINAL";
+        String tipoPractica = expediente.getTipoPractica() != null ? expediente.getTipoPractica().getCodigo() : "FINAL";
         String tipoCalificacion = "INICIAL".equals(tipoPractica) ? "CUALITATIVA" : "VIGESIMAL";
 
         // Crear evaluación
         Evaluacion evaluacionToSave = Evaluacion.builder()
-                .practica(practica)
+                .expediente(expediente)
                 .tipoEvaluador(request.getTipoEvaluador())
                 .evaluadorId(request.getEvaluadorId())
-                .unidad(request.getUnidad())
+                .componente(request.getComponente())
                 .puntajeTotal(puntajeTotal)
                 .comentarios(request.getComentarios())
                 .fechaEvaluacion(request.getFechaEvaluacion() != null ? request.getFechaEvaluacion() : LocalDate.now())
@@ -90,8 +83,8 @@ public class EvaluacionServiceImpl implements EvaluacionService {
         detalleEvaluacionRepository.saveAll(detalles);
 
         // Calcular promedio final
-        BigDecimal promedio = calcularPromedioFinal(practica.getId());
-        String calificacionCualitativa = calcularCalificacionCualitativa(puntajeTotal, detalles);
+        BigDecimal promedio = calcularPromedioFinal(expediente.getId());
+        String calificacionCualitativa = calcularCalificacionCualitativa(promedio.doubleValue());
 
         return toResponse(evaluacion, detalles, promedio, calificacionCualitativa);
     }
@@ -103,22 +96,22 @@ public class EvaluacionServiceImpl implements EvaluacionService {
                 .orElseThrow(() -> new ResourceNotFoundException("Evaluación", "id", id));
 
         List<DetalleEvaluacion> detalles = detalleEvaluacionRepository.findByEvaluacionId(id);
-        BigDecimal promedio = calcularPromedioFinal(evaluacion.getPractica().getId());
-        String calificacionCualitativa = calcularCalificacionCualitativa(evaluacion.getPuntajeTotal(), detalles);
+        BigDecimal promedio = calcularPromedioFinal(evaluacion.getExpediente().getId());
+        String calificacionCualitativa = calcularCalificacionCualitativa(promedio.doubleValue());
 
         return toResponse(evaluacion, detalles, promedio, calificacionCualitativa);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<EvaluacionResponseDTO> obtenerEvaluacionesPorPractica(Long idPractica) {
-        List<Evaluacion> evaluaciones = evaluacionRepository.findByPracticaIdAndActivoTrue(idPractica);
-        BigDecimal promedio = calcularPromedioFinal(idPractica);
+    public List<EvaluacionResponseDTO> obtenerEvaluacionesPorPractica(Long idExpediente) {
+        List<Evaluacion> evaluaciones = evaluacionRepository.findByExpedienteIdAndActivoTrue(idExpediente);
+        BigDecimal promedio = calcularPromedioFinal(idExpediente);
 
         return evaluaciones.stream()
                 .map(ev -> {
                     List<DetalleEvaluacion> detalles = detalleEvaluacionRepository.findByEvaluacionId(ev.getId());
-                    String calificacionCualitativa = calcularCalificacionCualitativa(ev.getPuntajeTotal(), detalles);
+                    String calificacionCualitativa = calcularCalificacionCualitativa(promedio.doubleValue());
                     return toResponse(ev, detalles, promedio, calificacionCualitativa);
                 })
                 .collect(Collectors.toList());
@@ -126,78 +119,43 @@ public class EvaluacionServiceImpl implements EvaluacionService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<CriterioEvaluacionDTO> obtenerCriteriosPorTipoEvaluador(String tipoEvaluador) {
-        List<CriterioEvaluacion> criterios = criterioEvaluacionRepository.findByTipoEvaluadorAndActivoTrue(tipoEvaluador);
-        log.info("Consultando criterios para tipo: {}, encontrados: {}", tipoEvaluador, criterios.size());
+    public List<CriterioEvaluacionDTO> obtenerCriteriosPorTipoEvaluador(String componente) {
+        List<CriterioEvaluacion> criterios = criterioEvaluacionRepository.findByComponenteAndActivoTrue(componente);
+        log.info("Consultando criterios para componente: {}, encontrados: {}", componente, criterios.size());
         return criterios
                 .stream()
                 .map(this::toCriterioDTO)
                 .collect(Collectors.toList());
     }
 
-    private BigDecimal calcularPromedioFinal(Long idPractica) {
-        List<Evaluacion> evaluaciones = evaluacionRepository.findByPracticaIdAndActivoTrue(idPractica);
+    private BigDecimal calcularPromedioFinal(Long idExpediente) {
+        List<Evaluacion> evaluaciones = evaluacionRepository.findByExpedienteIdAndActivoTrue(idExpediente);
 
         if (evaluaciones.isEmpty()) {
             return BigDecimal.ZERO;
         }
 
-        double promedioPonderado = 0;
+        double promedioPonderadoTotal = 0;
 
         for (Evaluacion ev : evaluaciones) {
             List<DetalleEvaluacion> detalles = detalleEvaluacionRepository.findByEvaluacionId(ev.getId());
-            int totalPuntos = ev.getPuntajeTotal();
-            int maxPuntos = detalles.stream().mapToInt(d -> d.getCriterio().getPuntajeMaximo()).sum();
+            double puntajeComponente = 0;
 
-            double porcentaje = 0;
-
-            if ("U1".equals(ev.getUnidad()) && "DOCENTE".equals(ev.getTipoEvaluador())) {
-                int planObtenido = 0;
-                int planMaximo = 0;
-                int informeObtenido = 0;
-                int informeMaximo = 0;
-
-                for (DetalleEvaluacion d : detalles) {
-                    if ("DA-PLAN".equals(d.getCriterio().getCodigo())) {
-                        planObtenido += d.getPuntajeObtenido();
-                        planMaximo += d.getCriterio().getPuntajeMaximo();
-                    } else {
-                        informeObtenido += d.getPuntajeObtenido();
-                        informeMaximo += d.getCriterio().getPuntajeMaximo();
-                    }
-                }
-
-                double porcentajePlan = planMaximo > 0 ? ((double) planObtenido / planMaximo * 100) : 0.0;
-                double porcentajeInforme = informeMaximo > 0 ? ((double) informeObtenido / informeMaximo * 100) : 0.0;
-
-                // Si no se evaluó el plan, todo recae en el informe y viceversa (fallback)
-                if (planMaximo == 0) {
-                    porcentaje = porcentajeInforme;
-                } else if (informeMaximo == 0) {
-                    porcentaje = porcentajePlan;
-                } else {
-                    porcentaje = (porcentajePlan * 0.20) + (porcentajeInforme * 0.80);
-                }
-            } else {
-                porcentaje = (double) totalPuntos / maxPuntos * 100;
+            for (DetalleEvaluacion d : detalles) {
+                // Formula: Nota final = Suma(Nota * Peso%).
+                double nota = d.getPuntajeObtenido();
+                double pesoPorcentaje = d.getCriterio().getPuntajeMaximo() / 100.0;
+                puntajeComponente += nota * pesoPorcentaje;
             }
-
-            double peso = PESOS_UNIDAD.getOrDefault(ev.getUnidad(), 0.3); // U1 y U2: 30%, U3: 40%
-            promedioPonderado += porcentaje * peso;
+            promedioPonderadoTotal += puntajeComponente;
         }
 
-        // Convertir a escala vigesimal (0-20)
-        return BigDecimal.valueOf(promedioPonderado)
-                .divide(BigDecimal.valueOf(5), 2, RoundingMode.HALF_UP);
+        return BigDecimal.valueOf(promedioPonderadoTotal)
+                .setScale(2, RoundingMode.HALF_UP);
     }
 
-    private String calcularCalificacionCualitativa(int puntajeTotal, List<DetalleEvaluacion> detalles) {
-        if (detalles.isEmpty()) return CALIFICACIONES_CUALITATIVAS[1];
-
-        int maxPuntos = detalles.stream().mapToInt(d -> d.getCriterio().getPuntajeMaximo()).sum();
-        if (maxPuntos == 0) return CALIFICACIONES_CUALITATIVAS[1];
-
-        double porcentaje = (double) puntajeTotal / maxPuntos * 100;
+    private String calcularCalificacionCualitativa(double promedio) {
+        double porcentaje = (promedio / 20.0) * 100;
 
         if (porcentaje < 40) return CALIFICACIONES_CUALITATIVAS[0];
         if (porcentaje < 60) return CALIFICACIONES_CUALITATIVAS[1];
@@ -209,12 +167,12 @@ public class EvaluacionServiceImpl implements EvaluacionService {
     private EvaluacionResponseDTO toResponse(Evaluacion evaluacion, List<DetalleEvaluacion> detalles, BigDecimal promedio, String calificacionCualitativa) {
         return EvaluacionResponseDTO.builder()
                 .id(evaluacion.getId())
-                .idPractica(evaluacion.getPractica().getId())
-                .nombreEstudiante(evaluacion.getPractica().getEstudiante().getUsuario().getNombres()
-                        + " " + evaluacion.getPractica().getEstudiante().getUsuario().getApellidoPaterno())
+                .idExpediente(evaluacion.getExpediente().getId())
+                .nombreEstudiante(evaluacion.getExpediente().getEstudiante().getUsuario().getNombres()
+                        + " " + evaluacion.getExpediente().getEstudiante().getUsuario().getApellidoPaterno())
                 .tipoEvaluador(evaluacion.getTipoEvaluador())
                 .evaluadorId(evaluacion.getEvaluadorId())
-                .unidad(evaluacion.getUnidad())
+                .componente(evaluacion.getComponente())
                 .puntajeTotal(evaluacion.getPuntajeTotal())
                 .promedioFinal(promedio)
                 .calificacionCualitativa(calificacionCualitativa)
@@ -248,8 +206,7 @@ public class EvaluacionServiceImpl implements EvaluacionService {
                 .nombre(criterio.getNombre())
                 .descripcion(criterio.getDescripcion())
                 .puntajeMaximo(criterio.getPuntajeMaximo())
-                .tipoEvaluador(criterio.getTipoEvaluador())
+                .componente(criterio.getComponente())
                 .build();
     }
 }
-

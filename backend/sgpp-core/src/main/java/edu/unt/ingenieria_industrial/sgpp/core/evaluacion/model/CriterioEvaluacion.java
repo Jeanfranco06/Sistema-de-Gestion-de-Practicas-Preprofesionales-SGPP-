@@ -29,8 +29,8 @@ public class CriterioEvaluacion extends BaseEntity {
     @Column(name = "puntaje_maximo", nullable = false)
     private Integer puntajeMaximo;
 
-    @Column(name = "tipo_evaluador", length = 50, nullable = false)
-    private String tipoEvaluador; // EMPRESA, DOCENTE
+    @Column(name = "componente", length = 50, nullable = false)
+    private String componente; // EMPRESA, DOCENTE, INFORME, SUSTENTACION
 
     @Column(name = "activo", nullable = false)
     @Builder.Default

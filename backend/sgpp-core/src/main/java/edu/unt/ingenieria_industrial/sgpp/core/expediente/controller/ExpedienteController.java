@@ -97,6 +97,34 @@ public class ExpedienteController {
                 .success(true).message("Plan de trabajo aprobado").data(response).timestamp(LocalDateTime.now()).build());
     }
 
+    @PostMapping("/{id}/documentos")
+    @Operation(summary = "Agregar documento al expediente")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'ESTUDIANTE', 'SECRETARIA')")
+    public ResponseEntity<ApiResponse<ExpedienteResponse>> agregarDocumento(
+            @PathVariable Long id,
+            @RequestParam(required = false) String tipoDocumento,
+            @RequestParam String nombreDoc,
+            @RequestParam String fileName,
+            @RequestAttribute(value = "idUsuario", required = false) Long idUsuario) {
+        ExpedienteResponse response = expedienteService.agregarDocumento(id, tipoDocumento, nombreDoc, fileName, idUsuario != null ? idUsuario : 1L);
+        return ResponseEntity.ok(ApiResponse.<ExpedienteResponse>builder()
+                .success(true).message("Documento agregado").data(response).timestamp(LocalDateTime.now()).build());
+    }
+
+    @PutMapping("/{id}/documentos/{idDocumento}/evaluar")
+    @Operation(summary = "Evaluar documento del expediente")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COMITE_PRACTICAS', 'DOCENTE_ASESOR')")
+    public ResponseEntity<ApiResponse<ExpedienteResponse>> evaluarDocumento(
+            @PathVariable Long id,
+            @PathVariable Long idDocumento,
+            @RequestParam String estado,
+            @RequestParam(required = false) String observaciones,
+            @RequestAttribute(value = "idUsuario", required = false) Long idUsuario) {
+        ExpedienteResponse response = expedienteService.evaluarDocumento(id, idDocumento, estado, observaciones, idUsuario != null ? idUsuario : 1L);
+        return ResponseEntity.ok(ApiResponse.<ExpedienteResponse>builder()
+                .success(true).message("Documento evaluado").data(response).timestamp(LocalDateTime.now()).build());
+    }
+
     @PostMapping("/{id}/observaciones")
     @Operation(summary = "Agregar observación al expediente")
     @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR', 'DOCENTE_ASESOR', 'SECRETARIA')")
@@ -226,6 +254,15 @@ public class ExpedienteController {
     @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR', 'ESTUDIANTE', 'DOCENTE_ASESOR')")
     public ResponseEntity<ApiResponse<List<ExpedienteResponse>>> findByEstudianteId(@PathVariable Long estudianteId) {
         List<ExpedienteResponse> list = expedienteService.findByEstudianteId(estudianteId);
+        return ResponseEntity.ok(ApiResponse.<List<ExpedienteResponse>>builder()
+                .success(true).data(list).timestamp(LocalDateTime.now()).build());
+    }
+
+    @GetMapping("/asesor/{asesorId}")
+    @Operation(summary = "Listar expedientes asignados a un docente asesor")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR', 'DOCENTE_ASESOR')")
+    public ResponseEntity<ApiResponse<List<ExpedienteResponse>>> findByAsesorId(@PathVariable Long asesorId) {
+        List<ExpedienteResponse> list = expedienteService.findByAsesorId(asesorId);
         return ResponseEntity.ok(ApiResponse.<List<ExpedienteResponse>>builder()
                 .success(true).data(list).timestamp(LocalDateTime.now()).build());
     }

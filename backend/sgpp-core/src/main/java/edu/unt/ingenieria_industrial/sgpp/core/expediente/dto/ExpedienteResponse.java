@@ -81,6 +81,8 @@ public class ExpedienteResponse {
         private Long id;
         private String tipoDocumento;
         private String nombreArchivo;
+        private String rutaArchivo;
+        private String estado;
         private Long idUsuario;
         private LocalDateTime fechaSubida;
         private String observaciones;

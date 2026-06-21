@@ -15,11 +15,11 @@ import java.util.List;
 @AllArgsConstructor
 public class EvaluacionResponseDTO {
     private Long id;
-    private Long idPractica;
+    private Long idExpediente;
     private String nombreEstudiante;
     private String tipoEvaluador;
     private Long evaluadorId;
-    private String unidad;
+    private String componente;
     private Integer puntajeTotal;
     private BigDecimal promedioFinal;
     private String calificacionCualitativa; // Para prácticas extracurriculares

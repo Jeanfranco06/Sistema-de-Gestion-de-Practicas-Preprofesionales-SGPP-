@@ -225,6 +225,45 @@ public class ExpedienteServiceImpl implements ExpedienteService {
     }
 
     @Override
+    public ExpedienteResponse agregarDocumento(Long idExpediente, String tipoDocumento, String nombreDoc, String fileName, Long idUsuario) {
+        Expediente expediente = findExpediente(idExpediente);
+        
+        ExpedienteDocumento doc = ExpedienteDocumento.builder()
+                .expediente(expediente)
+                .tipoDocumento(tipoDocumento != null ? tipoDocumento : "ANEXO")
+                .nombreArchivo(nombreDoc)
+                .rutaArchivo(fileName)
+                .build();
+                
+        documentoRepository.save(doc);
+        return toResponse(expediente);
+    }
+
+    @Override
+    public ExpedienteResponse evaluarDocumento(Long idExpediente, Long idDocumento, String estado, String observaciones, Long idUsuario) {
+        Expediente expediente = findExpediente(idExpediente);
+        
+        ExpedienteDocumento doc = documentoRepository.findById(idDocumento)
+                .orElseThrow(() -> new ResourceNotFoundException("Documento no encontrado"));
+                
+        if (!doc.getExpediente().getId().equals(idExpediente)) {
+            throw new BusinessException("El documento no pertenece a este expediente");
+        }
+        
+        doc.setEstado(estado);
+        doc.setObservaciones(observaciones);
+        doc.setUsuario(usuarioRepository.getReferenceById(idUsuario));
+        
+        documentoRepository.save(doc);
+        
+        // If a document is RECHAZADO or OBSERVADO, log it in the expediente's states or observations (optional)
+        registrarCambioEstado(expediente, expediente.getEstado(), expediente.getEstado(), idUsuario,
+                "Documento " + doc.getTipoDocumento() + " evaluado: " + estado, "EVALUACION_DOCUMENTO");
+                
+        return toResponse(expediente);
+    }
+
+    @Override
     public ExpedienteResponse agregarObservacion(Long idExpediente, AgregarObservacionRequest request, Long idUsuario) {
         Expediente expediente = findExpediente(idExpediente);
 
@@ -525,6 +564,14 @@ public class ExpedienteServiceImpl implements ExpedienteService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<ExpedienteResponse> findByAsesorId(Long asesorId) {
+        return expedienteRepository.findByAsesorIdAndActivoTrue(asesorId).stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public void disable(Long id, Long idUsuario) {
         Expediente expediente = expedienteRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Expediente no encontrado: " + id));
@@ -678,6 +725,8 @@ public class ExpedienteServiceImpl implements ExpedienteService {
                         .id(doc.getId())
                         .tipoDocumento(doc.getTipoDocumento())
                         .nombreArchivo(doc.getNombreArchivo())
+                        .rutaArchivo(doc.getRutaArchivo())
+                        .estado(doc.getEstado())
                         .idUsuario(doc.getUsuario() != null ? doc.getUsuario().getId() : null)
                         .fechaSubida(doc.getFechaSubida())
                         .observaciones(doc.getObservaciones())

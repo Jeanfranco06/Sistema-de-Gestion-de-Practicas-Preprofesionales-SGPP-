@@ -10,6 +10,8 @@ public interface ExpedienteService {
     ExpedienteResponse asignarAsesor(Long idExpediente, AsignarAsesorRequest request, Long idUsuario);
     ExpedienteResponse asignarComite(Long idExpediente, AsignarComiteRequest request, Long idUsuario);
     ExpedienteResponse presentarPlan(Long idExpediente, PresentarPlanRequest request, Long idUsuario);
+    ExpedienteResponse agregarDocumento(Long idExpediente, String tipoDocumento, String nombreDoc, String fileName, Long idUsuario);
+    ExpedienteResponse evaluarDocumento(Long idExpediente, Long idDocumento, String estado, String observaciones, Long idUsuario);
     ExpedienteResponse agregarObservacion(Long idExpediente, AgregarObservacionRequest request, Long idUsuario);
     ExpedienteResponse subsanarObservaciones(Long idExpediente, SubsanarObservacionesRequest request, Long idUsuario);
     ExpedienteResponse aprobarPlan(Long idExpediente, Long idUsuario);
@@ -24,7 +26,8 @@ public interface ExpedienteService {
     List<ExpedienteResponse> findAll();
     List<ExpedienteResponse> findByEstudianteId(Long estudianteId);
     List<ExpedienteResponse> findByEstado(String estado);
-    List<ExpedienteResponse> findByTutorEmpresaId(Long tutorEmpresaId);
+    List<ExpedienteResponse> findByTutorEmpresaId(Long tutorId);
+    List<ExpedienteResponse> findByAsesorId(Long asesorId);
     void disable(Long id, Long idUsuario);
     void emitirDictamen(Long idExpediente, String dictamenTexto, Long idUsuario);
 }

@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -22,7 +23,7 @@ public class EvaluacionController {
 
     @PostMapping
     public ResponseEntity<EvaluacionResponseDTO> crearEvaluacion(
-            @RequestBody EvaluacionRequestDTO request,
+            @Valid @RequestBody EvaluacionRequestDTO request,
             Authentication authentication) {
         String username = authentication.getName();
         Long userId = usuarioRepository.findByUsername(username)
@@ -36,14 +37,14 @@ public class EvaluacionController {
         return ResponseEntity.ok(evaluacionService.obtenerEvaluacionPorId(id));
     }
 
-    @GetMapping("/practica/{idPractica}")
-    public ResponseEntity<List<EvaluacionResponseDTO>> obtenerEvaluacionesPorPractica(@PathVariable Long idPractica) {
-        return ResponseEntity.ok(evaluacionService.obtenerEvaluacionesPorPractica(idPractica));
+    @GetMapping("/expediente/{idExpediente}")
+    public ResponseEntity<List<EvaluacionResponseDTO>> obtenerEvaluacionesPorPractica(@PathVariable Long idExpediente) {
+        return ResponseEntity.ok(evaluacionService.obtenerEvaluacionesPorPractica(idExpediente));
     }
 
-    @GetMapping("/criterios/{tipoEvaluador}")
-    public ResponseEntity<List<CriterioEvaluacionDTO>> obtenerCriteriosPorTipoEvaluador(@PathVariable String tipoEvaluador) {
-        return ResponseEntity.ok(evaluacionService.obtenerCriteriosPorTipoEvaluador(tipoEvaluador));
+    @GetMapping("/criterios/{componente}")
+    public ResponseEntity<List<CriterioEvaluacionDTO>> obtenerCriteriosPorTipoEvaluador(@PathVariable String componente) {
+        return ResponseEntity.ok(evaluacionService.obtenerCriteriosPorTipoEvaluador(componente));
     }
 }
 

@@ -26,6 +26,7 @@ import { InformesPeriodicos } from './modules/estudiante/pages/InformesPeriodico
 import { RevisionDocumental } from './modules/shared/pages/RevisionDocumental';
 import { EvaluacionTutorExterno } from './modules/evaluacion/EvaluacionTutorExterno';
 import { EvaluacionDocenteAsesor } from './modules/evaluacion/EvaluacionDocenteAsesor';
+import { ListaPracticantes } from './modules/evaluacion/ListaPracticantes';
 import { PanelComite } from './modules/comite/pages/PanelComite';
 import { RecepcionAdministrativa } from './modules/secretaria/pages/RecepcionAdministrativa';
 
@@ -88,13 +89,12 @@ export default function App() {
                   </ProtectedRoute>
                 }
               />
-              <Route path="/docente/practicantes" element={<PaginaEnConstruccion titulo="Mis Practicantes" />} />
-              <Route path="/docente/documentos" element={
+              <Route path="/docente/practicantes" element={
                 <ProtectedRoute allowedRoles={['DOCENTE_ASESOR']}>
-                  <RevisionDocumental />
+                  <ListaPracticantes />
                 </ProtectedRoute>
               } />
-              <Route path="/docente/evaluaciones" element={
+              <Route path="/docente/evaluaciones/:id" element={
                 <ProtectedRoute allowedRoles={['DOCENTE_ASESOR']}>
                   <EvaluacionDocenteAsesor />
                 </ProtectedRoute>
@@ -133,8 +133,8 @@ export default function App() {
                   </ProtectedRoute>
                 }
               />
-              <Route path="/admin/expedientes" element={
-                <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR']}>
+              <Route path="/docente/documentos/:id" element={
+                <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR', 'DOCENTE_ASESOR']}>
                   <RevisionDocumental />
                 </ProtectedRoute>
               } />
@@ -184,7 +184,15 @@ export default function App() {
                 }
               />
               <Route
-                path="/tutor/evaluaciones"
+                path="/tutor/practicantes"
+                element={
+                  <ProtectedRoute allowedRoles={['TUTOR_EXTERNO']}>
+                    <ListaPracticantes />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/tutor/evaluaciones/:id"
                 element={
                   <ProtectedRoute allowedRoles={['TUTOR_EXTERNO']}>
                     <EvaluacionTutorExterno />

@@ -9,7 +9,7 @@ import java.util.Optional;
 
 @Repository
 public interface CriterioEvaluacionRepository extends JpaRepository<CriterioEvaluacion, Long> {
-    List<CriterioEvaluacion> findByTipoEvaluadorAndActivoTrue(String tipoEvaluador);
+    List<CriterioEvaluacion> findByComponenteAndActivoTrue(String componente);
     Optional<CriterioEvaluacion> findByCodigoAndActivoTrue(String codigo);
 }
 

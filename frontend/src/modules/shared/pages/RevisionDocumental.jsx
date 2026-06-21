@@ -8,74 +8,95 @@ import {
   Download, Edit, History, FileUpload
 } from '@mui/icons-material';
 
-const EXPEDIENTE_MOCK = {
-  id: 'EXP-2025-001',
-  estudiante: 'Juan Carlos Pérez',
-  tipoPractica: 'FINAL',
-  estado: 'EN_REVISION'
-};
+import { useParams, useNavigate } from 'react-router-dom';
+import { expedientesApi } from '../../../api/expedientesApi';
+import api from '../../../api/axios';
+import { ArrowBack } from '@mui/icons-material';
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
 
-const DOCUMENTOS_MOCK = [
-  { 
-    id: 1, 
-    tipo: 'Plan de Prácticas', 
-    archivo: 'plan_v2.pdf', 
-    estado: 'PENDIENTE', 
-    fecha: '2025-10-10 10:30',
-    historial: [
-      { version: 'v1', fecha: '2025-10-01', usuario: 'Juan Carlos Pérez', accion: 'Carga inicial' },
-      { version: 'v1', fecha: '2025-10-05', usuario: 'Prof. Asesor', accion: 'Observado: Faltan objetivos' },
-      { version: 'v2', fecha: '2025-10-10', usuario: 'Juan Carlos Pérez', accion: 'Subsanación' }
-    ]
-  },
-  { 
-    id: 2, 
-    tipo: 'Carta de Aceptación', 
-    archivo: 'carta_empresa.pdf', 
-    estado: 'APROBADO', 
-    fecha: '2025-09-15 09:00',
-    historial: [
-      { version: 'v1', fecha: '2025-09-15', usuario: 'Juan Carlos Pérez', accion: 'Carga inicial' },
-      { version: 'v1', fecha: '2025-09-16', usuario: 'Comité', accion: 'Aprobado' }
-    ]
-  }
-];
+const MySwal = withReactContent(Swal);
 
 export const RevisionDocumental = () => {
-  const [documentos, setDocumentos] = useState(DOCUMENTOS_MOCK);
-  const [selectedDoc, setSelectedDoc] = useState(documentos[0]);
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [expediente, setExpediente] = useState(null);
+  const [documentos, setDocumentos] = useState([]);
+  const [selectedDoc, setSelectedDoc] = useState(null);
   const [reviewDialog, setReviewDialog] = useState(false);
   const [estadoReview, setEstadoReview] = useState('');
   const [observacion, setObservacion] = useState('');
   const [historyDialog, setHistoryDialog] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const fetchExpediente = async () => {
+    try {
+      setLoading(true);
+      const res = await expedientesApi.getById(id);
+      const data = res.data?.data || res.data;
+      setExpediente(data);
+      setDocumentos(data.documentos || []);
+      if (data.documentos?.length > 0 && !selectedDoc) {
+          setSelectedDoc(data.documentos[0]);
+      } else if (selectedDoc) {
+          const updatedSelected = data.documentos?.find(d => d.id === selectedDoc.id);
+          if (updatedSelected) setSelectedDoc(updatedSelected);
+      }
+    } catch (error) {
+      console.error(error);
+      MySwal.fire('Error', 'No se pudo cargar el expediente', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    if (id) {
+        fetchExpediente();
+    }
+  }, [id]);
 
   const handleOpenReview = (doc) => {
     setSelectedDoc(doc);
     setEstadoReview(doc.estado === 'PENDIENTE' ? '' : doc.estado);
-    setObservacion('');
+    setObservacion(doc.observaciones || '');
     setReviewDialog(true);
   };
 
-  const handleSaveReview = () => {
-    setDocumentos(documentos.map(d => {
-      if (d.id === selectedDoc.id) {
-        return {
-          ...d,
-          estado: estadoReview,
-          historial: [
-            ...d.historial,
-            { 
-              version: 'Actual', 
-              fecha: new Date().toISOString().split('T')[0], 
-              usuario: 'Revisor Actual', 
-              accion: `${estadoReview}${observacion ? ': ' + observacion : ''}` 
+  const handleSaveReview = async () => {
+    try {
+        MySwal.fire({ title: 'Guardando...', didOpen: () => MySwal.showLoading() });
+        await api.put(`/expedientes/${id}/documentos/${selectedDoc.id}/evaluar`, null, {
+            params: {
+                estado: estadoReview,
+                observaciones: observacion
             }
-          ]
-        };
-      }
-      return d;
-    }));
-    setReviewDialog(false);
+        });
+        await fetchExpediente();
+        setReviewDialog(false);
+        MySwal.fire({ icon: 'success', title: 'Evaluación Guardada', timer: 1500, showConfirmButton: false });
+    } catch (error) {
+        console.error(error);
+        MySwal.fire('Error', 'No se pudo guardar la evaluación', 'error');
+    }
+  };
+
+  const handleDownload = async (fileName, originalName) => {
+    if (!fileName) return;
+    try {
+        MySwal.fire({ title: 'Descargando...', didOpen: () => MySwal.showLoading() });
+        const res = await api.get(`/documentos/download/${fileName}`, { responseType: 'blob' });
+        const url = window.URL.createObjectURL(new Blob([res.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', originalName || fileName);
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode.removeChild(link);
+        MySwal.close();
+    } catch (error) {
+        MySwal.fire('Error', 'No se pudo descargar el archivo', 'error');
+    }
   };
 
   const getEstadoColor = (estado) => {
@@ -87,6 +108,9 @@ export const RevisionDocumental = () => {
     }
   };
 
+  if (loading) return <Box sx={{ p: 4, textAlign: 'center' }}>Cargando documentos...</Box>;
+  if (!expediente) return <Box sx={{ p: 4, textAlign: 'center' }}>Expediente no encontrado.</Box>;
+
   return (
     <Box>
       <Box sx={{ mb: 4 }}>
@@ -94,7 +118,7 @@ export const RevisionDocumental = () => {
           Revisión Documental
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 720 }}>
-          Expediente: {EXPEDIENTE_MOCK.id} | Estudiante: {EXPEDIENTE_MOCK.estudiante} | Tipo: {EXPEDIENTE_MOCK.tipoPractica}
+          Expediente: {expediente.codigoExpediente} | Estudiante: {expediente.nombreEstudiante} {expediente.apellidoEstudiante} | Tipo: {expediente.nombreTipoPractica}
         </Typography>
       </Box>
 
@@ -114,12 +138,12 @@ export const RevisionDocumental = () => {
                     >
                       <Box sx={{ width: '100%' }}>
                         <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                          {doc.tipo}
+                          {doc.tipoDocumento}
                         </Typography>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5, flexWrap: 'wrap' }}>
-                          <Chip size="small" label={doc.estado} color={getEstadoColor(doc.estado)} />
+                          <Chip size="small" label={doc.estado || 'PENDIENTE'} color={getEstadoColor(doc.estado)} />
                           <Typography variant="caption" color="text.secondary">
-                            {doc.fecha.split(' ')[0]}
+                            {new Date(doc.fechaSubida).toLocaleDateString()}
                           </Typography>
                         </Box>
                       </Box>
@@ -136,7 +160,7 @@ export const RevisionDocumental = () => {
           {selectedDoc ? (
             <Paper sx={{ p: { xs: 2.5, md: 3 }, height: '100%', borderRadius: 3 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, gap: 1 }}>
-                <Typography variant="h6">{selectedDoc.tipo}</Typography>
+                <Typography variant="h6">{selectedDoc.tipoDocumento}</Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
                   <Button startIcon={<History />} onClick={() => setHistoryDialog(true)}>
                     Historial
@@ -155,8 +179,8 @@ export const RevisionDocumental = () => {
                 <Box sx={{ flex: '1 1 280px' }}>
                   <Typography variant="caption" color="text.secondary">Archivo Actual</Typography>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-                    <Typography variant="body1" sx={{ wordBreak: 'break-word' }}>{selectedDoc.archivo}</Typography>
-                    <IconButton size="small" color="primary" title="Descargar documento">
+                    <Typography variant="body1" sx={{ wordBreak: 'break-word' }}>{selectedDoc.nombreArchivo}</Typography>
+                    <IconButton size="small" color="primary" title="Descargar documento" onClick={() => handleDownload(selectedDoc.rutaArchivo, selectedDoc.nombreArchivo)}>
                       <Download />
                     </IconButton>
                   </Box>
@@ -164,7 +188,7 @@ export const RevisionDocumental = () => {
                 <Box sx={{ flex: '1 1 200px' }}>
                   <Typography variant="caption" color="text.secondary">Estado Actual</Typography>
                   <Box sx={{ mt: 0.5 }}>
-                    <Chip label={selectedDoc.estado} color={getEstadoColor(selectedDoc.estado)} />
+                    <Chip label={selectedDoc.estado || 'PENDIENTE'} color={getEstadoColor(selectedDoc.estado)} />
                   </Box>
                 </Box>
               </Box>
@@ -233,25 +257,31 @@ export const RevisionDocumental = () => {
       </Dialog>
 
       <Dialog open={historyDialog} onClose={() => setHistoryDialog(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Historial de Trazabilidad - {selectedDoc?.tipo}</DialogTitle>
+        <DialogTitle>Historial de Trazabilidad - {selectedDoc?.tipoDocumento}</DialogTitle>
         <DialogContent>
           <List>
-            {selectedDoc?.historial.map((hist, index) => (
-              <React.Fragment key={index}>
-                <ListItem sx={{ alignItems: 'flex-start' }}>
-                  <ListItemText
-                    primary={
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
-                        <Typography variant="subtitle2">{hist.accion}</Typography>
-                        <Typography variant="caption" color="text.secondary">{hist.fecha}</Typography>
-                      </Box>
-                    }
-                    secondary={`Usuario: ${hist.usuario} | Versión: ${hist.version}`}
-                  />
-                </ListItem>
-                {index < selectedDoc.historial.length - 1 && <Divider />}
-              </React.Fragment>
-            ))}
+            {(selectedDoc?.historial || []).length > 0 ? (
+                (selectedDoc?.historial || []).map((hist, index) => (
+                  <React.Fragment key={index}>
+                    <ListItem sx={{ alignItems: 'flex-start' }}>
+                      <ListItemText
+                        primary={
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
+                            <Typography variant="subtitle2">{hist.accion}</Typography>
+                            <Typography variant="caption" color="text.secondary">{hist.fecha}</Typography>
+                          </Box>
+                        }
+                        secondary={`Usuario: ${hist.usuario} | Versión: ${hist.version}`}
+                      />
+                    </ListItem>
+                    {index < (selectedDoc?.historial || []).length - 1 && <Divider />}
+                  </React.Fragment>
+                ))
+            ) : (
+                <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
+                    No hay historial disponible para este documento.
+                </Typography>
+            )}
           </List>
         </DialogContent>
         <DialogActions>

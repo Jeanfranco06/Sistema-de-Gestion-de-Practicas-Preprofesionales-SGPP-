@@ -9,9 +9,9 @@ import java.util.Optional;
 
 @Repository
 public interface EvaluacionRepository extends JpaRepository<Evaluacion, Long> {
-    Optional<Evaluacion> findByPracticaIdAndTipoEvaluador(Long practicaId, String tipoEvaluador);
-    List<Evaluacion> findByPracticaId(Long practicaId);
+    Optional<Evaluacion> findByExpedienteIdAndTipoEvaluador(Long expedienteId, String tipoEvaluador);
+    List<Evaluacion> findByExpedienteId(Long expedienteId);
     List<Evaluacion> findByActivoTrue();
-    List<Evaluacion> findByPracticaIdAndActivoTrue(Long practicaId);
+    List<Evaluacion> findByExpedienteIdAndActivoTrue(Long expedienteId);
 }
 

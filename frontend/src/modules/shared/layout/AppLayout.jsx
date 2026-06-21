@@ -30,8 +30,6 @@ const NAV_ITEMS_ESTUDIANTE = [
 const NAV_ITEMS_DOCENTE = [
   { label: 'Dashboard', icon: <Dashboard />, path: '/docente/dashboard' },
   { label: 'Mis Practicantes', icon: <School />, path: '/docente/practicantes' },
-  { label: 'Documentos', icon: <Description />, path: '/docente/documentos' },
-  { label: 'Evaluaciones', icon: <Assessment />, path: '/docente/evaluaciones' },
 ];
 
 const NAV_ITEMS_ADMIN = [

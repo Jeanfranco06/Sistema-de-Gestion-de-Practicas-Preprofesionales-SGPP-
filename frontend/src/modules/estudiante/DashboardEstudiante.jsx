@@ -1,342 +1,234 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  Box, Grid, Card, CardContent, Typography, LinearProgress, Chip,
-  List, ListItem, ListItemText, ListItemIcon, ListItemSecondaryAction,
-  Avatar, Button, Divider, Alert, Paper, Stepper, Step, StepLabel,
-  Tooltip, CircularProgress,
+  Box, Grid, Typography, LinearProgress, Chip,
+  List, ListItem, ListItemText, ListItemIcon,
+  Avatar, Button, Divider, Alert, CircularProgress, IconButton
 } from '@mui/material';
 import {
-  Assignment, Description, Notifications, CheckCircle, Warning,
-  AccessTime, Business, ArrowForward, HourglassEmpty, School,
-  CalendarToday, InfoOutlined, UploadFile, Visibility, TrendingUp,
+  Assignment, Description, AccessTime, Business, ArrowForward, 
+  HourglassEmpty, Visibility, TrendingUp, Refresh, InfoOutlined, CloudUpload
 } from '@mui/icons-material';
 import { useAuth } from '../../auth/AuthContext';
+import { expedientesApi } from '../../api/expedientesApi';
+import { useNavigate } from 'react-router-dom';
 
-// ── Datos de prueba realistas (se sustituirán por llamadas a la API) ──────────
-const MOCK_PRACTICA = {
-  tipo: 'INICIAL', // INICIAL, FINAL, PROFESIONAL
-  tipoNombre: 'Prácticas Iniciales',
-  empresa: 'Empresa Agroindustrial Casa Grande S.A.A.',
-  sede: 'Sede Trujillo – Área de Producción',
-  fechaInicio: '2025-04-01',
-  fechaFin: '2025-06-24',
-  horasEjecutadas: 210,
-  horasTotales: 320,
-  horasMinimas: 120,
-  etapaActual: 2,
-  estado: 'EN_PROGRESO',
-  plazoPresentacionPlan: '2025-04-15', // Plazo para presentar plan
-  modalidadEvaluacion: 'INFORME', // INFORME, PRESENTACION, AMBAS
-};
-
-const MOCK_EXPEDIENTE = {
-  planPracticas: { estado: 'APROBADO', fecha: '2025-04-12', obligatorio: true },
-  cartaPresentacion: { estado: 'APROBADO', fecha: '2025-03-28', obligatorio: true },
-  informeParcial1: { estado: 'PENDIENTE', fecha: null, obligatorio: true },
-  informeParcial2: { estado: 'PENDIENTE', fecha: null, obligatorio: false }, // Solo para final/profesional
-  informeFinal: { estado: 'PENDIENTE', fecha: null, obligatorio: true },
-  presentacionFinal: { estado: 'PENDIENTE', fecha: null, obligatorio: false }, // Solo para final/profesional
-};
-
-const MOCK_OBSERVACIONES = [
-  { id: 1, documento: 'Plan de Prácticas', mensaje: 'Falta completar el cronograma de actividades en la semana 8.', fecha: '2025-04-10', resuelta: true },
-  { id: 2, documento: 'Informe Parcial 1', mensaje: 'Los objetivos no están alineados con el plan aprobado.', fecha: '2025-05-18', resuelta: false },
-];
-
-const MOCK_TAREAS = [
-  { id: 1, tarea: 'Subir Informe Parcial 1', limite: '2025-05-30', urgente: true, icon: <UploadFile fontSize="small" /> },
-  { id: 2, tarea: 'Levantar observación – Informe Parcial 1', limite: '2025-05-27', urgente: true, icon: <Warning fontSize="small" color="warning" /> },
-  { id: 3, tarea: 'Subir Informe Parcial 2', limite: '2025-06-13', urgente: false, icon: <UploadFile fontSize="small" /> },
-  { id: 4, tarea: 'Subir Informe Final', limite: '2025-06-20', urgente: false, icon: <Description fontSize="small" /> },
-];
-
-const MOCK_NOTIFICACIONES = [
-  { id: 1, tipo: 'warning', texto: 'Tu Informe Parcial 1 tiene una observación activa. Plazo: 27/05/2025.', fecha: 'Hoy' },
-  { id: 2, tipo: 'info', texto: 'El docente asesor revisó tu Plan de Prácticas y lo aprobó.', fecha: 'Hace 2 días' },
-  { id: 3, tipo: 'success', texto: 'Tu Carta de Presentación fue enviada a la empresa exitosamente.', fecha: 'Hace 5 días' },
-];
-
-const ETAPAS = ['Solicitud', 'Plan Aprobado', 'En Ejecución', 'Informes', 'Evaluación', 'Constancia'];
-
-// ── Componentes de tarjeta ────────────────────────────────────────────────────
-function StatCard({ icon, label, value, subtext, color = 'primary.main' }) {
-  return (
-    <Card sx={{ height: '100%' }}>
-      <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2.5 }}>
-        <Avatar sx={{ bgcolor: color, width: 48, height: 48 }}>{icon}</Avatar>
-        <Box>
-          <Typography variant="h4" fontWeight={700} color={color}>{value}</Typography>
-          <Typography variant="body2" fontWeight={600}>{label}</Typography>
-          {subtext && <Typography variant="caption" color="text.secondary">{subtext}</Typography>}
-        </Box>
-      </CardContent>
-    </Card>
-  );
+function getEtapaIndex(estado) {
+    const estadoToEtapa = {
+        'SOLICITADO': 0, 'EMPRESA_SEDE_ASIGNADA': 1, 'ASESOR_ASIGNADO': 1,
+        'COMITE_ASIGNADO': 1, 'PLAN_PRESENTADO': 2, 'EN_REVISION': 2,
+        'OBSERVADO': 2, 'SUBSANADO': 2, 'APROBADO': 3, 'EN_EJECUCION': 4,
+        'INFORME_PARCIAL_PRESENTADO': 4, 'INFORME_FINAL_PRESENTADO': 4,
+        'EVALUADO': 5, 'CERRADO': 6,
+    };
+    return estadoToEtapa[estado] || 0;
 }
 
-function EstadoChip({ estado }) {
-  const map = {
-    APROBADO: { label: 'Aprobado', color: 'success' },
-    PENDIENTE: { label: 'Pendiente', color: 'default' },
-    EN_REVISION: { label: 'En Revisión', color: 'info' },
-    OBSERVADO: { label: 'Observado', color: 'warning' },
-  };
-  const { label, color } = map[estado] || { label: estado, color: 'default' };
-  return <Chip label={label} color={color} size="small" />;
-}
-
-function diasRestantes(fechaStr) {
-  if (!fechaStr) return null;
-  const diff = Math.ceil((new Date(fechaStr) - new Date()) / 86400000);
-  return diff;
-}
-
-// ── Dashboard principal ───────────────────────────────────────────────────────
 export default function DashboardEstudiante() {
   const { user } = useAuth();
-  const [loading] = useState(false);
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [expediente, setExpediente] = useState(null);
 
-  const pct = Math.round((MOCK_PRACTICA.horasEjecutadas / MOCK_PRACTICA.horasTotales) * 100);
-  const obsActivas = MOCK_OBSERVACIONES.filter((o) => !o.resuelta);
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const res = await expedientesApi.getByEstudiante(user?.id || 1);
+      const expedientes = res.data?.data || [];
+      if (expedientes.length > 0) {
+        setExpediente(expedientes[0]);
+      }
+    } catch (err) {
+      console.error("Error al cargar datos:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const docsAprobados = Object.values(MOCK_EXPEDIENTE).filter((d) => d.estado === 'APROBADO').length;
-  const docsTotales = Object.keys(MOCK_EXPEDIENTE).length;
+  useEffect(() => {
+    fetchData();
+  }, [user]);
+
+  if (loading) {
+      return (
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
+              <CircularProgress size={60} thickness={4} sx={{ color: 'var(--wow-primary)' }} />
+          </Box>
+      );
+  }
+
+  if (!expediente) {
+      return (
+          <Box className="wow-animate-in" sx={{ p: 5, textAlign: 'center', mt: 5, maxWidth: 600, mx: 'auto' }}>
+              <div className="wow-card" style={{ padding: '48px' }}>
+                  <img src="https://illustrations.popsy.co/amber/student-going-to-school.svg" alt="No data" style={{ width: 200, marginBottom: 24 }} />
+                  <Typography variant="h5" fontWeight="700" color="text.primary" gutterBottom>¡Comienza tu aventura profesional!</Typography>
+                  <Typography variant="body1" color="text.secondary" mb={4}>Aún no tienes ninguna práctica registrada. Solicita el inicio de tus prácticas para empezar a registrar tu progreso.</Typography>
+                  <button className="wow-btn">Solicitar Práctica</button>
+              </div>
+          </Box>
+      );
+  }
+
+  const horasTotalesRequeridas = expediente.codigoTipoPractica === 'INICIAL' ? 120 : (expediente.codigoTipoPractica === 'FINAL' ? 180 : 200);
+  const horasEjecutadas = expediente.estado === 'CERRADO' || expediente.estado === 'EVALUADO' ? horasTotalesRequeridas : (expediente.estado === 'EN_EJECUCION' ? Math.floor(horasTotalesRequeridas * 0.5) : 0);
+  const pct = Math.round((horasEjecutadas / horasTotalesRequeridas) * 100);
+
+  const obsActivas = expediente.observacionesList?.filter(o => !o.subsanado) || [];
+  
+  const docsObligatorios = ['PLAN_PRACTICA', 'CARTA_ACEPTACION', 'INFORME_FINAL', 'CONSTANCIA_CULMINACION'];
+  const docsSubidos = expediente.documentos?.map(d => d.tipoDocumento) || [];
+  const docsAprobados = docsObligatorios.filter(d => docsSubidos.includes(d)).length;
+  const docsTotales = docsObligatorios.length;
 
   return (
-    <Box>
-      {/* Saludo */}
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h5" fontWeight={700}>
-          Bienvenido, {user?.nombres?.split(' ')[0]} 👋
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {MOCK_PRACTICA.tipo} · {MOCK_PRACTICA.empresa}
-        </Typography>
-      </Box>
+    <Box className="wow-animate-in" sx={{ maxWidth: 1200, margin: '0 auto', p: 2 }}>
+      
+      {/* Header Profile */}
+      <div className="wow-glass-card" style={{ padding: '32px', marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(135deg, rgba(99,102,241,0.1), rgba(200,100,255,0.05))' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+            <Avatar sx={{ width: 80, height: 80, bgcolor: 'var(--wow-primary)', fontSize: '2rem', boxShadow: 'var(--wow-shadow-float)' }}>
+                {user?.nombres?.charAt(0)}
+            </Avatar>
+            <Box>
+                <Typography variant="h4" fontWeight="800" className="wow-text-gradient">
+                    ¡Hola, {user?.nombres?.split(' ')[0]}! 👋
+                </Typography>
+                <Typography variant="body1" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
+                    {expediente.nombreTipoPractica} en {expediente.nombreEmpresa || 'Empresa No Asignada'}
+                </Typography>
+            </Box>
+        </Box>
+        <IconButton onClick={fetchData} sx={{ bgcolor: 'white', boxShadow: 'var(--wow-shadow-sm)' }}>
+            <Refresh color="primary" />
+        </IconButton>
+      </div>
 
-      {/* Alerta si hay observaciones activas */}
       {obsActivas.length > 0 && (
-        <Alert severity="warning" sx={{ mb: 3, borderRadius: 2 }}
-          action={<Button size="small" color="inherit">Ver</Button>}>
-          Tienes <strong>{obsActivas.length}</strong> observación activa pendiente de levantar. Plazo: <strong>27/05/2025</strong>.
+        <Alert severity="warning" sx={{ mb: 4, borderRadius: 3, border: '1px solid #fde68a' }}
+          action={<Button size="small" onClick={() => navigate('/estudiante/documentos')}>Resolver Ahora</Button>}>
+          Tienes <strong>{obsActivas.length}</strong> observación(es) pendiente(s). Por favor corrígelas para continuar.
         </Alert>
       )}
 
-      {/* ── Tarjetas de métricas ── */}
-      <Grid container spacing={2.5} sx={{ mb: 3 }}>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard icon={<Assignment />} label="Tipo de Práctica"
-            value={MOCK_PRACTICA.tipoNombre} subtext={`Mínimo: ${MOCK_PRACTICA.horasMinimas} horas`} color="primary.main" />
+      {/* Grid Overview */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} sm={6} md={3}>
+            <div className="wow-card" style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <Avatar sx={{ bgcolor: 'rgba(99,102,241,0.1)', color: 'var(--wow-primary)', width: 56, height: 56 }}><Assignment /></Avatar>
+                <Box>
+                    <Typography variant="body2" color="text.secondary" fontWeight="600">Modalidad</Typography>
+                    <Typography variant="h6" fontWeight="800">{expediente.codigoTipoPractica}</Typography>
+                </Box>
+            </div>
         </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard icon={<AccessTime />} label="Horas Registradas"
-            value={MOCK_PRACTICA.horasEjecutadas} subtext={`de ${MOCK_PRACTICA.horasTotales} horas requeridas`} color="primary.main" />
+        <Grid item xs={12} sm={6} md={3}>
+            <div className="wow-card" style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <Avatar sx={{ bgcolor: 'rgba(34,197,94,0.1)', color: '#22c55e', width: 56, height: 56 }}><AccessTime /></Avatar>
+                <Box>
+                    <Typography variant="body2" color="text.secondary" fontWeight="600">Horas Registradas</Typography>
+                    <Typography variant="h6" fontWeight="800">{horasEjecutadas} / {horasTotalesRequeridas}</Typography>
+                </Box>
+            </div>
         </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard icon={<HourglassEmpty />} label="Plazo Plan"
-            value={diasRestantes(MOCK_PRACTICA.plazoPresentacionPlan)} subtext={`días restantes`} color={diasRestantes(MOCK_PRACTICA.plazoPresentacionPlan) < 5 ? 'error.main' : 'warning.main'} />
+        <Grid item xs={12} sm={6} md={3}>
+            <div className="wow-card" style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <Avatar sx={{ bgcolor: 'rgba(239,68,68,0.1)', color: '#ef4444', width: 56, height: 56 }}><HourglassEmpty /></Avatar>
+                <Box>
+                    <Typography variant="body2" color="text.secondary" fontWeight="600">Estado Actual</Typography>
+                    <Typography variant="h6" fontWeight="800" sx={{ textTransform: 'capitalize' }}>{expediente.estado?.replace(/_/g, ' ').toLowerCase()}</Typography>
+                </Box>
+            </div>
         </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard icon={<Description />} label="Documentos"
-            value={`${docsAprobados}/${docsTotales}`} subtext="obligatorios aprobados" color="success.main" />
-        </Grid>
-      </Grid>
-
-      {/* ── Barra de progreso de horas + stepper ── */}
-      <Grid container spacing={2.5} sx={{ mb: 3 }}>
-        <Grid size={{ xs: 12, md: 6 }}>
-          <Card sx={{ height: '100%' }}>
-            <CardContent sx={{ p: 3 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                <Typography variant="h6" fontWeight={600}>Horas Acumuladas</Typography>
-                <Chip label={`${pct}%`} color={pct >= 80 ? 'success' : 'primary'} size="small" />
-              </Box>
-              <LinearProgress variant="determinate" value={pct} sx={{ height: 12, borderRadius: 6, mb: 1 }} />
-              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Typography variant="caption" color="text.secondary">
-                  {MOCK_PRACTICA.horasEjecutadas} horas ejecutadas
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {MOCK_PRACTICA.horasTotales - MOCK_PRACTICA.horasEjecutadas} restantes
-                </Typography>
-              </Box>
-              <Divider sx={{ my: 2 }} />
-              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                <Chip icon={<Business />} label={MOCK_PRACTICA.sede} size="small" variant="outlined" sx={{ maxWidth: '100%' }} />
-                <Chip icon={<CalendarToday />} label={`${MOCK_PRACTICA.fechaInicio} → ${MOCK_PRACTICA.fechaFin}`} size="small" variant="outlined" />
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid size={{ xs: 12, md: 6 }}>
-          <Card sx={{ height: '100%' }}>
-            <CardContent sx={{ p: 3 }}>
-              <Typography variant="h6" fontWeight={600} sx={{ mb: 2.5 }}>Progreso del Trámite</Typography>
-              <Stepper activeStep={MOCK_PRACTICA.etapaActual} alternativeLabel>
-                {ETAPAS.map((label) => (
-                  <Step key={label}>
-                    <StepLabel sx={{ '& .MuiStepLabel-label': { fontSize: '0.7rem' } }}>{label}</StepLabel>
-                  </Step>
-                ))}
-              </Stepper>
-            </CardContent>
-          </Card>
+        <Grid item xs={12} sm={6} md={3}>
+            <div className="wow-card" style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <Avatar sx={{ bgcolor: 'rgba(234,179,8,0.1)', color: '#eab308', width: 56, height: 56 }}><Description /></Avatar>
+                <Box>
+                    <Typography variant="body2" color="text.secondary" fontWeight="600">Documentos</Typography>
+                    <Typography variant="h6" fontWeight="800">{docsAprobados} de {docsTotales}</Typography>
+                </Box>
+            </div>
         </Grid>
       </Grid>
 
-      {/* ── Estado del expediente + Tareas ── */}
-      <Grid container spacing={2.5} sx={{ mb: 3 }}>
-        {/* Expediente */}
-        <Grid size={{ xs: 12, md: 4 }}>
-          <Card sx={{ height: '100%' }}>
-            <CardContent sx={{ p: 3 }}>
-              <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>Estado del Expediente</Typography>
-              <List dense disablePadding>
-                {Object.entries(MOCK_EXPEDIENTE)
-                  .filter(([_, data]) => data.obligatorio || MOCK_PRACTICA.tipo !== 'INICIAL')
-                  .map(([key, data]) => {
-                    const nombres = {
-                      planPracticas: 'Plan de Prácticas',
-                      cartaPresentacion: 'Carta de Presentación',
-                      informeParcial1: 'Informe Parcial 1',
-                      informeParcial2: 'Informe Parcial 2',
-                      informeFinal: 'Informe Final',
-                      presentacionFinal: 'Presentación Final',
-                    };
-                    return (
-                      <ListItem key={key} disablePadding sx={{ py: 0.75 }}>
-                        <ListItemText
-                          primary={nombres[key]}
-                          slotProps={{ primary: { fontSize: '0.82rem' } }}
-                        />
-                        <EstadoChip estado={data.estado} />
-                      </ListItem>
-                    );
-                  })}
-              </List>
-            </CardContent>
-          </Card>
-        </Grid>
+      <Grid container spacing={4}>
+        {/* Progreso Principal */}
+        <Grid item xs={12} lg={8}>
+            <div className="wow-card" style={{ padding: '32px', height: '100%' }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 4 }}>
+                    <Typography variant="h5" fontWeight="700">Progreso de Práctica</Typography>
+                    <Chip label={`${pct}% Completado`} color="primary" sx={{ fontWeight: 'bold' }} />
+                </Box>
+                
+                <Box className="wow-progress-bg" sx={{ height: 16, mb: 2 }}>
+                    <div className="wow-progress-fill" style={{ width: `${pct}%` }}></div>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 4 }}>
+                    <Typography variant="body2" color="text.secondary" fontWeight="600">{horasEjecutadas} hrs. ejecutadas</Typography>
+                    <Typography variant="body2" color="text.secondary" fontWeight="600">{horasTotalesRequeridas - horasEjecutadas} hrs. restantes</Typography>
+                </Box>
 
-        {/* Lista de tareas */}
-        <Grid size={{ xs: 12, md: 4 }}>
-          <Card sx={{ height: '100%' }}>
-            <CardContent sx={{ p: 3 }}>
-              <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>Tareas Pendientes</Typography>
-              <List dense disablePadding>
-                {MOCK_TAREAS.map((t) => {
-                  const dias = diasRestantes(t.limite);
-                  return (
-                    <ListItem key={t.id} disablePadding sx={{ py: 0.75 }}>
-                      <ListItemIcon sx={{ minWidth: 32, color: t.urgente ? 'error.main' : 'text.secondary' }}>
-                        {t.icon}
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={t.tarea}
-                        secondary={`${t.limite} · ${dias >= 0 ? `${dias} días` : 'vencido'}`}
-                        slotProps={{
-                          primary: { fontSize: '0.82rem', fontWeight: t.urgente ? 600 : 400 },
-                          secondary: { fontSize: '0.72rem', color: dias < 5 ? 'error.main' : 'text.secondary' }
-                        }}
-                      />
-                    </ListItem>
-                  );
-                })}
-              </List>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Notificaciones */}
-        <Grid size={{ xs: 12, md: 4 }}>
-          <Card sx={{ height: '100%' }}>
-            <CardContent sx={{ p: 3 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6" fontWeight={600}>Notificaciones</Typography>
-                <Chip label={MOCK_NOTIFICACIONES.length} color="error" size="small" />
-              </Box>
-              <List dense disablePadding>
-                {MOCK_NOTIFICACIONES.map((n) => (
-                  <Box key={n.id}>
-                    <ListItem disablePadding sx={{ py: 0.75, alignItems: 'flex-start' }}>
-                      <ListItemIcon sx={{ minWidth: 30, mt: 0.5 }}>
-                        {n.tipo === 'warning' && <Warning fontSize="small" color="warning" />}
-                        {n.tipo === 'info' && <InfoOutlined fontSize="small" color="info" />}
-                        {n.tipo === 'success' && <CheckCircle fontSize="small" color="success" />}
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={n.texto}
-                        secondary={n.fecha}
-                        slotProps={{
-                          primary: { fontSize: '0.8rem' },
-                          secondary: { fontSize: '0.72rem' }
-                        }}
-                      />
-                    </ListItem>
-                    <Divider component="li" />
-                  </Box>
-                ))}
-              </List>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-
-      {/* ── Accesos rápidos ── */}
-      <Card>
-        <CardContent sx={{ p: 3 }}>
-          <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>Accesos Rápidos</Typography>
-          <Grid container spacing={2}>
-            {(() => {
-              const accesosBase = [
-                { label: 'Ver mis Documentos', icon: <Visibility />, color: '#2e7d32', path: '/estudiante/documentos' },
-                { label: 'Registro de Horas', icon: <AccessTime />, color: '#ed6c02', path: '/estudiante/horas' },
-                { label: 'Mi Empresa / Sede', icon: <Business />, color: '#0288d1', path: '/estudiante/sedes' },
-                { label: 'Mi Docente Asesor', icon: <School />, color: '#7b1fa2', path: '/estudiante/practica' },
-              ];
-
-              const accesosPorTipo = {
-                INICIAL: [
-                  { label: 'Subir Informe Parcial', icon: <UploadFile />, color: '#1a3a5c', path: '/estudiante/documentos' },
-                  { label: 'Ver Evaluación', icon: <TrendingUp />, color: '#c8a951', path: '/estudiante/evaluacion' },
-                ],
-                FINAL: [
-                  { label: 'Subir Informe Parcial 1', icon: <UploadFile />, color: '#1a3a5c', path: '/estudiante/documentos' },
-                  { label: 'Subir Informe Parcial 2', icon: <UploadFile />, color: '#1a3a5c', path: '/estudiante/documentos' },
-                  { label: 'Subir Informe Final', icon: <Description />, color: '#1a3a5c', path: '/estudiante/documentos' },
-                  { label: 'Ver Evaluación', icon: <TrendingUp />, color: '#c8a951', path: '/estudiante/evaluacion' },
-                ],
-                PROFESIONAL: [
-                  { label: 'Subir Informe Final', icon: <Description />, color: '#1a3a5c', path: '/estudiante/documentos' },
-                  { label: 'Presentación Final', icon: <School />, color: '#7b1fa2', path: '/estudiante/presentacion' },
-                  { label: 'Ver Evaluación', icon: <TrendingUp />, color: '#c8a951', path: '/estudiante/evaluacion' },
-                ],
-              };
-
-              return [...accesosBase, ...(accesosPorTipo[MOCK_PRACTICA.tipo] || accesosPorTipo.INICIAL)].map((acc) => (
-                <Grid size={{ xs: 6, sm: 4, md: 2 }} key={acc.label}>
-                  <Paper
-                    sx={{
-                      p: 2, textAlign: 'center', cursor: 'pointer', borderRadius: 2,
-                      border: '1px solid #e0e0e0', transition: 'all 0.2s',
-                      '&:hover': { boxShadow: 4, transform: 'translateY(-2px)', borderColor: acc.color },
-                    }}
-                    onClick={() => {}}
-                  >
-                    <Avatar sx={{ bgcolor: acc.color, mx: 'auto', mb: 1, width: 42, height: 42 }}>
-                      {acc.icon}
-                    </Avatar>
-                    <Typography variant="caption" fontWeight={600} display="block" sx={{ lineHeight: 1.3 }}>
-                      {acc.label}
-                    </Typography>
-                  </Paper>
+                <Divider sx={{ my: 4 }} />
+                
+                <Typography variant="h6" fontWeight="700" sx={{ mb: 3 }}>Documentos Requeridos</Typography>
+                <Grid container spacing={2}>
+                    {docsObligatorios.map((docType) => {
+                        const isSubido = docsSubidos.includes(docType);
+                        const n = { 'PLAN_PRACTICA': 'Plan de Prácticas', 'CARTA_ACEPTACION': 'Carta de Aceptación', 'INFORME_FINAL': 'Informe Final', 'CONSTANCIA_CULMINACION': 'Constancia de Culminación' };
+                        return (
+                            <Grid item xs={12} sm={6} key={docType}>
+                                <div style={{ padding: '16px', borderRadius: '12px', border: isSubido ? '2px solid rgba(34,197,94,0.2)' : '2px solid rgba(0,0,0,0.05)', backgroundColor: isSubido ? 'rgba(34,197,94,0.02)' : '#fafafa', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                        {isSubido ? <CloudUpload sx={{ color: '#22c55e' }}/> : <Description color="disabled"/>}
+                                        <Typography variant="body2" fontWeight="600">{n[docType] || docType}</Typography>
+                                    </Box>
+                                    {isSubido ? <Chip label="Listo" size="small" sx={{ bgcolor: '#22c55e', color: 'white', fontWeight: 'bold' }}/> : <Chip label="Falta" size="small" variant="outlined"/>}
+                                </div>
+                            </Grid>
+                        );
+                    })}
                 </Grid>
-              ));
-            })()}
-          </Grid>
-        </CardContent>
-      </Card>
+            </div>
+        </Grid>
+
+        {/* Sidebar / Quick Actions */}
+        <Grid item xs={12} lg={4}>
+            <div className="wow-card" style={{ padding: '32px', marginBottom: '24px' }}>
+                <Typography variant="h6" fontWeight="700" sx={{ mb: 3 }}>Accesos Rápidos</Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <Button variant="outlined" startIcon={<Visibility />} fullWidth onClick={() => navigate('/estudiante/documentos')} sx={{ py: 1.5, borderRadius: 2, justifyContent: 'flex-start', color: 'text.primary', borderColor: 'rgba(0,0,0,0.1)' }}>
+                        Gestionar Documentos
+                    </Button>
+                    <Button variant="outlined" startIcon={<Business />} fullWidth onClick={() => navigate('/estudiante/sedes')} sx={{ py: 1.5, borderRadius: 2, justifyContent: 'flex-start', color: 'text.primary', borderColor: 'rgba(0,0,0,0.1)' }}>
+                        Información de Empresa
+                    </Button>
+                    <Button variant="outlined" startIcon={<TrendingUp />} fullWidth onClick={() => navigate('/estudiante/evaluacion')} sx={{ py: 1.5, borderRadius: 2, justifyContent: 'flex-start', color: 'text.primary', borderColor: 'rgba(0,0,0,0.1)' }}>
+                        Ver mis Evaluaciones
+                    </Button>
+                </Box>
+            </div>
+
+            <div className="wow-card" style={{ padding: '32px' }}>
+                <Typography variant="h6" fontWeight="700" sx={{ mb: 3 }}>Historial Reciente</Typography>
+                <List disablePadding>
+                    {expediente.estadoHistorial?.slice(-4).reverse().map((h) => (
+                        <ListItem key={h.id} disablePadding sx={{ mb: 2, alignItems: 'flex-start' }}>
+                            <ListItemIcon sx={{ minWidth: 36, mt: 0.5 }}>
+                                <InfoOutlined color="primary" fontSize="small" />
+                            </ListItemIcon>
+                            <ListItemText
+                                primary={`${h.estadoNuevo?.replace(/_/g, ' ')}`}
+                                secondary={h.observacion || h.fechaCambio}
+                                slotProps={{ primary: { fontWeight: 600, fontSize: '0.9rem', sx: { textTransform: 'capitalize' } }, secondary: { fontSize: '0.75rem' } }}
+                            />
+                        </ListItem>
+                    ))}
+                    {(!expediente.estadoHistorial || expediente.estadoHistorial.length === 0) && (
+                        <Typography variant="body2" color="text.secondary">No hay actualizaciones aún.</Typography>
+                    )}
+                </List>
+            </div>
+        </Grid>
+      </Grid>
     </Box>
   );
 }

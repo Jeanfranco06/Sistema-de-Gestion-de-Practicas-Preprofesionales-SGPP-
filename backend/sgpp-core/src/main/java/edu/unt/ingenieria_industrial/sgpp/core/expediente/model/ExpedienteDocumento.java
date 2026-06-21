@@ -45,4 +45,8 @@ public class ExpedienteDocumento extends BaseEntity {
 
     @Column(name = "observaciones", columnDefinition = "TEXT")
     private String observaciones;
+
+    @Column(name = "estado", length = 20)
+    @Builder.Default
+    private String estado = "PENDIENTE";
 }

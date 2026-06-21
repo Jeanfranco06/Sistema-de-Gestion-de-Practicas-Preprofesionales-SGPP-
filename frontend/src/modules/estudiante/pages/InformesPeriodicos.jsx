@@ -4,11 +4,17 @@ import {
   DialogActions, Alert, LinearProgress, Divider
 } from '@mui/material';
 import { CloudUpload, Download, AccessTime, CheckCircle, Lock } from '@mui/icons-material';
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
+import { expedientesApi } from '../../../api/expedientesApi';
+import api from '../../../api/axios';
+
+const MySwal = withReactContent(Swal);
 
 const HITOS = [
-  { id: 1, nombre: 'Informe Parcial 1', semana: 5, estado: 'APROBADO', fechaLimite: '2025-10-15', bloqueado: false, archivo: 'informe_semana5.pdf' },
-  { id: 2, nombre: 'Informe Parcial 2', semana: 10, estado: 'PENDIENTE', fechaLimite: '2025-11-20', bloqueado: false, archivo: null },
-  { id: 3, nombre: 'Informe Final', semana: 15, estado: 'BLOQUEADO', fechaLimite: '2025-12-25', bloqueado: true, archivo: null }
+  { id: 1, nombre: 'Informe Parcial 1', semana: 5, estado: 'APROBADO', fechaLimite: '2025-10-15', bloqueado: false, archivo: 'informe_semana5.pdf', fileName: 'mock-file.pdf' },
+  { id: 2, nombre: 'Informe Parcial 2', semana: 10, estado: 'PENDIENTE', fechaLimite: '2025-11-20', bloqueado: false, archivo: null, fileName: null },
+  { id: 3, nombre: 'Informe Final', semana: 15, estado: 'BLOQUEADO', fechaLimite: '2025-12-25', bloqueado: true, archivo: null, fileName: null }
 ];
 
 export const InformesPeriodicos = () => {
@@ -29,24 +35,90 @@ export const InformesPeriodicos = () => {
     const file = event.target.files[0];
     if (file) {
       if (file.name.split('.').pop().toLowerCase() !== 'pdf') {
-        alert('Solo se permiten archivos PDF');
+        MySwal.fire({
+          icon: 'error',
+          title: 'Formato Incorrecto',
+          text: 'Solo se permiten archivos en formato PDF.',
+          confirmButtonColor: '#d33'
+        });
         return;
       }
+      
+      if (file.size > 5 * 1024 * 1024) { // Max 5MB for informes
+        MySwal.fire({
+          icon: 'warning',
+          title: 'Archivo Demasiado Pesado',
+          text: 'El informe excede el tamaño máximo de 5MB. Por favor comprímalo.',
+          confirmButtonColor: '#f8bb86'
+        });
+        return;
+      }
+      
       setSelectedFile(file);
     }
   };
 
-  const handleUpload = () => {
+  const handleUpload = async () => {
     if (!selectedFile) return;
     
-    setHitos(hitos.map(h => {
-      if (h.id === uploadDialog.hito.id) {
-        return { ...h, estado: 'EN_REVISION', archivo: selectedFile.name };
-      }
-      return h;
-    }));
+    try {
+      MySwal.fire({
+        title: 'Enviando Informe...',
+        html: 'Guardando el documento y notificando a su docente asesor.',
+        allowOutsideClick: false,
+        didOpen: () => {
+          MySwal.showLoading();
+        }
+      });
 
-    handleCloseUpload();
+      // Simular retraso de red
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      // Lógica real en producción:
+      const response = await expedientesApi.uploadFile(selectedFile);
+      const { fileName } = response.data;
+
+      setHitos(hitos.map(h => {
+        if (h.id === uploadDialog.hito.id) {
+          return { ...h, estado: 'EN_REVISION', archivo: selectedFile.name, fileName: fileName };
+        }
+        return h;
+      }));
+
+      handleCloseUpload();
+      
+      MySwal.fire({
+        icon: 'success',
+        title: '¡Informe Enviado!',
+        text: 'Su docente asesor ha sido notificado para la revisión.',
+        timer: 2000,
+        showConfirmButton: false
+      });
+    } catch (error) {
+      MySwal.fire({
+        icon: 'error',
+        title: 'Error de Conexión',
+        text: 'Hubo un problema al subir el informe. Intente de nuevo.'
+      });
+    }
+  };
+
+  const handleDownload = async (hito) => {
+    try {
+      MySwal.fire({ title: 'Descargando...', allowOutsideClick: false, didOpen: () => MySwal.showLoading() });
+      const res = await api.get(`/documentos/download/${hito.fileName}`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', hito.archivo);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      MySwal.close();
+    } catch (error) {
+      console.error('Download error:', error);
+      MySwal.fire('Error', 'No tienes permisos o el archivo no existe.', 'error');
+    }
   };
 
   const getEstadoChip = (estado) => {
@@ -127,7 +199,7 @@ export const InformesPeriodicos = () => {
                   <Typography variant="body2" noWrap sx={{ maxWidth: '70%' }} title={hito.archivo}>
                     {hito.archivo}
                   </Typography>
-                  <Button size="small" startIcon={<Download />}>Descargar</Button>
+                  <Button size="small" startIcon={<Download />} onClick={() => handleDownload(hito)}>Descargar</Button>
                 </Box>
               ) : (
                 <Button

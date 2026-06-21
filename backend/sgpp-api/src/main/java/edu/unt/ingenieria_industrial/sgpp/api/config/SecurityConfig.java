@@ -47,6 +47,7 @@ public class SecurityConfig {
                         .requestMatchers("/docente/**").hasAnyRole("ADMIN_SISTEMA", "DOCENTE_ASESOR")
                         .requestMatchers("/tutor/**").hasAnyRole("ADMIN_SISTEMA", "TUTOR_EXTERNO")
                         .requestMatchers("/evaluaciones/**").hasAnyRole("ADMIN_SISTEMA", "DOCENTE_ASESOR", "TUTOR_EXTERNO")
+                        .requestMatchers("/documentos/**").authenticated()
                         .requestMatchers("/parametros/**").authenticated()
                         .requestMatchers("/tutores-externos/**").hasAnyRole("ADMIN_SISTEMA", "SECRETARIA", "COMITE_PRACTICAS", "COORDINADOR", "DIRECTOR")
                         .requestMatchers("/expedientes/**").hasAnyRole("ADMIN_SISTEMA", "SECRETARIA", "COMITE_PRACTICAS", "COORDINADOR", "DIRECTOR", "DOCENTE_ASESOR", "ESTUDIANTE", "TUTOR_EXTERNO")

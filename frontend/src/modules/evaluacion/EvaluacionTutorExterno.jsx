@@ -1,74 +1,78 @@
 import React, { useState, useEffect } from 'react';
 import {
-    Box,
-    Typography,
-    Paper,
-    TextField,
-    Button,
-    Grid,
-    Alert,
-    Chip,
-    FormControl,
-    InputLabel,
-    Select,
-    MenuItem
+    Box, Typography, TextField, Button, Grid, Chip, Table, TableBody, TableCell, 
+    TableContainer, TableHead, TableRow, Card, CardContent, List, ListItem, 
+    ListItemIcon, ListItemText, ListItemSecondaryAction, IconButton, Alert
 } from '@mui/material';
-import { CloudUpload, ReportProblem } from '@mui/icons-material';
+import { Download, Description, Person, Business, AutoGraph, CloudUpload } from '@mui/icons-material';
 import { evaluacionesApi } from '../../api/evaluacionesApi';
+import { expedientesApi } from '../../api/expedientesApi';
+import api from '../../api/axios';
 import { useAuth } from '../../auth/AuthContext';
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
+import { useParams, useNavigate } from 'react-router-dom';
+import { ArrowBack } from '@mui/icons-material';
+
+const MySwal = withReactContent(Swal);
 
 export const EvaluacionTutorExterno = () => {
     const { user } = useAuth();
+    const { id: idExpedienteParams } = useParams();
+    const navigate = useNavigate();
+    const idExpediente = idExpedienteParams ? parseInt(idExpedienteParams) : 1;
+
     const [criterios, setCriterios] = useState([]);
+    const [evaluaciones, setEvaluaciones] = useState([]);
     const [evaluacion, setEvaluacion] = useState({
-        idPractica: 1, // TODO: Obtener la práctica real del usuario
+        idExpediente: idExpediente,
         tipoEvaluador: 'EMPRESA',
         evaluadorId: user?.id || 1,
-        unidad: 'U1',
+        componente: 'EMPRESA',
         detalles: [],
         comentarios: '',
         horasRegistradas: 0,
         rutaConstancia: ''
     });
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState(false);
+    const [expediente, setExpediente] = useState(null);
+
+    const fetchData = async () => {
+        try {
+            const expRes = await expedientesApi.getById(idExpediente).catch(() => ({ data: null }));
+            const evRes = await evaluacionesApi.obtenerEvaluacionesPorPractica(idExpediente).catch(() => ({ data: [] }));
+            const critRes = await evaluacionesApi.obtenerCriteriosPorTipo('EMPRESA').catch(() => ({ data: [] }));
+            
+            const crit = critRes.data || [];
+            
+            setExpediente(expRes.data?.data || expRes.data);
+            setEvaluaciones(evRes.data || []);
+            setCriterios(crit);
+            
+            setEvaluacion(prev => ({
+                ...prev,
+                detalles: crit.map(c => ({
+                    idCriterio: c.id,
+                    puntajeObtenido: 0,
+                    comentarios: ''
+                }))
+            }));
+        } catch (error) {
+            console.error('❌ Error fetching data:', error);
+            MySwal.fire('Error', 'No se pudieron cargar los datos de evaluación.', 'error');
+        }
+    };
 
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                setError('');
-                console.log('🔍 Llamando a API de criterios para tipo: EMPRESA');
-                const response = await evaluacionesApi.obtenerCriteriosPorTipo('EMPRESA');
-                console.log('📥 Respuesta del API:', response);
-                console.log('📦 Datos de criterios:', response.data);
-                setCriterios(response.data);
-                setEvaluacion(prev => ({
-                    ...prev,
-                    evaluadorId: user?.id || 1,
-                    detalles: response.data.map(c => ({
-                        idCriterio: c.id,
-                        puntajeObtenido: 0,
-                        comentarios: ''
-                    }))
-                }));
-            } catch (error) {
-                console.error('❌ Error fetching criteria:', error);
-                setError('Error al cargar los datos: ' + (error.response?.data?.message || error.message));
-            }
-        };
-
         fetchData();
-    }, [user]);
+    }, [idExpediente]);
 
     const handlePuntajeChange = (index, value) => {
         const newDetalles = [...evaluacion.detalles];
         const numValue = parseInt(value) || 0;
-        const criterio = criterios[index];
-        const maxValue = criterio?.puntajeMaximo || 100;
         newDetalles[index] = {
             ...newDetalles[index],
-            puntajeObtenido: Math.min(Math.max(numValue, 0), maxValue)
+            puntajeObtenido: Math.min(Math.max(numValue, 0), 20) // Nota 0 a 20
         };
         setEvaluacion(prev => ({ ...prev, detalles: newDetalles }));
     };
@@ -82,234 +86,263 @@ export const EvaluacionTutorExterno = () => {
     const handleFileUpload = (e) => {
         const file = e.target.files[0];
         if (file) {
-            // TODO: Implement actual file upload to backend
             setEvaluacion(prev => ({ ...prev, rutaConstancia: file.name }));
         }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        const confirmResult = await MySwal.fire({
+            title: '¿Confirmar Evaluación?',
+            text: `¿Estás seguro de registrar la evaluación de la empresa?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, registrar',
+            cancelButtonText: 'Cancelar',
+            customClass: { confirmButton: 'wow-btn' }
+        });
+
+        if (!confirmResult.isConfirmed) return;
+
         setLoading(true);
-        setError('');
-        setSuccess(false);
         try {
+            MySwal.fire({ title: 'Guardando...', didOpen: () => MySwal.showLoading() });
             await evaluacionesApi.crearEvaluacion(evaluacion);
-            setSuccess(true);
-            // Reset form
-            setEvaluacion(prev => ({
-                ...prev,
-                detalles: criterios.map(c => ({
-                    idCriterio: c.id,
-                    puntajeObtenido: 0,
-                    comentarios: ''
-                })),
-                comentarios: '',
-                horasRegistradas: 0,
-                rutaConstancia: ''
-            }));
-            setTimeout(() => setSuccess(false), 5000);
+            
+            const evRes = await evaluacionesApi.obtenerEvaluacionesPorPractica(idExpediente);
+            setEvaluaciones(evRes.data || []);
+            
+            MySwal.fire({
+                icon: 'success',
+                title: 'Evaluación Registrada',
+                timer: 2000,
+                showConfirmButton: false
+            });
         } catch (error) {
-            console.error('Error submitting evaluation:', error);
-            setError('Error al guardar la evaluación: ' + (error.response?.data?.message || error.message));
+            MySwal.fire('Error', 'No se pudo guardar la evaluación.', 'error');
         } finally {
             setLoading(false);
         }
     };
 
-    const totalPuntaje = evaluacion.detalles.reduce((sum, d) => sum + d.puntajeObtenido, 0);
+    const handleDownloadDocument = async (docName) => {
+        try {
+            MySwal.fire({ title: 'Descargando...', didOpen: () => MySwal.showLoading() });
+            const res = await api.get(`/documentos/download/${docName}`, { responseType: 'blob' });
+            const url = window.URL.createObjectURL(new Blob([res.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', docName);
+            document.body.appendChild(link);
+            link.click();
+            link.parentNode.removeChild(link);
+            MySwal.close();
+        } catch (error) {
+            MySwal.fire('Error', 'No se pudo descargar el archivo.', 'error');
+        }
+    };
+
+    const ultimaEvaluacion = evaluaciones.length > 0 ? evaluaciones[evaluaciones.length - 1] : null;
+    const promedioFinal = ultimaEvaluacion?.promedioFinal || 0;
+    const progresoColor = promedioFinal >= 14 ? 'var(--wow-success)' : promedioFinal >= 11 ? 'var(--wow-warning)' : 'var(--wow-danger)';
 
     return (
-        <Box sx={{ maxWidth: 1200, margin: '0 auto', p: 2 }}>
-            <Box sx={{ mb: 4 }}>
-                <Typography variant="h4" fontWeight="600" color="text.primary" gutterBottom>
-                    Evaluación del Tutor Externo
-                </Typography>
-                <Typography variant="body1" color="text.secondary">
-                    Complete la evaluación del estudiante en prácticas de manera objetiva.
-                </Typography>
+        <Box sx={{ maxWidth: 1200, margin: '0 auto', p: 3 }} className="wow-animate-in">
+            <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
+                <IconButton onClick={() => navigate('/tutor/practicantes')} sx={{ bgcolor: 'var(--wow-surface-card)', boxShadow: 'var(--wow-shadow-sm)' }}>
+                    <ArrowBack />
+                </IconButton>
+                <Box>
+                    <Typography variant="h4" className="wow-text-gradient" gutterBottom>
+                        Desempeño en la Empresa (30%)
+                    </Typography>
+                    <Typography variant="body1" color="text.secondary">
+                        Evaluación por competencias - Tutor Externo
+                    </Typography>
+                </Box>
             </Box>
 
-            {error && (
-                <Alert severity="error" sx={{ mb: 4, borderRadius: 2 }} onClose={() => setError('')}>
-                    {error}
-                </Alert>
+            {expediente && (
+                <div className="wow-card" style={{ marginBottom: '24px', overflow: 'hidden' }}>
+                    <Box sx={{ p: 3, borderBottom: '1px solid rgba(0,0,0,0.05)', background: 'linear-gradient(to right, rgba(99,102,241,0.05), transparent)' }}>
+                        <Grid container spacing={3}>
+                            <Grid item xs={12} md={7}>
+                                <Typography variant="overline" color="primary" fontWeight="bold">Practicante a cargo</Typography>
+                                <Typography variant="h5" fontWeight="700" sx={{ mt: 1, mb: 1 }}>
+                                    {expediente.nombreEstudiante} {expediente.apellidoEstudiante}
+                                </Typography>
+                                <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                                    <Chip icon={<Person />} label={expediente.codigoEstudiantil} size="small" />
+                                    <Chip icon={<Business />} label={expediente.nombreEmpresa} size="small" variant="outlined" />
+                                </Box>
+                            </Grid>
+                            <Grid item xs={12} md={5}>
+                                <Box sx={{ p: 2, bgcolor: 'white', borderRadius: 3, boxShadow: 'var(--wow-shadow-sm)', textAlign: 'center' }}>
+                                    <Typography variant="body2" color="text.secondary" gutterBottom>Promedio Actual</Typography>
+                                    <Typography variant="h3" fontWeight="800" sx={{ color: progresoColor }}>
+                                        {promedioFinal}
+                                    </Typography>
+                                    <Box className="wow-progress-bg" sx={{ mt: 1 }}>
+                                        <div className="wow-progress-fill" style={{ width: `${(promedioFinal/20)*100}%`, background: progresoColor }}></div>
+                                    </Box>
+                                </Box>
+                            </Grid>
+                        </Grid>
+                    </Box>
+                    
+                    <Box sx={{ p: 3 }}>
+                        <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>DOCUMENTOS ASIGNADOS</Typography>
+                        <Grid container spacing={2}>
+                            {expediente.documentos?.map(doc => (
+                                <Grid item xs={12} sm={6} md={4} key={doc.id}>
+                                    <div className="wow-card" style={{ padding: '12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        <Description color="primary" />
+                                        <Box sx={{ flex: 1, overflow: 'hidden' }}>
+                                            <Typography variant="body2" noWrap fontWeight="500">{doc.tipoDocumento}</Typography>
+                                        </Box>
+                                        <IconButton size="small" onClick={() => handleDownloadDocument(doc.nombreArchivo)}>
+                                            <Download fontSize="small" />
+                                        </IconButton>
+                                    </div>
+                                </Grid>
+                            ))}
+                        </Grid>
+                    </Box>
+                </div>
             )}
 
-            {success && (
-                <Alert severity="success" sx={{ mb: 4, borderRadius: 2 }} onClose={() => setSuccess(false)}>
-                    Evaluación guardada exitosamente.
-                </Alert>
-            )}
-
-            <Paper elevation={0} sx={{ p: 4, borderRadius: 2, mb: 4, border: '1px solid #e0e0e0' }}>
-                <Typography variant="h6" fontWeight="600" sx={{ mb: 3 }}>
-                    Fase de Evaluación
-                </Typography>
-
-                <FormControl fullWidth sx={{ mb: 2 }}>
-                    <InputLabel>Unidad de avance</InputLabel>
-                    <Select
-                        value={evaluacion.unidad}
-                        label="Unidad de avance"
-                        onChange={(e) => setEvaluacion(prev => ({ ...prev, unidad: e.target.value }))}
-                        sx={{ borderRadius: 2 }}
-                    >
-                        <MenuItem value="U1">U1 - Planificación inicial (30% del ciclo)</MenuItem>
-                        <MenuItem value="U2">U2 - Desarrollo intermedio (30% del ciclo)</MenuItem>
-                        <MenuItem value="U3">U3 - Cierre final (40% del ciclo)</MenuItem>
-                    </Select>
-                </FormControl>
-            </Paper>
-
-            <Paper elevation={0} sx={{ p: 4, borderRadius: 2, mb: 4, border: '1px solid #e0e0e0' }}>
-                <Typography variant="h6" fontWeight="600" sx={{ mb: 3 }}>
-                    Rúbrica de Competencias
-                </Typography>
-
+            <div className="wow-card" style={{ padding: '24px', marginBottom: '24px' }}>
+                <Typography variant="h6" fontWeight="700" sx={{ mb: 3 }}>Rúbrica de Evaluación</Typography>
+                
                 {criterios.length === 0 ? (
-                    <Alert severity="warning" sx={{ mb: 2, borderRadius: 2 }}>
-                        ⚠️ No hay competencias disponibles. Es posible que las migraciones de la base de datos no se hayan ejecutado.
-                    </Alert>
+                    <Alert severity="warning">No hay competencias empresariales disponibles en este momento.</Alert>
                 ) : (
                     <Grid container spacing={3}>
                         {criterios.map((criterio, index) => (
                             <Grid item xs={12} md={6} key={criterio.id}>
-                                <Paper elevation={0} sx={{ p: 3, border: '1px solid #f0f0f0', borderRadius: 2, height: '100%', backgroundColor: '#fafafa' }}>
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                                        <Typography variant="subtitle1" fontWeight="600" color="text.primary">
+                                <Box sx={{ p: 3, bgcolor: '#f8fafc', borderRadius: 3, height: '100%', border: '1px solid #e2e8f0', transition: 'all 0.3s', '&:hover': { borderColor: 'var(--wow-primary)', boxShadow: 'var(--wow-shadow-md)' } }}>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                                        <Typography variant="subtitle1" fontWeight="700" color="text.primary">
                                             {criterio.nombre}
                                         </Typography>
-                                        <Chip label={`Max: ${criterio.puntajeMaximo}`} size="small" sx={{ backgroundColor: '#fff' }} />
+                                        <Chip label={`Peso: ${criterio.puntajeMaximo}%`} size="small" color="primary" variant="outlined" />
                                     </Box>
-                                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3, minHeight: '40px' }}>
+                                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
                                         {criterio.descripcion}
                                     </Typography>
                                     
-                                    <Grid container spacing={2}>
-                                        <Grid item xs={12}>
-                                            <TextField
-                                                label="Puntaje Obtenido"
-                                                type="number"
-                                                fullWidth
-                                                size="small"
-                                                InputProps={{ inputProps: { min: 0, max: criterio.puntajeMaximo } }}
-                                                value={evaluacion.detalles[index]?.puntajeObtenido || ''}
-                                                onChange={(e) => handlePuntajeChange(index, e.target.value)}
-                                                sx={{ backgroundColor: '#fff' }}
-                                            />
-                                        </Grid>
-                                        <Grid item xs={12}>
-                                            <TextField
-                                                label="Observación específica"
-                                                fullWidth
-                                                size="small"
-                                                multiline
-                                                rows={2}
-                                                value={evaluacion.detalles[index]?.comentarios || ''}
-                                                onChange={(e) => handleComentarioChange(index, e.target.value)}
-                                                sx={{ backgroundColor: '#fff' }}
-                                            />
-                                        </Grid>
-                                    </Grid>
-                                </Paper>
+                                    <TextField
+                                        label="Nota (0-20)"
+                                        type="number"
+                                        fullWidth
+                                        size="small"
+                                        className="wow-input"
+                                        InputProps={{ inputProps: { min: 0, max: 20 } }}
+                                        value={evaluacion.detalles[index]?.puntajeObtenido || ''}
+                                        onChange={(e) => handlePuntajeChange(index, e.target.value)}
+                                        sx={{ mb: 2 }}
+                                    />
+                                    <TextField
+                                        label="Observaciones (Opcional)"
+                                        fullWidth
+                                        size="small"
+                                        multiline
+                                        rows={2}
+                                        className="wow-input"
+                                        value={evaluacion.detalles[index]?.comentarios || ''}
+                                        onChange={(e) => handleComentarioChange(index, e.target.value)}
+                                    />
+                                </Box>
                             </Grid>
                         ))}
                     </Grid>
                 )}
-            </Paper>
 
-            <Paper elevation={0} sx={{ p: 4, borderRadius: 2, mb: 4, border: '1px solid #e0e0e0' }}>
-                <Typography variant="h6" fontWeight="600" sx={{ mb: 3 }}>
-                    Documentación y Comentarios Adicionales
-                </Typography>
-
-                <Grid container spacing={3}>
-                    <Grid item xs={12} md={6}>
-                        <TextField
-                            label="Total Horas Registradas"
-                            type="number"
-                            fullWidth
-                            InputProps={{ inputProps: { min: 0 } }}
-                            value={evaluacion.horasRegistradas || ''}
-                            onChange={(e) => setEvaluacion(prev => ({
-                                ...prev,
-                                horasRegistradas: parseInt(e.target.value) || 0
-                            }))}
-                            sx={{ backgroundColor: '#fafafa' }}
-                        />
+                <Box sx={{ mt: 4, pt: 3, borderTop: '1px solid #e2e8f0' }}>
+                    <Typography variant="subtitle1" fontWeight="700" sx={{ mb: 2 }}>Constancia y Comentarios</Typography>
+                    <Grid container spacing={3}>
+                        <Grid item xs={12} md={6}>
+                            <TextField
+                                label="Horas Registradas en el periodo"
+                                type="number"
+                                fullWidth
+                                className="wow-input"
+                                value={evaluacion.horasRegistradas || ''}
+                                onChange={(e) => setEvaluacion(prev => ({ ...prev, horasRegistradas: parseInt(e.target.value) || 0 }))}
+                            />
+                        </Grid>
+                        <Grid item xs={12} md={6}>
+                            <Button
+                                variant="outlined"
+                                component="label"
+                                startIcon={<CloudUpload />}
+                                fullWidth
+                                sx={{ height: '100%', borderRadius: 2, borderStyle: 'dashed', borderWidth: '2px', color: 'text.secondary' }}
+                            >
+                                {evaluacion.rutaConstancia ? evaluacion.rutaConstancia : 'Subir Constancia de Horas'}
+                                <input type="file" hidden accept=".pdf,.doc,.docx" onChange={handleFileUpload} />
+                            </Button>
+                        </Grid>
+                        <Grid item xs={12}>
+                            <TextField
+                                label="Resumen de Desempeño"
+                                fullWidth
+                                multiline
+                                rows={3}
+                                className="wow-input"
+                                value={evaluacion.comentarios}
+                                onChange={(e) => setEvaluacion(prev => ({ ...prev, comentarios: e.target.value }))}
+                            />
+                        </Grid>
                     </Grid>
-                    <Grid item xs={12} md={6}>
-                        <Button
-                            variant="outlined"
-                            component="label"
-                            startIcon={<CloudUpload />}
-                            fullWidth
-                            sx={{ height: '100%', borderRadius: 2, textTransform: 'none', borderStyle: 'dashed', borderWidth: '1.5px', color: 'text.secondary', borderColor: 'grey.400' }}
-                        >
-                            {evaluacion.rutaConstancia ? 'Cambiar Constancia' : 'Subir Constancia'}
-                            <input type="file" hidden accept=".pdf,.doc,.docx" onChange={handleFileUpload} />
-                        </Button>
-                        {evaluacion.rutaConstancia && (
-                            <Typography variant="caption" sx={{ mt: 1, display: 'block', color: 'success.main', fontWeight: '500' }}>
-                                ✓ Archivo adjunto: {evaluacion.rutaConstancia}
-                            </Typography>
-                        )}
-                    </Grid>
-                    <Grid item xs={12}>
-                        <TextField
-                            label="Desempeño general"
-                            fullWidth
-                            multiline
-                            rows={3}
-                            placeholder="Resuma el desempeño del practicante..."
-                            value={evaluacion.comentarios}
-                            onChange={(e) => setEvaluacion(prev => ({
-                                ...prev,
-                                comentarios: e.target.value
-                            }))}
-                            sx={{ backgroundColor: '#fafafa' }}
-                        />
-                    </Grid>
-                    <Grid item xs={12}>
-                        <TextField
-                            label="Reportar Incidencia"
-                            fullWidth
-                            multiline
-                            rows={3}
-                            placeholder="Describa cualquier incidencia o problema durante la práctica"
-                            value={evaluacion.incidencia || ''}
-                            onChange={(e) => setEvaluacion(prev => ({
-                                ...prev,
-                                incidencia: e.target.value
-                            }))}
-                            InputProps={{
-                                startAdornment: <ReportProblem sx={{ mr: 1, color: 'warning.main', mt: -3 }} />
-                            }}
-                            sx={{ backgroundColor: '#fafafa' }}
-                        />
-                    </Grid>
-                </Grid>
-            </Paper>
-
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 3, backgroundColor: '#f8f9fc', borderRadius: 2, border: '1px solid #e2e8f0' }}>
-                <Box>
-                    <Typography variant="body2" color="text.secondary">Puntaje total asignado</Typography>
-                    <Typography variant="h5" fontWeight="bold" color="primary.main">
-                        {totalPuntaje} <Typography component="span" variant="body1" color="text.secondary">puntos</Typography>
-                    </Typography>
                 </Box>
-                <Button
-                    variant="contained"
-                    size="large"
-                    disableElevation
-                    onClick={handleSubmit}
-                    disabled={loading}
-                    sx={{ px: 4, py: 1.5, borderRadius: 2, textTransform: 'none', fontWeight: '600' }}
-                >
-                    {loading ? 'Guardando...' : 'Confirmar Evaluación'}
-                </Button>
-            </Box>
+                
+                <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end' }}>
+                    <button className="wow-btn" onClick={handleSubmit} disabled={loading}>
+                        {loading ? 'Registrando...' : `Registrar Calificación`}
+                    </button>
+                </Box>
+            </div>
+
+            {evaluaciones.length > 0 && (
+                <div className="wow-card" style={{ padding: '24px' }}>
+                    <Typography variant="h6" fontWeight="700" sx={{ mb: 3 }}>
+                        <AutoGraph sx={{ mr: 1, verticalAlign: 'middle', color: 'var(--wow-primary)' }}/>
+                        Historial de Evaluaciones de Empresa
+                    </Typography>
+                    <TableContainer>
+                        <Table>
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell sx={{ fontWeight: '600' }}>Fecha</TableCell>
+                                    <TableCell sx={{ fontWeight: '600' }}>Horas Validadas</TableCell>
+                                    <TableCell sx={{ fontWeight: '600' }}>Evaluador</TableCell>
+                                    <TableCell sx={{ fontWeight: '600' }}>Detalles / Notas</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {evaluaciones.map((ev) => ev.componente === 'EMPRESA' && (
+                                    <TableRow key={ev.id} hover>
+                                        <TableCell>{ev.fechaEvaluacion}</TableCell>
+                                        <TableCell>
+                                            <Chip label={`${ev.horasRegistradas} hrs`} size="small" color="primary" variant="outlined"/>
+                                        </TableCell>
+                                        <TableCell>{ev.tipoEvaluador}</TableCell>
+                                        <TableCell>
+                                            {ev.detalles?.map(d => (
+                                                <Typography key={d.idCriterio} variant="caption" display="block">
+                                                    • {d.nombreCriterio}: <strong>{d.puntajeObtenido}/20</strong>
+                                                </Typography>
+                                            ))}
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                </div>
+            )}
         </Box>
     );
 };
-

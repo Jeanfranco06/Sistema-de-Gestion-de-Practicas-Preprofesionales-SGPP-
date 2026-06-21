@@ -1,7 +1,7 @@
 package edu.unt.ingenieria_industrial.sgpp.core.evaluacion.model;
 
 import edu.unt.ingenieria_industrial.sgpp.core.common.BaseEntity;
-import edu.unt.ingenieria_industrial.sgpp.core.practicas.model.Practica;
+import edu.unt.ingenieria_industrial.sgpp.core.expediente.model.Expediente;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,8 +21,8 @@ import java.time.LocalDate;
 public class Evaluacion extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_practica", nullable = false)
-    private Practica practica;
+    @JoinColumn(name = "id_expediente", nullable = false)
+    private Expediente expediente;
 
     @Column(name = "tipo_evaluador", length = 50, nullable = false)
     private String tipoEvaluador; // EMPRESA, DOCENTE
@@ -30,8 +30,8 @@ public class Evaluacion extends BaseEntity {
     @Column(name = "evaluador_id")
     private Long evaluadorId;
 
-    @Column(name = "unidad", length = 20)
-    private String unidad; // U1, U2, U3
+    @Column(name = "componente", length = 20)
+    private String componente; // EMPRESA, DOCENTE, INFORME, SUSTENTACION
 
     @Column(name = "puntaje_asistencia")
     private Integer puntajeAsistencia;

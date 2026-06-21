@@ -1,11 +1,5 @@
 # ============================================================
-# SGPP - Docker Compose (Entorno de Desarrollo)
-# ============================================================
-# Levanta la infraestructura de desarrollo (DB + pgAdmin).
-# Uso:
-#   docker-compose up -d          (iniciar en segundo plano)
-#   docker-compose down           (detener)
-#   docker-compose down -v        (detener y borrar volúmenes/datos)
+# SGPP - Docker Compose (Entorno de Desarrollo Completo)
 # ============================================================
 
 services:
@@ -29,7 +23,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # ---- pgAdmin (Interfaz gráfica para PostgreSQL) ----
+  # ---- pgAdmin ----
   pgadmin:
     image: dpage/pgadmin4:latest
     container_name: sgpp-pgadmin
@@ -46,8 +40,42 @@ services:
     volumes:
       - pgadmin_data:/var/lib/pgadmin
 
+  # ---- Backend (Spring Boot) ----
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: sgpp-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/${POSTGRES_DB:-sgpp_db}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-postgres}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    volumes:
+      - sgpp_uploads:/app/uploads
+
+  # ---- Frontend (React / Nginx) ----
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: sgpp-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+
 volumes:
   pgdata:
     driver: local
   pgadmin_data:
+    driver: local
+  sgpp_uploads:
     driver: local

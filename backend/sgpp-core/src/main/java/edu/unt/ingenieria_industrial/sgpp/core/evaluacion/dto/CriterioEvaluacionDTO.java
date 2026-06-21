@@ -15,6 +15,6 @@ public class CriterioEvaluacionDTO {
     private String nombre;
     private String descripcion;
     private Integer puntajeMaximo;
-    private String tipoEvaluador;
+    private String componente;
 }
 
