@@ -57,6 +57,7 @@ const NAV_ITEMS_ADMIN_SISTEMA = [
 
 const NAV_ITEMS_SECRETARIA = [
   { label: 'Dashboard', icon: <Dashboard />, path: '/admin/dashboard' },
+  { label: 'Reportes', icon: <BarChart />, path: '/admin/reportes' },
   { label: 'Recepción Admin.', icon: <Assignment />, path: '/secretaria/recepcion' },
   { label: 'Validar Requisitos', icon: <FactCheck />, path: '/admin/validar-requisitos' },
   { label: 'Expedientes', icon: <Assignment />, path: '/admin/expedientes' },
@@ -65,8 +66,9 @@ const NAV_ITEMS_SECRETARIA = [
 ];
 
 const NAV_ITEMS_COMITE = [
-  { label: 'Dashboard', icon: <Dashboard />, path: '/admin/dashboard' },
-  { label: 'Panel Comité', icon: <Assignment />, path: '/comite/panel' },
+  { label: 'Panel Comité', icon: <FactCheck />, path: '/comite/panel' },
+  { label: 'Panel Ejecutivo', icon: <Dashboard />, path: '/coordinacion/dashboard' },
+  { label: 'Reportes', icon: <BarChart />, path: '/coordinacion/reportes' },
   { label: 'Expedientes', icon: <Assignment />, path: '/admin/expedientes' },
   { label: 'Empresas', icon: <Business />, path: '/admin/empresas' },
   { label: 'Sedes', icon: <Business />, path: '/admin/sedes' },
@@ -77,25 +79,27 @@ const NAV_ITEMS_TUTOR_EXTERNO = [
   { label: 'Evaluaciones', icon: <Assessment />, path: '/tutor/evaluaciones' },
 ];
 
-function getNavItems(roles = []) {
-  const roleNames = roles.map(r => typeof r === 'string' ? r : r.authority || r.nombre || '');
-  
-  if (roleNames.some(rn => rn === 'ADMIN_SISTEMA' || rn === 'ROLE_ADMIN_SISTEMA')) return NAV_ITEMS_ADMIN_SISTEMA;
-  if (roleNames.some(rn => rn === 'ADMINISTRADOR' || rn === 'ROLE_ADMINISTRADOR')) return NAV_ITEMS_ADMIN;
-  if (roleNames.some(rn => rn === 'ESTUDIANTE' || rn === 'ROLE_ESTUDIANTE')) return NAV_ITEMS_ESTUDIANTE;
-  if (roleNames.some(rn => rn === 'DOCENTE_ASESOR' || rn === 'ROLE_DOCENTE_ASESOR')) return NAV_ITEMS_DOCENTE;
-  if (roleNames.some(rn => rn === 'TUTOR_EXTERNO' || rn === 'ROLE_TUTOR_EXTERNO')) return NAV_ITEMS_TUTOR_EXTERNO;
-  if (roleNames.some(rn => rn === 'COMITE_PRACTICAS' || rn === 'ROLE_COMITE_PRACTICAS')) return NAV_ITEMS_COMITE;
-  if (roleNames.some(rn => rn === 'SECRETARIA' || rn === 'ROLE_SECRETARIA')) return NAV_ITEMS_SECRETARIA;
-  
-  const isAdminRole = roleNames.some(rn => 
-    ['SECRETARIA', 'COORDINADOR', 'DIRECTOR', 'COMITE_PRACTICAS'].some(adminR => rn === adminR || rn === `ROLE_${adminR}`)
-  );
+const NAV_ITEMS_COORDINACION = [
+  { label: 'Panel Ejecutivo', icon: <Dashboard />, path: '/coordinacion/dashboard' },
+  { label: 'Reportes', icon: <Assessment />, path: '/coordinacion/reportes' },
+  { label: 'Expedientes', icon: <Assignment />, path: '/admin/expedientes' },
+  { label: 'Panel Comité', icon: <FactCheck />, path: '/comite/panel' },
+  { label: 'Empresas', icon: <Business />, path: '/admin/empresas' },
+  { label: 'Sedes', icon: <Business />, path: '/admin/sedes' },
+];
 
-  if (isAdminRole) {
-    return NAV_ITEMS_ADMIN;
-  }
-  
+function getNavItems(roles = []) {
+  const roleNames = roles.map(r => typeof r === 'string' ? r : r.authority || r.nombre || '').map(r => r.replace(/^ROLE_/, ''));
+
+  if (roleNames.includes('ESTUDIANTE')) return NAV_ITEMS_ESTUDIANTE;
+  if (roleNames.includes('DOCENTE_ASESOR')) return NAV_ITEMS_DOCENTE;
+  if (roleNames.includes('TUTOR_EXTERNO')) return NAV_ITEMS_TUTOR_EXTERNO;
+  if (roleNames.includes('COORDINADOR') || roleNames.includes('DIRECTOR')) return NAV_ITEMS_COORDINACION;
+  if (roleNames.includes('COMITE_PRACTICAS')) return NAV_ITEMS_COMITE;
+  if (roleNames.includes('SECRETARIA')) return NAV_ITEMS_SECRETARIA;
+  if (roleNames.includes('ADMIN_SISTEMA')) return NAV_ITEMS_ADMIN_SISTEMA;
+  if (roleNames.includes('ADMINISTRADOR')) return NAV_ITEMS_ADMIN;
+
   return NAV_ITEMS_ADMIN;
 }
 

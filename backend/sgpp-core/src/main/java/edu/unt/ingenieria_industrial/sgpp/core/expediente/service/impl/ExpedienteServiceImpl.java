@@ -17,6 +17,11 @@ import edu.unt.ingenieria_industrial.sgpp.core.seguridad.model.Estudiante;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.model.Usuario;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.repository.EstudianteRepository;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.repository.UsuarioRepository;
+import edu.unt.ingenieria_industrial.sgpp.core.integridad.dto.RegistrarEventoAuditoriaDTO;
+import edu.unt.ingenieria_industrial.sgpp.core.integridad.service.AuditoriaTransaccionalService;
+import edu.unt.ingenieria_industrial.sgpp.core.integridad.service.ReglasIntegridadService;
+import edu.unt.ingenieria_industrial.sgpp.shared.enums.AccionAuditoria;
+import edu.unt.ingenieria_industrial.sgpp.shared.enums.TipoEntidadAuditable;
 import edu.unt.ingenieria_industrial.sgpp.shared.exception.BusinessException;
 import edu.unt.ingenieria_industrial.sgpp.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -54,6 +59,8 @@ public class ExpedienteServiceImpl implements ExpedienteService {
     private final ConvenioRepository convenioRepository;
     private final PlazoService plazoService;
     private final edu.unt.ingenieria_industrial.sgpp.core.hora.service.ControlHoraService controlHoraService;
+    private final AuditoriaTransaccionalService auditoriaService;
+    private final ReglasIntegridadService reglasIntegridadService;
 
     @Override
     public ExpedienteResponse crear(CrearExpedienteRequest request, Long idUsuario) {
@@ -90,6 +97,19 @@ public class ExpedienteServiceImpl implements ExpedienteService {
         expediente = expedienteRepository.save(expediente);
         registrarCambioEstado(expediente, null, "SOLICITADO", idUsuario, "Expediente creado", "CREACION");
 
+        auditoriaService.registrar(RegistrarEventoAuditoriaDTO.builder()
+                .tipoEntidad(TipoEntidadAuditable.EXPEDIENTE)
+                .entidadId(expediente.getId())
+                .idExpediente(expediente.getId())
+                .accion(AccionAuditoria.CREATE)
+                .idUsuario(idUsuario)
+                .valorNuevo(Map.of(
+                        "codigoExpediente", codigo,
+                        "tipoPractica", tipoPractica.getCodigo(),
+                        "estudiante", estudiante.getCodigoEstudiantil()))
+                .motivo("Creación de expediente de práctica")
+                .build());
+
         log.info("Expediente {} creado para estudiante {}", codigo, estudiante.getCodigoEstudiantil());
         return toResponse(expediente);
     }
@@ -99,24 +119,18 @@ public class ExpedienteServiceImpl implements ExpedienteService {
         Expediente expediente = findExpediente(idExpediente);
         validarEstadoPara(expediente, "EMPRESA_SEDE_ASIGNADA", "SOLICITADO");
 
+        reglasIntegridadService.validarAsignacionEmpresaSede(
+                expediente, request.getIdEmpresa(), request.getIdSedePractica(), request.getIdConvenio());
+
         Empresa empresa = empresaRepository.findById(request.getIdEmpresa())
                 .orElseThrow(() -> new ResourceNotFoundException("Empresa no encontrada"));
-        if (!Boolean.TRUE.equals(empresa.getActivo()) || !Boolean.TRUE.equals(empresa.getValidado())) {
-            throw new BusinessException("La empresa no está activa o validada para recibir practicantes");
-        }
 
         SedePractica sede = sedePracticaRepository.findById(request.getIdSedePractica())
                 .orElseThrow(() -> new ResourceNotFoundException("Sede no encontrada"));
-        if (!"ACTIVA".equals(sede.getEstadoSede())) {
-            throw new BusinessException("La sede de práctica no está activa");
-        }
 
         if (request.getIdConvenio() != null) {
             Convenio convenio = convenioRepository.findById(request.getIdConvenio())
                     .orElseThrow(() -> new ResourceNotFoundException("Convenio no encontrado"));
-            if (!Boolean.TRUE.equals(convenio.getVigente())) {
-                throw new BusinessException("El convenio no está vigente");
-            }
             expediente.setConvenio(convenio);
         }
 
@@ -296,7 +310,7 @@ public class ExpedienteServiceImpl implements ExpedienteService {
         Expediente expediente = findExpediente(idExpediente);
         validarEstadoPara(expediente, "SUBSANADO", "OBSERVADO");
 
-        plazoService.validarEntregaOPresentacion(expediente.getId(), "SUBSANACION_DOCUMENTO");
+        reglasIntegridadService.validarSubsanacionPermitida(expediente, idUsuario);
 
         Usuario usuario = usuarioRepository.getReferenceById(idUsuario);
 
@@ -319,6 +333,17 @@ public class ExpedienteServiceImpl implements ExpedienteService {
                 "Subsanación de " + request.getObservacionIds().size() + " observaciones", "SUBSANACION");
 
         plazoService.registrarCumplimiento(expediente.getId(), "SUBSANACION_DOCUMENTO", LocalDate.now());
+
+        auditoriaService.registrar(RegistrarEventoAuditoriaDTO.builder()
+                .tipoEntidad(TipoEntidadAuditable.SUBSANACION)
+                .entidadId(idExpediente)
+                .idExpediente(idExpediente)
+                .accion(AccionAuditoria.SUBSANAR)
+                .idUsuario(idUsuario)
+                .valorNuevo(Map.of("observacionesSubsanadas", request.getObservacionIds().size()))
+                .motivo(request.getRespuesta())
+                .cumplimientoPlazo(true)
+                .build());
 
         return toResponse(expediente);
     }
@@ -431,6 +456,8 @@ public class ExpedienteServiceImpl implements ExpedienteService {
             throw new BusinessException("El expediente debe tener informes presentados para ser evaluado");
         }
 
+        reglasIntegridadService.validarRegistroCalificacion(expediente, request.getCalificacionFinal());
+
         expediente.setCalificacionFinal(request.getCalificacionFinal());
         if (request.getObservaciones() != null) {
             expediente.setObservaciones(request.getObservaciones());
@@ -442,6 +469,16 @@ public class ExpedienteServiceImpl implements ExpedienteService {
         registrarCambioEstado(expediente, estadoActual, nuevoEstado, idUsuario,
                 "Evaluación: calificación " + request.getCalificacionFinal(), "EVALUACION");
 
+        auditoriaService.registrar(RegistrarEventoAuditoriaDTO.builder()
+                .tipoEntidad(TipoEntidadAuditable.NOTA)
+                .entidadId(idExpediente)
+                .idExpediente(idExpediente)
+                .accion(AccionAuditoria.REGISTRAR_CALIFICACION)
+                .idUsuario(idUsuario)
+                .valorNuevo(Map.of("calificacionFinal", request.getCalificacionFinal()))
+                .motivo("Registro de calificación final de práctica")
+                .build());
+
         return toResponse(expediente);
     }
 
@@ -449,49 +486,13 @@ public class ExpedienteServiceImpl implements ExpedienteService {
     public ExpedienteResponse cerrar(Long idExpediente, Long idUsuario, String observacion) {
         Expediente expediente = findExpediente(idExpediente);
 
-        if ("CERRADO".equals(expediente.getEstado())) {
-            throw new BusinessException("El expediente ya está cerrado");
-        }
-
-        // Validar cumplimiento de horas antes de cerrar
         try {
-            var response = controlHoraService.puedeCerrarExpediente(idExpediente);
-            if (!Boolean.TRUE.equals(response.getData())) {
-                throw new BusinessException("No se puede cerrar el expediente: no se ha cumplido el requisito de horas de práctica");
-            }
-        } catch (Exception e) {
-            // Si no existe control de horas, permitir el cierre (compatibilidad con expedientes anteriores)
-            log.warn("No se pudo validar el cumplimiento de horas para expediente {}: {}", idExpediente, e.getMessage());
-        }
-
-        // Validar Calificación Final
-        if (expediente.getCalificacionFinal() == null) {
-            throw new BusinessException("No se puede cerrar el expediente: no cuenta con una calificación final");
-        }
-        if (expediente.getCalificacionFinal().compareTo(new BigDecimal("13.5")) < 0) {
-            throw new BusinessException("No se puede cerrar el expediente: la calificación final es desaprobatoria (" + expediente.getCalificacionFinal() + ")");
-        }
-
-        // Validar Documentos requeridos
-        Set<String> documentosSubidos = expediente.getDocumentos().stream()
-                .map(edu.unt.ingenieria_industrial.sgpp.core.expediente.model.ExpedienteDocumento::getTipoDocumento)
-                .collect(Collectors.toSet());
-
-        String tipoCodigo = expediente.getTipoPractica().getCodigo();
-        if (TIPO_INICIAL.equals(tipoCodigo)) {
-            List<String> obligatoriosInicial = Arrays.asList("PLAN_PRACTICA", "INFORME_PARCIAL", "INFORME_FINAL", "CONSTANCIA_CULMINACION", "VISTO_BUENO_ASESOR", "DICTAMEN_FINAL");
-            for (String doc : obligatoriosInicial) {
-                if (!documentosSubidos.contains(doc)) {
-                    throw new BusinessException("No se puede cerrar el expediente: falta el documento obligatorio " + doc);
-                }
-            }
-        } else {
-            List<String> obligatoriosFinal = Arrays.asList("CARTA_ACEPTACION", "PLAN_PRACTICA", "INFORME_FINAL", "CONSTANCIA_CULMINACION", "FICHA_EVALUACION_EMPRESA", "DICTAMEN_FINAL");
-            for (String doc : obligatoriosFinal) {
-                if (!documentosSubidos.contains(doc)) {
-                    throw new BusinessException("No se puede cerrar el expediente: falta el documento obligatorio " + doc);
-                }
-            }
+            reglasIntegridadService.validarCierreExpediente(expediente);
+        } catch (BusinessException e) {
+            auditoriaService.registrarIntentoFallido(
+                    idExpediente, idUsuario, AccionAuditoria.CERRAR, e.getMessage(),
+                    Map.of("estado", expediente.getEstado()));
+            throw e;
         }
 
         String estadoAnterior = expediente.getEstado();
@@ -647,6 +648,14 @@ public class ExpedienteServiceImpl implements ExpedienteService {
                 .tipoCambio(tipoCambio)
                 .build();
         estadoRepository.save(estado);
+
+        try {
+            auditoriaService.registrarCambioEstado(
+                    expediente.getId(), idUsuario, anterior, nuevo, tipoCambio, observacion);
+        } catch (Exception e) {
+            log.warn("No se pudo registrar evento de auditoría para expediente {}: {}",
+                    expediente.getId(), e.getMessage());
+        }
     }
 
     private String generarCodigoExpediente(String tipoCodigo) {

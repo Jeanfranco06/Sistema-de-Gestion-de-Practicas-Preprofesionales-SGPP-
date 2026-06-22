@@ -12,11 +12,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import edu.unt.ingenieria_industrial.sgpp.core.expediente.model.Expediente;
-import edu.unt.ingenieria_industrial.sgpp.core.expediente.model.ExpedienteDocumento;
 import edu.unt.ingenieria_industrial.sgpp.core.expediente.model.ExpedienteEstado;
 import edu.unt.ingenieria_industrial.sgpp.core.expediente.repository.ExpedienteRepository;
-import edu.unt.ingenieria_industrial.sgpp.core.expediente.repository.ExpedienteDocumentoRepository;
 import edu.unt.ingenieria_industrial.sgpp.core.expediente.repository.ExpedienteEstadoRepository;
+import edu.unt.ingenieria_industrial.sgpp.core.exportacion.dto.GenerarDocumentoInternoRequest;
+import edu.unt.ingenieria_industrial.sgpp.core.exportacion.service.ExportacionService;
+import edu.unt.ingenieria_industrial.sgpp.shared.enums.TipoDocumentoInstitucional;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.model.Usuario;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.repository.UsuarioRepository;
 import java.util.List;
@@ -28,9 +29,9 @@ public class SecretariaServiceImpl implements SecretariaService {
 
     private final EstudianteRepository estudianteRepository;
     private final ExpedienteRepository expedienteRepository;
-    private final ExpedienteDocumentoRepository documentoRepository;
     private final ExpedienteEstadoRepository estadoRepository;
     private final UsuarioRepository usuarioRepository;
+    private final ExportacionService exportacionService;
 
     @Override
     @Transactional(readOnly = true)
@@ -81,33 +82,19 @@ public class SecretariaServiceImpl implements SecretariaService {
     @Override
     @Transactional
     public void emitirCartaPresentacion(Long expedienteId, Long idUsuario) {
-        Expediente expediente = expedienteRepository.findById(expedienteId)
-                .orElseThrow(() -> new BusinessException("Expediente no encontrado"));
-        Usuario usuario = usuarioRepository.findById(idUsuario).orElseThrow();
-        
-        ExpedienteDocumento doc = ExpedienteDocumento.builder()
-                .expediente(expediente)
-                .tipoDocumento("CARTA_PRESENTACION")
-                .nombreArchivo("Carta_Presentacion_" + expediente.getCodigoExpediente() + ".pdf")
-                .usuario(usuario)
-                .build();
-        documentoRepository.save(doc);
+        exportacionService.generarDocumentoInterno(GenerarDocumentoInternoRequest.builder()
+                .tipoDocumento(TipoDocumentoInstitucional.CARTA_PRESENTACION)
+                .idExpediente(expedienteId)
+                .build());
     }
 
     @Override
     @Transactional
     public void emitirConstancia(Long expedienteId, Long idUsuario) {
-        Expediente expediente = expedienteRepository.findById(expedienteId)
-                .orElseThrow(() -> new BusinessException("Expediente no encontrado"));
-        Usuario usuario = usuarioRepository.findById(idUsuario).orElseThrow();
-        
-        ExpedienteDocumento doc = ExpedienteDocumento.builder()
-                .expediente(expediente)
-                .tipoDocumento("CONSTANCIA_CULMINACION")
-                .nombreArchivo("Constancia_" + expediente.getCodigoExpediente() + ".pdf")
-                .usuario(usuario)
-                .build();
-        documentoRepository.save(doc);
+        exportacionService.generarDocumentoInterno(GenerarDocumentoInternoRequest.builder()
+                .tipoDocumento(TipoDocumentoInstitucional.CONSTANCIA_CULMINACION)
+                .idExpediente(expedienteId)
+                .build());
     }
 
     @Override
