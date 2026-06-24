@@ -14,6 +14,8 @@ import LoginPage from './modules/auth/LoginPage';
 import ForgotPasswordPage from './modules/auth/ForgotPasswordPage';
 import ResetPasswordPage from './modules/auth/ResetPasswordPage';
 import DashboardEstudiante from './modules/estudiante/DashboardEstudiante';
+import DashboardDocente from './modules/docente/pages/DashboardDocente';
+import DashboardTutor from './modules/tutor/pages/DashboardTutor';
 import NoAutorizado from './modules/shared/NoAutorizado';
 import PaginaEnConstruccion from './modules/shared/PaginaEnConstruccion';
 import { CatalogoSedes } from './modules/sedes/pages/CatalogoSedes';
@@ -94,7 +96,7 @@ export default function App() {
                 path="/docente/dashboard"
                 element={
                   <ProtectedRoute allowedRoles={['DOCENTE_ASESOR']}>
-                    <PaginaEnConstruccion titulo="Dashboard Docente" />
+                    <DashboardDocente />
                   </ProtectedRoute>
                 }
               />
@@ -213,7 +215,7 @@ export default function App() {
                 path="/tutor/dashboard"
                 element={
                   <ProtectedRoute allowedRoles={['TUTOR_EXTERNO']}>
-                    <PaginaEnConstruccion titulo="Panel Tutor Externo" />
+                    <DashboardTutor />
                   </ProtectedRoute>
                 }
               />
