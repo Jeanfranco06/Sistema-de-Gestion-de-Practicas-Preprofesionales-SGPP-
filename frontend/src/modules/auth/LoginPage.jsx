@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link as RouterLink } from 'react-router-dom';
 import {
   Box, Card, CardContent, TextField, Button, Typography,
-  InputAdornment, IconButton, Alert, CircularProgress, Divider,
+  InputAdornment, IconButton, Alert, CircularProgress, Divider, Link,
 } from '@mui/material';
 import {
   Visibility, VisibilityOff, School, LockOutlined, AccountCircleOutlined,
@@ -199,9 +199,15 @@ export default function LoginPage() {
                   ),
                 },
               }}
-              sx={{ mb: 3 }}
+              sx={{ mb: 1 }}
               autoComplete="current-password"
             />
+
+            <Box sx={{ textAlign: 'right', mb: 2 }}>
+              <Link component={RouterLink} to="/forgot-password" variant="body2" underline="hover" color="primary.main">
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </Box>
 
             <Button
               type="submit"

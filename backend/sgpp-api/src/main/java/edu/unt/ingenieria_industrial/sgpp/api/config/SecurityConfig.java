@@ -41,7 +41,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**", "/public/**", "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/actuator/**", "/webjars/**").permitAll()
+                        .requestMatchers("/auth/login", "/auth/forgot-password", "/auth/reset-password", "/auth/validate-reset-token", "/public/**", "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/actuator/**", "/webjars/**").permitAll()
                         .requestMatchers("/admin/**").hasAnyRole("ADMIN_SISTEMA", "SECRETARIA", "COMITE_PRACTICAS", "COORDINADOR", "DIRECTOR")
                         .requestMatchers("/secretaria/**").hasAnyRole("ADMIN_SISTEMA", "SECRETARIA")
                         .requestMatchers("/estudiante/**").hasAnyRole("ADMIN_SISTEMA", "ESTUDIANTE")

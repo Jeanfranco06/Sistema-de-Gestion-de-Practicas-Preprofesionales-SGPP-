@@ -11,6 +11,8 @@ import { AuthProvider } from './auth/AuthContext';
 import ProtectedRoute from './auth/ProtectedRoute';
 import AppLayout from './modules/shared/layout/AppLayout';
 import LoginPage from './modules/auth/LoginPage';
+import ForgotPasswordPage from './modules/auth/ForgotPasswordPage';
+import ResetPasswordPage from './modules/auth/ResetPasswordPage';
 import DashboardEstudiante from './modules/estudiante/DashboardEstudiante';
 import NoAutorizado from './modules/shared/NoAutorizado';
 import PaginaEnConstruccion from './modules/shared/PaginaEnConstruccion';
@@ -44,6 +46,8 @@ export default function App() {
           <Routes>
             {/* Pública */}
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/no-autorizado" element={<NoAutorizado />} />
 
             {/* Rutas protegidas con layout */}
