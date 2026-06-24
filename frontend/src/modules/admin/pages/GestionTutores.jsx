@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
-    Container, Typography, Box, Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-    Chip, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Grid, InputAdornment, Tooltip,
+    Typography, Box, Button, Table, TableBody, TableCell, TableHead, TableRow,
+    Chip, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, InputAdornment, Tooltip,
     TablePagination, MenuItem, FormControl, InputLabel, Select, Drawer, Divider, Alert, CircularProgress, TableSortLabel,
     Avatar, Stack
 } from '@mui/material';
@@ -19,7 +19,9 @@ import WorkIcon from '@mui/icons-material/Work';
 import PersonIcon from '@mui/icons-material/Person';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SaveIcon from '@mui/icons-material/Save';
-import { motion } from 'framer-motion';
+import {
+    ModulePageShell, ModulePageHeader, ModuleToolbar, ModuleTableContainer, moduleHeadCellSx, moduleSortLabelSx,
+} from '../../../shared/components/module/ModulePageShell';
 import { tutoresApi, usuariosApi } from '../../../api/usuariosApi';
 import { empresaApi } from '../../../api/sedesApi';
 import Swal from 'sweetalert2';
@@ -227,66 +229,57 @@ export const GestionTutores = () => {
 
     if (loading && tutores.length === 0) {
         return (
-            <Container maxWidth="xl" sx={{ mt: 4, mb: 6, textAlign: 'center' }}>
+            <ModulePageShell sx={{ textAlign: 'center' }}>
                 <CircularProgress />
                 <Typography variant="body1" sx={{ mt: 2 }}>Cargando tutores externos...</Typography>
-            </Container>
+            </ModulePageShell>
         );
     }
 
     return (
-        <Container maxWidth="xl" sx={{ mt: 4, mb: 6 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 4, p: 4, borderRadius: 4, bgcolor: 'primary.main', color: 'white', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', position: 'relative', overflow: 'hidden' }}>
-                <Box sx={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <BusinessIcon sx={{ fontSize: 48, color: 'rgba(255,255,255,0.9)' }} />
-                    <Box>
-                        <Typography variant="h4" fontWeight="bold">Gestión de Tutores Externos</Typography>
-                        <Typography variant="subtitle1" sx={{ opacity: 0.9 }}>
-                            Registro y control de tutores designados por las entidades receptoras.
-                        </Typography>
-                    </Box>
-                </Box>
-            </Box>
+        <ModulePageShell>
+            <ModulePageHeader
+                icon={<BusinessIcon />}
+                title="Gestión de Tutores Externos"
+                subtitle="Registro y control de tutores designados por las entidades receptoras."
+            />
 
-            <Paper component={motion.div} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}
-                elevation={0} sx={{ p: 4, mb: 4, borderRadius: 4, bgcolor: '#fff', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)' }}>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-                        <Typography variant="h6" fontWeight="bold" color="primary">Filtros de Búsqueda</Typography>
+            <ModuleToolbar>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, width: '100%' }}>
+                    <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', lg: 'row' }, alignItems: { lg: 'center' }, justifyContent: 'space-between', flexWrap: 'wrap' }}>
+                        <Box sx={{ display: 'flex', gap: 2, flex: 1, flexWrap: 'wrap', width: { xs: '100%', lg: 'auto' } }}>
+                            <TextField size="small" variant="outlined" placeholder="Buscar por nombre, empresa o cargo..."
+                                value={searchTerm} onChange={handleSearchChange}
+                                slotProps={{ input: { startAdornment: (<InputAdornment position="start"><SearchIcon color="action" fontSize="small" /></InputAdornment>), sx: { bgcolor: '#fff', borderRadius: 2, minWidth: { xs: '100%', sm: 280 } } } }} />
+                            <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 140 } }}>
+                                <InputLabel>Estado</InputLabel>
+                                <Select value={filtroEstado} label="Estado" onChange={(e) => setFiltroEstado(e.target.value)} sx={{ borderRadius: 2, bgcolor: '#fff' }}>
+                                    {ESTADOS_FILTRO.map(e => <MenuItem key={e} value={e}>{e === 'todos' ? 'Todos' : e.charAt(0) + e.slice(1).toLowerCase()}</MenuItem>)}
+                                </Select>
+                            </FormControl>
+                            <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 200 } }}>
+                                <InputLabel>Empresa</InputLabel>
+                                <Select value={filtroEmpresa} label="Empresa" onChange={(e) => setFiltroEmpresa(e.target.value)} sx={{ borderRadius: 2, bgcolor: '#fff' }}>
+                                    <MenuItem value="todos">Todas</MenuItem>
+                                    {empresas.map(emp => <MenuItem key={emp.id} value={emp.id}>{emp.razonSocial}</MenuItem>)}
+                                </Select>
+                            </FormControl>
+                        </Box>
                         <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={() => handleOpenDialog()}
-                            sx={{ px: 3, py: 1.2, borderRadius: 1.2, boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', whiteSpace: 'nowrap' }}>
+                            sx={{ px: 3, py: 1, borderRadius: 2, boxShadow: 2, whiteSpace: 'nowrap', width: { xs: '100%', sm: 'auto' }, minHeight: '40px' }}>
                             Nuevo Perfil Tutor
                         </Button>
                     </Box>
-                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '2fr 1fr 1fr' }, gap: 2.5 }}>
-                         <TextField size="small" variant="outlined" placeholder="Buscar por nombre, empresa o cargo..."
-                            value={searchTerm} onChange={handleSearchChange}
-                            slotProps={{ input: { startAdornment: (<InputAdornment position="start"><SearchIcon color="action" fontSize="small" /></InputAdornment>), sx: { bgcolor: '#fff', borderRadius: 1.2 } } }} />
-                        <FormControl size="small" fullWidth>
-                            <InputLabel>Estado</InputLabel>
-                            <Select value={filtroEstado} label="Estado" onChange={(e) => setFiltroEstado(e.target.value)} sx={{ borderRadius: 1.2, bgcolor: '#fff' }}>
-                                {ESTADOS_FILTRO.map(e => <MenuItem key={e} value={e}>{e === 'todos' ? 'Todos' : e.charAt(0) + e.slice(1).toLowerCase()}</MenuItem>)}
-                            </Select>
-                        </FormControl>
-                        <FormControl size="small" fullWidth>
-                            <InputLabel>Empresa</InputLabel>
-                            <Select value={filtroEmpresa} label="Empresa" onChange={(e) => setFiltroEmpresa(e.target.value)} sx={{ borderRadius: 1.2, bgcolor: '#fff' }}>
-                                <MenuItem value="todos">Todas</MenuItem>
-                                {empresas.map(emp => <MenuItem key={emp.id} value={emp.id}>{emp.razonSocial}</MenuItem>)}
-                            </Select>
-                        </FormControl>
-                    </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                         <Button variant="outlined" size="medium" onClick={limpiarFiltros} startIcon={<FilterListIcon />}
-                            sx={{ borderRadius: 1.2, px: 3, fontWeight: 600 }}>Limpiar Filtros</Button>
+                            sx={{ borderRadius: 2, px: 3, fontWeight: 600 }}>Limpiar Filtros</Button>
                     </Box>
                 </Box>
-            </Paper>
+            </ModuleToolbar>
 
-            <TableContainer component={motion.div} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.2 }}
-                elevation={0} sx={{ borderRadius: 4, border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)', overflow: 'hidden', bgcolor: '#fff' }}>
+            <ModuleTableContainer>
                 <Table>
-                    <TableHead sx={{ bgcolor: 'secondary.main' }}>
+                    <TableHead sx={{ bgcolor: 'primary.main' }}>
                         <TableRow>
                             {[
                                 { id: 'nombres', label: 'Tutor' },
@@ -297,11 +290,10 @@ export const GestionTutores = () => {
                                 { id: 'estado', label: 'Estado', sortable: false },
                                 { id: 'acciones', label: 'Acciones', sortable: false }
                             ].map(hc => (
-                                <TableCell key={hc.id} sx={{ color: '#fff', fontWeight: 'bold' }}>
+                                <TableCell key={hc.id} sx={moduleHeadCellSx}>
                                     {hc.sortable !== false ? (
                                         <TableSortLabel active={orderBy === hc.id} direction={orderBy === hc.id ? order : 'asc'}
-                                            onClick={() => handleSort(hc.id)}
-                                            sx={{ color: '#fff !important', '& .MuiTableSortLabel-icon': { color: '#fff !important' } }}>
+                                            onClick={() => handleSort(hc.id)} sx={moduleSortLabelSx}>
                                             {hc.label}
                                         </TableSortLabel>
                                     ) : hc.label}
@@ -316,7 +308,7 @@ export const GestionTutores = () => {
                                 <TableRow key={tutor.id} hover sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
                                     <TableCell>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                            <Avatar sx={{ width: 32, height: 32, bgcolor: 'secondary.main', fontSize: 14, fontWeight: 'bold' }}>
+                                            <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.light', fontSize: 14, fontWeight: 'bold' }}>
                                                 <PersonIcon fontSize="small" />
                                             </Avatar>
                                             <Box>
@@ -381,7 +373,7 @@ export const GestionTutores = () => {
                         )}
                     </TableBody>
                 </Table>
-            </TableContainer>
+            </ModuleTableContainer>
 
             <TablePagination rowsPerPageOptions={[5, 10, 25]} component="div" count={sortedTutores.length}
                 rowsPerPage={rowsPerPage} page={page} onPageChange={(e, p) => setPage(p)}
@@ -389,12 +381,12 @@ export const GestionTutores = () => {
                 labelRowsPerPage="Filas por página:" labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`} />
 
             <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="md" fullWidth slotProps={{ paper: { sx: { borderRadius: 3 } } }}>
-                <DialogTitle sx={{ bgcolor: 'secondary.main', color: '#fff', pb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <DialogTitle sx={{ bgcolor: 'primary.main', color: '#fff', pb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
                     <BusinessIcon /> {isEditing ? 'Editar Perfil Tutor' : 'Registrar Nuevo Tutor Externo'}
                 </DialogTitle>
                 <DialogContent dividers sx={{ p: { xs: 2, md: 4 }, bgcolor: '#fbfbfb' }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                        <Typography variant="subtitle2" color="secondary" sx={{ borderBottom: '1px solid #e0e0e0', pb: 0.5 }}>
+                        <Typography variant="subtitle2" color="primary" sx={{ borderBottom: '1px solid #e0e0e0', pb: 0.5 }}>
                             Vinculación al Sistema
                         </Typography>
                         <FormControl fullWidth error={!!errors.idUsuario}>
@@ -411,7 +403,7 @@ export const GestionTutores = () => {
                             </Select>
                         </FormControl>
 
-                        <Typography variant="subtitle2" color="secondary" sx={{ borderBottom: '1px solid #e0e0e0', pb: 0.5 }}>
+                        <Typography variant="subtitle2" color="primary" sx={{ borderBottom: '1px solid #e0e0e0', pb: 0.5 }}>
                             Empresa y Sede
                         </Typography>
                         <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', md: 'row' } }}>
@@ -438,7 +430,7 @@ export const GestionTutores = () => {
                                 onChange={e => setFormData({ ...formData, empresaNombre: e.target.value })} />
                         </Box>
 
-                        <Typography variant="subtitle2" color="secondary" sx={{ borderBottom: '1px solid #e0e0e0', pb: 0.5 }}>
+                        <Typography variant="subtitle2" color="primary" sx={{ borderBottom: '1px solid #e0e0e0', pb: 0.5 }}>
                             Datos del Cargo
                         </Typography>
                         <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', md: 'row' } }}>
@@ -459,7 +451,7 @@ export const GestionTutores = () => {
                 </DialogContent>
                 <DialogActions sx={{ p: 2, px: 3, bgcolor: '#f4f6f8' }}>
                     <Button onClick={() => setOpenDialog(false)} color="inherit" sx={{ fontWeight: 'bold' }}>Cancelar</Button>
-                    <Button variant="contained" color="secondary" onClick={handleSubmit} startIcon={<SaveIcon />} sx={{ px: 4, borderRadius: 2 }}>
+                    <Button variant="contained" color="primary" onClick={handleSubmit} startIcon={<SaveIcon />} sx={{ px: 4, borderRadius: 2 }}>
                         {isEditing ? 'Actualizar' : 'Guardar'}
                     </Button>
                 </DialogActions>
@@ -477,7 +469,7 @@ export const GestionTutores = () => {
                         </Box>
 
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5, mb: 3, p: 2.5, bgcolor: '#f8fafc', borderRadius: 3 }}>
-                            <Avatar sx={{ width: 56, height: 56, bgcolor: 'secondary.main', fontSize: 22 }}>
+                            <Avatar sx={{ width: 56, height: 56, bgcolor: 'primary.main', fontSize: 22 }}>
                                 <PersonIcon fontSize="large" />
                             </Avatar>
                             <Box>
@@ -525,6 +517,6 @@ export const GestionTutores = () => {
                     </Box>
                 ) : null}
             </Drawer>
-        </Container>
+        </ModulePageShell>
     );
 };

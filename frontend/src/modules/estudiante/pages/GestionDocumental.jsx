@@ -5,16 +5,19 @@ import {
   Stack,
 } from '@mui/material';
 import {
-  CloudUpload, Delete, Download, CheckCircle, Warning, PendingActions,
-  Description, FolderZip,
+  CloudUpload, Delete, Download, CheckCircle,
+  Description, FolderZip, Folder,
 } from '@mui/icons-material';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import { expedientesApi } from '../../../api/expedientesApi';
 import api from '../../../api/axios';
 import { useAuth } from '../../../auth/AuthContext';
-import PageHeader from '../../../shared/components/PageHeader';
+import {
+  ModulePageShell, ModulePageHeader,
+} from '../../../shared/components/module/ModulePageShell';
 import ContentCard from '../../../shared/components/ContentCard';
+import StatusChip from '../../../shared/components/StatusChip';
 
 const MySwal = withReactContent(Swal);
 
@@ -71,13 +74,13 @@ export const GestionDocumental = () => {
 
   if (!expediente) {
     return (
-        <Box sx={{ maxWidth: 480, mx: 'auto', textAlign: 'center', py: 6 }}>
+        <ModulePageShell>
         <ContentCard>
           <FolderZip sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
           <Typography variant="h6" gutterBottom>Sin expediente activo</Typography>
           <Typography variant="body2" color="text.secondary">No tienes ninguna práctica registrada para gestionar documentos.</Typography>
         </ContentCard>
-        </Box>
+        </ModulePageShell>
     );
   }
 
@@ -227,21 +230,19 @@ export const GestionDocumental = () => {
   };
 
   const getEstadoChip = (estado) => {
-    switch(estado) {
-      case 'APROBADO': return <Chip size="small" icon={<CheckCircle />} label="Aprobado" variant="outlined" />;
-      case 'OBSERVADO': return <Chip size="small" icon={<Warning />} label="Observado" variant="outlined" color="error" />;
-      default: return <Chip size="small" icon={<PendingActions />} label="En revisión" variant="outlined" />;
-    }
+    const map = { APROBADO: 'APROBADO', OBSERVADO: 'OBSERVADO' };
+    return <StatusChip status={map[estado] || 'PENDIENTE'} label={estado === 'APROBADO' ? 'Aprobado' : estado === 'OBSERVADO' ? 'Observado' : 'En revisión'} />;
   };
 
   const pctCargados = Math.round((documentosConsolidados.length / docObligatorios.length) * 100);
 
   return (
-    <Box sx={{ maxWidth: 1100, mx: 'auto' }}>
-      <PageHeader
+    <ModulePageShell>
+      <ModulePageHeader
+        icon={<Folder />}
         title="Gestor documental"
         subtitle={`Expediente: ${expediente.nombreTipoPractica}`}
-        action={<Chip label={`${pctCargados}% completado`} size="small" variant="outlined" />}
+        action={<Chip label={`${pctCargados}% completado`} size="small" color="primary" variant="outlined" />}
       />
 
       <ContentCard noPadding sx={{ mb: 0 }}>
@@ -266,12 +267,14 @@ export const GestionDocumental = () => {
                     key={docType.id}
                     sx={{
                       display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center',
-                      py: 1.5, px: 2, borderRadius: 1,
-                      border: '1px solid', borderColor: 'divider',
+                      py: 1.5, px: 2, borderRadius: 1.5,
+                      border: '1px solid',
+                      borderColor: docCargado ? 'success.light' : 'divider',
+                      bgcolor: docCargado ? 'success.light' : 'background.paper',
                     }}
                   >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flex: '1 1 220px' }}>
-                      <Description fontSize="small" color={docCargado ? 'action' : 'disabled'} />
+                      <Description fontSize="small" sx={{ color: docCargado ? 'success.main' : 'text.disabled' }} />
                       <Box>
                         <Typography variant="body2" fontWeight={500}>{docType.nombre}</Typography>
                         <Typography variant="caption" color="text.secondary">
@@ -382,6 +385,6 @@ export const GestionDocumental = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </ModulePageShell>
   );
 };

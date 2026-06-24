@@ -17,8 +17,10 @@ import PeopleIcon from '@mui/icons-material/People';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import WarningIcon from '@mui/icons-material/Warning';
-import { motion } from 'framer-motion';
 import { sedeApi, empresaApi } from '../../../api/sedesApi';
+import {
+    ModulePageShell, ModulePageHeader, ModuleToolbar, ModuleTableContainer, moduleHeadCellSx, moduleSortLabelSx,
+} from '../../../shared/components/module/ModulePageShell';
 import { validacionApi } from '../../../api/validacionesApi';
 import { useAuth } from '../../../auth/AuthContext';
 import Swal from 'sweetalert2';
@@ -408,148 +410,132 @@ export const GestionSedes = () => {
 
     if (loading && sedes.length === 0) {
         return (
-            <Container maxWidth="xl" sx={{ mt: 4, mb: 6, textAlign: 'center' }}>
+            <ModulePageShell sx={{ textAlign: 'center' }}>
                 <CircularProgress />
                 <Typography variant="body1" sx={{ mt: 2 }}>Cargando sedes...</Typography>
-            </Container>
+            </ModulePageShell>
         );
     }
 
     return (
-        <Container maxWidth="xl" sx={{ mt: 4, mb: 6 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 4, p: 4, borderRadius: 4, bgcolor: 'primary.main', color: 'white', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', position: 'relative', overflow: 'hidden' }}>
-                <Box sx={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <LocationCityIcon sx={{ fontSize: 48, color: 'rgba(255,255,255,0.9)' }} />
-                    <Box>
-                        <Typography variant="h4" fontWeight="bold">
-                            Gestión de Sedes
-                        </Typography>
-                        <Typography variant="subtitle1" sx={{ opacity: 0.9 }}>
-                            Administra las sedes operativas vinculadas a las empresas.
-                        </Typography>
-                    </Box>
-                </Box>
-            </Box>
+        <ModulePageShell>
+            <ModulePageHeader
+                icon={<LocationCityIcon />}
+                title="Gestión de Sedes"
+                subtitle="Administra las sedes operativas vinculadas a las empresas."
+            />
 
-            <Paper 
-                component={motion.div} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}
-                elevation={0} sx={{ p: 4, mb: 4, borderRadius: 4, bgcolor: '#fff', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)' }}
-            >
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <ModuleToolbar>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-                        <Typography variant="h6" fontWeight="bold" color="primary">Filtros de Búsqueda</Typography>
-                        <Button 
-                            variant="contained" 
-                            color="primary" 
-                            startIcon={<AddIcon />} 
+                        <Box sx={{ display: 'flex', gap: 2, flex: 1, flexWrap: 'wrap', minWidth: 0 }}>
+                            <TextField
+                                size="small"
+                                variant="outlined"
+                                placeholder="Buscar sede, empresa o distrito..."
+                                value={searchTerm}
+                                onChange={handleSearchChange}
+                                slotProps={{
+                                    input: {
+                                        startAdornment: (
+                                            <InputAdornment position="start">
+                                                <SearchIcon color="action" fontSize="small" />
+                                            </InputAdornment>
+                                        ),
+                                        sx: { bgcolor: '#fff', borderRadius: 2, minWidth: { xs: '100%', sm: 280 } },
+                                    },
+                                }}
+                            />
+                            <FormControl size="small" sx={{ minWidth: 120 }}>
+                                <InputLabel>Estado</InputLabel>
+                                <Select value={filtroEstadoSede} label="Estado" onChange={(e) => setFiltroEstadoSede(e.target.value)} sx={{ borderRadius: 2, bgcolor: '#fff' }}>
+                                    <MenuItem value="todos">Todos</MenuItem>
+                                    <MenuItem value="ACTIVA">Activa</MenuItem>
+                                    <MenuItem value="INACTIVA">Inactiva</MenuItem>
+                                </Select>
+                            </FormControl>
+                            <FormControl size="small" sx={{ minWidth: 130 }}>
+                                <InputLabel>Validación</InputLabel>
+                                <Select value={filtroValidacion} label="Validación" onChange={(e) => setFiltroValidacion(e.target.value)} sx={{ borderRadius: 2, bgcolor: '#fff' }}>
+                                    <MenuItem value="todos">Todos</MenuItem>
+                                    <MenuItem value="aprobada">Aprobada</MenuItem>
+                                    <MenuItem value="observada">Observada</MenuItem>
+                                    <MenuItem value="rechazada">Rechazada</MenuItem>
+                                    <MenuItem value="no_validada">No validada</MenuItem>
+                                </Select>
+                            </FormControl>
+                            <FormControl size="small" sx={{ minWidth: 120 }}>
+                                <InputLabel>Convenio</InputLabel>
+                                <Select value={filtroConvenio} label="Convenio" onChange={(e) => setFiltroConvenio(e.target.value)} sx={{ borderRadius: 2, bgcolor: '#fff' }}>
+                                    <MenuItem value="todos">Todos</MenuItem>
+                                    <MenuItem value="vigente">Vigente</MenuItem>
+                                    <MenuItem value="no_vigente">No vigente</MenuItem>
+                                </Select>
+                            </FormControl>
+                            <FormControl size="small" sx={{ minWidth: 110 }}>
+                                <InputLabel>Tutor</InputLabel>
+                                <Select value={filtroTutor} label="Tutor" onChange={(e) => setFiltroTutor(e.target.value)} sx={{ borderRadius: 2, bgcolor: '#fff' }}>
+                                    <MenuItem value="todos">Todos</MenuItem>
+                                    <MenuItem value="con_tutor">Con tutor</MenuItem>
+                                    <MenuItem value="sin_tutor">Sin tutor</MenuItem>
+                                </Select>
+                            </FormControl>
+                            <FormControl size="small" sx={{ minWidth: 110 }}>
+                                <InputLabel>Elegible</InputLabel>
+                                <Select value={filtroElegible} label="Elegible" onChange={(e) => setFiltroElegible(e.target.value)} sx={{ borderRadius: 2, bgcolor: '#fff' }}>
+                                    <MenuItem value="todos">Todos</MenuItem>
+                                    <MenuItem value="elegible">Elegible</MenuItem>
+                                    <MenuItem value="no_elegible">No elegible</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Box>
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            startIcon={<AddIcon />}
                             onClick={() => handleOpenDialog()}
-                            sx={{ px: 3, py: 1.2, borderRadius: 1.2, boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', whiteSpace: 'nowrap' }}
+                            sx={{ px: 3, py: 1, borderRadius: 2, boxShadow: 2, whiteSpace: 'nowrap' }}
                         >
                             Nueva Sede
                         </Button>
                     </Box>
-                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(3, 1fr)', lg: '2fr 1fr 1fr 1fr 1fr 1fr' }, gap: 2.5 }}>
-                        <TextField 
-                            size="small"
-                            variant="outlined" 
-                            placeholder="Buscar sede, empresa o distrito..." 
-                            value={searchTerm}
-                            onChange={handleSearchChange}
-                            slotProps={{ input: {
-                                startAdornment: (
-                                    <InputAdornment position="start">
-                                        <SearchIcon color="action" fontSize="small" />
-                                    </InputAdornment>
-                                ),
-                                sx: { bgcolor: '#fff', borderRadius: 1.2 }
-                            }}}
-                        />
-                        <FormControl size="small" fullWidth>
-                            <InputLabel>Estado</InputLabel>
-                            <Select value={filtroEstadoSede} label="Estado" onChange={(e) => setFiltroEstadoSede(e.target.value)} sx={{ borderRadius: 1.2, bgcolor: '#fff' }}>
-                                <MenuItem value="todos">Todos</MenuItem>
-                                <MenuItem value="ACTIVA">Activa</MenuItem>
-                                <MenuItem value="INACTIVA">Inactiva</MenuItem>
-                            </Select>
-                        </FormControl>
-                        <FormControl size="small" fullWidth>
-                            <InputLabel>Validación</InputLabel>
-                            <Select value={filtroValidacion} label="Validación" onChange={(e) => setFiltroValidacion(e.target.value)} sx={{ borderRadius: 1.2, bgcolor: '#fff' }}>
-                                <MenuItem value="todos">Todos</MenuItem>
-                                <MenuItem value="aprobada">Aprobada</MenuItem>
-                                <MenuItem value="observada">Observada</MenuItem>
-                                <MenuItem value="rechazada">Rechazada</MenuItem>
-                                <MenuItem value="no_validada">No validada</MenuItem>
-                            </Select>
-                        </FormControl>
-                        <FormControl size="small" fullWidth>
-                            <InputLabel>Convenio</InputLabel>
-                            <Select value={filtroConvenio} label="Convenio" onChange={(e) => setFiltroConvenio(e.target.value)} sx={{ borderRadius: 1.2, bgcolor: '#fff' }}>
-                                <MenuItem value="todos">Todos</MenuItem>
-                                <MenuItem value="vigente">Vigente</MenuItem>
-                                <MenuItem value="no_vigente">No vigente</MenuItem>
-                            </Select>
-                        </FormControl>
-                        <FormControl size="small" fullWidth>
-                            <InputLabel>Tutor</InputLabel>
-                            <Select value={filtroTutor} label="Tutor" onChange={(e) => setFiltroTutor(e.target.value)} sx={{ borderRadius: 1.2, bgcolor: '#fff' }}>
-                                <MenuItem value="todos">Todos</MenuItem>
-                                <MenuItem value="con_tutor">Con tutor</MenuItem>
-                                <MenuItem value="sin_tutor">Sin tutor</MenuItem>
-                            </Select>
-                        </FormControl>
-                        <FormControl size="small" fullWidth>
-                            <InputLabel>Elegible</InputLabel>
-                            <Select value={filtroElegible} label="Elegible" onChange={(e) => setFiltroElegible(e.target.value)} sx={{ borderRadius: 1.2, bgcolor: '#fff' }}>
-                                <MenuItem value="todos">Todos</MenuItem>
-                                <MenuItem value="elegible">Elegible</MenuItem>
-                                <MenuItem value="no_elegible">No elegible</MenuItem>
-                            </Select>
-                        </FormControl>
-                    </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
-                        <Button 
-                            variant="outlined" 
-                            size="medium" 
-                            onClick={limpiarFiltros}
-                            startIcon={<FilterListIcon />}
-                            sx={{ borderRadius: 1.2, px: 3, fontWeight: 600 }}
-                        >
-                            Limpiar Filtros
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <Button variant="outlined" size="small" onClick={limpiarFiltros} startIcon={<FilterListIcon />}>
+                            Limpiar filtros
                         </Button>
                     </Box>
                 </Box>
-            </Paper>
+            </ModuleToolbar>
 
-            <TableContainer elevation={0} sx={{ borderRadius: 4, border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)', overflow: 'hidden', bgcolor: '#fff' }}>
+            <ModuleTableContainer>
                 <Table>
                     <TableHead sx={{ bgcolor: 'primary.main' }}>
                         <TableRow>
-                            <TableCell sx={{ color: '#fff', fontWeight: 'bold' }}>
-                                <TableSortLabel 
-                                    active={orderBy === 'nombreSede'} direction={orderBy === 'nombreSede' ? order : 'asc'} 
-                                    onClick={() => handleSort('nombreSede')} sx={{ color: '#fff !important', '& .MuiTableSortLabel-icon': { color: '#fff !important' } }}
+                            <TableCell sx={moduleHeadCellSx}>
+                                <TableSortLabel
+                                    active={orderBy === 'nombreSede'} direction={orderBy === 'nombreSede' ? order : 'asc'}
+                                    onClick={() => handleSort('nombreSede')} sx={moduleSortLabelSx}
                                 >Sede</TableSortLabel>
                             </TableCell>
-                            <TableCell sx={{ color: '#fff', fontWeight: 'bold' }}>
+                            <TableCell sx={moduleHeadCellSx}>
                                 <TableSortLabel 
                                     active={orderBy === 'razonSocialEmpresa'} direction={orderBy === 'razonSocialEmpresa' ? order : 'asc'} 
                                     onClick={() => handleSort('razonSocialEmpresa')} sx={{ color: '#fff !important', '& .MuiTableSortLabel-icon': { color: '#fff !important' } }}
                                 >Empresa</TableSortLabel>
                             </TableCell>
-                            <TableCell sx={{ color: '#fff', fontWeight: 'bold' }}>Ubicación</TableCell>
-                            <TableCell sx={{ color: '#fff', fontWeight: 'bold' }}>Estado</TableCell>
-                            <TableCell sx={{ color: '#fff', fontWeight: 'bold' }}>Validación</TableCell>
-                            <TableCell sx={{ color: '#fff', fontWeight: 'bold' }}>Convenio</TableCell>
-                            <TableCell sx={{ color: '#fff', fontWeight: 'bold' }}>Tutor</TableCell>
-                            <TableCell sx={{ color: '#fff', fontWeight: 'bold' }}>Elegible</TableCell>
-                            <TableCell sx={{ color: '#fff', fontWeight: 'bold', width: '100px' }}>Capacidad</TableCell>
-                            <TableCell align="center" sx={{ color: '#fff', fontWeight: 'bold' }}>Acciones</TableCell>
+                            <TableCell sx={moduleHeadCellSx}>Ubicación</TableCell>
+                            <TableCell sx={moduleHeadCellSx}>Estado</TableCell>
+                            <TableCell sx={moduleHeadCellSx}>Validación</TableCell>
+                            <TableCell sx={moduleHeadCellSx}>Convenio</TableCell>
+                            <TableCell sx={moduleHeadCellSx}>Tutor</TableCell>
+                            <TableCell sx={moduleHeadCellSx}>Elegible</TableCell>
+                            <TableCell sx={{ ...moduleHeadCellSx, width: '100px' }}>Capacidad</TableCell>
+                            <TableCell align="center" sx={moduleHeadCellSx}>Acciones</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {paginatedSedes.map((sede) => (
-                            <TableRow key={sede.id} hover sx={{ '&:last-child td, &:last-child th': { border: 0 }, bgcolor: !sede.esElegible ? 'rgba(255, 152, 0, 0.05)' : 'inherit' }}>
+                            <TableRow key={sede.id} hover sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
                                 <TableCell fontWeight="medium">{sede.nombreSede}</TableCell>
                                 <TableCell>
                                     <Typography variant="body2" fontWeight="bold" color="primary">
@@ -576,34 +562,35 @@ export const GestionSedes = () => {
                                     />
                                 </TableCell>
                                 <TableCell>
-                                    <Chip 
-                                        label={sede.tieneConvenioVigente ? 'Vigente' : 'No vigente'} 
-                                        size="small" 
-                                        color={sede.tieneConvenioVigente ? 'success' : 'error'}
+                                    <Chip
+                                        label={sede.tieneConvenioVigente ? 'Vigente' : 'No vigente'}
+                                        size="small"
+                                        color={sede.tieneConvenioVigente ? 'success' : 'warning'}
                                     />
                                 </TableCell>
                                 <TableCell>
-                                    <Chip 
-                                        label={sede.tieneTutorActivo ? `Sí (${sede.cantidadTutoresActivos})` : 'No'} 
-                                        size="small" 
-                                        color={sede.tieneTutorActivo ? 'success' : 'error'}
+                                    <Chip
+                                        label={sede.tieneTutorActivo ? `Sí (${sede.cantidadTutoresActivos})` : 'No'}
+                                        size="small"
+                                        color={sede.tieneTutorActivo ? 'success' : 'default'}
+                                        variant={sede.tieneTutorActivo ? 'filled' : 'outlined'}
                                     />
                                 </TableCell>
                                 <TableCell>
                                     {sede.esElegible ? (
-                                        <Chip label="Sí" size="small" color="success" icon={<CheckCircleIcon fontSize="small" />} />
+                                        <Chip label="Sí" size="small" color="success" />
                                     ) : (
                                         <Tooltip title={sede.motivoNoElegible || 'No cumple requisitos'} arrow>
-                                            <Chip label="No" size="small" color="warning" icon={<WarningIcon fontSize="small" />} />
+                                            <Chip label="No" size="small" color="warning" variant="outlined" />
                                         </Tooltip>
                                     )}
                                 </TableCell>
                                 <TableCell align="center">
-                                    <Chip label={sede.capacidadMaxima || 0} color="secondary" size="small" />
+                                    <Chip label={sede.capacidadMaxima || 0} size="small" variant="outlined" />
                                 </TableCell>
                                 <TableCell align="center">
                                     <Tooltip title="Ver Detalle">
-                                        <IconButton color="info" onClick={() => handleVerDetalle(sede)}>
+                                        <IconButton color="primary" onClick={() => handleVerDetalle(sede)}>
                                             <VisibilityIcon />
                                         </IconButton>
                                     </Tooltip>
@@ -613,17 +600,17 @@ export const GestionSedes = () => {
                                         </IconButton>
                                     </Tooltip>
                                     <Tooltip title="Gestionar Validación">
-                                        <IconButton color="warning" onClick={() => handleGestionarValidacion(sede)}>
+                                        <IconButton color="primary" onClick={() => handleGestionarValidacion(sede)}>
                                             <AssignmentIcon />
                                         </IconButton>
                                     </Tooltip>
                                     <Tooltip title="Gestionar Tutores">
-                                        <IconButton color="secondary" onClick={() => handleGestionarTutores(sede)}>
+                                        <IconButton color="primary" onClick={() => handleGestionarTutores(sede)}>
                                             <PeopleIcon />
                                         </IconButton>
                                     </Tooltip>
                                     <Tooltip title="Ver Expedientes">
-                                        <IconButton color="success" onClick={() => handleVerExpedientes(sede)}>
+                                        <IconButton color="primary" onClick={() => handleVerExpedientes(sede)}>
                                             <SchoolIcon />
                                         </IconButton>
                                     </Tooltip>
@@ -646,7 +633,7 @@ export const GestionSedes = () => {
                         )}
                     </TableBody>
                 </Table>
-            </TableContainer>
+            </ModuleTableContainer>
 
             <TablePagination
                 rowsPerPageOptions={[5, 10, 25]}
@@ -1068,6 +1055,6 @@ export const GestionSedes = () => {
                     </Button>
                 </DialogActions>
             </Dialog>
-        </Container>
+        </ModulePageShell>
     );
 };

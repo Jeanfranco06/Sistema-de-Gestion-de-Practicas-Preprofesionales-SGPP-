@@ -131,28 +131,28 @@ export default function AppLayout() {
         sx={{
           px: 2, py: 2.5,
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          borderBottom: '1px solid',
-          borderColor: 'divider',
+          bgcolor: 'primary.main',
+          color: 'primary.contrastText',
         }}
       >
         <Box>
-          <Typography variant="subtitle1" fontWeight={600} lineHeight={1.2}>
+          <Typography variant="subtitle1" fontWeight={600} lineHeight={1.2} color="inherit">
             SGPP – UNT
           </Typography>
-          <Typography variant="caption" color="text.secondary">
+          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)' }}>
             Ing. Industrial
           </Typography>
         </Box>
         {isMobile && (
-          <IconButton onClick={() => setDrawerOpen(false)} size="small">
+          <IconButton onClick={() => setDrawerOpen(false)} size="small" sx={{ color: 'inherit' }}>
             <ChevronLeft />
           </IconButton>
         )}
       </Box>
 
-      <Box sx={{ px: 2, py: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
+      <Box sx={{ px: 2, py: 2, borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'info.light' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Avatar sx={{ bgcolor: 'grey.200', color: 'text.primary', width: 38, height: 38, fontSize: '0.9rem' }}>
+          <Avatar sx={{ bgcolor: 'primary.main', color: 'primary.contrastText', width: 38, height: 38, fontSize: '0.9rem' }}>
             {getInitials(user?.nombres, user?.apellidoPaterno)}
           </Avatar>
           <Box sx={{ overflow: 'hidden' }}>
@@ -174,15 +174,9 @@ export default function AppLayout() {
               <ListItemButton
                 onClick={() => { navigate(item.path); if (isMobile) setDrawerOpen(false); }}
                 selected={active}
-                sx={{
-                  mx: 1, borderRadius: 1, mb: 0.25,
-                  '&.Mui-selected': {
-                    bgcolor: 'action.selected',
-                    '& .MuiListItemIcon-root': { color: 'text.primary' },
-                  },
-                }}
+                sx={{ mx: 1, borderRadius: 1.5, mb: 0.25 }}
               >
-                <ListItemIcon sx={{ minWidth: 36, color: 'text.secondary' }}>
+                <ListItemIcon sx={{ minWidth: 36, color: active ? 'primary.main' : 'text.secondary' }}>
                   {item.icon}
                 </ListItemIcon>
                 <ListItemText
@@ -244,7 +238,7 @@ export default function AppLayout() {
           <Typography
             variant="subtitle1"
             fontWeight={600}
-            color="text.primary"
+            color="primary.dark"
             noWrap
             sx={{ flexGrow: 1, minWidth: 0 }}
           >
@@ -261,7 +255,7 @@ export default function AppLayout() {
                 aria-label="Menú de usuario"
                 sx={{ p: 0.5 }}
               >
-                <Avatar sx={{ bgcolor: 'grey.800', width: 34, height: 34, fontSize: '0.85rem' }}>
+                <Avatar sx={{ bgcolor: 'primary.main', width: 34, height: 34, fontSize: '0.85rem' }}>
                   {getInitials(user?.nombres, user?.apellidoPaterno)}
                 </Avatar>
               </IconButton>

@@ -5,7 +5,7 @@ import {
     Card, CardContent, List, ListItem, ListItemIcon, ListItemText, ListItemSecondaryAction, 
     IconButton, Tabs, Tab
 } from '@mui/material';
-import { Download, Description, Person, Business, Assessment, AutoGraph } from '@mui/icons-material';
+import { Download, Description, Person, Business, Assessment, AutoGraph, ArrowBack } from '@mui/icons-material';
 import { evaluacionesApi } from '../../api/evaluacionesApi';
 import { expedientesApi } from '../../api/expedientesApi';
 import api from '../../api/axios';
@@ -13,8 +13,9 @@ import { useAuth } from '../../auth/AuthContext';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowBack } from '@mui/icons-material';
-import PageHeader from '../../shared/components/PageHeader';
+import {
+  ModulePageShell, ModulePageHeader,
+} from '../../shared/components/module/ModulePageShell';
 import ContentCard from '../../shared/components/ContentCard';
 
 const MySwal = withReactContent(Swal);
@@ -160,8 +161,9 @@ export const EvaluacionDocenteAsesor = () => {
     const progresoColor = promedioFinal >= 14 ? 'var(--wow-success)' : promedioFinal >= 11 ? 'var(--wow-warning)' : 'var(--wow-danger)';
 
     return (
-        <Box sx={{ maxWidth: 1100, mx: 'auto' }}>
-            <PageHeader
+        <ModulePageShell>
+            <ModulePageHeader
+                icon={<Assessment />}
                 title="Evaluación docente asesor"
                 subtitle="Sistema de calificación por competencias UNT"
                 action={
@@ -228,7 +230,7 @@ export const EvaluacionDocenteAsesor = () => {
                 <Grid container spacing={2}>
                     {criterios.map((criterio, index) => (
                         <Grid item xs={12} md={6} key={criterio.id}>
-                            <Box sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1, height: '100%' }}>
+                            <Box sx={{ p: 2, border: '1px solid', borderColor: 'primary.light', borderRadius: 1.5, height: '100%', bgcolor: 'info.light' }}>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                                     <Typography variant="body2" fontWeight={600}>{criterio.nombre}</Typography>
                                     <Chip label={`Peso: ${criterio.puntajeMaximo}%`} size="small" variant="outlined" />
@@ -300,6 +302,6 @@ export const EvaluacionDocenteAsesor = () => {
                     </TableContainer>
                 </ContentCard>
             )}
-        </Box>
+        </ModulePageShell>
     );
 };

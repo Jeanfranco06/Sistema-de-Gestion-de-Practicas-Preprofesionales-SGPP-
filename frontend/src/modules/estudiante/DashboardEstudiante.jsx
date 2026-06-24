@@ -1,16 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box, Grid, Typography, Chip, List, ListItem, ListItemText, ListItemIcon,
-  Button, Divider, Alert, CircularProgress, IconButton, Paper, Stack,
+  Button, Divider, Alert, CircularProgress, IconButton, Stack,
 } from '@mui/material';
 import {
   Description, Business, Visibility, TrendingUp, Refresh, InfoOutlined,
+  Assignment, AccessTime, FolderOpen, School,
 } from '@mui/icons-material';
 import { useAuth } from '../../auth/AuthContext';
 import { expedientesApi } from '../../api/expedientesApi';
 import { useNavigate } from 'react-router-dom';
-import PageHeader from '../../shared/components/PageHeader';
+import {
+  ModulePageShell, ModulePageHeader,
+} from '../../shared/components/module/ModulePageShell';
 import ContentCard from '../../shared/components/ContentCard';
+import StatStrip from '../../shared/components/StatStrip';
+import StatusChip from '../../shared/components/StatusChip';
 
 export default function DashboardEstudiante() {
   const { user } = useAuth();
@@ -43,7 +48,7 @@ export default function DashboardEstudiante() {
 
   if (!expediente) {
     return (
-      <Box sx={{ maxWidth: 480, mx: 'auto', textAlign: 'center', py: 8 }}>
+      <ModulePageShell>
         <ContentCard>
           <Typography variant="h6" gutterBottom>Sin práctica registrada</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
@@ -51,7 +56,7 @@ export default function DashboardEstudiante() {
           </Typography>
           <Button variant="contained">Solicitar práctica</Button>
         </ContentCard>
-      </Box>
+      </ModulePageShell>
     );
   }
 
@@ -73,15 +78,16 @@ export default function DashboardEstudiante() {
   };
 
   const stats = [
-    { label: 'Modalidad', value: expediente.codigoTipoPractica },
-    { label: 'Horas', value: `${horasEjecutadas} / ${horasTotales}` },
-    { label: 'Estado', value: expediente.estado?.replace(/_/g, ' ').toLowerCase() },
-    { label: 'Documentos', value: `${docsAprobados} / ${docsObligatorios.length}` },
+    { label: 'Modalidad', value: expediente.codigoTipoPractica, icon: <Assignment fontSize="small" />, accent: 'blue' },
+    { label: 'Horas', value: `${horasEjecutadas} / ${horasTotales}`, icon: <AccessTime fontSize="small" />, accent: 'teal' },
+    { label: 'Estado', value: expediente.estado?.replace(/_/g, ' ').toLowerCase(), icon: <FolderOpen fontSize="small" />, accent: 'violet' },
+    { label: 'Documentos', value: `${docsAprobados} / ${docsObligatorios.length}`, icon: <Description fontSize="small" />, accent: 'emerald' },
   ];
 
   return (
-    <Box sx={{ maxWidth: 1100, mx: 'auto' }}>
-      <PageHeader
+    <ModulePageShell>
+      <ModulePageHeader
+        icon={<School />}
         title={`Hola, ${user?.nombres?.split(' ')[0]}`}
         subtitle={`${expediente.nombreTipoPractica} · ${expediente.nombreEmpresa || 'Empresa no asignada'}`}
         action={
@@ -98,33 +104,14 @@ export default function DashboardEstudiante() {
         </Alert>
       )}
 
-      <Paper variant="outlined" sx={{ mb: 3, borderRadius: 2, display: 'flex', flexWrap: 'wrap' }}>
-        {stats.map((s, i) => (
-          <Box
-            key={s.label}
-            sx={{
-              flex: '1 1 140px',
-              px: 2.5, py: 2,
-              borderRight: i < stats.length - 1 ? '1px solid' : 'none',
-              borderColor: 'divider',
-            }}
-          >
-            <Typography variant="caption" color="text.secondary" textTransform="uppercase" letterSpacing={0.5}>
-              {s.label}
-            </Typography>
-            <Typography variant="subtitle1" fontWeight={600} sx={{ mt: 0.25, textTransform: 'capitalize' }}>
-              {s.value}
-            </Typography>
-          </Box>
-        ))}
-      </Paper>
+      <StatStrip items={stats} />
 
       <Grid container spacing={3}>
         <Grid item xs={12} lg={8}>
           <ContentCard>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <Typography variant="subtitle1" fontWeight={600}>Progreso de práctica</Typography>
-              <Chip label={`${pct}%`} size="small" variant="outlined" />
+              <Chip label={`${pct}%`} size="small" color="primary" variant="outlined" />
             </Box>
             <Box className="wow-progress-bg" sx={{ mb: 1 }}>
               <div className="wow-progress-fill" style={{ width: `${pct}%` }} />
@@ -146,15 +133,17 @@ export default function DashboardEstudiante() {
                     key={docType}
                     sx={{
                       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                      py: 1.25, px: 1.5, borderRadius: 1,
-                      border: '1px solid', borderColor: 'divider',
+                      py: 1.25, px: 1.5, borderRadius: 1.5,
+                      border: '1px solid',
+                      borderColor: listo ? 'success.light' : 'divider',
+                      bgcolor: listo ? 'success.light' : 'background.paper',
                     }}
                   >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                      <Description fontSize="small" color={listo ? 'action' : 'disabled'} />
+                      <Description fontSize="small" sx={{ color: listo ? 'success.main' : 'text.disabled' }} />
                       <Typography variant="body2">{docLabels[docType] || docType}</Typography>
                     </Box>
-                    <Chip label={listo ? 'Listo' : 'Pendiente'} size="small" variant="outlined" />
+                    <StatusChip status={listo ? 'APROBADO' : 'PENDIENTE'} label={listo ? 'Listo' : 'Pendiente'} />
                   </Box>
                 );
               })}
@@ -164,15 +153,15 @@ export default function DashboardEstudiante() {
 
         <Grid item xs={12} lg={4}>
           <ContentCard>
-            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>Accesos</Typography>
+            <Typography variant="subtitle2" color="primary.dark" sx={{ mb: 2 }}>Accesos rápidos</Typography>
             <Stack spacing={1}>
-              <Button variant="text" startIcon={<Visibility />} onClick={() => navigate('/estudiante/documentos')} sx={{ justifyContent: 'flex-start' }}>
+              <Button variant="outlined" color="primary" startIcon={<Visibility />} onClick={() => navigate('/estudiante/documentos')} sx={{ justifyContent: 'flex-start' }}>
                 Gestionar documentos
               </Button>
-              <Button variant="text" startIcon={<Business />} onClick={() => navigate('/estudiante/sedes')} sx={{ justifyContent: 'flex-start' }}>
+              <Button variant="outlined" color="secondary" startIcon={<Business />} onClick={() => navigate('/estudiante/sedes')} sx={{ justifyContent: 'flex-start' }}>
                 Información de empresa
               </Button>
-              <Button variant="text" startIcon={<TrendingUp />} onClick={() => navigate('/estudiante/evaluacion')} sx={{ justifyContent: 'flex-start' }}>
+              <Button variant="outlined" startIcon={<TrendingUp />} onClick={() => navigate('/estudiante/evaluacion')} sx={{ justifyContent: 'flex-start', borderColor: 'divider', color: 'text.primary' }}>
                 Ver evaluaciones
               </Button>
             </Stack>
@@ -184,7 +173,7 @@ export default function DashboardEstudiante() {
               {expediente.estadoHistorial?.slice(-4).reverse().map((h) => (
                 <ListItem key={h.id} disablePadding sx={{ mb: 1 }}>
                   <ListItemIcon sx={{ minWidth: 28 }}>
-                    <InfoOutlined fontSize="small" color="action" />
+                    <InfoOutlined fontSize="small" color="primary" />
                   </ListItemIcon>
                   <ListItemText
                     primary={h.estadoNuevo?.replace(/_/g, ' ')}
@@ -201,6 +190,6 @@ export default function DashboardEstudiante() {
           </ContentCard>
         </Grid>
       </Grid>
-    </Box>
+    </ModulePageShell>
   );
 }

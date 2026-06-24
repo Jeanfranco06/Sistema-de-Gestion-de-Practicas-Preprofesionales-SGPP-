@@ -11,6 +11,9 @@ import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
 import BusinessCenterIcon from '@mui/icons-material/BusinessCenter';
 import FilterListIcon from '@mui/icons-material/FilterList';
+import {
+  ModulePageShell, ModulePageHeader, ModuleToolbar, ModuleTableContainer, moduleHeadCellSx, moduleSortLabelSx,
+} from '../../../shared/components/module/ModulePageShell';
 import { empresaApi } from '../../../api/sedesApi';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
@@ -222,20 +225,14 @@ export const GestionEmpresas = () => {
     const paginatedEmpresas = filteredEmpresas.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
     return (
-        <Container maxWidth="xl" sx={{ mt: 4, mb: 6 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-                <BusinessCenterIcon sx={{ fontSize: 40, color: 'primary.main' }} />
-                <Box>
-                    <Typography variant="h4" fontWeight="bold" color="primary">
-                        Gestión de Empresas
-                    </Typography>
-                    <Typography variant="subtitle2" color="textSecondary">
-                        Administra el catálogo de empresas aliadas y valida sus perfiles.
-                    </Typography>
-                </Box>
-            </Box>
+        <ModulePageShell>
+            <ModulePageHeader
+                icon={<BusinessCenterIcon />}
+                title="Gestión de Empresas"
+                subtitle="Administra el catálogo de empresas aliadas y valida sus perfiles."
+            />
 
-            <Paper elevation={1} sx={{ p: 2, mb: 3, borderRadius: 3, bgcolor: '#fff', border: '1px solid #e0e0e0' }}>
+            <ModuleToolbar>
                 <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' }, alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
                     <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' }, width: { xs: '100%', sm: 'auto' }, flex: 1 }}>
                         <TextField 
@@ -282,28 +279,28 @@ export const GestionEmpresas = () => {
                         Nueva Empresa
                     </Button>
                 </Box>
-            </Paper>
+            </ModuleToolbar>
 
-            <TableContainer component={Paper} elevation={3} sx={{ borderRadius: 3, overflow: 'hidden' }}>
+            <ModuleTableContainer>
                 <Table>
                     <TableHead sx={{ bgcolor: 'primary.main' }}>
                         <TableRow>
-                            <TableCell sx={{ color: '#fff', fontWeight: 'bold' }}>
+                            <TableCell sx={moduleHeadCellSx}>
                                 <TableSortLabel 
                                     active={orderBy === 'ruc'} direction={orderBy === 'ruc' ? order : 'asc'} 
-                                    onClick={() => handleSort('ruc')} sx={{ color: '#fff !important', '& .MuiTableSortLabel-icon': { color: '#fff !important' } }}
+                                    onClick={() => handleSort('ruc')} sx={moduleSortLabelSx}
                                 >RUC</TableSortLabel>
                             </TableCell>
-                            <TableCell sx={{ color: '#fff', fontWeight: 'bold' }}>
+                            <TableCell sx={moduleHeadCellSx}>
                                 <TableSortLabel 
                                     active={orderBy === 'razonSocial'} direction={orderBy === 'razonSocial' ? order : 'asc'} 
-                                    onClick={() => handleSort('razonSocial')} sx={{ color: '#fff !important', '& .MuiTableSortLabel-icon': { color: '#fff !important' } }}
+                                    onClick={() => handleSort('razonSocial')} sx={moduleSortLabelSx}
                                 >Razón Social</TableSortLabel>
                             </TableCell>
-                            <TableCell sx={{ color: '#fff', fontWeight: 'bold' }}>Sector</TableCell>
-                            <TableCell sx={{ color: '#fff', fontWeight: 'bold' }}>Contacto</TableCell>
-                            <TableCell sx={{ color: '#fff', fontWeight: 'bold' }}>Estado</TableCell>
-                            <TableCell align="center" sx={{ color: '#fff', fontWeight: 'bold' }}>Acciones</TableCell>
+                            <TableCell sx={moduleHeadCellSx}>Sector</TableCell>
+                            <TableCell sx={moduleHeadCellSx}>Contacto</TableCell>
+                            <TableCell sx={moduleHeadCellSx}>Estado</TableCell>
+                            <TableCell align="center" sx={moduleHeadCellSx}>Acciones</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -359,7 +356,7 @@ export const GestionEmpresas = () => {
                         )}
                     </TableBody>
                 </Table>
-            </TableContainer>
+            </ModuleTableContainer>
             
             <TablePagination
                 rowsPerPageOptions={[5, 10, 25]}
@@ -427,6 +424,6 @@ export const GestionEmpresas = () => {
                     <Button variant="contained" onClick={handleSave} sx={{ px: 4, borderRadius: 2 }}>{isEditing ? 'Actualizar' : 'Guardar'}</Button>
                 </DialogActions>
             </Dialog>
-        </Container>
+        </ModulePageShell>
     );
 };
