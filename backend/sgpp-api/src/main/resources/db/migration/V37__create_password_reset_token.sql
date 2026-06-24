@@ -1,5 +1,5 @@
 -- ============================================================
--- V29: Recuperación de Contraseña
+-- V37: Recuperación de Contraseña
 -- Permite generar tokens de recuperación para restablecer
 -- la contraseña de usuarios del sistema.
 -- ============================================================
