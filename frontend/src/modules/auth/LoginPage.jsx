@@ -98,7 +98,7 @@ export default function LoginPage() {
     <Box
       sx={{
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #0f2238 0%, #1a3a5c 50%, #2e5f8a 100%)',
+        bgcolor: 'background.default',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -106,31 +106,30 @@ export default function LoginPage() {
         p: 2,
       }}
     >
-      {/* Logo / Cabecera institucional */}
       <Box sx={{ textAlign: 'center', mb: 3 }}>
         <Box
           sx={{
-            width: 70, height: 70, borderRadius: '50%', bgcolor: 'secondary.main',
+            width: 56, height: 56, borderRadius: 2, bgcolor: 'grey.100',
+            border: '1px solid', borderColor: 'divider',
             display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 1.5,
           }}
         >
-          <School sx={{ fontSize: 38, color: '#fff' }} />
+          <School sx={{ fontSize: 28, color: 'text.primary' }} />
         </Box>
-        <Typography variant="h5" sx={{ color: '#fff', fontWeight: 700, lineHeight: 1.2 }}>
+        <Typography variant="h5" fontWeight={600} lineHeight={1.2}>
           SGPP – UNT
         </Typography>
-        <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.75)', mt: 0.5 }}>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
           Sistema de Gestión de Prácticas Preprofesionales
         </Typography>
-        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.55)' }}>
+        <Typography variant="caption" color="text.secondary">
           Escuela de Ingeniería Industrial
         </Typography>
       </Box>
 
-      {/* Card de login */}
-      <Card sx={{ width: '100%', maxWidth: 420, borderRadius: 3, boxShadow: '0 8px 32px rgba(0,0,0,0.35)' }}>
+      <Card variant="outlined" sx={{ width: '100%', maxWidth: 420, borderRadius: 2 }}>
         <CardContent sx={{ p: 4 }}>
-          <Typography variant="h6" sx={{ mb: 0.5, fontWeight: 700, color: 'primary.main' }}>
+          <Typography variant="h6" sx={{ mb: 0.5, fontWeight: 600 }}>
             Iniciar sesión
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
@@ -216,7 +215,7 @@ export default function LoginPage() {
         </CardContent>
       </Card>
 
-      <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)', mt: 3 }}>
+      <Typography variant="caption" color="text.secondary" sx={{ mt: 3 }}>
         © 2025 Universidad Nacional de Trujillo · Ingeniería Industrial
       </Typography>
     </Box>

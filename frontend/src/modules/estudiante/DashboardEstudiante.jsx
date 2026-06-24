@@ -1,27 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Box, Grid, Typography, LinearProgress, Chip,
-  List, ListItem, ListItemText, ListItemIcon,
-  Avatar, Button, Divider, Alert, CircularProgress, IconButton
+  Box, Grid, Typography, Chip, List, ListItem, ListItemText, ListItemIcon,
+  Button, Divider, Alert, CircularProgress, IconButton, Paper, Stack,
 } from '@mui/material';
 import {
-  Assignment, Description, AccessTime, Business, ArrowForward, 
-  HourglassEmpty, Visibility, TrendingUp, Refresh, InfoOutlined, CloudUpload
+  Description, Business, Visibility, TrendingUp, Refresh, InfoOutlined,
 } from '@mui/icons-material';
 import { useAuth } from '../../auth/AuthContext';
 import { expedientesApi } from '../../api/expedientesApi';
 import { useNavigate } from 'react-router-dom';
-
-function getEtapaIndex(estado) {
-    const estadoToEtapa = {
-        'SOLICITADO': 0, 'EMPRESA_SEDE_ASIGNADA': 1, 'ASESOR_ASIGNADO': 1,
-        'COMITE_ASIGNADO': 1, 'PLAN_PRESENTADO': 2, 'EN_REVISION': 2,
-        'OBSERVADO': 2, 'SUBSANADO': 2, 'APROBADO': 3, 'EN_EJECUCION': 4,
-        'INFORME_PARCIAL_PRESENTADO': 4, 'INFORME_FINAL_PRESENTADO': 4,
-        'EVALUADO': 5, 'CERRADO': 6,
-    };
-    return estadoToEtapa[estado] || 0;
-}
+import PageHeader from '../../shared/components/PageHeader';
+import ContentCard from '../../shared/components/ContentCard';
 
 export default function DashboardEstudiante() {
   const { user } = useAuth();
@@ -32,201 +21,184 @@ export default function DashboardEstudiante() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const res = await expedientesApi.getByEstudiante(user?.id || 1);
+      const res = await expedientesApi.getMisExpedientes();
       const expedientes = res.data?.data || [];
-      if (expedientes.length > 0) {
-        setExpediente(expedientes[0]);
-      }
+      if (expedientes.length > 0) setExpediente(expedientes[0]);
     } catch (err) {
-      console.error("Error al cargar datos:", err);
+      console.error('Error al cargar datos:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, [user]);
+  useEffect(() => { fetchData(); }, [user]);
 
   if (loading) {
-      return (
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
-              <CircularProgress size={60} thickness={4} sx={{ color: 'var(--wow-primary)' }} />
-          </Box>
-      );
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
+        <CircularProgress size={32} />
+      </Box>
+    );
   }
 
   if (!expediente) {
-      return (
-          <Box className="wow-animate-in" sx={{ p: 5, textAlign: 'center', mt: 5, maxWidth: 600, mx: 'auto' }}>
-              <div className="wow-card" style={{ padding: '48px' }}>
-                  <img src="https://illustrations.popsy.co/amber/student-going-to-school.svg" alt="No data" style={{ width: 200, marginBottom: 24 }} />
-                  <Typography variant="h5" fontWeight="700" color="text.primary" gutterBottom>¡Comienza tu aventura profesional!</Typography>
-                  <Typography variant="body1" color="text.secondary" mb={4}>Aún no tienes ninguna práctica registrada. Solicita el inicio de tus prácticas para empezar a registrar tu progreso.</Typography>
-                  <button className="wow-btn">Solicitar Práctica</button>
-              </div>
-          </Box>
-      );
+    return (
+      <Box sx={{ maxWidth: 480, mx: 'auto', textAlign: 'center', py: 8 }}>
+        <ContentCard>
+          <Typography variant="h6" gutterBottom>Sin práctica registrada</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Solicita el inicio de tus prácticas para comenzar a registrar tu progreso.
+          </Typography>
+          <Button variant="contained">Solicitar práctica</Button>
+        </ContentCard>
+      </Box>
+    );
   }
 
-  const horasTotalesRequeridas = expediente.codigoTipoPractica === 'INICIAL' ? 120 : (expediente.codigoTipoPractica === 'FINAL' ? 180 : 200);
-  const horasEjecutadas = expediente.estado === 'CERRADO' || expediente.estado === 'EVALUADO' ? horasTotalesRequeridas : (expediente.estado === 'EN_EJECUCION' ? Math.floor(horasTotalesRequeridas * 0.5) : 0);
-  const pct = Math.round((horasEjecutadas / horasTotalesRequeridas) * 100);
+  const horasTotales = expediente.codigoTipoPractica === 'INICIAL' ? 120 : (expediente.codigoTipoPractica === 'FINAL' ? 180 : 200);
+  const horasEjecutadas = expediente.estado === 'CERRADO' || expediente.estado === 'EVALUADO'
+    ? horasTotales
+    : (expediente.estado === 'EN_EJECUCION' ? Math.floor(horasTotales * 0.5) : 0);
+  const pct = Math.round((horasEjecutadas / horasTotales) * 100);
 
-  const obsActivas = expediente.observacionesList?.filter(o => !o.subsanado) || [];
-  
+  const obsActivas = expediente.observacionesList?.filter((o) => !o.subsanado) || [];
   const docsObligatorios = ['PLAN_PRACTICA', 'CARTA_ACEPTACION', 'INFORME_FINAL', 'CONSTANCIA_CULMINACION'];
-  const docsSubidos = expediente.documentos?.map(d => d.tipoDocumento) || [];
-  const docsAprobados = docsObligatorios.filter(d => docsSubidos.includes(d)).length;
-  const docsTotales = docsObligatorios.length;
+  const docsSubidos = expediente.documentos?.map((d) => d.tipoDocumento) || [];
+  const docsAprobados = docsObligatorios.filter((d) => docsSubidos.includes(d)).length;
+  const docLabels = {
+    PLAN_PRACTICA: 'Plan de prácticas',
+    CARTA_ACEPTACION: 'Carta de aceptación',
+    INFORME_FINAL: 'Informe final',
+    CONSTANCIA_CULMINACION: 'Constancia de culminación',
+  };
+
+  const stats = [
+    { label: 'Modalidad', value: expediente.codigoTipoPractica },
+    { label: 'Horas', value: `${horasEjecutadas} / ${horasTotales}` },
+    { label: 'Estado', value: expediente.estado?.replace(/_/g, ' ').toLowerCase() },
+    { label: 'Documentos', value: `${docsAprobados} / ${docsObligatorios.length}` },
+  ];
 
   return (
-    <Box className="wow-animate-in" sx={{ maxWidth: 1200, margin: '0 auto', p: 2 }}>
-      
-      {/* Header Profile */}
-      <div className="wow-glass-card" style={{ padding: '32px', marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(135deg, rgba(99,102,241,0.1), rgba(200,100,255,0.05))' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-            <Avatar sx={{ width: 80, height: 80, bgcolor: 'var(--wow-primary)', fontSize: '2rem', boxShadow: 'var(--wow-shadow-float)' }}>
-                {user?.nombres?.charAt(0)}
-            </Avatar>
-            <Box>
-                <Typography variant="h4" fontWeight="800" className="wow-text-gradient">
-                    ¡Hola, {user?.nombres?.split(' ')[0]}! 👋
-                </Typography>
-                <Typography variant="body1" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
-                    {expediente.nombreTipoPractica} en {expediente.nombreEmpresa || 'Empresa No Asignada'}
-                </Typography>
-            </Box>
-        </Box>
-        <IconButton onClick={fetchData} sx={{ bgcolor: 'white', boxShadow: 'var(--wow-shadow-sm)' }}>
-            <Refresh color="primary" />
-        </IconButton>
-      </div>
+    <Box sx={{ maxWidth: 1100, mx: 'auto' }}>
+      <PageHeader
+        title={`Hola, ${user?.nombres?.split(' ')[0]}`}
+        subtitle={`${expediente.nombreTipoPractica} · ${expediente.nombreEmpresa || 'Empresa no asignada'}`}
+        action={
+          <IconButton onClick={fetchData} size="small" aria-label="Actualizar">
+            <Refresh fontSize="small" />
+          </IconButton>
+        }
+      />
 
       {obsActivas.length > 0 && (
-        <Alert severity="warning" sx={{ mb: 4, borderRadius: 3, border: '1px solid #fde68a' }}
-          action={<Button size="small" onClick={() => navigate('/estudiante/documentos')}>Resolver Ahora</Button>}>
-          Tienes <strong>{obsActivas.length}</strong> observación(es) pendiente(s). Por favor corrígelas para continuar.
+        <Alert severity="warning" sx={{ mb: 3 }}
+          action={<Button size="small" onClick={() => navigate('/estudiante/documentos')}>Resolver</Button>}>
+          Tienes {obsActivas.length} observación(es) pendiente(s).
         </Alert>
       )}
 
-      {/* Grid Overview */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
-            <div className="wow-card" style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <Avatar sx={{ bgcolor: 'rgba(99,102,241,0.1)', color: 'var(--wow-primary)', width: 56, height: 56 }}><Assignment /></Avatar>
-                <Box>
-                    <Typography variant="body2" color="text.secondary" fontWeight="600">Modalidad</Typography>
-                    <Typography variant="h6" fontWeight="800">{expediente.codigoTipoPractica}</Typography>
-                </Box>
-            </div>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-            <div className="wow-card" style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <Avatar sx={{ bgcolor: 'rgba(34,197,94,0.1)', color: '#22c55e', width: 56, height: 56 }}><AccessTime /></Avatar>
-                <Box>
-                    <Typography variant="body2" color="text.secondary" fontWeight="600">Horas Registradas</Typography>
-                    <Typography variant="h6" fontWeight="800">{horasEjecutadas} / {horasTotalesRequeridas}</Typography>
-                </Box>
-            </div>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-            <div className="wow-card" style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <Avatar sx={{ bgcolor: 'rgba(239,68,68,0.1)', color: '#ef4444', width: 56, height: 56 }}><HourglassEmpty /></Avatar>
-                <Box>
-                    <Typography variant="body2" color="text.secondary" fontWeight="600">Estado Actual</Typography>
-                    <Typography variant="h6" fontWeight="800" sx={{ textTransform: 'capitalize' }}>{expediente.estado?.replace(/_/g, ' ').toLowerCase()}</Typography>
-                </Box>
-            </div>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-            <div className="wow-card" style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <Avatar sx={{ bgcolor: 'rgba(234,179,8,0.1)', color: '#eab308', width: 56, height: 56 }}><Description /></Avatar>
-                <Box>
-                    <Typography variant="body2" color="text.secondary" fontWeight="600">Documentos</Typography>
-                    <Typography variant="h6" fontWeight="800">{docsAprobados} de {docsTotales}</Typography>
-                </Box>
-            </div>
-        </Grid>
-      </Grid>
+      <Paper variant="outlined" sx={{ mb: 3, borderRadius: 2, display: 'flex', flexWrap: 'wrap' }}>
+        {stats.map((s, i) => (
+          <Box
+            key={s.label}
+            sx={{
+              flex: '1 1 140px',
+              px: 2.5, py: 2,
+              borderRight: i < stats.length - 1 ? '1px solid' : 'none',
+              borderColor: 'divider',
+            }}
+          >
+            <Typography variant="caption" color="text.secondary" textTransform="uppercase" letterSpacing={0.5}>
+              {s.label}
+            </Typography>
+            <Typography variant="subtitle1" fontWeight={600} sx={{ mt: 0.25, textTransform: 'capitalize' }}>
+              {s.value}
+            </Typography>
+          </Box>
+        ))}
+      </Paper>
 
-      <Grid container spacing={4}>
-        {/* Progreso Principal */}
+      <Grid container spacing={3}>
         <Grid item xs={12} lg={8}>
-            <div className="wow-card" style={{ padding: '32px', height: '100%' }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 4 }}>
-                    <Typography variant="h5" fontWeight="700">Progreso de Práctica</Typography>
-                    <Chip label={`${pct}% Completado`} color="primary" sx={{ fontWeight: 'bold' }} />
-                </Box>
-                
-                <Box className="wow-progress-bg" sx={{ height: 16, mb: 2 }}>
-                    <div className="wow-progress-fill" style={{ width: `${pct}%` }}></div>
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 4 }}>
-                    <Typography variant="body2" color="text.secondary" fontWeight="600">{horasEjecutadas} hrs. ejecutadas</Typography>
-                    <Typography variant="body2" color="text.secondary" fontWeight="600">{horasTotalesRequeridas - horasEjecutadas} hrs. restantes</Typography>
-                </Box>
+          <ContentCard>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="subtitle1" fontWeight={600}>Progreso de práctica</Typography>
+              <Chip label={`${pct}%`} size="small" variant="outlined" />
+            </Box>
+            <Box className="wow-progress-bg" sx={{ mb: 1 }}>
+              <div className="wow-progress-fill" style={{ width: `${pct}%` }} />
+            </Box>
+            <Typography variant="caption" color="text.secondary">
+              {horasEjecutadas} hrs ejecutadas · {horasTotales - horasEjecutadas} hrs restantes
+            </Typography>
 
-                <Divider sx={{ my: 4 }} />
-                
-                <Typography variant="h6" fontWeight="700" sx={{ mb: 3 }}>Documentos Requeridos</Typography>
-                <Grid container spacing={2}>
-                    {docsObligatorios.map((docType) => {
-                        const isSubido = docsSubidos.includes(docType);
-                        const n = { 'PLAN_PRACTICA': 'Plan de Prácticas', 'CARTA_ACEPTACION': 'Carta de Aceptación', 'INFORME_FINAL': 'Informe Final', 'CONSTANCIA_CULMINACION': 'Constancia de Culminación' };
-                        return (
-                            <Grid item xs={12} sm={6} key={docType}>
-                                <div style={{ padding: '16px', borderRadius: '12px', border: isSubido ? '2px solid rgba(34,197,94,0.2)' : '2px solid rgba(0,0,0,0.05)', backgroundColor: isSubido ? 'rgba(34,197,94,0.02)' : '#fafafa', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                        {isSubido ? <CloudUpload sx={{ color: '#22c55e' }}/> : <Description color="disabled"/>}
-                                        <Typography variant="body2" fontWeight="600">{n[docType] || docType}</Typography>
-                                    </Box>
-                                    {isSubido ? <Chip label="Listo" size="small" sx={{ bgcolor: '#22c55e', color: 'white', fontWeight: 'bold' }}/> : <Chip label="Falta" size="small" variant="outlined"/>}
-                                </div>
-                            </Grid>
-                        );
-                    })}
-                </Grid>
-            </div>
+            <Divider sx={{ my: 3 }} />
+
+            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>
+              Documentos requeridos
+            </Typography>
+            <Stack spacing={1}>
+              {docsObligatorios.map((docType) => {
+                const listo = docsSubidos.includes(docType);
+                return (
+                  <Box
+                    key={docType}
+                    sx={{
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      py: 1.25, px: 1.5, borderRadius: 1,
+                      border: '1px solid', borderColor: 'divider',
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                      <Description fontSize="small" color={listo ? 'action' : 'disabled'} />
+                      <Typography variant="body2">{docLabels[docType] || docType}</Typography>
+                    </Box>
+                    <Chip label={listo ? 'Listo' : 'Pendiente'} size="small" variant="outlined" />
+                  </Box>
+                );
+              })}
+            </Stack>
+          </ContentCard>
         </Grid>
 
-        {/* Sidebar / Quick Actions */}
         <Grid item xs={12} lg={4}>
-            <div className="wow-card" style={{ padding: '32px', marginBottom: '24px' }}>
-                <Typography variant="h6" fontWeight="700" sx={{ mb: 3 }}>Accesos Rápidos</Typography>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <Button variant="outlined" startIcon={<Visibility />} fullWidth onClick={() => navigate('/estudiante/documentos')} sx={{ py: 1.5, borderRadius: 2, justifyContent: 'flex-start', color: 'text.primary', borderColor: 'rgba(0,0,0,0.1)' }}>
-                        Gestionar Documentos
-                    </Button>
-                    <Button variant="outlined" startIcon={<Business />} fullWidth onClick={() => navigate('/estudiante/sedes')} sx={{ py: 1.5, borderRadius: 2, justifyContent: 'flex-start', color: 'text.primary', borderColor: 'rgba(0,0,0,0.1)' }}>
-                        Información de Empresa
-                    </Button>
-                    <Button variant="outlined" startIcon={<TrendingUp />} fullWidth onClick={() => navigate('/estudiante/evaluacion')} sx={{ py: 1.5, borderRadius: 2, justifyContent: 'flex-start', color: 'text.primary', borderColor: 'rgba(0,0,0,0.1)' }}>
-                        Ver mis Evaluaciones
-                    </Button>
-                </Box>
-            </div>
+          <ContentCard>
+            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>Accesos</Typography>
+            <Stack spacing={1}>
+              <Button variant="text" startIcon={<Visibility />} onClick={() => navigate('/estudiante/documentos')} sx={{ justifyContent: 'flex-start' }}>
+                Gestionar documentos
+              </Button>
+              <Button variant="text" startIcon={<Business />} onClick={() => navigate('/estudiante/sedes')} sx={{ justifyContent: 'flex-start' }}>
+                Información de empresa
+              </Button>
+              <Button variant="text" startIcon={<TrendingUp />} onClick={() => navigate('/estudiante/evaluacion')} sx={{ justifyContent: 'flex-start' }}>
+                Ver evaluaciones
+              </Button>
+            </Stack>
+          </ContentCard>
 
-            <div className="wow-card" style={{ padding: '32px' }}>
-                <Typography variant="h6" fontWeight="700" sx={{ mb: 3 }}>Historial Reciente</Typography>
-                <List disablePadding>
-                    {expediente.estadoHistorial?.slice(-4).reverse().map((h) => (
-                        <ListItem key={h.id} disablePadding sx={{ mb: 2, alignItems: 'flex-start' }}>
-                            <ListItemIcon sx={{ minWidth: 36, mt: 0.5 }}>
-                                <InfoOutlined color="primary" fontSize="small" />
-                            </ListItemIcon>
-                            <ListItemText
-                                primary={`${h.estadoNuevo?.replace(/_/g, ' ')}`}
-                                secondary={h.observacion || h.fechaCambio}
-                                slotProps={{ primary: { fontWeight: 600, fontSize: '0.9rem', sx: { textTransform: 'capitalize' } }, secondary: { fontSize: '0.75rem' } }}
-                            />
-                        </ListItem>
-                    ))}
-                    {(!expediente.estadoHistorial || expediente.estadoHistorial.length === 0) && (
-                        <Typography variant="body2" color="text.secondary">No hay actualizaciones aún.</Typography>
-                    )}
-                </List>
-            </div>
+          <ContentCard sx={{ mb: 0 }}>
+            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1.5 }}>Historial reciente</Typography>
+            <List disablePadding dense>
+              {expediente.estadoHistorial?.slice(-4).reverse().map((h) => (
+                <ListItem key={h.id} disablePadding sx={{ mb: 1 }}>
+                  <ListItemIcon sx={{ minWidth: 28 }}>
+                    <InfoOutlined fontSize="small" color="action" />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={h.estadoNuevo?.replace(/_/g, ' ')}
+                    secondary={h.observacion || h.fechaCambio}
+                    primaryTypographyProps={{ variant: 'body2', fontWeight: 500, textTransform: 'capitalize' }}
+                    secondaryTypographyProps={{ variant: 'caption' }}
+                  />
+                </ListItem>
+              ))}
+              {(!expediente.estadoHistorial || expediente.estadoHistorial.length === 0) && (
+                <Typography variant="body2" color="text.secondary">Sin actualizaciones.</Typography>
+              )}
+            </List>
+          </ContentCard>
         </Grid>
       </Grid>
     </Box>

@@ -3,8 +3,9 @@ import api from './axios';
 export const expedientesApi = {
     getAll: () => api.get('/expedientes'),
     getById: (id) => api.get(`/expedientes/${id}`),
+    getMisExpedientes: () => api.get('/expedientes/mis-expedientes'),
     getByEstudiante: (estudianteId) => api.get(`/expedientes/estudiante/${estudianteId}`),
-    getByTutor: (tutorId) => api.get(`/expedientes/tutor-empresa/${tutorId}`),
+    getByTutor: (usuarioId) => api.get(`/expedientes/tutor-usuario/${usuarioId}`),
     getByAsesor: (asesorId) => api.get(`/expedientes/asesor/${asesorId}`),
     aprobarPlan: (id) => api.put(`/expedientes/${id}/aprobar-plan`),
     aprobarInformeFinal: (id) => api.put(`/expedientes/${id}/aprobar-informe-final`),

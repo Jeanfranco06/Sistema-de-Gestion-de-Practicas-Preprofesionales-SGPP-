@@ -2,6 +2,7 @@ package edu.unt.ingenieria_industrial.sgpp.core.expediente.controller;
 
 import edu.unt.ingenieria_industrial.sgpp.core.expediente.dto.*;
 import edu.unt.ingenieria_industrial.sgpp.core.expediente.service.ExpedienteService;
+import edu.unt.ingenieria_industrial.sgpp.core.seguridad.service.CurrentUserService;
 import edu.unt.ingenieria_industrial.sgpp.shared.common.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/expedientes")
@@ -23,6 +25,7 @@ import java.util.List;
 public class ExpedienteController {
 
     private final ExpedienteService expedienteService;
+    private final CurrentUserService currentUserService;
 
     @PostMapping
     @Operation(summary = "Crear un nuevo expediente")
@@ -232,11 +235,25 @@ public class ExpedienteController {
                 .success(true).message("Estado actualizado").data(response).timestamp(LocalDateTime.now()).build());
     }
 
+    @GetMapping("/mis-expedientes")
+    @Operation(summary = "Listar expedientes del usuario autenticado según su rol")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR', 'DOCENTE_ASESOR', 'ESTUDIANTE', 'TUTOR_EXTERNO')")
+    public ResponseEntity<ApiResponse<List<ExpedienteResponse>>> findMisExpedientes() {
+        Long idUsuario = Objects.requireNonNull(currentUserService.getCurrentUserId(), "Usuario no autenticado");
+        List<ExpedienteResponse> list = expedienteService.findMisExpedientes(idUsuario, currentUserService.getCurrentRoles());
+        return ResponseEntity.ok(ApiResponse.<List<ExpedienteResponse>>builder()
+                .success(true).data(list).timestamp(LocalDateTime.now()).build());
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "Obtener expediente por ID")
     @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR', 'DOCENTE_ASESOR', 'ESTUDIANTE', 'TUTOR_EXTERNO')")
     public ResponseEntity<ApiResponse<ExpedienteResponse>> findById(@PathVariable Long id) {
-        ExpedienteResponse response = expedienteService.findById(id);
+        Long idUsuario = currentUserService.getCurrentUserId();
+        List<String> roles = currentUserService.getCurrentRoles();
+        ExpedienteResponse response = idUsuario != null
+                ? expedienteService.findByIdForUser(id, idUsuario, roles)
+                : expedienteService.findById(id);
         return ResponseEntity.ok(ApiResponse.<ExpedienteResponse>builder()
                 .success(true).data(response).timestamp(LocalDateTime.now()).build());
     }
@@ -253,7 +270,10 @@ public class ExpedienteController {
     @Operation(summary = "Listar expedientes por estudiante")
     @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR', 'ESTUDIANTE', 'DOCENTE_ASESOR')")
     public ResponseEntity<ApiResponse<List<ExpedienteResponse>>> findByEstudianteId(@PathVariable Long estudianteId) {
-        List<ExpedienteResponse> list = expedienteService.findByEstudianteId(estudianteId);
+        Long idUsuario = currentUserService.getCurrentUserId();
+        List<ExpedienteResponse> list = idUsuario != null
+                ? expedienteService.findByEstudianteIdForUser(estudianteId, idUsuario, currentUserService.getCurrentRoles())
+                : expedienteService.findByEstudianteId(estudianteId);
         return ResponseEntity.ok(ApiResponse.<List<ExpedienteResponse>>builder()
                 .success(true).data(list).timestamp(LocalDateTime.now()).build());
     }
@@ -262,7 +282,10 @@ public class ExpedienteController {
     @Operation(summary = "Listar expedientes asignados a un docente asesor")
     @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR', 'DOCENTE_ASESOR')")
     public ResponseEntity<ApiResponse<List<ExpedienteResponse>>> findByAsesorId(@PathVariable Long asesorId) {
-        List<ExpedienteResponse> list = expedienteService.findByAsesorId(asesorId);
+        Long idUsuario = currentUserService.getCurrentUserId();
+        List<ExpedienteResponse> list = idUsuario != null
+                ? expedienteService.findByAsesorIdForUser(asesorId, idUsuario, currentUserService.getCurrentRoles())
+                : expedienteService.findByAsesorId(asesorId);
         return ResponseEntity.ok(ApiResponse.<List<ExpedienteResponse>>builder()
                 .success(true).data(list).timestamp(LocalDateTime.now()).build());
     }
@@ -276,10 +299,23 @@ public class ExpedienteController {
     }
 
     @GetMapping("/tutor-empresa/{tutorEmpresaId}")
-    @Operation(summary = "Listar expedientes por tutor empresa")
+    @Operation(summary = "Listar expedientes por empresa del tutor")
     @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'TUTOR_EXTERNO', 'COORDINADOR', 'COMITE_PRACTICAS', 'DIRECTOR')")
     public ResponseEntity<ApiResponse<List<ExpedienteResponse>>> findByTutorEmpresaId(@PathVariable Long tutorEmpresaId) {
         List<ExpedienteResponse> list = expedienteService.findByTutorEmpresaId(tutorEmpresaId);
+        return ResponseEntity.ok(ApiResponse.<List<ExpedienteResponse>>builder()
+                .success(true).data(list).timestamp(LocalDateTime.now()).build());
+    }
+
+    @GetMapping("/tutor-usuario/{usuarioId}")
+    @Operation(summary = "Listar expedientes asignados a un tutor externo por su usuario")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'TUTOR_EXTERNO', 'COORDINADOR', 'COMITE_PRACTICAS', 'DIRECTOR')")
+    public ResponseEntity<ApiResponse<List<ExpedienteResponse>>> findByTutorUsuarioId(@PathVariable Long usuarioId) {
+        Long idUsuario = currentUserService.getCurrentUserId();
+        if (currentUserService.hasAnyRole("TUTOR_EXTERNO") && idUsuario != null && !idUsuario.equals(usuarioId)) {
+            throw new org.springframework.security.access.AccessDeniedException("No puede consultar expedientes de otro tutor");
+        }
+        List<ExpedienteResponse> list = expedienteService.findByTutorUsuarioId(usuarioId);
         return ResponseEntity.ok(ApiResponse.<List<ExpedienteResponse>>builder()
                 .success(true).data(list).timestamp(LocalDateTime.now()).build());
     }

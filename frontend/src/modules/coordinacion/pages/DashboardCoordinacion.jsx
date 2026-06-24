@@ -47,7 +47,7 @@ import { convenioApi, empresaApi, sedeApi } from '../../../api/sedesApi';
 import { dashboardApi, reportesCoordinacionApi } from '../../../api/coordinacionApi';
 import { secretariaApi, tutoresApi, usuariosApi } from '../../../api/usuariosApi';
 
-const COLORS = ['#1d4ed8', '#0f766e', '#7c3aed', '#ca8a04', '#dc2626', '#0891b2', '#0f172a'];
+const COLORS = ['#18181b', '#3f3f46', '#52525b', '#71717a', '#a1a1aa', '#d4d4d8', '#e4e4e7'];
 
 /** Datos de demostración cuando la BD local aún no tiene expedientes. */
 const DEMO_CHARTS = {
@@ -129,60 +129,23 @@ const percentFormat = (value) =>
 const hasChartData = (list = [], keys = ['value']) =>
   Array.isArray(list) && list.some((item) => keys.some((key) => Number(item?.[key] || 0) > 0));
 
-const MetricCard = ({ title, value, helper, icon, color }) => (
-  <Paper
-    sx={{
-      p: 2.5,
-      borderRadius: 3,
-      border: '1px solid',
-      borderColor: 'divider',
-      height: '100%',
-      display: 'flex',
-      alignItems: 'flex-start',
-      gap: 2,
-      boxShadow: '0 10px 25px rgba(15, 23, 42, 0.05)',
-    }}
-  >
-    <Box
-      sx={{
-        width: 50,
-        height: 50,
-        borderRadius: 2.5,
-        bgcolor: color,
-        color: '#fff',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexShrink: 0,
-      }}
-    >
-      {icon}
-    </Box>
-    <Box sx={{ minWidth: 0 }}>
-      <Typography variant="body2" color="text.secondary">
-        {title}
-      </Typography>
-      <Typography variant="h4" fontWeight={800} sx={{ lineHeight: 1.1, mt: 0.5 }}>
-        {numberFormat(value)}
-      </Typography>
-      <Typography variant="caption" color="text.secondary">
-        {helper}
-      </Typography>
+const MetricCard = ({ title, value, helper, icon }) => (
+  <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2, height: '100%' }}>
+    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+      <Box sx={{ color: 'text.secondary', display: 'flex', mt: 0.25 }}>{icon}</Box>
+      <Box sx={{ minWidth: 0 }}>
+        <Typography variant="body2" color="text.secondary">{title}</Typography>
+        <Typography variant="h5" fontWeight={600} sx={{ lineHeight: 1.2, mt: 0.5 }}>
+          {numberFormat(value)}
+        </Typography>
+        <Typography variant="caption" color="text.secondary">{helper}</Typography>
+      </Box>
     </Box>
   </Paper>
 );
 
 const ChartCard = ({ title, subtitle, badge, children, minHeight = 320 }) => (
-  <Paper
-    sx={{
-      p: 2.5,
-      borderRadius: 3,
-      border: '1px solid',
-      borderColor: 'divider',
-      height: '100%',
-      boxShadow: '0 10px 25px rgba(15, 23, 42, 0.05)',
-    }}
-  >
+  <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2, height: '100%' }}>
     <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1.5, alignItems: 'flex-start', mb: 0.5 }}>
       <Box sx={{ minWidth: 0 }}>
         <Typography variant="h6" fontWeight={700}>
@@ -214,11 +177,12 @@ const EmptyChartState = ({ title, description, highlight }) => (
     <Box>
       <Box
         sx={{
-          width: 68,
-          height: 68,
-          borderRadius: '50%',
-          bgcolor: 'rgba(29, 78, 216, 0.08)',
-          color: 'primary.main',
+          width: 48,
+          height: 48,
+          borderRadius: 1,
+          border: '1px solid',
+          borderColor: 'divider',
+          color: 'text.secondary',
           mx: 'auto',
           mb: 2,
           display: 'flex',
@@ -249,36 +213,17 @@ const EmptyChartState = ({ title, description, highlight }) => (
 
 const QuickActionCard = ({ title, helper, icon, onClick }) => (
   <Paper
+    variant="outlined"
     onClick={onClick}
     sx={{
       p: 2,
-      borderRadius: 2.5,
-      border: '1px solid',
-      borderColor: 'divider',
+      borderRadius: 2,
       cursor: 'pointer',
-      transition: 'all .2s ease',
-      '&:hover': {
-        borderColor: 'primary.main',
-        transform: 'translateY(-2px)',
-        boxShadow: '0 10px 20px rgba(29, 78, 216, 0.12)',
-      },
+      '&:hover': { bgcolor: 'action.hover' },
     }}
   >
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-      <Box
-        sx={{
-          width: 42,
-          height: 42,
-          borderRadius: 2,
-          bgcolor: 'rgba(29, 78, 216, 0.08)',
-          color: 'primary.main',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        {icon}
-      </Box>
+      <Box sx={{ color: 'text.secondary', display: 'flex' }}>{icon}</Box>
       <Box sx={{ minWidth: 0 }}>
         <Typography variant="subtitle2" fontWeight={700}>
           {title}
@@ -519,7 +464,7 @@ export const DashboardCoordinacion = ({ variant = 'coordinacion' }) => {
   return (
     <PageContainer>
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" fontWeight={800} color="primary.main" sx={{ mb: 0.75 }}>
+        <Typography variant="h5" fontWeight={600} sx={{ mb: 0.75 }}>
           {viewMeta.title}
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 920, mb: 1.5 }}>
@@ -532,16 +477,7 @@ export const DashboardCoordinacion = ({ variant = 'coordinacion' }) => {
         </Stack>
       </Box>
 
-      <Paper
-        sx={{
-          p: 2.5,
-          mb: 3,
-          borderRadius: 3,
-          border: '1px solid',
-          borderColor: 'divider',
-          background: 'linear-gradient(180deg, rgba(29,78,216,0.04), rgba(255,255,255,0))',
-        }}
-      >
+      <Paper variant="outlined" sx={{ p: 2.5, mb: 3, borderRadius: 2 }}>
         <Box
           sx={{
             display: 'grid',
@@ -627,35 +563,30 @@ export const DashboardCoordinacion = ({ variant = 'coordinacion' }) => {
               value={displayResumen?.expedientesActivos}
               helper="Trámites en curso"
               icon={<FolderOpen />}
-              color="#1d4ed8"
             />
             <MetricCard
               title="Expedientes cerrados"
               value={displayResumen?.expedientesCerrados}
               helper="Casos concluidos"
               icon={<GppGood />}
-              color="#15803d"
             />
             <MetricCard
               title="Subsanaciones pendientes"
               value={displayResumen?.subsanacionesPendientes}
               helper="Observaciones por atender"
               icon={<PlaylistAddCheckCircle />}
-              color="#ca8a04"
             />
             <MetricCard
               title="Convenios vigentes"
               value={displayResumen?.conveniosVigentes}
               helper="Cobertura institucional activa"
               icon={<Business />}
-              color="#0f766e"
             />
             <MetricCard
               title="Alertas críticas"
               value={alertasCriticas.length}
               helper="Plazos o convenios en riesgo"
               icon={<WarningAmber />}
-              color="#dc2626"
             />
             {isAdminView && (
               <MetricCard
@@ -663,7 +594,6 @@ export const DashboardCoordinacion = ({ variant = 'coordinacion' }) => {
                 value={displayAdminMetrics.usuarios}
                 helper="Cuentas registradas"
                 icon={<People />}
-                color="#7c3aed"
               />
             )}
           </Box>
@@ -731,8 +661,8 @@ export const DashboardCoordinacion = ({ variant = 'coordinacion' }) => {
                     <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
                     <Tooltip formatter={(value) => numberFormat(value)} />
                     <Legend />
-                    <Bar dataKey="activos" name="Activos" fill="#1d4ed8" radius={[8, 8, 0, 0]} maxBarSize={48} />
-                    <Bar dataKey="cerrados" name="Cerrados" fill="#16a34a" radius={[8, 8, 0, 0]} maxBarSize={48} />
+                    <Bar dataKey="activos" name="Activos" fill="#3f3f46" radius={[4, 4, 0, 0]} maxBarSize={48} />
+                    <Bar dataKey="cerrados" name="Cerrados" fill="#a1a1aa" radius={[4, 4, 0, 0]} maxBarSize={48} />
                   </ReBarChart>
                 </ResponsiveContainer>
               ) : (
@@ -821,7 +751,7 @@ export const DashboardCoordinacion = ({ variant = 'coordinacion' }) => {
                     <XAxis type="number" allowDecimals={false} tick={{ fontSize: 12 }} />
                     <YAxis type="category" dataKey="name" width={130} tick={{ fontSize: 11 }} />
                     <Tooltip formatter={(value) => numberFormat(value)} />
-                    <Bar dataKey="total" name="Expedientes" fill="#0f766e" radius={[0, 8, 8, 0]} maxBarSize={28} />
+                    <Bar dataKey="total" name="Expedientes" fill="#52525b" radius={[0, 4, 4, 0]} maxBarSize={28} />
                   </ReBarChart>
                 </ResponsiveContainer>
               ) : (
@@ -843,7 +773,7 @@ export const DashboardCoordinacion = ({ variant = 'coordinacion' }) => {
                     <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} angle={-18} textAnchor="end" height={56} />
                     <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
                     <Tooltip formatter={(value) => numberFormat(value)} />
-                    <Line type="monotone" dataKey="total" name="Expedientes" stroke="#7c3aed" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                    <Line type="monotone" dataKey="total" name="Expedientes" stroke="#3f3f46" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
                   </LineChart>
                 </ResponsiveContainer>
               ) : (

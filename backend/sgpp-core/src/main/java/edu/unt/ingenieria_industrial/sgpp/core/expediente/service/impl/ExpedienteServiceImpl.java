@@ -9,6 +9,7 @@ import edu.unt.ingenieria_industrial.sgpp.core.empresarial.repository.SedePracti
 import edu.unt.ingenieria_industrial.sgpp.core.expediente.dto.*;
 import edu.unt.ingenieria_industrial.sgpp.core.expediente.model.*;
 import edu.unt.ingenieria_industrial.sgpp.core.expediente.repository.*;
+import edu.unt.ingenieria_industrial.sgpp.core.expediente.service.ExpedienteAccesoService;
 import edu.unt.ingenieria_industrial.sgpp.core.expediente.service.ExpedienteService;
 import edu.unt.ingenieria_industrial.sgpp.core.practicas.model.TipoPractica;
 import edu.unt.ingenieria_industrial.sgpp.core.practicas.repository.TipoPracticaRepository;
@@ -17,6 +18,7 @@ import edu.unt.ingenieria_industrial.sgpp.core.seguridad.model.Estudiante;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.model.Usuario;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.repository.EstudianteRepository;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.repository.UsuarioRepository;
+import edu.unt.ingenieria_industrial.sgpp.core.service.NotificacionEventoService;
 import edu.unt.ingenieria_industrial.sgpp.core.integridad.dto.RegistrarEventoAuditoriaDTO;
 import edu.unt.ingenieria_industrial.sgpp.core.integridad.service.AuditoriaTransaccionalService;
 import edu.unt.ingenieria_industrial.sgpp.core.integridad.service.ReglasIntegridadService;
@@ -61,6 +63,8 @@ public class ExpedienteServiceImpl implements ExpedienteService {
     private final edu.unt.ingenieria_industrial.sgpp.core.hora.service.ControlHoraService controlHoraService;
     private final AuditoriaTransaccionalService auditoriaService;
     private final ReglasIntegridadService reglasIntegridadService;
+    private final ExpedienteAccesoService expedienteAccesoService;
+    private final NotificacionEventoService notificacionEventoService;
 
     @Override
     public ExpedienteResponse crear(CrearExpedienteRequest request, Long idUsuario) {
@@ -165,6 +169,14 @@ public class ExpedienteServiceImpl implements ExpedienteService {
                 "Asesor: " + asesor.getNombres() + " " + asesor.getApellidoPaterno() +
                 " - Resolución: " + request.getResolucion(), "ASIGNACION_ASESOR");
 
+        String nombreEstudiante = expediente.getEstudiante().getUsuario().getNombres() + " "
+                + expediente.getEstudiante().getUsuario().getApellidoPaterno();
+        notificacionEventoService.notificarAsignacionAsesor(
+                asesor.getId(), expediente.getCodigoExpediente(), nombreEstudiante);
+        notificacionEventoService.notificarCambioEstadoExpediente(
+                expediente.getEstudiante().getUsuario().getId(),
+                expediente.getCodigoExpediente(), "ASESOR_ASIGNADO");
+
         LocalDate fechaBaseInicial = expediente.getFechaInicioPractica() != null
                 ? expediente.getFechaInicioPractica() : LocalDate.now();
         plazoService.iniciarPlazo(expediente.getId(), "PRESENTACION_PLAN_INICIAL",
@@ -247,9 +259,26 @@ public class ExpedienteServiceImpl implements ExpedienteService {
                 .tipoDocumento(tipoDocumento != null ? tipoDocumento : "ANEXO")
                 .nombreArchivo(nombreDoc)
                 .rutaArchivo(fileName)
+                .usuario(usuarioRepository.getReferenceById(idUsuario))
                 .build();
                 
         documentoRepository.save(doc);
+
+        auditoriaService.registrar(RegistrarEventoAuditoriaDTO.builder()
+                .tipoEntidad(TipoEntidadAuditable.DOCUMENTO)
+                .entidadId(doc.getId())
+                .idExpediente(expediente.getId())
+                .accion(AccionAuditoria.CREATE)
+                .idUsuario(idUsuario)
+                .valorNuevo(Map.of(
+                        "tipoDocumento", doc.getTipoDocumento(),
+                        "nombreArchivo", doc.getNombreArchivo()))
+                .motivo("Documento agregado al expediente")
+                .build());
+
+        registrarCambioEstado(expediente, expediente.getEstado(), expediente.getEstado(), idUsuario,
+                "Documento agregado: " + doc.getTipoDocumento(), "AGREGAR_DOCUMENTO");
+
         return toResponse(expediente);
     }
 
@@ -273,6 +302,12 @@ public class ExpedienteServiceImpl implements ExpedienteService {
         // If a document is RECHAZADO or OBSERVADO, log it in the expediente's states or observations (optional)
         registrarCambioEstado(expediente, expediente.getEstado(), expediente.getEstado(), idUsuario,
                 "Documento " + doc.getTipoDocumento() + " evaluado: " + estado, "EVALUACION_DOCUMENTO");
+
+        if (expediente.getEstudiante() != null && expediente.getEstudiante().getUsuario() != null) {
+            notificacionEventoService.notificarDocumentoEvaluado(
+                    expediente.getEstudiante().getUsuario().getUsername(),
+                    doc.getTipoDocumento(), estado);
+        }
                 
         return toResponse(expediente);
     }
@@ -358,6 +393,12 @@ public class ExpedienteServiceImpl implements ExpedienteService {
         expediente = expedienteRepository.save(expediente);
         registrarCambioEstado(expediente, "EN_REVISION", "APROBADO", idUsuario,
                 "Plan de trabajo aprobado", "APROBACION");
+
+        if (expediente.getEstudiante() != null && expediente.getEstudiante().getUsuario() != null) {
+            notificacionEventoService.notificarPlanAprobado(
+                    expediente.getEstudiante().getUsuario().getUsername(),
+                    expediente.getCodigoExpediente());
+        }
 
         return toResponse(expediente);
     }
@@ -531,6 +572,57 @@ public class ExpedienteServiceImpl implements ExpedienteService {
 
     @Override
     @Transactional(readOnly = true)
+    public ExpedienteResponse findByIdForUser(Long id, Long idUsuario, Collection<String> roles) {
+        Expediente expediente = findExpediente(id);
+        expedienteAccesoService.verificarLectura(expediente, idUsuario, roles);
+        return toResponse(expediente);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ExpedienteResponse> findMisExpedientes(Long idUsuario, Collection<String> roles) {
+        if (roles.contains("ESTUDIANTE")) {
+            return estudianteRepository.findByUsuarioId(idUsuario)
+                    .map(est -> findByEstudianteId(est.getId()))
+                    .orElse(List.of());
+        }
+        if (roles.contains("DOCENTE_ASESOR")) {
+            return findByAsesorId(idUsuario);
+        }
+        if (roles.contains("TUTOR_EXTERNO")) {
+            return findByTutorUsuarioId(idUsuario);
+        }
+        if (roles.stream().anyMatch(r -> Set.of("ADMIN_SISTEMA", "SECRETARIA", "COORDINADOR",
+                "DIRECTOR", "COMITE_PRACTICAS").contains(r))) {
+            return findAll();
+        }
+        return List.of();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ExpedienteResponse> findByEstudianteIdForUser(Long estudianteId, Long idUsuario, Collection<String> roles) {
+        if (roles.contains("ESTUDIANTE")) {
+            Estudiante estudiante = estudianteRepository.findByUsuarioId(idUsuario)
+                    .orElseThrow(() -> new BusinessException("Perfil de estudiante no encontrado"));
+            if (!estudiante.getId().equals(estudianteId)) {
+                throw new BusinessException("No puede consultar expedientes de otro estudiante");
+            }
+        }
+        return findByEstudianteId(estudianteId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ExpedienteResponse> findByAsesorIdForUser(Long asesorId, Long idUsuario, Collection<String> roles) {
+        if (roles.contains("DOCENTE_ASESOR") && !idUsuario.equals(asesorId)) {
+            throw new BusinessException("No puede consultar expedientes de otro asesor");
+        }
+        return findByAsesorId(asesorId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<ExpedienteResponse> findAll() {
         return expedienteRepository.findAllActive().stream()
                 .map(this::toResponse)
@@ -556,10 +648,20 @@ public class ExpedienteServiceImpl implements ExpedienteService {
     @Override
     @Transactional(readOnly = true)
     public List<ExpedienteResponse> findByTutorEmpresaId(Long tutorEmpresaId) {
-        return expedienteRepository.findAll().stream()
-                .filter(e -> Boolean.TRUE.equals(e.getActivo()))
-                .filter(e -> e.getEmpresa() != null &&
-                        e.getEmpresa().getId().equals(tutorEmpresaId))
+        return expedienteRepository.findByEmpresaIdAndActivoTrue(tutorEmpresaId).stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ExpedienteResponse> findByTutorUsuarioId(Long usuarioId) {
+        Map<Long, Expediente> unicos = new LinkedHashMap<>();
+        expedienteRepository.findByTutorUsuarioId(usuarioId)
+                .forEach(e -> unicos.put(e.getId(), e));
+        expedienteRepository.findByTutorEmpresaUsuarioId(usuarioId)
+                .forEach(e -> unicos.put(e.getId(), e));
+        return unicos.values().stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }

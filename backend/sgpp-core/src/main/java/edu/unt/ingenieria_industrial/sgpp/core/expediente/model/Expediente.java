@@ -7,6 +7,7 @@ import edu.unt.ingenieria_industrial.sgpp.core.empresarial.model.Empresa;
 import edu.unt.ingenieria_industrial.sgpp.core.empresarial.model.SedePractica;
 import edu.unt.ingenieria_industrial.sgpp.core.practicas.model.TipoPractica;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.model.Estudiante;
+import edu.unt.ingenieria_industrial.sgpp.core.seguridad.model.TutorExterno;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.model.Usuario;
 import jakarta.persistence.*;
 import lombok.*;
@@ -83,6 +84,13 @@ public class Expediente extends BaseEntity {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Convenio convenio;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_tutor_empresa")
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private TutorExterno tutorEmpresa;
 
     @Column(name = "carta_aceptacion_presentada")
     @Builder.Default

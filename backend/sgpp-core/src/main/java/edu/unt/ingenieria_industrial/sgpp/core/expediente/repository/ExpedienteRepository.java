@@ -31,6 +31,14 @@ public interface ExpedienteRepository extends JpaRepository<Expediente, Long> {
     Integer findMaxCorrelativoByPrefix(@Param("prefix") String prefix);
 
     @Query("SELECT e FROM Expediente e LEFT JOIN FETCH e.empresa LEFT JOIN FETCH e.sedePractica " +
-           "LEFT JOIN FETCH e.tipoPractica LEFT JOIN FETCH e.asesor WHERE e.id = :id")
+           "LEFT JOIN FETCH e.tipoPractica LEFT JOIN FETCH e.asesor LEFT JOIN FETCH e.tutorEmpresa " +
+           "LEFT JOIN FETCH e.estudiante est LEFT JOIN FETCH est.usuario WHERE e.id = :id")
     Optional<Expediente> findByIdWithRelations(@Param("id") Long id);
+
+    @Query("SELECT e FROM Expediente e JOIN e.tutorEmpresa te WHERE te.usuario.id = :usuarioId AND e.activo = true")
+    List<Expediente> findByTutorUsuarioId(@Param("usuarioId") Long usuarioId);
+
+    @Query("SELECT e FROM Expediente e JOIN TutorExterno te ON te.empresa.id = e.empresa.id " +
+           "WHERE te.usuario.id = :usuarioId AND e.activo = true AND e.tutorEmpresa IS NULL")
+    List<Expediente> findByTutorEmpresaUsuarioId(@Param("usuarioId") Long usuarioId);
 }

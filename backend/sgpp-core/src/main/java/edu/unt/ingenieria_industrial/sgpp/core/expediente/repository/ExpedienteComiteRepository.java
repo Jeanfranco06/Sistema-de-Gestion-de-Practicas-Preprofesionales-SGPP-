@@ -9,4 +9,5 @@ import java.util.List;
 public interface ExpedienteComiteRepository extends JpaRepository<ExpedienteComite, Long> {
     List<ExpedienteComite> findByExpedienteIdAndActivoTrue(Long expedienteId);
     List<ExpedienteComite> findByExpedienteId(Long expedienteId);
+    boolean existsByExpedienteIdAndUsuarioIdAndActivoTrue(Long expedienteId, Long usuarioId);
 }

@@ -32,6 +32,7 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final edu.unt.ingenieria_industrial.sgpp.api.security.UsuarioContextFilter usuarioContextFilter;
     private final UserDetailsService userDetailsService;
 
     @Bean
@@ -56,13 +57,15 @@ public class SecurityConfig {
                         .requestMatchers("/sedes/catalogo", "/sedes/*/detalle").authenticated()
                         .requestMatchers("/empresas/**", "/sedes/**", "/convenios/**").authenticated()
                         .requestMatchers("/usuarios/**").hasAnyRole("ADMIN_SISTEMA", "COORDINADOR", "DIRECTOR")
-                        .anyRequest().hasRole("ADMIN_SISTEMA")
+                        .requestMatchers("/notificaciones/**").authenticated()
+                        .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authenticationProvider(authenticationProvider())
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(usuarioContextFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }

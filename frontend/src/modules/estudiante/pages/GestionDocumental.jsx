@@ -1,18 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Box, Typography, Tabs, Tab, Button, List, IconButton, Chip, Dialog, 
-  DialogTitle, DialogContent, DialogActions, Alert, TextField, CircularProgress, 
-  Grid
+  Box, Typography, Tabs, Tab, Button, IconButton, Chip, Dialog,
+  DialogTitle, DialogContent, DialogActions, Alert, TextField, CircularProgress,
+  Stack,
 } from '@mui/material';
 import {
-  CloudUpload, Delete, Download, CheckCircle, Warning, PendingActions, 
-  Description, FolderZip, Folder
+  CloudUpload, Delete, Download, CheckCircle, Warning, PendingActions,
+  Description, FolderZip,
 } from '@mui/icons-material';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import { expedientesApi } from '../../../api/expedientesApi';
 import api from '../../../api/axios';
 import { useAuth } from '../../../auth/AuthContext';
+import PageHeader from '../../../shared/components/PageHeader';
+import ContentCard from '../../../shared/components/ContentCard';
 
 const MySwal = withReactContent(Swal);
 
@@ -47,7 +49,7 @@ export const GestionDocumental = () => {
   const fetchExpediente = async () => {
     try {
         setLoading(true);
-        const res = await expedientesApi.getByEstudiante(user?.id || 1);
+        const res = await expedientesApi.getMisExpedientes();
         const list = res.data?.data || [];
         if (list.length > 0) {
             setExpediente(list[0]);
@@ -64,17 +66,17 @@ export const GestionDocumental = () => {
   }, [user]);
 
   if (loading) {
-    return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}><CircularProgress size={60} thickness={4} sx={{ color: 'var(--wow-primary)' }} /></Box>;
+    return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}><CircularProgress size={32} /></Box>;
   }
 
   if (!expediente) {
     return (
-        <Box className="wow-animate-in" sx={{ p: 5, textAlign: 'center', mt: 5, maxWidth: 600, mx: 'auto' }}>
-            <div className="wow-card" style={{ padding: '48px' }}>
-                <FolderZip sx={{ fontSize: 100, color: 'var(--wow-primary)', mb: 3 }} />
-                <Typography variant="h5" fontWeight="700" color="text.primary" gutterBottom>Sin Expediente Activo</Typography>
-                <Typography variant="body1" color="text.secondary">No tienes ninguna práctica registrada aún para gestionar documentos.</Typography>
-            </div>
+        <Box sx={{ maxWidth: 480, mx: 'auto', textAlign: 'center', py: 6 }}>
+        <ContentCard>
+          <FolderZip sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
+          <Typography variant="h6" gutterBottom>Sin expediente activo</Typography>
+          <Typography variant="body2" color="text.secondary">No tienes ninguna práctica registrada para gestionar documentos.</Typography>
+        </ContentCard>
         </Box>
     );
   }
@@ -226,165 +228,158 @@ export const GestionDocumental = () => {
 
   const getEstadoChip = (estado) => {
     switch(estado) {
-      case 'APROBADO': return <Chip size="small" icon={<CheckCircle />} label="Aprobado" sx={{ bgcolor: '#22c55e', color: 'white' }} />;
-      case 'OBSERVADO': return <Chip size="small" icon={<Warning />} label="Observado" sx={{ bgcolor: '#ef4444', color: 'white' }} />;
-      default: return <Chip size="small" icon={<PendingActions />} label="En Revisión" sx={{ bgcolor: '#f59e0b', color: 'white' }} />;
+      case 'APROBADO': return <Chip size="small" icon={<CheckCircle />} label="Aprobado" variant="outlined" />;
+      case 'OBSERVADO': return <Chip size="small" icon={<Warning />} label="Observado" variant="outlined" color="error" />;
+      default: return <Chip size="small" icon={<PendingActions />} label="En revisión" variant="outlined" />;
     }
   };
 
   const pctCargados = Math.round((documentosConsolidados.length / docObligatorios.length) * 100);
 
   return (
-    <Box className="wow-animate-in" sx={{ maxWidth: 1200, margin: '0 auto', p: 2 }}>
-      
-      <div className="wow-glass-card" style={{ padding: '32px', marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(135deg, rgba(99,102,241,0.1), rgba(200,100,255,0.05))' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-            <Box sx={{ p: 2, bgcolor: 'var(--wow-surface-card)', borderRadius: 3, boxShadow: 'var(--wow-shadow-sm)' }}>
-                <Folder sx={{ fontSize: 40, color: 'var(--wow-primary)' }} />
-            </Box>
-            <Box>
-                <Typography variant="h4" fontWeight="800" className="wow-text-gradient">
-                    Gestor Documental
-                </Typography>
-                <Typography variant="body1" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
-                    Expediente: Práctica {expediente.nombreTipoPractica}
-                </Typography>
-            </Box>
-        </Box>
-        <Box sx={{ textAlign: 'right' }}>
-            <Typography variant="body2" color="text.secondary" fontWeight="600" gutterBottom>Progreso General</Typography>
-            <Chip label={`${pctCargados}% Completado`} color="primary" sx={{ fontWeight: 'bold' }} />
-        </Box>
-      </div>
+    <Box sx={{ maxWidth: 1100, mx: 'auto' }}>
+      <PageHeader
+        title="Gestor documental"
+        subtitle={`Expediente: ${expediente.nombreTipoPractica}`}
+        action={<Chip label={`${pctCargados}% completado`} size="small" variant="outlined" />}
+      />
 
-      <div className="wow-card" style={{ marginBottom: '32px', overflow: 'hidden' }}>
+      <ContentCard noPadding sx={{ mb: 0 }}>
         <Tabs
           value={tabValue}
           onChange={handleTabChange}
-          sx={{ px: 2, pt: 2, borderBottom: '1px solid rgba(0,0,0,0.05)', '& .MuiTab-root': { fontWeight: '600', fontFamily: 'var(--wow-font-display)' } }}
+          sx={{ px: 2, borderBottom: '1px solid', borderColor: 'divider' }}
         >
-          <Tab label="Documentos Obligatorios" />
-          <Tab label="Anexos Adicionales" />
+          <Tab label="Documentos obligatorios" />
+          <Tab label="Anexos adicionales" />
         </Tabs>
-        
-        <Box sx={{ p: { xs: 2, md: 4 }, bgcolor: '#fafafa' }}>
+
+        <Box sx={{ p: { xs: 2, md: 3 } }}>
           {tabValue === 0 && (
-            <Grid container spacing={3}>
+            <Stack spacing={1.5}>
               {docObligatorios.map((docType) => {
                 const docCargado = documentosConsolidados.find(d => d.tipoId === docType.id);
                 const esDesdeBD = docCargado && !documentosLocales.some(d => d.id === docCargado.id);
-                
-                return (
-                  <Grid item xs={12} key={docType.id}>
-                    <div className="wow-card" style={{ padding: '20px', display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center', transition: 'all 0.3s', border: docCargado ? '1px solid rgba(34,197,94,0.3)' : '1px solid rgba(0,0,0,0.05)', backgroundColor: docCargado ? 'rgba(34,197,94,0.02)' : '#fff' }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: '1 1 260px', minWidth: 220 }}>
-                          <div style={{ padding: '12px', borderRadius: '12px', backgroundColor: docCargado ? 'rgba(34,197,94,0.1)' : 'rgba(0,0,0,0.05)' }}>
-                              <Description sx={{ color: docCargado ? '#22c55e' : 'grey' }} />
-                          </div>
-                          <Box>
-                            <Typography variant="subtitle1" fontWeight="700">{docType.nombre}</Typography>
-                            <Typography variant="caption" color="text.secondary">Formato: {docType.formato} | Máx: {docType.maxMB}MB</Typography>
-                          </Box>
-                      </Box>
-                      
-                      <Box sx={{ flex: '1 1 260px', minWidth: 220 }}>
-                        {docCargado ? (
-                          <Box>
-                            <Typography variant="body2" fontWeight="600" noWrap title={docCargado.nombreOriginal}>{docCargado.nombreOriginal}</Typography>
-                            <Typography variant="caption" color="text.secondary">{new Date(docCargado.fechaSubida).toLocaleDateString()} {docCargado.tamanio !== 'N/A' && `- ${docCargado.tamanio}`}</Typography>
-                          </Box>
-                        ) : (
-                          <Typography variant="body2" color="error.main" fontWeight="600" fontStyle="italic">Pendiente de subida</Typography>
-                        )}
-                      </Box>
 
-                      <Box sx={{ flex: '0 0 auto', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 1 }}>
-                        {docCargado && getEstadoChip(docCargado.estado)}
-                        {docCargado ? (
-                          <>
-                            <IconButton color="primary" onClick={() => handleDownload(docCargado)} sx={{ bgcolor: 'rgba(99,102,241,0.1)' }}><Download /></IconButton>
-                            {docCargado.estado !== 'APROBADO' && !esDesdeBD && (
-                              <IconButton color="error" onClick={() => handleDelete(docCargado.id)} sx={{ bgcolor: 'rgba(239,68,68,0.1)' }}><Delete /></IconButton>
-                            )}
-                          </>
-                        ) : (
-                          <button className="wow-btn" onClick={() => handleOpenUpload(docType)} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <CloudUpload fontSize="small" /> Subir Archivo
-                          </button>
-                        )}
+                return (
+                  <Box
+                    key={docType.id}
+                    sx={{
+                      display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center',
+                      py: 1.5, px: 2, borderRadius: 1,
+                      border: '1px solid', borderColor: 'divider',
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flex: '1 1 220px' }}>
+                      <Description fontSize="small" color={docCargado ? 'action' : 'disabled'} />
+                      <Box>
+                        <Typography variant="body2" fontWeight={500}>{docType.nombre}</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {docType.formato} · máx. {docType.maxMB}MB
+                        </Typography>
                       </Box>
-                    </div>
-                  </Grid>
+                    </Box>
+
+                    <Box sx={{ flex: '1 1 200px' }}>
+                      {docCargado ? (
+                        <>
+                          <Typography variant="body2" noWrap title={docCargado.nombreOriginal}>
+                            {docCargado.nombreOriginal}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {new Date(docCargado.fechaSubida).toLocaleDateString()}
+                          </Typography>
+                        </>
+                      ) : (
+                        <Typography variant="body2" color="text.secondary" fontStyle="italic">Pendiente</Typography>
+                      )}
+                    </Box>
+
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      {docCargado && getEstadoChip(docCargado.estado)}
+                      {docCargado ? (
+                        <>
+                          <IconButton size="small" onClick={() => handleDownload(docCargado)}><Download fontSize="small" /></IconButton>
+                          {docCargado.estado !== 'APROBADO' && !esDesdeBD && (
+                            <IconButton size="small" onClick={() => handleDelete(docCargado.id)}><Delete fontSize="small" /></IconButton>
+                          )}
+                        </>
+                      ) : (
+                        <Button size="small" startIcon={<CloudUpload />} onClick={() => handleOpenUpload(docType)}>
+                          Subir
+                        </Button>
+                      )}
+                    </Box>
+                  </Box>
                 );
               })}
-            </Grid>
+            </Stack>
           )}
 
           {tabValue === 1 && (
             <Box>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                <Typography variant="subtitle1" fontWeight="700">Archivos y Anexos Institucionales</Typography>
-                <button className="wow-btn" onClick={() => handleOpenUpload(null, true)} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <CloudUpload fontSize="small" /> Nuevo Anexo
-                </button>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="body2" color="text.secondary">Archivos adicionales</Typography>
+                <Button size="small" startIcon={<CloudUpload />} onClick={() => handleOpenUpload(null, true)}>
+                  Nuevo anexo
+                </Button>
               </Box>
 
               {anexosList.length === 0 ? (
-                <Alert severity="info" sx={{ borderRadius: 2 }}>No hay documentos anexos cargados en este expediente.</Alert>
+                <Alert severity="info">No hay anexos cargados.</Alert>
               ) : (
-                <Grid container spacing={3}>
+                <Stack spacing={1.5}>
                   {anexosList.map((anexo) => (
-                    <Grid item xs={12} key={anexo.id}>
-                        <div className="wow-card" style={{ padding: '20px', display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center' }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: '1 1 260px' }}>
-                                <div style={{ padding: '12px', borderRadius: '12px', backgroundColor: 'rgba(99,102,241,0.1)' }}><Description color="primary" /></div>
-                                <Box>
-                                    <Typography variant="subtitle1" fontWeight="700">{anexo.nombreOriginal}</Typography>
-                                    <Typography variant="body2" color="text.secondary">{anexo.fileName}</Typography>
-                                </Box>
-                            </Box>
-                            <Box sx={{ display: 'flex', gap: 1 }}>
-                                <IconButton color="primary" onClick={() => handleDownload(anexo)} sx={{ bgcolor: 'rgba(99,102,241,0.1)' }}><Download /></IconButton>
-                                <IconButton color="error" onClick={() => handleDelete(anexo.id, true)} sx={{ bgcolor: 'rgba(239,68,68,0.1)' }}><Delete /></IconButton>
-                            </Box>
-                        </div>
-                    </Grid>
+                    <Box
+                      key={anexo.id}
+                      sx={{
+                        display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center',
+                        py: 1.5, px: 2, borderRadius: 1,
+                        border: '1px solid', borderColor: 'divider',
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flex: 1 }}>
+                        <Description fontSize="small" color="action" />
+                        <Box>
+                          <Typography variant="body2" fontWeight={500}>{anexo.nombreOriginal}</Typography>
+                          <Typography variant="caption" color="text.secondary">{anexo.fileName}</Typography>
+                        </Box>
+                      </Box>
+                      <Box>
+                        <IconButton size="small" onClick={() => handleDownload(anexo)}><Download fontSize="small" /></IconButton>
+                        <IconButton size="small" onClick={() => handleDelete(anexo.id, true)}><Delete fontSize="small" /></IconButton>
+                      </Box>
+                    </Box>
                   ))}
-                </Grid>
+                </Stack>
               )}
             </Box>
           )}
         </Box>
-      </div>
+      </ContentCard>
 
-      <Dialog 
-        open={uploadDialog.open} 
-        onClose={handleCloseUpload} 
-        maxWidth="sm" 
-        fullWidth
-        PaperProps={{ className: 'wow-glass-card', sx: { borderRadius: 4, overflow: 'hidden', p: 2 } }}
-      >
-        <DialogTitle sx={{ fontWeight: '800', textAlign: 'center', fontSize: '1.5rem', mb: 1 }}>
-          Subir {uploadDialog.isAnexo ? 'Anexo Adicional' : uploadDialog.docType?.nombre}
-        </DialogTitle>
-        <DialogContent sx={{ overflow: 'visible' }}>
+      <Dialog open={uploadDialog.open} onClose={handleCloseUpload} maxWidth="sm" fullWidth>
+        <DialogTitle>Subir {uploadDialog.isAnexo ? 'anexo' : uploadDialog.docType?.nombre}</DialogTitle>
+        <DialogContent>
           {uploadDialog.isAnexo && (
-            <TextField fullWidth label="Título descriptivo del Anexo" variant="outlined" margin="normal" className="wow-input" value={anexoNombre} onChange={(e) => setAnexoNombre(e.target.value)} />
+            <TextField fullWidth label="Título del anexo" margin="normal" value={anexoNombre} onChange={(e) => setAnexoNombre(e.target.value)} />
           )}
-          <Box sx={{ mt: 3, p: 4, border: '2px dashed var(--wow-primary)', borderRadius: 3, textAlign: 'center', bgcolor: 'rgba(99,102,241,0.05)', transition: 'all 0.3s', '&:hover': { bgcolor: 'rgba(99,102,241,0.1)' } }}>
+          <Box sx={{ mt: 2, p: 3, border: '1px dashed', borderColor: 'divider', borderRadius: 1, textAlign: 'center' }}>
             <input accept="application/pdf" style={{ display: 'none' }} id="raised-button-file" type="file" onChange={handleFileChange} />
             <label htmlFor="raised-button-file" style={{ cursor: 'pointer' }}>
-                <CloudUpload sx={{ fontSize: 60, color: 'var(--wow-primary)', mb: 2 }} />
-                <Typography variant="h6" fontWeight="600" color="primary">Haz clic aquí para seleccionar tu PDF</Typography>
+              <CloudUpload sx={{ fontSize: 40, color: 'text.secondary', mb: 1 }} />
+              <Typography variant="body2" color="text.secondary">Seleccionar PDF</Typography>
             </label>
             {selectedFile && (
-              <Chip icon={<CheckCircle />} label={`${selectedFile.name} (${(selectedFile.size / 1024 / 1024).toFixed(2)} MB)`} color="success" sx={{ mt: 3, fontWeight: 'bold' }} />
+              <Chip icon={<CheckCircle />} label={`${selectedFile.name} (${(selectedFile.size / 1024 / 1024).toFixed(2)} MB)`} size="small" sx={{ mt: 2 }} />
             )}
           </Box>
         </DialogContent>
-        <DialogActions sx={{ justifyContent: 'center', mt: 2 }}>
-          <Button onClick={handleCloseUpload} sx={{ color: 'text.secondary', fontWeight: 'bold' }}>Cancelar</Button>
-          <button className="wow-btn" onClick={handleUpload} disabled={!selectedFile || (uploadDialog.isAnexo && !anexoNombre)}>Confirmar y Subir</button>
+        <DialogActions>
+          <Button onClick={handleCloseUpload}>Cancelar</Button>
+          <Button variant="contained" onClick={handleUpload} disabled={!selectedFile || (uploadDialog.isAnexo && !anexoNombre)}>
+            Confirmar
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>

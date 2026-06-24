@@ -1,46 +1,35 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap');
+/* SGPP — tema minimalista (compatibilidad con clases wow-*) */
 
 :root {
-  /* Color Palette - Premium Corporate (Slate/Blue) */
-  --wow-primary: hsl(222, 47%, 11%); /* Slate 900 */
-  --wow-primary-hover: hsl(222, 47%, 20%);
-  --wow-secondary: hsl(217, 91%, 60%); /* Blue 500 */
-  --wow-accent: hsl(210, 100%, 50%);
-  
-  --wow-success: hsl(150, 60%, 45%);
-  --wow-warning: hsl(40, 90%, 55%);
-  --wow-danger: hsl(350, 70%, 55%);
-  
-  --wow-surface: hsl(210, 20%, 98%);
-  --wow-surface-card: hsl(0, 0%, 100%);
-  --wow-surface-card-hover: hsl(210, 20%, 95%);
-  
-  --wow-text-main: hsl(220, 30%, 15%);
-  --wow-text-muted: hsl(220, 15%, 45%);
-  
-  /* Glassmorphism */
-  --wow-glass-bg: rgba(255, 255, 255, 0.7);
-  --wow-glass-border: rgba(255, 255, 255, 0.4);
-  --wow-glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
-  --wow-glass-blur: blur(12px);
+  --wow-primary: #18181b;
+  --wow-primary-hover: #27272a;
+  --wow-secondary: #3f3f46;
+  --wow-accent: #52525b;
 
-  /* Shadows */
-  --wow-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
-  --wow-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.06);
-  --wow-shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.08);
-  --wow-shadow-float: 0 20px 40px rgba(var(--wow-primary), 0.15);
+  --wow-success: #166534;
+  --wow-warning: #a16207;
+  --wow-danger: #b91c1c;
 
-  /* Typography */
+  --wow-surface: #fafafa;
+  --wow-surface-card: #ffffff;
+  --wow-surface-card-hover: #fafafa;
+
+  --wow-text-main: #18181b;
+  --wow-text-muted: #71717a;
+
+  --wow-border: #e4e4e7;
+  --wow-shadow-sm: none;
+  --wow-shadow-md: none;
+  --wow-shadow-lg: none;
+  --wow-shadow-float: none;
+
   --wow-font-sans: 'Inter', system-ui, sans-serif;
-  --wow-font-display: 'Outfit', system-ui, sans-serif;
-  
-  /* Transitions */
-  --wow-transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-  --wow-transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  --wow-transition-bounce: 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --wow-font-display: 'Inter', system-ui, sans-serif;
+
+  --wow-transition-fast: 0.15s ease;
+  --wow-transition-normal: 0.2s ease;
 }
 
-/* Base resets for WOW theme */
 body {
   font-family: var(--wow-font-sans);
   color: var(--wow-text-main);
@@ -49,118 +38,77 @@ body {
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--wow-font-display);
-  font-weight: 700;
+  font-family: var(--wow-font-sans);
+  font-weight: 600;
   letter-spacing: -0.02em;
 }
 
-/* Wow Utils */
 .wow-card {
   background: var(--wow-surface-card);
-  border-radius: 16px;
-  box-shadow: var(--wow-shadow-sm);
-  transition: all var(--wow-transition-bounce);
-  border: 1px solid rgba(0,0,0,0.03);
-}
-
-.wow-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--wow-shadow-md);
+  border-radius: 8px;
+  border: 1px solid var(--wow-border);
+  box-shadow: none;
 }
 
 .wow-glass-card {
-  background: var(--wow-glass-bg);
-  backdrop-filter: var(--wow-glass-blur);
-  -webkit-backdrop-filter: var(--wow-glass-blur);
-  border-radius: 16px;
-  border: 1px solid var(--wow-glass-border);
-  box-shadow: var(--wow-glass-shadow);
-  transition: all var(--wow-transition-normal);
-}
-
-.wow-glass-card:hover {
-  box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.12);
-  transform: translateY(-2px);
+  background: var(--wow-surface-card);
+  border-radius: 8px;
+  border: 1px solid var(--wow-border);
+  box-shadow: none;
 }
 
 .wow-btn {
-  background: linear-gradient(135deg, var(--wow-primary), var(--wow-secondary));
-  color: white;
+  background: var(--wow-primary);
+  color: #fff;
   border: none;
-  border-radius: 8px;
-  padding: 10px 24px;
+  border-radius: 6px;
+  padding: 8px 16px;
   font-family: var(--wow-font-sans);
-  font-weight: 600;
+  font-weight: 500;
+  font-size: 0.875rem;
   cursor: pointer;
-  transition: all var(--wow-transition-bounce);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  transition: background var(--wow-transition-fast);
 }
 
 .wow-btn:hover {
-  transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+  background: var(--wow-primary-hover);
 }
 
-.wow-btn:active {
-  transform: translateY(1px) scale(0.98);
+.wow-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
-/* Gradients text */
 .wow-text-gradient {
-  background: linear-gradient(135deg, var(--wow-primary), var(--wow-secondary));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* Animations */
-@keyframes wow-fade-in-up {
-  0% {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  background: none;
+  -webkit-text-fill-color: currentColor;
+  color: var(--wow-text-main);
 }
 
 .wow-animate-in {
-  animation: wow-fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: wow-fade-in 0.25s ease forwards;
 }
 
-.wow-delay-1 { animation-delay: 0.1s; }
-.wow-delay-2 { animation-delay: 0.2s; }
-.wow-delay-3 { animation-delay: 0.3s; }
+@keyframes wow-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
 
-/* Custom Progress Bars */
 .wow-progress-bg {
-  background-color: rgba(0,0,0,0.05);
-  border-radius: 999px;
+  background-color: #f4f4f5;
+  border-radius: 4px;
   overflow: hidden;
-  height: 8px;
+  height: 6px;
 }
 
 .wow-progress-fill {
   height: 100%;
-  border-radius: 999px;
-  transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1);
-  background: linear-gradient(90deg, var(--wow-primary), var(--wow-accent));
+  border-radius: 4px;
+  background: var(--wow-primary);
+  transition: width 0.4s ease;
 }
 
-/* Form inputs */
+.wow-input .MuiOutlinedInput-root,
 .wow-input {
-  border: 2px solid rgba(0,0,0,0.05);
-  border-radius: 8px;
-  padding: 12px 16px;
-  font-family: var(--wow-font-sans);
-  transition: all var(--wow-transition-fast);
-  background: rgba(255,255,255,0.8);
-}
-
-.wow-input:focus {
-  outline: none;
-  border-color: var(--wow-primary);
-  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
-  background: white;
+  border-radius: 6px;
 }

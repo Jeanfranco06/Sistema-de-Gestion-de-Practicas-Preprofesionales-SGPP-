@@ -27,7 +27,12 @@ public interface ExpedienteService {
     List<ExpedienteResponse> findByEstudianteId(Long estudianteId);
     List<ExpedienteResponse> findByEstado(String estado);
     List<ExpedienteResponse> findByTutorEmpresaId(Long tutorId);
+    List<ExpedienteResponse> findByTutorUsuarioId(Long usuarioId);
     List<ExpedienteResponse> findByAsesorId(Long asesorId);
+    List<ExpedienteResponse> findMisExpedientes(Long idUsuario, java.util.Collection<String> roles);
+    ExpedienteResponse findByIdForUser(Long id, Long idUsuario, java.util.Collection<String> roles);
+    List<ExpedienteResponse> findByEstudianteIdForUser(Long estudianteId, Long idUsuario, java.util.Collection<String> roles);
+    List<ExpedienteResponse> findByAsesorIdForUser(Long asesorId, Long idUsuario, java.util.Collection<String> roles);
     void disable(Long id, Long idUsuario);
     void emitirDictamen(Long idExpediente, String dictamenTexto, Long idUsuario);
 }
