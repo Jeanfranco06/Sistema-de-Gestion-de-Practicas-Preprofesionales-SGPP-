@@ -21,8 +21,9 @@ import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SaveIcon from '@mui/icons-material/Save';
 import {
-    ModulePageShell, ModulePageHeader, ModuleToolbar, ModuleTableContainer, moduleHeadCellSx, moduleSortLabelSx,
+    ModulePageShell, ModulePageHeader,
 } from '../../../shared/components/module/ModulePageShell';
+import ContentCard from '../../../shared/components/ContentCard';
 import { usuariosApi } from '../../../api/usuariosApi';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
@@ -314,61 +315,57 @@ export const GestionUsuarios = () => {
                 subtitle="Administración de cuentas, roles y acceso al sistema SGPP."
             />
 
-            <ModuleToolbar>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, width: '100%' }}>
-                    <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', lg: 'row' }, alignItems: { lg: 'center' }, justifyContent: 'space-between', flexWrap: 'wrap' }}>
-                        <Box sx={{ display: 'flex', gap: 2, flex: 1, flexWrap: 'wrap', width: { xs: '100%', lg: 'auto' } }}>
-                            <TextField size="small" variant="outlined" placeholder="Buscar por nombre, correo o documento..."
-                                value={searchTerm} onChange={handleSearchChange}
-                                slotProps={{ input: { startAdornment: (<InputAdornment position="start"><SearchIcon color="action" fontSize="small" /></InputAdornment>), sx: { bgcolor: '#fff', borderRadius: 2, minWidth: { xs: '100%', sm: 280 } } } }} />
-                            <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 140 } }}>
-                                <InputLabel>Estado</InputLabel>
-                                <Select value={filtroEstado} label="Estado" onChange={(e) => setFiltroEstado(e.target.value)} sx={{ borderRadius: 2, bgcolor: '#fff' }}>
-                                    {ESTADOS_FILTRO.map(e => <MenuItem key={e} value={e}>{e === 'todos' ? 'Todos' : e.charAt(0) + e.slice(1).toLowerCase()}</MenuItem>)}
-                                </Select>
-                            </FormControl>
-                            <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 160 } }}>
-                                <InputLabel>Rol</InputLabel>
-                                <Select value={filtroRol} label="Rol" onChange={(e) => setFiltroRol(e.target.value)} sx={{ borderRadius: 2, bgcolor: '#fff' }}>
-                                    <MenuItem value="todos">Todos</MenuItem>
-                                    {ROLES_DISPONIBLES.map(r => <MenuItem key={r} value={r}>{r.replace(/_/g, ' ')}</MenuItem>)}
-                                </Select>
-                            </FormControl>
-                            <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 150 } }}>
-                                <InputLabel>Tipo Usuario</InputLabel>
-                                <Select value={filtroTipoUsuario} label="Tipo Usuario" onChange={(e) => setFiltroTipoUsuario(e.target.value)} sx={{ borderRadius: 2, bgcolor: '#fff' }}>
-                                    {TIPO_USUARIO_FILTRO.map(t => <MenuItem key={t} value={t}>{t === 'todos' ? 'Todos' : t}</MenuItem>)}
-                                </Select>
-                            </FormControl>
-                        </Box>
-                        <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={() => handleOpenDialog()}
-                            sx={{ px: 3, py: 1, borderRadius: 2, boxShadow: 2, whiteSpace: 'nowrap', width: { xs: '100%', sm: 'auto' }, minHeight: '40px' }}>
-                            Nuevo Usuario
-                        </Button>
-                    </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                        <Button variant="outlined" size="medium" onClick={limpiarFiltros} startIcon={<FilterListIcon />}
-                            sx={{ borderRadius: 2, px: 3, fontWeight: 600 }}>Limpiar Filtros</Button>
-                    </Box>
-                </Box>
-            </ModuleToolbar>
+            <ContentCard accent>
+                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>Directorio de Usuarios</Typography>
 
-            <ModuleTableContainer>
-                <Table>
-                    <TableHead sx={{ bgcolor: 'primary.main' }}>
-                        <TableRow>
-                            {headCells.map((hc) => (
-                                <TableCell key={hc.id} sx={moduleHeadCellSx}>
-                                    {hc.sortable !== false ? (
-                                        <TableSortLabel active={orderBy === hc.id} direction={orderBy === hc.id ? order : 'asc'}
-                                            onClick={() => handleSort(hc.id)} sx={moduleSortLabelSx}>
-                                            {hc.label}
-                                        </TableSortLabel>
-                                    ) : hc.label}
-                                </TableCell>
-                            ))}
-                        </TableRow>
-                    </TableHead>
+                <Box sx={{ p: 2, mb: 3, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap', bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                    <TextField size="small" variant="outlined" placeholder="Buscar por nombre, correo o documento..."
+                        value={searchTerm} onChange={handleSearchChange}
+                        slotProps={{ input: { startAdornment: (<InputAdornment position="start"><SearchIcon color="action" fontSize="small" /></InputAdornment>), sx: { bgcolor: '#fff', borderRadius: 2, minWidth: { xs: '100%', sm: 280 } } } }} />
+                    <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 140 } }}>
+                        <InputLabel>Estado</InputLabel>
+                        <Select value={filtroEstado} label="Estado" onChange={(e) => setFiltroEstado(e.target.value)} sx={{ borderRadius: 2, bgcolor: '#fff' }}>
+                            {ESTADOS_FILTRO.map(e => <MenuItem key={e} value={e}>{e === 'todos' ? 'Todos' : e.charAt(0) + e.slice(1).toLowerCase()}</MenuItem>)}
+                        </Select>
+                    </FormControl>
+                    <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 160 } }}>
+                        <InputLabel>Rol</InputLabel>
+                        <Select value={filtroRol} label="Rol" onChange={(e) => setFiltroRol(e.target.value)} sx={{ borderRadius: 2, bgcolor: '#fff' }}>
+                            <MenuItem value="todos">Todos</MenuItem>
+                            {ROLES_DISPONIBLES.map(r => <MenuItem key={r} value={r}>{r.replace(/_/g, ' ')}</MenuItem>)}
+                        </Select>
+                    </FormControl>
+                    <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 150 } }}>
+                        <InputLabel>Tipo Usuario</InputLabel>
+                        <Select value={filtroTipoUsuario} label="Tipo Usuario" onChange={(e) => setFiltroTipoUsuario(e.target.value)} sx={{ borderRadius: 2, bgcolor: '#fff' }}>
+                            {TIPO_USUARIO_FILTRO.map(t => <MenuItem key={t} value={t}>{t === 'todos' ? 'Todos' : t}</MenuItem>)}
+                        </Select>
+                    </FormControl>
+                    <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={() => handleOpenDialog()}
+                        sx={{ px: 3, py: 1, borderRadius: 2, boxShadow: 2, whiteSpace: 'nowrap' }}>
+                        Nuevo Usuario
+                    </Button>
+                    <Button variant="outlined" size="small" onClick={limpiarFiltros} startIcon={<FilterListIcon />}>
+                        Limpiar filtros
+                    </Button>
+                </Box>
+
+                <Box sx={{ overflowX: 'auto', border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
+                    <Table size="small">
+                        <TableHead sx={{ bgcolor: 'background.default' }}>
+                            <TableRow>
+                                {headCells.map((hc) => (
+                                    <TableCell key={hc.id} sx={{ fontWeight: 600 }}>
+                                        {hc.sortable !== false ? (
+                                            <TableSortLabel active={orderBy === hc.id} direction={orderBy === hc.id ? order : 'asc'}
+                                                onClick={() => handleSort(hc.id)}>
+                                                {hc.label}
+                                            </TableSortLabel>
+                                        ) : hc.label}
+                                    </TableCell>
+                                ))}
+                            </TableRow>
+                        </TableHead>
                     <TableBody>
                         {paginatedUsuarios.map((usuario) => (
                             <TableRow key={usuario.id} hover sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
@@ -459,12 +456,12 @@ export const GestionUsuarios = () => {
                         )}
                     </TableBody>
                 </Table>
-            </ModuleTableContainer>
-
-            <TablePagination rowsPerPageOptions={[5, 10, 25]} component="div" count={sortedUsuarios.length}
-                rowsPerPage={rowsPerPage} page={page} onPageChange={(e, p) => setPage(p)}
-                onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
-                labelRowsPerPage="Filas por página:" labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`} />
+                <TablePagination rowsPerPageOptions={[5, 10, 25]} component="div" count={sortedUsuarios.length}
+                    rowsPerPage={rowsPerPage} page={page} onPageChange={(e, p) => setPage(p)}
+                    onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
+                    labelRowsPerPage="Filas por página:" labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`} />
+            </Box>
+        </ContentCard>
 
             <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="md" fullWidth slotProps={{ paper: { sx: { borderRadius: 3 } } }}>
                 <DialogTitle sx={{ bgcolor: 'primary.main', color: '#fff', pb: 2 }}>

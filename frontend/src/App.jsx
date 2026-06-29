@@ -229,6 +229,14 @@ export default function App() {
                 }
               />
               <Route
+                path="/tutor/evaluaciones"
+                element={
+                  <ProtectedRoute allowedRoles={['TUTOR_EXTERNO']}>
+                    <ListaPracticantes />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/tutor/practicantes"
                 element={
                   <ProtectedRoute allowedRoles={['TUTOR_EXTERNO']}>

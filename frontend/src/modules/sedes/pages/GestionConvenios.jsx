@@ -14,6 +14,10 @@ import FilterListIcon from '@mui/icons-material/FilterList';
 import { convenioApi, empresaApi } from '../../../api/sedesApi';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
+import {
+    ModulePageShell, ModulePageHeader,
+} from '../../../shared/components/module/ModulePageShell';
+import ContentCard from '../../../shared/components/ContentCard';
 
 const MySwal = withReactContent(Swal);
 
@@ -201,67 +205,12 @@ export const GestionConvenios = () => {
     const paginatedConvenios = filteredConvenios.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
     return (
-        <Container maxWidth="xl" sx={{ mt: 4, mb: 6 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-                <HandshakeIcon sx={{ fontSize: 40, color: 'primary.main' }} />
-                <Box>
-                    <Typography variant="h4" fontWeight="bold" color="primary">
-                        Gestión de Convenios
-                    </Typography>
-                    <Typography variant="subtitle2" color="textSecondary">
-                        Registra y monitorea los convenios activos con las empresas aliadas.
-                    </Typography>
-                </Box>
-            </Box>
-
-            <Paper elevation={1} sx={{ p: 2, mb: 3, borderRadius: 3, bgcolor: '#fff', border: '1px solid #e0e0e0' }}>
-                <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' }, alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                    <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' }, width: { xs: '100%', sm: 'auto' }, flex: 1 }}>
-                        <TextField 
-                            size="small"
-                            variant="outlined" 
-                            placeholder="Buscar por número o empresa..." 
-                            value={searchTerm}
-                             onChange={handleSearchChange}
-                            slotProps={{ input: {
-                                startAdornment: (
-                                    <InputAdornment position="start">
-                                        <SearchIcon color="action" fontSize="small" />
-                                    </InputAdornment>
-                                ),
-                                sx: { bgcolor: '#fff', borderRadius: 2, minWidth: { xs: '100%', sm: '320px' } }
-                            }}}
-                        />
-                        <TextField
-                            select
-                            size="small"
-                            value={filterVigencia}
-                            onChange={(e) => setFilterVigencia(e.target.value)}
-                            slotProps={{ input: {
-                                startAdornment: (
-                                    <InputAdornment position="start">
-                                        <FilterListIcon color="action" fontSize="small" />
-                                    </InputAdornment>
-                                ),
-                                sx: { bgcolor: '#fff', borderRadius: 2 }
-                            }}}
-                        >
-                            <MenuItem value="todos">Todos los Estados</MenuItem>
-                            <MenuItem value="vigentes">Convenios Vigentes</MenuItem>
-                            <MenuItem value="vencidos">Convenios Vencidos</MenuItem>
-                        </TextField>
-                    </Box>
-                    <Button 
-                        variant="contained" 
-                        color="primary" 
-                        startIcon={<AddIcon />} 
-                        onClick={() => handleOpenDialog()}
-                        sx={{ px: 3, py: 1, borderRadius: 2, boxShadow: 2, whiteSpace: 'nowrap', width: { xs: '100%', sm: 'auto' }, minHeight: '40px' }}
-                    >
-                        Nuevo Convenio
-                    </Button>
-                </Box>
-            </Paper>
+        <ModulePageShell>
+            <ModulePageHeader
+                icon={<HandshakeIcon />}
+                title="Gestión de Convenios"
+                subtitle="Registra y monitorea los convenios activos con las empresas aliadas."
+            />
 
             {expiring.length > 0 && (
                 <Alert 
@@ -273,32 +222,75 @@ export const GestionConvenios = () => {
                 </Alert>
             )}
 
-            <TableContainer component={Paper} elevation={3} sx={{ borderRadius: 3, overflow: 'hidden' }}>
-                <Table>
-                    <TableHead sx={{ bgcolor: 'primary.main' }}>
-                        <TableRow>
-                            <TableCell sx={{ color: '#fff', fontWeight: 'bold' }}>
-                                <TableSortLabel 
-                                    active={orderBy === 'numeroConvenio'} direction={orderBy === 'numeroConvenio' ? order : 'asc'} 
-                                    onClick={() => handleSort('numeroConvenio')} sx={{ color: '#fff !important', '& .MuiTableSortLabel-icon': { color: '#fff !important' } }}
-                                >N° Convenio</TableSortLabel>
-                            </TableCell>
-                            <TableCell sx={{ color: '#fff', fontWeight: 'bold' }}>
-                                <TableSortLabel 
-                                    active={orderBy === 'razonSocialEmpresa'} direction={orderBy === 'razonSocialEmpresa' ? order : 'asc'} 
-                                    onClick={() => handleSort('razonSocialEmpresa')} sx={{ color: '#fff !important', '& .MuiTableSortLabel-icon': { color: '#fff !important' } }}
-                                >Empresa</TableSortLabel>
-                            </TableCell>
-                            <TableCell sx={{ color: '#fff', fontWeight: 'bold' }}>
-                                <TableSortLabel 
-                                    active={orderBy === 'fechaInicio'} direction={orderBy === 'fechaInicio' ? order : 'asc'} 
-                                    onClick={() => handleSort('fechaInicio')} sx={{ color: '#fff !important', '& .MuiTableSortLabel-icon': { color: '#fff !important' } }}
-                                >Vigencia</TableSortLabel>
-                            </TableCell>
-                            <TableCell sx={{ color: '#fff', fontWeight: 'bold' }}>Estado</TableCell>
-                            <TableCell align="center" sx={{ color: '#fff', fontWeight: 'bold' }}>Acciones</TableCell>
-                        </TableRow>
-                    </TableHead>
+            <ContentCard accent>
+                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>Directorio de Convenios</Typography>
+                
+                <Box sx={{ p: 2, mb: 3, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap', bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                    <TextField 
+                        size="small"
+                        variant="outlined" 
+                        placeholder="Buscar por número o empresa..." 
+                        value={searchTerm}
+                        onChange={handleSearchChange}
+                        slotProps={{ input: {
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <SearchIcon color="action" fontSize="small" />
+                                </InputAdornment>
+                            ),
+                            sx: { bgcolor: '#fff', borderRadius: 2, minWidth: { xs: '100%', sm: '320px' } }
+                        }}}
+                    />
+                    <FormControl size="small" sx={{ minWidth: 200 }}>
+                        <InputLabel>Estado de Convenio</InputLabel>
+                        <Select
+                            value={filterVigencia}
+                            label="Estado de Convenio"
+                            onChange={(e) => setFilterVigencia(e.target.value)}
+                            sx={{ borderRadius: 2, bgcolor: '#fff' }}
+                        >
+                            <MenuItem value="todos">Todos los Estados</MenuItem>
+                            <MenuItem value="vigentes">Convenios Vigentes</MenuItem>
+                            <MenuItem value="vencidos">Convenios Vencidos</MenuItem>
+                        </Select>
+                    </FormControl>
+                    <Button 
+                        variant="contained" 
+                        color="primary" 
+                        startIcon={<AddIcon />} 
+                        onClick={() => handleOpenDialog()}
+                        sx={{ px: 3, py: 1, borderRadius: 2, boxShadow: 2, whiteSpace: 'nowrap' }}
+                    >
+                        Nuevo Convenio
+                    </Button>
+                </Box>
+
+                <TableContainer sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
+                    <Table size="small">
+                        <TableHead sx={{ bgcolor: 'background.default' }}>
+                            <TableRow>
+                                <TableCell sx={{ fontWeight: 600 }}>
+                                    <TableSortLabel 
+                                        active={orderBy === 'numeroConvenio'} direction={orderBy === 'numeroConvenio' ? order : 'asc'} 
+                                        onClick={() => handleSort('numeroConvenio')}
+                                    >N° Convenio</TableSortLabel>
+                                </TableCell>
+                                <TableCell sx={{ fontWeight: 600 }}>
+                                    <TableSortLabel 
+                                        active={orderBy === 'razonSocialEmpresa'} direction={orderBy === 'razonSocialEmpresa' ? order : 'asc'} 
+                                        onClick={() => handleSort('razonSocialEmpresa')}
+                                    >Empresa</TableSortLabel>
+                                </TableCell>
+                                <TableCell sx={{ fontWeight: 600 }}>
+                                    <TableSortLabel 
+                                        active={orderBy === 'fechaInicio'} direction={orderBy === 'fechaInicio' ? order : 'asc'} 
+                                        onClick={() => handleSort('fechaInicio')}
+                                    >Vigencia</TableSortLabel>
+                                </TableCell>
+                                <TableCell sx={{ fontWeight: 600 }}>Estado</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 600 }}>Acciones</TableCell>
+                            </TableRow>
+                        </TableHead>
                     <TableBody>
                         {paginatedConvenios.map((conv) => {
                             const isExpiring = expiring.some(e => e.id === conv.id);
@@ -350,19 +342,19 @@ export const GestionConvenios = () => {
                         )}
                     </TableBody>
                 </Table>
+                <TablePagination
+                    rowsPerPageOptions={[5, 10, 25]}
+                    component="div"
+                    count={filteredConvenios.length}
+                    rowsPerPage={rowsPerPage}
+                    page={page}
+                    onPageChange={handleChangePage}
+                    onRowsPerPageChange={handleChangeRowsPerPage}
+                    labelRowsPerPage="Filas por página:"
+                    labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`}
+                />
             </TableContainer>
-
-            <TablePagination
-                rowsPerPageOptions={[5, 10, 25]}
-                component="div"
-                count={filteredConvenios.length}
-                rowsPerPage={rowsPerPage}
-                page={page}
-                onPageChange={handleChangePage}
-                onRowsPerPageChange={handleChangeRowsPerPage}
-                labelRowsPerPage="Filas por página:"
-                labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`}
-            />
+            </ContentCard>
 
             <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="md" fullWidth slotProps={{ paper: { sx: { borderRadius: 3 } } }}>
                 <DialogTitle sx={{ bgcolor: 'primary.main', color: '#fff', pb: 2 }}>
@@ -422,6 +414,6 @@ export const GestionConvenios = () => {
                     <Button variant="contained" onClick={handleSave} sx={{ px: 4, borderRadius: 2 }}>{isEditing ? 'Actualizar' : 'Guardar'}</Button>
                 </DialogActions>
             </Dialog>
-        </Container>
+        </ModulePageShell>
     );
 };

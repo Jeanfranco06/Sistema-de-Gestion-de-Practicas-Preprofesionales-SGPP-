@@ -3,6 +3,7 @@ import {
   Box, Typography, Button, TextField, MenuItem,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   IconButton, Stack, Chip, CircularProgress, Tooltip,
+  TablePagination,
 } from '@mui/material';
 import {
   Search, Description, ChevronRight, Groups, Clear, FilterList,
@@ -16,7 +17,7 @@ import StatusChip from '../../shared/components/StatusChip';
 import ContentCard from '../../shared/components/ContentCard';
 import StatStrip from '../../shared/components/StatStrip';
 import {
-  ModulePageShell, ModulePageHeader, moduleHeadCellSx,
+  ModulePageShell, ModulePageHeader,
 } from '../../shared/components/module/ModulePageShell';
 
 const ESTADOS_FILTRO = [
@@ -32,6 +33,8 @@ export const ListaPracticantes = () => {
   const [search, setSearch] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('TODOS');
   const [filtroTipo, setFiltroTipo] = useState('TODOS');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const isTutor = hasAnyRole(user?.roles, ['TUTOR_EXTERNO']);
   const basePath = isTutor ? '/tutor' : '/docente';
@@ -115,66 +118,6 @@ export const ListaPracticantes = () => {
 
       <StatStrip items={statItems} />
 
-      <ContentCard>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-          <FilterList color="primary" />
-          <Typography variant="subtitle1" fontWeight={600}>Filtros de búsqueda</Typography>
-        </Box>
-
-        <Stack spacing={2.5}>
-          <TextField
-            fullWidth
-            placeholder="Buscar por nombre, código, expediente o empresa..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            slotProps={{
-              input: {
-                startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />,
-                endAdornment: search && (
-                  <IconButton onClick={() => setSearch('')} size="small">
-                    <Clear />
-                  </IconButton>
-                ),
-              },
-            }}
-          />
-
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
-            <TextField
-              select
-              fullWidth
-              label="Estado"
-              value={filtroEstado}
-              onChange={(e) => setFiltroEstado(e.target.value)}
-            >
-              {ESTADOS_FILTRO.map((s) => (
-                <MenuItem key={s} value={s}>
-                  {s === 'TODOS' ? 'Todos' : s.replace(/_/g, ' ')}
-                </MenuItem>
-              ))}
-            </TextField>
-            <TextField
-              select
-              fullWidth
-              label="Modalidad"
-              value={filtroTipo}
-              onChange={(e) => setFiltroTipo(e.target.value)}
-            >
-              <MenuItem value="TODOS">Todas</MenuItem>
-              <MenuItem value="INICIAL">Inicial</MenuItem>
-              <MenuItem value="FINAL">Final</MenuItem>
-              <MenuItem value="PROFESIONAL">Profesional</MenuItem>
-            </TextField>
-          </Box>
-
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <Button variant="outlined" size="medium" onClick={limpiarFiltros} startIcon={<Clear />}>
-              Limpiar filtros
-            </Button>
-          </Box>
-        </Stack>
-      </ContentCard>
-
       {filteredPracticantes.length === 0 ? (
         <ContentCard sx={{ textAlign: 'center', py: 6 }}>
           <Groups sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
@@ -195,21 +138,80 @@ export const ListaPracticantes = () => {
           )}
         </ContentCard>
       ) : (
-        <ContentCard accent noPadding sx={{ overflow: 'hidden' }}>
-          <TableContainer>
+        <ContentCard accent>
+          <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>Filtros de búsqueda</Typography>
+
+          <Box sx={{ p: 2, mb: 3, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap', bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+            <TextField
+              size="small"
+              variant="outlined"
+              placeholder="Buscar por nombre, código, expediente o empresa..."
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+              slotProps={{
+                input: {
+                  startAdornment: <Search fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />,
+                  endAdornment: search && (
+                    <IconButton onClick={() => setSearch('')} size="small">
+                      <Clear />
+                    </IconButton>
+                  ),
+                },
+              }}
+              sx={{ minWidth: { xs: '100%', sm: 280 } }}
+            />
+            <TextField
+              select
+              size="small"
+              label="Estado"
+              value={filtroEstado}
+              onChange={(e) => { setFiltroEstado(e.target.value); setPage(0); }}
+              sx={{ minWidth: 120, borderRadius: 2, bgcolor: '#fff' }}
+            >
+              {ESTADOS_FILTRO.map((s) => (
+                <MenuItem key={s} value={s}>
+                  {s === 'TODOS' ? 'Todos' : s.replace(/_/g, ' ')}
+                </MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              select
+              size="small"
+              label="Modalidad"
+              value={filtroTipo}
+              onChange={(e) => { setFiltroTipo(e.target.value); setPage(0); }}
+              sx={{ minWidth: 120, borderRadius: 2, bgcolor: '#fff' }}
+            >
+              <MenuItem value="TODOS">Todas</MenuItem>
+              <MenuItem value="INICIAL">Inicial</MenuItem>
+              <MenuItem value="FINAL">Final</MenuItem>
+              <MenuItem value="PROFESIONAL">Profesional</MenuItem>
+            </TextField>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={limpiarFiltros}
+              startIcon={<Clear />}
+              sx={{ borderRadius: 2 }}
+            >
+              Limpiar filtros
+            </Button>
+          </Box>
+
+          <TableContainer sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
             <Table size="small">
-              <TableHead sx={{ bgcolor: 'primary.main' }}>
+              <TableHead sx={{ bgcolor: 'background.default' }}>
                 <TableRow>
-                  <TableCell sx={moduleHeadCellSx}>Estudiante</TableCell>
-                  <TableCell sx={moduleHeadCellSx}>Expediente</TableCell>
-                  <TableCell sx={moduleHeadCellSx}>Empresa</TableCell>
-                  <TableCell sx={moduleHeadCellSx}>Modalidad</TableCell>
-                  <TableCell sx={moduleHeadCellSx}>Estado</TableCell>
-                  <TableCell align="right" sx={moduleHeadCellSx}>Acciones</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Estudiante</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Expediente</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Empresa</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Modalidad</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Estado</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 600 }}>Acciones</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filteredPracticantes.map((p) => (
+                {filteredPracticantes.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((p) => (
                   <TableRow key={p.id} hover>
                     <TableCell>
                       <Typography variant="body2" fontWeight={500}>
@@ -244,15 +246,17 @@ export const ListaPracticantes = () => {
                           <Visibility fontSize="small" />
                         </IconButton>
                       </Tooltip>
-                      <Tooltip title="Documentos">
-                        <IconButton
-                          size="small"
-                          color="primary"
-                          onClick={() => navigate(`/docente/documentos/${p.id}`)}
-                        >
-                          <Description fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
+                      {!isTutor && (
+                        <Tooltip title="Documentos">
+                          <IconButton
+                            size="small"
+                            color="primary"
+                            onClick={() => navigate(`/docente/documentos/${p.id}`)}
+                          >
+                            <Description fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
                       <Button
                         size="small"
                         variant="contained"
@@ -267,6 +271,17 @@ export const ListaPracticantes = () => {
                 ))}
               </TableBody>
             </Table>
+            <TablePagination
+              rowsPerPageOptions={[5, 10, 25]}
+              component="div"
+              count={filteredPracticantes.length}
+              rowsPerPage={rowsPerPage}
+              page={page}
+              onPageChange={(_, p) => setPage(p)}
+              onRowsPerPageChange={(e) => { setRowsPerPage(+e.target.value); setPage(0); }}
+              labelRowsPerPage="Filas por página:"
+              labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`}
+            />
           </TableContainer>
         </ContentCard>
       )}

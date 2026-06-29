@@ -20,8 +20,9 @@ import PersonIcon from '@mui/icons-material/Person';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SaveIcon from '@mui/icons-material/Save';
 import {
-    ModulePageShell, ModulePageHeader, ModuleToolbar, ModuleTableContainer, moduleHeadCellSx, moduleSortLabelSx,
+    ModulePageShell, ModulePageHeader,
 } from '../../../shared/components/module/ModulePageShell';
+import ContentCard from '../../../shared/components/ContentCard';
 import { tutoresApi, usuariosApi } from '../../../api/usuariosApi';
 import { empresaApi } from '../../../api/sedesApi';
 import Swal from 'sweetalert2';
@@ -244,63 +245,59 @@ export const GestionTutores = () => {
                 subtitle="Registro y control de tutores designados por las entidades receptoras."
             />
 
-            <ModuleToolbar>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, width: '100%' }}>
-                    <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', lg: 'row' }, alignItems: { lg: 'center' }, justifyContent: 'space-between', flexWrap: 'wrap' }}>
-                        <Box sx={{ display: 'flex', gap: 2, flex: 1, flexWrap: 'wrap', width: { xs: '100%', lg: 'auto' } }}>
-                            <TextField size="small" variant="outlined" placeholder="Buscar por nombre, empresa o cargo..."
-                                value={searchTerm} onChange={handleSearchChange}
-                                slotProps={{ input: { startAdornment: (<InputAdornment position="start"><SearchIcon color="action" fontSize="small" /></InputAdornment>), sx: { bgcolor: '#fff', borderRadius: 2, minWidth: { xs: '100%', sm: 280 } } } }} />
-                            <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 140 } }}>
-                                <InputLabel>Estado</InputLabel>
-                                <Select value={filtroEstado} label="Estado" onChange={(e) => setFiltroEstado(e.target.value)} sx={{ borderRadius: 2, bgcolor: '#fff' }}>
-                                    {ESTADOS_FILTRO.map(e => <MenuItem key={e} value={e}>{e === 'todos' ? 'Todos' : e.charAt(0) + e.slice(1).toLowerCase()}</MenuItem>)}
-                                </Select>
-                            </FormControl>
-                            <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 200 } }}>
-                                <InputLabel>Empresa</InputLabel>
-                                <Select value={filtroEmpresa} label="Empresa" onChange={(e) => setFiltroEmpresa(e.target.value)} sx={{ borderRadius: 2, bgcolor: '#fff' }}>
-                                    <MenuItem value="todos">Todas</MenuItem>
-                                    {empresas.map(emp => <MenuItem key={emp.id} value={emp.id}>{emp.razonSocial}</MenuItem>)}
-                                </Select>
-                            </FormControl>
-                        </Box>
-                        <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={() => handleOpenDialog()}
-                            sx={{ px: 3, py: 1, borderRadius: 2, boxShadow: 2, whiteSpace: 'nowrap', width: { xs: '100%', sm: 'auto' }, minHeight: '40px' }}>
-                            Nuevo Perfil Tutor
-                        </Button>
-                    </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                        <Button variant="outlined" size="medium" onClick={limpiarFiltros} startIcon={<FilterListIcon />}
-                            sx={{ borderRadius: 2, px: 3, fontWeight: 600 }}>Limpiar Filtros</Button>
-                    </Box>
-                </Box>
-            </ModuleToolbar>
+            <ContentCard accent>
+                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>Directorio de Tutores Externos</Typography>
 
-            <ModuleTableContainer>
-                <Table>
-                    <TableHead sx={{ bgcolor: 'primary.main' }}>
-                        <TableRow>
-                            {[
-                                { id: 'nombres', label: 'Tutor' },
-                                { id: 'empresaNombre', label: 'Empresa' },
-                                { id: 'nombreSede', label: 'Sede' },
-                                { id: 'cargo', label: 'Cargo / Área' },
-                                { id: 'correo', label: 'Contacto' },
-                                { id: 'estado', label: 'Estado', sortable: false },
-                                { id: 'acciones', label: 'Acciones', sortable: false }
-                            ].map(hc => (
-                                <TableCell key={hc.id} sx={moduleHeadCellSx}>
-                                    {hc.sortable !== false ? (
-                                        <TableSortLabel active={orderBy === hc.id} direction={orderBy === hc.id ? order : 'asc'}
-                                            onClick={() => handleSort(hc.id)} sx={moduleSortLabelSx}>
-                                            {hc.label}
-                                        </TableSortLabel>
-                                    ) : hc.label}
-                                </TableCell>
-                            ))}
-                        </TableRow>
-                    </TableHead>
+                <Box sx={{ p: 2, mb: 3, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap', bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                    <TextField size="small" variant="outlined" placeholder="Buscar por nombre, empresa o cargo..."
+                        value={searchTerm} onChange={handleSearchChange}
+                        slotProps={{ input: { startAdornment: (<InputAdornment position="start"><SearchIcon color="action" fontSize="small" /></InputAdornment>), sx: { bgcolor: '#fff', borderRadius: 2, minWidth: { xs: '100%', sm: 280 } } } }} />
+                    <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 140 } }}>
+                        <InputLabel>Estado</InputLabel>
+                        <Select value={filtroEstado} label="Estado" onChange={(e) => setFiltroEstado(e.target.value)} sx={{ borderRadius: 2, bgcolor: '#fff' }}>
+                            {ESTADOS_FILTRO.map(e => <MenuItem key={e} value={e}>{e === 'todos' ? 'Todos' : e.charAt(0) + e.slice(1).toLowerCase()}</MenuItem>)}
+                        </Select>
+                    </FormControl>
+                    <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 200 } }}>
+                        <InputLabel>Empresa</InputLabel>
+                        <Select value={filtroEmpresa} label="Empresa" onChange={(e) => setFiltroEmpresa(e.target.value)} sx={{ borderRadius: 2, bgcolor: '#fff' }}>
+                            <MenuItem value="todos">Todas</MenuItem>
+                            {empresas.map(emp => <MenuItem key={emp.id} value={emp.id}>{emp.razonSocial}</MenuItem>)}
+                        </Select>
+                    </FormControl>
+                    <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={() => handleOpenDialog()}
+                        sx={{ px: 3, py: 1, borderRadius: 2, boxShadow: 2, whiteSpace: 'nowrap' }}>
+                        Nuevo Perfil Tutor
+                    </Button>
+                    <Button variant="outlined" size="small" onClick={limpiarFiltros} startIcon={<FilterListIcon />}>
+                        Limpiar Filtros
+                    </Button>
+                </Box>
+
+                <Box sx={{ overflowX: 'auto', border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
+                    <Table size="small">
+                        <TableHead sx={{ bgcolor: 'background.default' }}>
+                            <TableRow>
+                                {[
+                                    { id: 'nombres', label: 'Tutor' },
+                                    { id: 'empresaNombre', label: 'Empresa' },
+                                    { id: 'nombreSede', label: 'Sede' },
+                                    { id: 'cargo', label: 'Cargo / Área' },
+                                    { id: 'correo', label: 'Contacto' },
+                                    { id: 'estado', label: 'Estado', sortable: false },
+                                    { id: 'acciones', label: 'Acciones', sortable: false }
+                                ].map(hc => (
+                                    <TableCell key={hc.id} sx={{ fontWeight: 600 }}>
+                                        {hc.sortable !== false ? (
+                                            <TableSortLabel active={orderBy === hc.id} direction={orderBy === hc.id ? order : 'asc'}
+                                                onClick={() => handleSort(hc.id)}>
+                                                {hc.label}
+                                            </TableSortLabel>
+                                        ) : hc.label}
+                                    </TableCell>
+                                ))}
+                            </TableRow>
+                        </TableHead>
                     <TableBody>
                         {paginatedTutores.map((tutor) => {
                             const estado = getEstado(tutor);
@@ -373,12 +370,12 @@ export const GestionTutores = () => {
                         )}
                     </TableBody>
                 </Table>
-            </ModuleTableContainer>
-
-            <TablePagination rowsPerPageOptions={[5, 10, 25]} component="div" count={sortedTutores.length}
-                rowsPerPage={rowsPerPage} page={page} onPageChange={(e, p) => setPage(p)}
-                onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
-                labelRowsPerPage="Filas por página:" labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`} />
+                <TablePagination rowsPerPageOptions={[5, 10, 25]} component="div" count={sortedTutores.length}
+                    rowsPerPage={rowsPerPage} page={page} onPageChange={(e, p) => setPage(p)}
+                    onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
+                    labelRowsPerPage="Filas por página:" labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`} />
+            </Box>
+        </ContentCard>
 
             <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="md" fullWidth slotProps={{ paper: { sx: { borderRadius: 3 } } }}>
                 <DialogTitle sx={{ bgcolor: 'primary.main', color: '#fff', pb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
