@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link as RouterLink } from 'react-router-dom';
 import {
   Box, Card, CardContent, TextField, Button, Typography,
@@ -41,7 +41,7 @@ function canAccessRoute(pathname, roles = []) {
 }
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -50,6 +50,12 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
+
+  useEffect(() => {
+    if (user) {
+      navigate(getHomeRoute(user.roles), { replace: true });
+    }
+  }, [user, navigate]);
 
   const validate = () => {
     const errors = {};
@@ -75,8 +81,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const usuario = await login(form.username, form.password);
-      const from = location.state?.from?.pathname;
-      const destination = canAccessRoute(from, usuario.roles) ? from : getHomeRoute(usuario.roles);
+      const destination = getHomeRoute(usuario.roles);
       navigate(destination, { replace: true });
     } catch (err) {
       const status = err.response?.status;

@@ -145,9 +145,9 @@ export const DashboardCoordinacion = () => {
 
       <StatStrip items={stats} />
 
-      <Grid container spacing={3} alignItems="stretch">
+      <Grid container spacing={3}>
         <Grid item xs={12} lg={8}>
-          <ContentCard accent sx={{ height: '100%' }}>
+          <ContentCard accent>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <Typography variant="subtitle1" fontWeight={600}>Resumen de Cerrados</Typography>
               <Chip label={`${avancePct}% cerrados`} size="small" color="primary" variant="outlined" />

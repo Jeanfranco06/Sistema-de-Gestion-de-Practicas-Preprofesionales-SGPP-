@@ -207,7 +207,7 @@ export const ListaPracticantes = () => {
                   <TableCell sx={{ fontWeight: 600 }}>Empresa</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>Modalidad</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>Estado</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 600 }}>Acciones</TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 600 }}>Acciones</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>

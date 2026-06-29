@@ -207,7 +207,7 @@ export default function AppLayout() {
   );
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
+    <Box sx={{ display: 'flex', bgcolor: 'background.default' }}>
       {/* AppBar fijo: solo compensa el sidebar cuando está visible en desktop */}
       <AppBar
         position="fixed"
