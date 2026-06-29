@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
     Typography, Box, Button, Table, TableBody, TableCell, TableHead, TableRow,
     Chip, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, InputAdornment, Tooltip,
-    TablePagination, MenuItem, FormControl, InputLabel, Select, Alert, CircularProgress, TableSortLabel,
+    TablePagination, MenuItem, FormControl, InputLabel, Select, Alert, CircularProgress, TableSortLabel, TableContainer,
     Stack, LinearProgress, Card, CardContent, Collapse
 } from '@mui/material';
 import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
@@ -23,8 +23,10 @@ import SaveIcon from '@mui/icons-material/Save';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import {
-    ModulePageShell, ModulePageHeader, ModuleToolbar, ModuleTableContainer, moduleHeadCellSx, moduleSortLabelSx,
+    ModulePageShell, ModulePageHeader,
 } from '../../../shared/components/module/ModulePageShell';
+import ContentCard from '../../../shared/components/ContentCard';
+import StatStrip from '../../../shared/components/StatStrip';
 import { secretariaApi } from '../../../api/usuariosApi';
 import { academicoApi } from '../../../api/validacionesApi';
 import Swal from 'sweetalert2';
@@ -215,6 +217,22 @@ export const ValidarRequisitos = () => {
 
     const paginated = sortedEstudiantes.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
+    const kpis = useMemo(() => {
+        return {
+            total: estudiantes.length,
+            activos: estudiantes.filter(e => e.estadoAcademico === 'ACTIVO').length,
+            matriculados: estudiantes.filter(e => e.estadoAcademico === 'MATRICULADO').length,
+            egresados: estudiantes.filter(e => ['EGRESADO', 'GRADUADO'].includes(e.estadoAcademico)).length
+        };
+    }, [estudiantes]);
+
+    const stats = [
+        { label: 'Total Estudiantes', value: kpis.total, icon: <SchoolIcon fontSize="small" />, accent: 'blue' },
+        { label: 'Activos', value: kpis.activos, icon: <CheckCircleIcon fontSize="small" />, accent: 'emerald' },
+        { label: 'Matriculados', value: kpis.matriculados, icon: <AssignmentTurnedInIcon fontSize="small" />, accent: 'violet' },
+        { label: 'Egresados/Graduados', value: kpis.egresados, icon: <RuleIcon fontSize="small" />, accent: 'orange' }
+    ];
+
     const handleSearchChange = useCallback((e) => {
         setSearchTerm(e.target.value);
     }, []);
@@ -251,111 +269,105 @@ export const ValidarRequisitos = () => {
                 subtitle="Verificación de requisitos académicos y normativos para inicio de prácticas preprofesionales."
             />
 
-            <ModuleToolbar>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, width: '100%' }}>
-                    <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', lg: 'row' }, alignItems: { lg: 'center' }, justifyContent: 'space-between', flexWrap: 'wrap' }}>
-                        <Box sx={{ display: 'flex', gap: 2, flex: 1, flexWrap: 'wrap', width: { xs: '100%', lg: 'auto' } }}>
-                            <TextField size="small" variant="outlined" placeholder="Buscar por código o nombre del estudiante..."
-                                value={searchTerm} onChange={handleSearchChange}
-                                slotProps={{ input: { startAdornment: (<InputAdornment position="start"><SearchIcon color="action" fontSize="small" /></InputAdornment>), sx: { bgcolor: '#fff', borderRadius: 2, minWidth: { xs: '100%', sm: 320 } } } }} />
-                            <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 200 } }}>
-                                <InputLabel>Estado Académico</InputLabel>
-                                <Select value={filtroEstadoAc} label="Estado Académico" onChange={(e) => setFiltroEstadoAc(e.target.value)} sx={{ borderRadius: 2, bgcolor: '#fff' }}>
-                                    <MenuItem value="todos">Todos</MenuItem>
-                                    {ESTADOS_ACADEMICOS.map(ea => <MenuItem key={ea} value={ea}>{ea}</MenuItem>)}
-                                </Select>
-                            </FormControl>
-                        </Box>
-                        <Button variant="outlined" size="medium" onClick={loadEstudiantes} startIcon={<RefreshIcon />}
-                            sx={{ borderRadius: 2, px: 3, fontWeight: 600, width: { xs: '100%', sm: 'auto' }, minHeight: '40px' }}>
-                            Actualizar
-                        </Button>
-                    </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                        <Button variant="outlined" size="medium" onClick={limpiarFiltros} startIcon={<FilterListIcon />}
-                            sx={{ borderRadius: 2, px: 3, fontWeight: 600 }}>Limpiar Filtros</Button>
-                    </Box>
+            <StatStrip items={stats} />
+
+            <ContentCard accent>
+                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>Listado de Estudiantes</Typography>
+
+                <Box sx={{ p: 2, mb: 3, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap', bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                    <TextField
+                        size="small"
+                        variant="outlined"
+                        placeholder="Buscar por código o nombre del estudiante..."
+                        value={searchTerm}
+                        onChange={handleSearchChange}
+                        InputProps={{ startAdornment: <SearchIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} /> }}
+                        sx={{ minWidth: { xs: '100%', sm: 320 } }}
+                    />
+                    <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 200 } }}>
+                        <InputLabel>Estado Académico</InputLabel>
+                        <Select value={filtroEstadoAc} label="Estado Académico" onChange={(e) => setFiltroEstadoAc(e.target.value)} sx={{ borderRadius: 2, bgcolor: '#fff' }}>
+                            <MenuItem value="todos">Todos</MenuItem>
+                            {ESTADOS_ACADEMICOS.map(ea => <MenuItem key={ea} value={ea}>{ea}</MenuItem>)}
+                        </Select>
+                    </FormControl>
+                    <Button variant="outlined" size="medium" onClick={loadEstudiantes} startIcon={<RefreshIcon />}
+                        sx={{ borderRadius: 2, px: 3, fontWeight: 600, width: { xs: '100%', sm: 'auto' }, minHeight: '40px' }}>
+                        Actualizar
+                    </Button>
+                    <Button variant="outlined" size="medium" onClick={limpiarFiltros} startIcon={<FilterListIcon />}
+                        sx={{ borderRadius: 2, px: 3, fontWeight: 600 }}>Limpiar Filtros</Button>
                 </Box>
-            </ModuleToolbar>
 
-            <ModuleTableContainer>
-                <Table>
-                    <TableHead sx={{ bgcolor: 'primary.main' }}>
-                        <TableRow>
-                            {headCells.map(hc => (
-                                <TableCell key={hc.id} sx={moduleHeadCellSx}>
-                                    {hc.sortable !== false ? (
-                                        <TableSortLabel active={orderBy === hc.id} direction={orderBy === hc.id ? order : 'asc'}
-                                            onClick={() => handleSort(hc.id)} sx={moduleSortLabelSx}>
-                                            {hc.label}
-                                        </TableSortLabel>
-                                    ) : hc.label}
-                                </TableCell>
-                            ))}
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {paginated.map((est) => {
-                            const nombre = `${est.nombres || ''} ${est.apellidoPaterno || ''}${est.apellidoMaterno ? ' ' + est.apellidoMaterno : ''}`;
-                            return (
-                                <TableRow key={est.id} hover sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
-                                    <TableCell>
-                                        <Typography fontWeight="bold">{est.codigoEstudiantil}</Typography>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                            <Box sx={{ width: 32, height: 32, borderRadius: '50%', bgcolor: 'primary.light', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 'bold' }}>
-                                                {getInitials(est.nombres, est.apellidoPaterno)}
-                                            </Box>
-                                            <Typography variant="body2">{nombre}</Typography>
-                                        </Box>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Chip label={`${est.semestreActual || '—'}°`} size="small" variant="outlined" />
-                                    </TableCell>
-                                    <TableCell>{est.creditosAprobados ?? '—'}</TableCell>
-                                    <TableCell>{est.promedioPonderado ?? '—'}</TableCell>
-                                    <TableCell>
-                                        <Chip label={est.estadoAcademico || '—'} size="small"
-                                            color={ESTADO_ACADEMICO_COLOR[est.estadoAcademico] || 'default'} />
-                                    </TableCell>
-                                    <TableCell>
-                                        <Stack direction="row" spacing={0.3}>
-                                            <Tooltip title="Validar requisitos">
-                                                <IconButton size="small" color="success" onClick={() => handleOpenValidar(est)}>
-                                                    <AssignmentTurnedInIcon fontSize="small" />
-                                                </IconButton>
-                                            </Tooltip>
-                                            <Tooltip title="Historial de validaciones">
-                                                <IconButton size="small" color="info" onClick={() => handleOpenHistorial(est)}>
-                                                    <HistoryIcon fontSize="small" />
-                                                </IconButton>
-                                            </Tooltip>
-                                            <Tooltip title="Editar datos académicos">
-                                                <IconButton size="small" color="primary" onClick={() => handleEdit(est)}>
-                                                    <EditIcon fontSize="small" />
-                                                </IconButton>
-                                            </Tooltip>
-                                        </Stack>
-                                    </TableCell>
-                                </TableRow>
-                            );
-                        })}
-                        {sortedEstudiantes.length === 0 && !loading && (
+                <TableContainer sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
+                    <Table size="small">
+                        <TableHead sx={{ bgcolor: 'background.default' }}>
                             <TableRow>
-                                <TableCell colSpan={7} align="center" sx={{ py: 5 }}>
-                                    <Typography variant="h6" color="textSecondary">No se encontraron estudiantes con los filtros aplicados.</Typography>
-                                </TableCell>
+                                {headCells.map(hc => (
+                                    <TableCell key={hc.id} sx={{ fontWeight: 600 }}>
+                                        {hc.sortable !== false ? (
+                                            <TableSortLabel active={orderBy === hc.id} direction={orderBy === hc.id ? order : 'asc'}
+                                                onClick={() => handleSort(hc.id)}>
+                                                {hc.label}
+                                            </TableSortLabel>
+                                        ) : hc.label}
+                                    </TableCell>
+                                ))}
                             </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-            </ModuleTableContainer>
-
-            <TablePagination rowsPerPageOptions={[5, 10, 25]} component="div" count={sortedEstudiantes.length}
-                rowsPerPage={rowsPerPage} page={page} onPageChange={(e, p) => setPage(p)}
-                onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
-                labelRowsPerPage="Filas por página:" labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`} />
+                        </TableHead>
+                        <TableBody>
+                            {paginated.map((est) => {
+                                const nombre = `${est.nombres || ''} ${est.apellidoPaterno || ''}${est.apellidoMaterno ? ' ' + est.apellidoMaterno : ''}`;
+                                return (
+                                    <TableRow key={est.id} hover>
+                                        <TableCell sx={{ fontFamily: 'monospace', fontSize: 12 }}>{est.codigoEstudiantil}</TableCell>
+                                        <TableCell>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                                <Box sx={{ width: 32, height: 32, borderRadius: '50%', bgcolor: 'primary.light', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 'bold' }}>
+                                                    {getInitials(est.nombres, est.apellidoPaterno)}
+                                                </Box>
+                                                <Typography variant="body2">{nombre}</Typography>
+                                            </Box>
+                                        </TableCell>
+                                        <TableCell><Chip label={`${est.semestreActual || '—'}°`} size="small" variant="outlined" /></TableCell>
+                                        <TableCell>{est.creditosAprobados ?? '—'}</TableCell>
+                                        <TableCell>{est.promedioPonderado ?? '—'}</TableCell>
+                                        <TableCell><Chip label={est.estadoAcademico || '—'} size="small" color={ESTADO_ACADEMICO_COLOR[est.estadoAcademico] || 'default'} /></TableCell>
+                                        <TableCell align="center">
+                                            <Stack direction="row" spacing={0.3}>
+                                                <Tooltip title="Validar requisitos">
+                                                    <IconButton size="small" color="success" onClick={() => handleOpenValidar(est)}>
+                                                        <AssignmentTurnedInIcon fontSize="small" />
+                                                    </IconButton>
+                                                </Tooltip>
+                                                <Tooltip title="Historial de validaciones">
+                                                    <IconButton size="small" color="info" onClick={() => handleOpenHistorial(est)}>
+                                                        <HistoryIcon fontSize="small" />
+                                                    </IconButton>
+                                                </Tooltip>
+                                                <Tooltip title="Editar datos académicos">
+                                                    <IconButton size="small" color="primary" onClick={() => handleEdit(est)}>
+                                                        <EditIcon fontSize="small" />
+                                                    </IconButton>
+                                                </Tooltip>
+                                            </Stack>
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                            })}
+                            {sortedEstudiantes.length === 0 && !loading && (
+                                <TableRow>
+                                    <TableCell colSpan={7} align="center" sx={{ py: 4, color: 'text.secondary' }}>No se encontraron estudiantes</TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                    <TablePagination rowsPerPageOptions={[5, 10, 25]} component="div" count={sortedEstudiantes.length}
+                        rowsPerPage={rowsPerPage} page={page} onPageChange={(_, p) => setPage(p)}
+                        onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
+                        labelRowsPerPage="Filas por página:" labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`} />
+                </TableContainer>
+            </ContentCard>
 
             <Dialog open={openValidarDialog} onClose={() => { if (!validando) setOpenValidarDialog(false); }}
                 maxWidth="md" fullWidth slotProps={{ paper: { sx: { borderRadius: 3 } } }}>

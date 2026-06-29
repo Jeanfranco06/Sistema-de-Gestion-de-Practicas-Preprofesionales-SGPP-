@@ -38,6 +38,7 @@ import { ReportesCoordinacion } from './modules/coordinacion/pages/Reportes';
 import { DetalleExpediente } from './modules/coordinacion/pages/DetalleExpediente';
 import AdminDashboardPage from './modules/admin/pages/AdminDashboardPage';
 import AdminReportesPage from './modules/admin/pages/AdminReportesPage';
+import { GestionExpedientes } from './modules/admin/pages/GestionExpedientes';
 
 export default function App() {
   return (
@@ -196,6 +197,14 @@ export default function App() {
                 element={
                   <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR']}>
                     <AdminReportesPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/expedientes"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR']}>
+                    <GestionExpedientes />
                   </ProtectedRoute>
                 }
               />

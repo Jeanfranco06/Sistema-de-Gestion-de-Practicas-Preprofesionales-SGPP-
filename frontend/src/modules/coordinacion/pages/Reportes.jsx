@@ -21,6 +21,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   ModulePageShell, ModulePageHeader, ModuleToolbar, ModuleTableContainer, moduleHeadCellSx,
 } from '../../../shared/components/module/ModulePageShell';
+import ContentCard from '../../../shared/components/ContentCard';
 import { empresaApi, sedeApi } from '../../../api/sedesApi';
 import { reportesCoordinacionApi } from '../../../api/coordinacionApi';
 
@@ -202,7 +203,8 @@ export const ReportesCoordinacion = ({ variant = 'coordinacion' }) => {
         }
       />
 
-      <ModuleToolbar>
+      <ContentCard accent>
+        <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 2 }}>Configuración de Reporte</Typography>
         <Box
           sx={{
             display: 'grid',
@@ -311,7 +313,7 @@ export const ReportesCoordinacion = ({ variant = 'coordinacion' }) => {
             Generar reporte
           </Button>
         </Box>
-      </ModuleToolbar>
+      </ContentCard>
 
       {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
       {exportMessage && <Alert severity="info" sx={{ mb: 3 }}>{exportMessage}</Alert>}
@@ -325,8 +327,8 @@ export const ReportesCoordinacion = ({ variant = 'coordinacion' }) => {
         </Paper>
       ) : resultado ? (
         <>
-          <ModuleToolbar>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+          <ContentCard sx={{ mt: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap', alignItems: 'center', mb: 2 }}>
               <Box>
                 <Typography variant="subtitle1" fontWeight="bold" color="primary">
                   {resultado.titulo || REPORT_TYPES.find((item) => item.value === tipoReporte)?.label}
@@ -344,17 +346,16 @@ export const ReportesCoordinacion = ({ variant = 'coordinacion' }) => {
                 </Button>
               </Box>
             </Box>
-          </ModuleToolbar>
 
           {resultado.registros?.length > 0 ? (
-            <ModuleTableContainer>
+            <TableContainer sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
               <Table size="small">
-                <TableHead sx={{ bgcolor: 'primary.main' }}>
+                <TableHead sx={{ bgcolor: 'background.default' }}>
                   <TableRow>
                     {columnas.map((col) => (
-                      <TableCell key={col.key} sx={moduleHeadCellSx}>{col.label}</TableCell>
+                      <TableCell key={col.key} sx={{ fontWeight: 600 }}>{col.label}</TableCell>
                     ))}
-                    <TableCell align="right" sx={moduleHeadCellSx}>Acciones</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 600 }}>Acciones</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -365,7 +366,7 @@ export const ReportesCoordinacion = ({ variant = 'coordinacion' }) => {
                           {col.key.toLowerCase().includes('estado') ? (
                             <Chip size="small" label={formatValue(row[col.key])} color="primary" variant="outlined" />
                           ) : (
-                            formatValue(row[col.key])
+                            <Typography variant="body2">{formatValue(row[col.key])}</Typography>
                           )}
                         </TableCell>
                       ))}
@@ -373,7 +374,7 @@ export const ReportesCoordinacion = ({ variant = 'coordinacion' }) => {
                         {row.idExpediente ? (
                           <Button
                             size="small"
-                            startIcon={<Visibility />}
+                            startIcon={<Visibility fontSize="small" />}
                             onClick={() => navigate(`/coordinacion/expedientes/${row.idExpediente}`)}
                           >
                             Ver detalle
@@ -386,10 +387,11 @@ export const ReportesCoordinacion = ({ variant = 'coordinacion' }) => {
                   ))}
                 </TableBody>
               </Table>
-            </ModuleTableContainer>
+            </TableContainer>
           ) : (
             <Alert severity="info">El reporte no devolvió registros con los filtros seleccionados.</Alert>
           )}
+          </ContentCard>
         </>
       ) : (
         <Paper elevation={1} sx={{ p: 4, borderRadius: 3, textAlign: 'center', border: '1px solid #e0e0e0' }}>

@@ -1,7 +1,7 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../../auth/AuthContext';
 import { isCoordinacionRole } from '../../../shared/utils/roleRoutes';
-import { DashboardCoordinacion } from '../../coordinacion/pages/DashboardCoordinacion';
+import DashboardSecretaria from '../../secretaria/pages/DashboardSecretaria';
 
 /**
  * Dashboard administrativo: vista operativa para secretaría, comité y admins.
@@ -14,5 +14,5 @@ export default function AdminDashboardPage() {
     return <Navigate to="/coordinacion/dashboard" replace />;
   }
 
-  return <DashboardCoordinacion variant="admin" />;
+  return <DashboardSecretaria />;
 }

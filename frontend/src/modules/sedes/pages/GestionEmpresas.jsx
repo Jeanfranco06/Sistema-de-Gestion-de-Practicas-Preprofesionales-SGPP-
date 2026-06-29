@@ -14,6 +14,8 @@ import FilterListIcon from '@mui/icons-material/FilterList';
 import {
   ModulePageShell, ModulePageHeader, ModuleToolbar, ModuleTableContainer, moduleHeadCellSx, moduleSortLabelSx,
 } from '../../../shared/components/module/ModulePageShell';
+import ContentCard from '../../../shared/components/ContentCard';
+import StatStrip from '../../../shared/components/StatStrip';
 import { empresaApi } from '../../../api/sedesApi';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
@@ -224,6 +226,22 @@ export const GestionEmpresas = () => {
 
     const paginatedEmpresas = filteredEmpresas.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
+    const kpis = useMemo(() => {
+        return {
+            total: empresas.length,
+            validadas: empresas.filter(e => e.validado).length,
+            pendientes: empresas.filter(e => !e.validado).length,
+            inactivas: empresas.filter(e => !e.activo).length,
+        };
+    }, [empresas]);
+
+    const stats = [
+        { label: 'Total Empresas', value: kpis.total, icon: <BusinessCenterIcon fontSize="small" />, accent: 'blue' },
+        { label: 'Validadas', value: kpis.validadas, icon: <CheckCircleIcon fontSize="small" />, accent: 'emerald' },
+        { label: 'Pendientes', value: kpis.pendientes, icon: <FilterListIcon fontSize="small" />, accent: 'violet' },
+        { label: 'Inactivas', value: kpis.inactivas, icon: <DeleteIcon fontSize="small" />, accent: 'orange' },
+    ];
+
     return (
         <ModulePageShell>
             <ModulePageHeader
@@ -232,43 +250,45 @@ export const GestionEmpresas = () => {
                 subtitle="Administra el catálogo de empresas aliadas y valida sus perfiles."
             />
 
-            <ModuleToolbar>
-                <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' }, alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                    <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' }, width: { xs: '100%', sm: 'auto' }, flex: 1 }}>
-                        <TextField 
-                            size="small"
-                            variant="outlined" 
-                            placeholder="Buscar empresa (Nombre o RUC)..." 
-                            value={searchTerm}
-                             onChange={handleSearchChange}
-                            slotProps={{ input: {
-                                startAdornment: (
-                                    <InputAdornment position="start">
-                                        <SearchIcon color="action" fontSize="small" />
-                                    </InputAdornment>
-                                ),
-                                sx: { bgcolor: '#fff', borderRadius: 2, minWidth: { xs: '100%', sm: '400px' } }
-                            }}}
-                        />
-                        <TextField
-                            select
-                            size="small"
-                            value={filterEstado}
-                            onChange={(e) => setFilterEstado(e.target.value)}
-                            slotProps={{ input: {
-                                startAdornment: (
-                                    <InputAdornment position="start">
-                                        <FilterListIcon color="action" fontSize="small" />
-                                    </InputAdornment>
-                                ),
-                                sx: { bgcolor: '#fff', borderRadius: 2 }
-                            }}}
-                        >
-                            <MenuItem value="todos">Todos los Estados</MenuItem>
-                            <MenuItem value="validadas">Empresas Validadas</MenuItem>
-                            <MenuItem value="pendientes">Pendientes de Validación</MenuItem>
-                        </TextField>
-                    </Box>
+            <StatStrip items={stats} />
+
+            <ContentCard accent>
+                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>Directorio de Empresas</Typography>
+
+                <Box sx={{ p: 2, mb: 3, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap', bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                    <TextField 
+                        size="small"
+                        variant="outlined" 
+                        placeholder="Buscar empresa (Nombre o RUC)..." 
+                        value={searchTerm}
+                        onChange={handleSearchChange}
+                        slotProps={{ input: {
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <SearchIcon color="action" fontSize="small" />
+                                </InputAdornment>
+                            )
+                        }}}
+                        sx={{ minWidth: { xs: '100%', sm: '400px' } }}
+                    />
+                    <TextField
+                        select
+                        size="small"
+                        value={filterEstado}
+                        onChange={(e) => setFilterEstado(e.target.value)}
+                        slotProps={{ input: {
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <FilterListIcon color="action" fontSize="small" />
+                                </InputAdornment>
+                            )
+                        }}}
+                        sx={{ minWidth: { xs: '100%', sm: 200 } }}
+                    >
+                        <MenuItem value="todos">Todos los Estados</MenuItem>
+                        <MenuItem value="validadas">Empresas Validadas</MenuItem>
+                        <MenuItem value="pendientes">Pendientes de Validación</MenuItem>
+                    </TextField>
                     <Button 
                         variant="contained" 
                         color="primary" 
@@ -279,35 +299,35 @@ export const GestionEmpresas = () => {
                         Nueva Empresa
                     </Button>
                 </Box>
-            </ModuleToolbar>
-
-            <ModuleTableContainer>
-                <Table>
-                    <TableHead sx={{ bgcolor: 'primary.main' }}>
+            <TableContainer sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
+                <Table size="small">
+                    <TableHead sx={{ bgcolor: 'background.default' }}>
                         <TableRow>
-                            <TableCell sx={moduleHeadCellSx}>
+                            <TableCell sx={{ fontWeight: 600 }}>
                                 <TableSortLabel 
                                     active={orderBy === 'ruc'} direction={orderBy === 'ruc' ? order : 'asc'} 
-                                    onClick={() => handleSort('ruc')} sx={moduleSortLabelSx}
+                                    onClick={() => handleSort('ruc')}
                                 >RUC</TableSortLabel>
                             </TableCell>
-                            <TableCell sx={moduleHeadCellSx}>
+                            <TableCell sx={{ fontWeight: 600 }}>
                                 <TableSortLabel 
                                     active={orderBy === 'razonSocial'} direction={orderBy === 'razonSocial' ? order : 'asc'} 
-                                    onClick={() => handleSort('razonSocial')} sx={moduleSortLabelSx}
+                                    onClick={() => handleSort('razonSocial')}
                                 >Razón Social</TableSortLabel>
                             </TableCell>
-                            <TableCell sx={moduleHeadCellSx}>Sector</TableCell>
-                            <TableCell sx={moduleHeadCellSx}>Contacto</TableCell>
-                            <TableCell sx={moduleHeadCellSx}>Estado</TableCell>
-                            <TableCell align="center" sx={moduleHeadCellSx}>Acciones</TableCell>
+                            <TableCell sx={{ fontWeight: 600 }}>Sector</TableCell>
+                            <TableCell sx={{ fontWeight: 600 }}>Contacto</TableCell>
+                            <TableCell sx={{ fontWeight: 600 }}>Estado</TableCell>
+                            <TableCell align="center" sx={{ fontWeight: 600 }}>Acciones</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {paginatedEmpresas.map((emp) => (
-                            <TableRow key={emp.id} hover sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
-                                <TableCell fontWeight="medium">{emp.ruc}</TableCell>
-                                <TableCell>{emp.razonSocial}</TableCell>
+                            <TableRow key={emp.id} hover>
+                                <TableCell sx={{ fontFamily: 'monospace', fontSize: 12 }}>{emp.ruc}</TableCell>
+                                <TableCell>
+                                    <Typography fontWeight={500} variant="body2">{emp.razonSocial}</Typography>
+                                </TableCell>
                                 <TableCell>
                                     <Chip label={emp.sectorEconomico || 'N/A'} size="small" variant="outlined" />
                                 </TableCell>
@@ -327,36 +347,36 @@ export const GestionEmpresas = () => {
                                 <TableCell align="center">
                                     {!emp.validado && emp.activo && (
                                         <Tooltip title="Validar Perfil">
-                                            <IconButton color="success" onClick={() => handleValidate(emp.id)}>
-                                                <CheckCircleIcon />
+                                            <IconButton color="success" size="small" onClick={() => handleValidate(emp.id)}>
+                                                <CheckCircleIcon fontSize="small" />
                                             </IconButton>
                                         </Tooltip>
                                     )}
                                     <Tooltip title="Editar Empresa">
-                                        <IconButton color="primary" onClick={() => handleOpenDialog(emp)}>
-                                            <EditIcon />
+                                        <IconButton color="primary" size="small" onClick={() => handleOpenDialog(emp)}>
+                                            <EditIcon fontSize="small" />
                                         </IconButton>
                                     </Tooltip>
                                     {emp.activo && (
                                         <Tooltip title="Deshabilitar Empresa">
-                                            <IconButton color="error" onClick={() => handleDisable(emp.id)}>
-                                                <DeleteIcon />
+                                            <IconButton color="error" size="small" onClick={() => handleDisable(emp.id)}>
+                                                <DeleteIcon fontSize="small" />
                                             </IconButton>
                                         </Tooltip>
                                     )}
                                 </TableCell>
                             </TableRow>
                         ))}
-                        {filteredEmpresas.length === 0 && (
+                        {filteredEmpresas.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={6} align="center" sx={{ py: 5 }}>
-                                    <Typography variant="h6" color="textSecondary">No se encontraron empresas.</Typography>
+                                <TableCell colSpan={6} align="center" sx={{ py: 4, color: 'text.secondary' }}>
+                                    No se encontraron empresas.
                                 </TableCell>
                             </TableRow>
-                        )}
+                        ) : null}
                     </TableBody>
                 </Table>
-            </ModuleTableContainer>
+            </TableContainer>
             
             <TablePagination
                 rowsPerPageOptions={[5, 10, 25]}
@@ -369,6 +389,7 @@ export const GestionEmpresas = () => {
                 labelRowsPerPage="Filas por página:"
                 labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`}
             />
+            </ContentCard>
 
             <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="md" fullWidth slotProps={{ paper: { sx: { borderRadius: 3 } } }}>
                 <DialogTitle sx={{ bgcolor: 'primary.main', color: '#fff', pb: 2 }}>
