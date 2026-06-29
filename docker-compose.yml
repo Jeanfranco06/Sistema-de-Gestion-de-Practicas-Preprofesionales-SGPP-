@@ -1,8 +1,6 @@
 # ============================================================
-# SGPP - Docker Compose (solo infraestructura local)
+# SGPP - Docker Compose (Entorno de Desarrollo Completo)
 # ============================================================
-# Backend y frontend se ejecutan en la máquina (Maven + npm).
-# Ver GUIA_EJECUCION_LOCAL.md
 
 services:
 
@@ -42,7 +40,7 @@ services:
     volumes:
       - pgadmin_data:/var/lib/pgadmin
 
-  # ---- Backend (Spring Boot) — ejecutar local con Maven ----
+  # ---- Backend (Spring Boot) ----
   # backend:
   #   build:
   #     context: ./backend
@@ -53,6 +51,7 @@ services:
   #     db:
   #       condition: service_healthy
   #   ports:
+  #     # 8081 en el host evita conflicto con XAMPP/Apache en 8080
   #     - "8081:8080"
   #   environment:
   #     - SPRING_PROFILES_ACTIVE=docker
@@ -62,7 +61,7 @@ services:
   #   volumes:
   #     - sgpp_uploads:/app/uploads
 
-  # ---- Frontend (React / Vite) — ejecutar local con npm run dev ----
+  # ---- Frontend (React / Vite para Desarrollo) ----
   # frontend:
   #   image: node:20-alpine
   #   container_name: sgpp-frontend
@@ -71,9 +70,6 @@ services:
   #   depends_on:
   #     - backend
   #   command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
-  #   environment:
-  #     - BACKEND_URL=http://backend:8080
-  #     - CHOKIDAR_USEPOLLING=true
   #   ports:
   #     - "80:3002"
   #   volumes:
@@ -83,7 +79,7 @@ services:
 volumes:
   pgdata:
     driver: local
-  pgadmin_data:
+  pgadmin_data: 
     driver: local
   # sgpp_uploads:
   #   driver: local
