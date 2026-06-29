@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Box, Typography, Tabs, Tab, Button, IconButton, Chip, Dialog,
   DialogTitle, DialogContent, DialogActions, Alert, TextField, CircularProgress,
-  Stack,
+  Stack, Grid, LinearProgress,
 } from '@mui/material';
 import {
   CloudUpload, Delete, Download, CheckCircle,
@@ -235,6 +235,7 @@ export const GestionDocumental = () => {
   };
 
   const pctCargados = Math.round((documentosConsolidados.length / docObligatorios.length) * 100);
+  const pendientes = Math.max(docObligatorios.length - documentosConsolidados.length, 0);
 
   return (
     <ModulePageShell>
@@ -244,6 +245,33 @@ export const GestionDocumental = () => {
         subtitle={`Expediente: ${expediente.nombreTipoPractica}`}
         action={<Chip label={`${pctCargados}% completado`} size="small" color="primary" variant="outlined" />}
       />
+
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        {[
+          { label: 'Documentos cargados', value: documentosConsolidados.length, color: 'primary.main' },
+          { label: 'Pendientes', value: pendientes, color: 'warning.main' },
+          { label: 'Anexos', value: anexosList.length, color: 'secondary.main' },
+        ].map((item) => (
+          <Grid item xs={12} sm={4} key={item.label}>
+            <ContentCard sx={{ mb: 0, p: 2.25 }}>
+              <Typography variant="caption" color="text.secondary" textTransform="uppercase">
+                {item.label}
+              </Typography>
+              <Typography variant="h5" fontWeight={700} sx={{ color: item.color, mt: 0.5 }}>
+                {item.value}
+              </Typography>
+            </ContentCard>
+          </Grid>
+        ))}
+      </Grid>
+
+      <ContentCard sx={{ p: 2.25 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, mb: 1 }}>
+          <Typography variant="subtitle2" fontWeight={600}>Avance documental</Typography>
+          <Typography variant="body2" color="text.secondary">{pctCargados}%</Typography>
+        </Box>
+        <LinearProgress variant="determinate" value={pctCargados} sx={{ height: 9, borderRadius: 999 }} />
+      </ContentCard>
 
       <ContentCard noPadding sx={{ mb: 0 }}>
         <Tabs
@@ -271,6 +299,7 @@ export const GestionDocumental = () => {
                       border: '1px solid',
                       borderColor: docCargado ? 'success.light' : 'divider',
                       bgcolor: docCargado ? 'success.light' : 'background.paper',
+                      boxShadow: docCargado ? '0 1px 2px rgba(5, 150, 105, 0.08)' : 'none',
                     }}
                   >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flex: '1 1 220px' }}>
@@ -339,6 +368,7 @@ export const GestionDocumental = () => {
                         display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center',
                         py: 1.5, px: 2, borderRadius: 1,
                         border: '1px solid', borderColor: 'divider',
+                        bgcolor: 'background.paper',
                       }}
                     >
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flex: 1 }}>

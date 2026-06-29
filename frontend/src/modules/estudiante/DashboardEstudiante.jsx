@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box, Grid, Typography, Chip, List, ListItem, ListItemText, ListItemIcon,
-  Button, Divider, Alert, CircularProgress, IconButton, Stack,
+  Button, Divider, Alert, CircularProgress, IconButton, Stack, LinearProgress,
 } from '@mui/material';
 import {
   Description, Business, Visibility, TrendingUp, Refresh, InfoOutlined,
-  Assignment, AccessTime, FolderOpen, School,
+  Assignment, AccessTime, FolderOpen, School, TaskAlt, PendingActions,
 } from '@mui/icons-material';
 import { useAuth } from '../../auth/AuthContext';
 import { expedientesApi } from '../../api/expedientesApi';
@@ -84,6 +84,11 @@ export default function DashboardEstudiante() {
     { label: 'Documentos', value: `${docsAprobados} / ${docsObligatorios.length}`, icon: <Description fontSize="small" />, accent: 'emerald' },
   ];
 
+  const horasChart = useMemo(() => ([
+    { name: 'Ejecutadas', horas: horasEjecutadas },
+    { name: 'Restantes', horas: Math.max(horasTotales - horasEjecutadas, 0) },
+  ]), [horasEjecutadas, horasTotales]);
+
   return (
     <ModulePageShell>
       <ModulePageHeader
@@ -108,17 +113,64 @@ export default function DashboardEstudiante() {
 
       <Grid container spacing={3}>
         <Grid item xs={12} lg={8}>
-          <ContentCard>
+          <ContentCard accent>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <Typography variant="subtitle1" fontWeight={600}>Progreso de práctica</Typography>
               <Chip label={`${pct}%`} size="small" color="primary" variant="outlined" />
             </Box>
-            <Box className="wow-progress-bg" sx={{ mb: 1 }}>
-              <div className="wow-progress-fill" style={{ width: `${pct}%` }} />
-            </Box>
+            <LinearProgress variant="determinate" value={pct} sx={{ height: 10, borderRadius: 999, mb: 1 }} />
             <Typography variant="caption" color="text.secondary">
               {horasEjecutadas} hrs ejecutadas · {horasTotales - horasEjecutadas} hrs restantes
             </Typography>
+
+            <Grid container spacing={2.5} sx={{ mt: 1.5 }}>
+              <Grid item xs={12} md={5}>
+                <Box sx={{ height: 210, display: 'grid', placeItems: 'center' }}>
+                  <Box
+                    sx={{
+                      width: 148,
+                      height: 148,
+                      borderRadius: '50%',
+                      background: `conic-gradient(#10b981 0 ${docsAprobados / docsObligatorios.length * 100}%, #e2e8f0 0 100%)`,
+                      display: 'grid',
+                      placeItems: 'center',
+                    }}
+                  >
+                    <Box sx={{ width: 104, height: 104, borderRadius: '50%', bgcolor: 'background.paper', display: 'grid', placeItems: 'center', textAlign: 'center' }}>
+                      <Typography variant="h5" fontWeight={700} color="success.main">{docsAprobados}</Typography>
+                      <Typography variant="caption" color="text.secondary">de {docsObligatorios.length}</Typography>
+                    </Box>
+                  </Box>
+                </Box>
+                <Stack direction="row" spacing={1} justifyContent="center" sx={{ mt: -1, flexWrap: 'wrap' }}>
+                  <Chip size="small" icon={<TaskAlt />} label={`${docsAprobados} listos`} color="success" variant="outlined" />
+                  <Chip size="small" icon={<PendingActions />} label={`${docsObligatorios.length - docsAprobados} pendientes`} variant="outlined" />
+                </Stack>
+              </Grid>
+              <Grid item xs={12} md={7}>
+                <Box sx={{ height: 210, display: 'flex', alignItems: 'end', justifyContent: 'center', gap: 3, px: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
+                  {horasChart.map((item, index) => {
+                    const height = Math.max((item.horas / horasTotales) * 160, item.horas > 0 ? 16 : 4);
+                    return (
+                      <Box key={item.name} sx={{ width: 88, textAlign: 'center' }}>
+                        <Typography variant="caption" color="text.secondary">{item.horas} h</Typography>
+                        <Box
+                          sx={{
+                            height,
+                            mt: 0.75,
+                            borderRadius: '8px 8px 0 0',
+                            bgcolor: index === 0 ? '#3b82f6' : '#cbd5e1',
+                          }}
+                        />
+                        <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
+                          {item.name}
+                        </Typography>
+                      </Box>
+                    );
+                  })}
+                </Box>
+              </Grid>
+            </Grid>
 
             <Divider sx={{ my: 3 }} />
 
@@ -152,7 +204,7 @@ export default function DashboardEstudiante() {
         </Grid>
 
         <Grid item xs={12} lg={4}>
-          <ContentCard>
+          <ContentCard accent>
             <Typography variant="subtitle2" color="primary.dark" sx={{ mb: 2 }}>Accesos rápidos</Typography>
             <Stack spacing={1}>
               <Button variant="outlined" color="primary" startIcon={<Visibility />} onClick={() => navigate('/estudiante/documentos')} sx={{ justifyContent: 'flex-start' }}>
