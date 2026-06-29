@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Container, Typography, Grid, Box, Chip, FormControl, InputLabel, Select, MenuItem,
-  Checkbox, FormControlLabel, CircularProgress, Alert, Drawer, Divider,
-  Avatar, IconButton, Stack, Badge, Tooltip, Button
+  Typography, Box, Chip, FormControl, InputLabel, Select, MenuItem,
+  Checkbox, FormControlLabel, CircularProgress, Alert, Drawer,
+  Avatar, IconButton, Stack, Badge, Tooltip, Button, TextField,
 } from '@mui/material';
 import {
   Search, Business, LocationOn, Work, People, CheckCircle,
@@ -37,14 +37,18 @@ export const CatalogoSedes = () => {
   const [estadoValidacion, setEstadoValidacion] = useState('todos');
   const [tieneTutor, setTieneTutor] = useState('todos');
   const [mostrarSoloElegibles, setMostrarSoloElegibles] = useState(false);
+  const [selectedSede, setSelectedSede] = useState(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectingSedeId, setSelectingSedeId] = useState(null);
 
   useEffect(() => {
     const fetchCatalogoSedes = async () => {
       try {
         setLoading(true);
         const response = await sedeApi.getCatalogo();
-        setSedes(response.data);
-        setFilteredSedes(response.data);
+        const data = Array.isArray(response.data) ? response.data : response.data?.data || [];
+        setSedes(data);
+        setFilteredSedes(data);
         setError(null);
       } catch (err) {
         console.error('Error cargando catálogo de sedes:', err);
@@ -98,9 +102,6 @@ export const CatalogoSedes = () => {
     setFilteredSedes(filtered);
   }, [sedes, searchTerm, tipoEntidad, vigenciaConvenio, disponibilidad, estadoValidacion, tieneTutor, mostrarSoloElegibles]);
 
-  const [selectedSede, setSelectedSede] = useState(null);
-  const [drawerOpen, setDrawerOpen] = useState(false);
-
   const handleOpenDetails = async (sede) => {
     try {
       setLoading(true);
@@ -119,8 +120,6 @@ export const CatalogoSedes = () => {
     setDrawerOpen(false);
     setSelectedSede(null);
   };
-
-  const [selectingSedeId, setSelectingSedeId] = useState(null);
 
   const handleSeleccionarSede = async (sede) => {
     if (!sede.esElegible) {

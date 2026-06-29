@@ -112,8 +112,10 @@ sgpp-pgadmin      Up              0.0.0.0:5050->80/tcp
 ```bash
 cd backend
 mvn clean install -DskipTests
-mvn -pl sgpp-api spring-boot:run -Dspring-boot.run.profiles=local
+mvn -pl sgpp-api spring-boot:run
 ```
+
+> **PowerShell:** no uses `-Dspring-boot.run.profiles=local` sin comillas; PowerShell interpreta mal el punto y falla con `Unknown lifecycle phase ".run.profiles=local"`. El perfil `local` ya está configurado en el plugin de Spring Boot.
 
 ### Opción B: Desde IntelliJ IDEA (Recomendado para desarrollo)
 
@@ -195,7 +197,7 @@ Flyway inserta automáticamente estos usuarios la primera vez que se ejecuta el 
 | Detener y **borrar datos**            | `docker-compose down -v`                           |
 | Ver logs de PostgreSQL                | `docker-compose logs -f db`                        |
 | Compilar backend                      | `cd backend && mvn clean install -DskipTests`      |
-| Ejecutar backend                      | `cd backend && mvn -pl sgpp-api spring-boot:run -Dspring-boot.run.profiles=local` |
+| Ejecutar backend                      | `cd backend && mvn -pl sgpp-api spring-boot:run` |
 | Instalar dependencias frontend        | `cd frontend && npm install`                       |
 | Ejecutar frontend                     | `cd frontend && npm run dev`                       |
 

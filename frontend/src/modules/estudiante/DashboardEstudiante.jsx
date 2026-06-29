@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box, Grid, Typography, Chip, List, ListItem, ListItemText, ListItemIcon,
   Button, Divider, Alert, CircularProgress, IconButton, Stack, LinearProgress,
@@ -84,10 +84,10 @@ export default function DashboardEstudiante() {
     { label: 'Documentos', value: `${docsAprobados} / ${docsObligatorios.length}`, icon: <Description fontSize="small" />, accent: 'emerald' },
   ];
 
-  const horasChart = useMemo(() => ([
+  const horasChart = [
     { name: 'Ejecutadas', horas: horasEjecutadas },
     { name: 'Restantes', horas: Math.max(horasTotales - horasEjecutadas, 0) },
-  ]), [horasEjecutadas, horasTotales]);
+  ];
 
   return (
     <ModulePageShell>

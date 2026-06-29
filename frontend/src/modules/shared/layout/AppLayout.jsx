@@ -160,7 +160,10 @@ export default function AppLayout() {
               {user?.nombres} {user?.apellidoPaterno}
             </Typography>
             <Typography variant="caption" color="text.secondary" noWrap>
-              {user?.roles?.[0]?.replace('_', ' ')}
+              {(typeof user?.roles?.[0] === 'string'
+                ? user.roles[0]
+                : user?.roles?.[0]?.authority || user?.roles?.[0]?.nombre || ''
+              ).replace(/_/g, ' ')}
             </Typography>
           </Box>
         </Box>

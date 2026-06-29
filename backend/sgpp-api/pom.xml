@@ -91,6 +91,9 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
                     <mainClass>edu.unt.ingenieria_industrial.sgpp.api.SgppApplication</mainClass>
+                    <profiles>
+                        <profile>local</profile>
+                    </profiles>
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>

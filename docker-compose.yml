@@ -1,6 +1,8 @@
 # ============================================================
-# SGPP - Docker Compose (Entorno de Desarrollo Completo)
+# SGPP - Docker Compose (solo infraestructura local)
 # ============================================================
+# Backend y frontend se ejecutan en la máquina (Maven + npm).
+# Ver GUIA_EJECUCION_LOCAL.md
 
 services:
 
@@ -40,51 +42,50 @@ services:
     volumes:
       - pgadmin_data:/var/lib/pgadmin
 
-  # ---- Backend (Spring Boot) ----
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: sgpp-backend
-    restart: unless-stopped
-    depends_on:
-      db:
-        condition: service_healthy
-    ports:
-      # 8081 en el host evita conflicto con XAMPP/Apache en 8080
-      - "8081:8080"
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/${POSTGRES_DB:-sgpp_db}
-      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-postgres}
-      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-postgres}
-    volumes:
-      - sgpp_uploads:/app/uploads
+  # ---- Backend (Spring Boot) — ejecutar local con Maven ----
+  # backend:
+  #   build:
+  #     context: ./backend
+  #     dockerfile: Dockerfile
+  #   container_name: sgpp-backend
+  #   restart: unless-stopped
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
+  #   ports:
+  #     - "8081:8080"
+  #   environment:
+  #     - SPRING_PROFILES_ACTIVE=docker
+  #     - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/${POSTGRES_DB:-sgpp_db}
+  #     - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-postgres}
+  #     - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+  #   volumes:
+  #     - sgpp_uploads:/app/uploads
 
-  # ---- Frontend (React / Vite para Desarrollo) ----
-  frontend:
-    image: node:20-alpine
-    container_name: sgpp-frontend
-    restart: unless-stopped
-    working_dir: /app
-    depends_on:
-      - backend
-    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
-    environment:
-      - BACKEND_URL=http://backend:8080
-      - CHOKIDAR_USEPOLLING=true
-    ports:
-      - "80:3002"
-    volumes:
-      - ./frontend:/app
-      - frontend_node_modules:/app/node_modules
+  # ---- Frontend (React / Vite) — ejecutar local con npm run dev ----
+  # frontend:
+  #   image: node:20-alpine
+  #   container_name: sgpp-frontend
+  #   restart: unless-stopped
+  #   working_dir: /app
+  #   depends_on:
+  #     - backend
+  #   command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+  #   environment:
+  #     - BACKEND_URL=http://backend:8080
+  #     - CHOKIDAR_USEPOLLING=true
+  #   ports:
+  #     - "80:3002"
+  #   volumes:
+  #     - ./frontend:/app
+  #     - frontend_node_modules:/app/node_modules
 
 volumes:
   pgdata:
     driver: local
   pgadmin_data:
     driver: local
-  sgpp_uploads:
-    driver: local
-  frontend_node_modules:
-    driver: local
+  # sgpp_uploads:
+  #   driver: local
+  # frontend_node_modules:
+  #   driver: local

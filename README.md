@@ -64,7 +64,7 @@ docker-compose up -d
 # 4. Compilar y ejecutar el backend
 cd backend
 mvn clean install -DskipTests
-mvn -pl sgpp-api spring-boot:run -Dspring-boot.run.profiles=local
+mvn -pl sgpp-api spring-boot:run
 
 # 5. En otra terminal, ejecutar el frontend
 cd frontend
