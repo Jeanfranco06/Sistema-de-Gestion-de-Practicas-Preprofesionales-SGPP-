@@ -276,6 +276,19 @@ public class SedePracticaServiceImpl implements SedePracticaService {
 
     @Override
     @Transactional(readOnly = true)
+    public boolean checkNombreDisponible(String nombre, Long empresaId, Long excludeId) {
+        if (nombre == null || nombre.isBlank() || empresaId == null) return true;
+        String normalized = nombre.trim();
+        if (excludeId != null) {
+            return sedePracticaRepository.findByNombreSedeAndEmpresaId(normalized, empresaId)
+                    .map(s -> s.getId().equals(excludeId))
+                    .orElse(true);
+        }
+        return sedePracticaRepository.findByNombreSedeAndEmpresaId(normalized, empresaId).isEmpty();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<SedeCatalogoDTO> getCatalogoSedes() {
         List<SedePractica> sedes = sedePracticaRepository.findByActivoTrue();
         return sedes.stream().map(this::toCatalogoDto).collect(Collectors.toList());

@@ -75,31 +75,25 @@ public class Usuario extends BaseEntity {
     @Column(name = "tipo_usuario", length = 20)
     private TipoUsuario tipoUsuario;
 
-    @Column(name = "fecha_registro")
-    private LocalDateTime fechaRegistro;
-
-    @Column(name = "fecha_actualizacion")
-    private LocalDateTime fechaActualizacion;
-
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Set<UsuarioRol> usuarioRoles = new HashSet<>();
 
-    @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL)
+    @OneToOne(mappedBy = "usuario", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Estudiante estudiante;
 
-    @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL)
+    @OneToOne(mappedBy = "usuario", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Docente docente;
 
-    @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL)
+    @OneToOne(mappedBy = "usuario", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude

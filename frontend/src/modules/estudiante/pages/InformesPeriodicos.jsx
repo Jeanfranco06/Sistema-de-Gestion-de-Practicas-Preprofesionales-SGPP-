@@ -156,7 +156,7 @@ export const InformesPeriodicos = () => {
         ].map((item) => (
           <Grid item xs={12} sm={4} key={item.label}>
             <ContentCard sx={{ mb: 0, p: 2.25 }}>
-              <Typography variant="caption" color="text.secondary" textTransform="uppercase">
+              <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase' }}>
                 {item.label}
               </Typography>
               <Typography variant="h5" fontWeight={700} sx={{ color: item.color, mt: 0.5 }}>

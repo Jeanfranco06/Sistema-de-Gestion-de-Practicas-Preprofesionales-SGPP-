@@ -7,100 +7,174 @@ import {
 } from '@mui/material';
 import {
   Dashboard, Assignment, Description, Assessment,
-  Business, AccountCircle, Logout, ChevronLeft,
-  School, AccessTime, CheckCircle, BarChart, ViewSidebar,
-  People, SupervisorAccount, FactCheck
+  Business, AccountCircle, Logout, Menu as MenuIcon,
+  School, AccessTime, CheckCircle, BarChart,
+  People, SupervisorAccount, FactCheck, FolderOpen
 } from '@mui/icons-material';
 import { useAuth } from '../../../auth/AuthContext';
 import PageContainer from '../../../shared/components/PageContainer';
 import { NotificationsMenu } from '../components/NotificationsMenu';
 
-const DRAWER_WIDTH = 240;
+const DRAWER_WIDTH_EXPANDED = 260;
+const DRAWER_WIDTH_COLLAPSED = 76;
 
-const NAV_ITEMS_ESTUDIANTE = [
-  { label: 'Dashboard', icon: <Dashboard />, path: '/estudiante/dashboard' },
-  { label: 'Mi Práctica', icon: <Assignment />, path: '/estudiante/practica' },
-  { label: 'Documentos', icon: <Description />, path: '/estudiante/documentos' },
-  { label: 'Informes Periódicos', icon: <Assessment />, path: '/estudiante/informes' },
-  { label: 'Registro de Horas', icon: <AccessTime />, path: '/estudiante/horas' },
-  { label: 'Evaluación', icon: <CheckCircle />, path: '/estudiante/evaluacion' },
-  { label: 'Sedes / Empresas', icon: <Business />, path: '/estudiante/sedes' },
-];
-
-const NAV_ITEMS_DOCENTE = [
-  { label: 'Dashboard', icon: <Dashboard />, path: '/docente/dashboard' },
-  { label: 'Mis Practicantes', icon: <School />, path: '/docente/practicantes' },
-];
-
-const NAV_ITEMS_ADMIN = [
-  { label: 'Dashboard', icon: <Dashboard />, path: '/admin/dashboard' },
-  { label: 'Validar Requisitos', icon: <FactCheck />, path: '/admin/validar-requisitos' },
-  { label: 'Tutores Externos', icon: <SupervisorAccount />, path: '/admin/tutores' },
-  { label: 'Expedientes', icon: <Assignment />, path: '/admin/expedientes' },
-  { label: 'Empresas', icon: <Business />, path: '/admin/empresas' },
-  { label: 'Sedes', icon: <Business />, path: '/admin/sedes' },
-  { label: 'Convenios', icon: <Description />, path: '/admin/convenios' },
-  { label: 'Reportes', icon: <BarChart />, path: '/admin/reportes' },
-];
-
-const NAV_ITEMS_ADMIN_SISTEMA = [
-  { label: 'Dashboard', icon: <Dashboard />, path: '/admin/dashboard' },
-  { label: 'Validar Requisitos', icon: <FactCheck />, path: '/admin/validar-requisitos' },
-  { label: 'Usuarios', icon: <People />, path: '/admin/usuarios' },
-  { label: 'Tutores Externos', icon: <SupervisorAccount />, path: '/admin/tutores' },
-  { label: 'Expedientes', icon: <Assignment />, path: '/admin/expedientes' },
-  { label: 'Empresas', icon: <Business />, path: '/admin/empresas' },
-  { label: 'Sedes', icon: <Business />, path: '/admin/sedes' },
-  { label: 'Convenios', icon: <Description />, path: '/admin/convenios' },
-  { label: 'Reportes', icon: <BarChart />, path: '/admin/reportes' },
-];
-
-const NAV_ITEMS_SECRETARIA = [
-  { label: 'Dashboard', icon: <Dashboard />, path: '/admin/dashboard' },
-  { label: 'Reportes', icon: <BarChart />, path: '/admin/reportes' },
-  { label: 'Recepción Admin.', icon: <Assignment />, path: '/secretaria/recepcion' },
-  { label: 'Validar Requisitos', icon: <FactCheck />, path: '/admin/validar-requisitos' },
-  { label: 'Expedientes', icon: <Assignment />, path: '/admin/expedientes' },
-  { label: 'Empresas', icon: <Business />, path: '/admin/empresas' },
-  { label: 'Sedes', icon: <Business />, path: '/admin/sedes' },
-];
-
-const NAV_ITEMS_COMITE = [
-  { label: 'Panel Comité', icon: <FactCheck />, path: '/comite/panel' },
-  { label: 'Panel Ejecutivo', icon: <Dashboard />, path: '/coordinacion/dashboard' },
-  { label: 'Reportes', icon: <BarChart />, path: '/coordinacion/reportes' },
-  { label: 'Expedientes', icon: <Assignment />, path: '/admin/expedientes' },
-  { label: 'Empresas', icon: <Business />, path: '/admin/empresas' },
-  { label: 'Sedes', icon: <Business />, path: '/admin/sedes' },
-];
-
-const NAV_ITEMS_TUTOR_EXTERNO = [
-  { label: 'Dashboard', icon: <Dashboard />, path: '/tutor/dashboard' },
-  { label: 'Evaluaciones', icon: <Assessment />, path: '/tutor/evaluaciones' },
-];
-
-const NAV_ITEMS_COORDINACION = [
-  { label: 'Panel Ejecutivo', icon: <Dashboard />, path: '/coordinacion/dashboard' },
-  { label: 'Reportes', icon: <Assessment />, path: '/coordinacion/reportes' },
-  { label: 'Expedientes', icon: <Assignment />, path: '/admin/expedientes' },
-  { label: 'Panel Comité', icon: <FactCheck />, path: '/comite/panel' },
-  { label: 'Empresas', icon: <Business />, path: '/admin/empresas' },
-  { label: 'Sedes', icon: <Business />, path: '/admin/sedes' },
-];
-
-function getNavItems(roles = []) {
+// Estructuración lógica por grupos y roles
+function getNavGroups(roles = []) {
   const roleNames = roles.map(r => typeof r === 'string' ? r : r.authority || r.nombre || '').map(r => r.replace(/^ROLE_/, ''));
 
-  if (roleNames.includes('ESTUDIANTE')) return NAV_ITEMS_ESTUDIANTE;
-  if (roleNames.includes('DOCENTE_ASESOR')) return NAV_ITEMS_DOCENTE;
-  if (roleNames.includes('TUTOR_EXTERNO')) return NAV_ITEMS_TUTOR_EXTERNO;
-  if (roleNames.includes('COORDINADOR') || roleNames.includes('DIRECTOR')) return NAV_ITEMS_COORDINACION;
-  if (roleNames.includes('COMITE_PRACTICAS')) return NAV_ITEMS_COMITE;
-  if (roleNames.includes('SECRETARIA')) return NAV_ITEMS_SECRETARIA;
-  if (roleNames.includes('ADMIN_SISTEMA')) return NAV_ITEMS_ADMIN_SISTEMA;
-  if (roleNames.includes('ADMINISTRADOR')) return NAV_ITEMS_ADMIN;
+  if (roleNames.includes('ESTUDIANTE')) {
+    return [
+      {
+        group: 'General',
+        items: [{ label: 'Dashboard', icon: <Dashboard />, path: '/estudiante/dashboard' }]
+      },
+      {
+        group: 'Gestión Académica',
+        items: [
+          { label: 'Mi Práctica', icon: <Assignment />, path: '/estudiante/practica' },
+          { label: 'Documentos', icon: <Description />, path: '/estudiante/documentos' }, // Badge opcional aquí si hay observables
+          { label: 'Registro de Horas', icon: <AccessTime />, path: '/estudiante/horas' },
+          { label: 'Informes', icon: <Assessment />, path: '/estudiante/informes' },
+        ]
+      },
+      {
+        group: 'Institucional',
+        items: [
+          { label: 'Evaluación', icon: <CheckCircle />, path: '/estudiante/evaluacion' },
+          { label: 'Centros de Práctica', icon: <Business />, path: '/estudiante/sedes' },
+        ]
+      }
+    ];
+  }
 
-  return NAV_ITEMS_ADMIN;
+  if (roleNames.includes('ADMIN_SISTEMA') || roleNames.includes('ADMINISTRADOR')) {
+    return [
+      {
+        group: 'Principal',
+        items: [{ label: 'Dashboard', icon: <Dashboard />, path: '/admin/dashboard' }]
+      },
+      {
+        group: 'Operaciones',
+        items: [
+          { label: 'Recepción Admin', icon: <FolderOpen />, path: '/secretaria/recepcion' },
+          { label: 'Validar Requisitos', icon: <FactCheck />, path: '/admin/validar-requisitos' },
+          { label: 'Expedientes', icon: <Assignment />, path: '/admin/expedientes' },
+        ]
+      },
+      {
+        group: 'Entidades Externas',
+        items: [
+          { label: 'Tutores Externos', icon: <SupervisorAccount />, path: '/admin/tutores' },
+          { label: 'Empresas', icon: <Business />, path: '/admin/empresas' },
+          { label: 'Sedes', icon: <Business />, path: '/admin/sedes' },
+          { label: 'Convenios', icon: <Description />, path: '/admin/convenios' },
+        ]
+      },
+      {
+        group: 'Configuración',
+        items: [
+          { label: 'Usuarios', icon: <People />, path: '/admin/usuarios' },
+          { label: 'Reportes', icon: <BarChart />, path: '/admin/reportes' },
+        ]
+      }
+    ];
+  }
+
+  if (roleNames.includes('SECRETARIA')) {
+    return [
+      {
+        group: 'Principal',
+        items: [
+          { label: 'Dashboard Administrativo', icon: <Dashboard />, path: '/admin/dashboard' },
+          { label: 'Reportes Consolidados', icon: <BarChart />, path: '/admin/reportes' },
+        ]
+      },
+      {
+        group: 'Operaciones',
+        items: [
+          { label: 'Recepción Admin', icon: <FolderOpen />, path: '/secretaria/recepcion' },
+          { label: 'Validar Requisitos', icon: <FactCheck />, path: '/admin/validar-requisitos' },
+          { label: 'Expedientes', icon: <Assignment />, path: '/admin/expedientes' },
+        ]
+      },
+      {
+        group: 'Entidades Externas',
+        items: [
+          { label: 'Empresas', icon: <Business />, path: '/admin/empresas' },
+          { label: 'Sedes', icon: <Business />, path: '/admin/sedes' },
+        ]
+      }
+    ];
+  }
+
+  if (roleNames.includes('COORDINADOR') || roleNames.includes('DIRECTOR')) {
+    return [
+      {
+        group: 'Dirección',
+        items: [
+          { label: 'Panel Ejecutivo', icon: <Dashboard />, path: '/coordinacion/dashboard' },
+          { label: 'Reportes Consolidados', icon: <Assessment />, path: '/coordinacion/reportes' },
+          { label: 'Panel Comité', icon: <FactCheck />, path: '/comite/panel' },
+        ]
+      },
+      {
+        group: 'Supervisión',
+        items: [
+          { label: 'Expedientes', icon: <Assignment />, path: '/admin/expedientes' },
+          { label: 'Empresas', icon: <Business />, path: '/admin/empresas' },
+          { label: 'Sedes', icon: <Business />, path: '/admin/sedes' },
+        ]
+      }
+    ];
+  }
+
+  if (roleNames.includes('COMITE_PRACTICAS')) {
+    return [
+      {
+        group: 'Comité',
+        items: [
+          { label: 'Panel Comité', icon: <FactCheck />, path: '/comite/panel' },
+          { label: 'Panel Ejecutivo', icon: <Dashboard />, path: '/coordinacion/dashboard' },
+          { label: 'Reportes Consolidados', icon: <BarChart />, path: '/coordinacion/reportes' },
+        ]
+      },
+      {
+        group: 'Consultas',
+        items: [
+          { label: 'Expedientes', icon: <Assignment />, path: '/admin/expedientes' },
+          { label: 'Empresas', icon: <Business />, path: '/admin/empresas' },
+          { label: 'Sedes', icon: <Business />, path: '/admin/sedes' },
+        ]
+      }
+    ];
+  }
+
+  if (roleNames.includes('DOCENTE_ASESOR')) {
+    return [
+      {
+        group: 'Seguimiento',
+        items: [
+          { label: 'Dashboard', icon: <Dashboard />, path: '/docente/dashboard' },
+          { label: 'Mis Practicantes', icon: <School />, path: '/docente/practicantes' },
+        ]
+      }
+    ];
+  }
+
+  if (roleNames.includes('TUTOR_EXTERNO')) {
+    return [
+      {
+        group: 'Supervisión',
+        items: [
+          { label: 'Dashboard', icon: <Dashboard />, path: '/tutor/dashboard' },
+          { label: 'Evaluaciones', icon: <Assessment />, path: '/tutor/evaluaciones' },
+        ]
+      }
+    ];
+  }
+
+  // Fallback
+  return [{ group: 'General', items: [{ label: 'Dashboard', icon: <Dashboard />, path: '/admin/dashboard' }] }];
 }
 
 function getInitials(nombres = '', apellido = '') {
@@ -114,218 +188,307 @@ export default function AppLayout() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  const [drawerOpen, setDrawerOpen] = useState(!isMobile);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
 
-  const navItems = getNavItems(user?.roles);
-  const sidebarVisible = drawerOpen && !isMobile;
+  const navGroups = getNavGroups(user?.roles);
+  const drawerWidth = collapsed && !isMobile ? DRAWER_WIDTH_COLLAPSED : DRAWER_WIDTH_EXPANDED;
 
   const handleLogout = () => {
     logout();
     navigate('/login', { replace: true, state: null });
   };
 
-  const drawerContent = (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <Box
+  const handleDrawerToggle = () => {
+    if (isMobile) {
+      setMobileOpen(!mobileOpen);
+    } else {
+      setCollapsed(!collapsed);
+    }
+  };
+
+  const NavItem = ({ item, collapsed }) => {
+    const active = location.pathname === item.path;
+    const content = (
+      <ListItemButton
+        onClick={() => { navigate(item.path); if (isMobile) setMobileOpen(false); }}
         sx={{
-          px: 2, py: 2.5,
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          bgcolor: 'primary.main',
-          color: 'primary.contrastText',
+          minHeight: 44,
+          mx: collapsed ? 1 : 1.5,
+          my: 0.25,
+          px: collapsed ? 0 : 2,
+          justifyContent: collapsed ? 'center' : 'flex-start',
+          borderRadius: 1.5,
+          position: 'relative',
+          bgcolor: active ? 'rgba(25, 118, 210, 0.08)' : 'transparent',
+          color: active ? 'primary.main' : 'text.secondary',
+          transition: 'background-color 0.2s, color 0.2s',
+          '&:hover': {
+            bgcolor: active ? 'rgba(25, 118, 210, 0.12)' : 'rgba(0,0,0,0.04)',
+          },
+          ...(active && !collapsed && {
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              left: -12,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              height: '60%',
+              width: 4,
+              bgcolor: 'primary.main',
+              borderRadius: '0 4px 4px 0',
+            }
+          })
         }}
+        aria-current={active ? 'page' : undefined}
       >
-        <Box>
-          <Typography variant="subtitle1" fontWeight={600} lineHeight={1.2} color="inherit">
-            SGPP – UNT
-          </Typography>
-          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)' }}>
-            Ing. Industrial
-          </Typography>
-        </Box>
-        {isMobile && (
-          <IconButton onClick={() => setDrawerOpen(false)} size="small" sx={{ color: 'inherit' }}>
-            <ChevronLeft />
-          </IconButton>
+        <ListItemIcon
+          sx={{
+            minWidth: 0,
+            mr: collapsed ? 0 : 2,
+            justifyContent: 'center',
+            color: active ? 'primary.main' : 'inherit',
+            '& svg': { fontSize: 22 }
+          }}
+        >
+          {item.icon}
+        </ListItemIcon>
+        {!collapsed && (
+          <ListItemText
+            primary={item.label}
+            slotProps={{
+              primaryTypography: {
+                fontSize: '0.875rem',
+                fontWeight: active ? 600 : 500
+              }
+            }}
+          />
         )}
-      </Box>
-
-      <Box sx={{ px: 2, py: 2, borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'info.light' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Avatar sx={{ bgcolor: 'primary.main', color: 'primary.contrastText', width: 38, height: 38, fontSize: '0.9rem' }}>
-            {getInitials(user?.nombres, user?.apellidoPaterno)}
-          </Avatar>
-          <Box sx={{ overflow: 'hidden' }}>
-            <Typography variant="body2" fontWeight={600} noWrap>
-              {user?.nombres} {user?.apellidoPaterno}
-            </Typography>
-            <Typography variant="caption" color="text.secondary" noWrap>
-              {(typeof user?.roles?.[0] === 'string'
-                ? user.roles[0]
-                : user?.roles?.[0]?.authority || user?.roles?.[0]?.nombre || ''
-              ).replace(/_/g, ' ')}
-            </Typography>
+        {item.badge && !collapsed && (
+          <Box sx={{
+            bgcolor: 'error.main', color: 'white', fontSize: '0.7rem',
+            fontWeight: 700, px: 1, py: 0.25, borderRadius: 10, lineHeight: 1
+          }}>
+            {item.badge}
           </Box>
+        )}
+        {item.badge && collapsed && (
+          <Box sx={{ position: 'absolute', top: 8, right: 12, width: 8, height: 8, bgcolor: 'error.main', borderRadius: '50%', border: '2px solid white' }} />
+        )}
+      </ListItemButton>
+    );
+
+    return collapsed ? (
+      <Tooltip title={item.label} placement="right" arrow>
+        <ListItem disablePadding sx={{ display: 'block' }}>
+          {content}
+        </ListItem>
+      </Tooltip>
+    ) : (
+      <ListItem disablePadding sx={{ display: 'block' }}>
+        {content}
+      </ListItem>
+    );
+  };
+
+  const drawerContent = (
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: '#ffffff' }}>
+
+      {/* Header Sidebar */}
+      <Box sx={{
+        height: { xs: 56, sm: 64 }, display: 'flex', alignItems: 'center',
+        justifyContent: collapsed ? 'center' : 'flex-start', px: collapsed ? 0 : 2.5,
+        borderBottom: '1px solid', borderColor: 'divider'
+      }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, overflow: 'hidden' }}>
+          <Box sx={{ width: 32, height: 32, bgcolor: '#1a365d', borderRadius: 1.5, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <Typography variant="subtitle2" fontWeight={800} color="white">SG</Typography>
+          </Box>
+          {!collapsed && (
+            <Box>
+              <Typography variant="subtitle2" fontWeight={700} color="text.primary" noWrap sx={{ lineHeight: 1.2 }}>
+                SGPP UNT
+              </Typography>
+              <Typography variant="caption" color="text.secondary" fontWeight={500} noWrap>
+                Ing. Industrial
+              </Typography>
+            </Box>
+          )}
         </Box>
       </Box>
 
-      <List sx={{ flexGrow: 1, py: 1 }}>
-        {navItems.map((item) => {
-          const active = location.pathname === item.path;
-          return (
-            <ListItem key={item.path} disablePadding>
-              <ListItemButton
-                onClick={() => { navigate(item.path); if (isMobile) setDrawerOpen(false); }}
-                selected={active}
-                sx={{ mx: 1, borderRadius: 1.5, mb: 0.25 }}
+      {/* Navegación por Grupos */}
+      <Box sx={{ flexGrow: 1, overflowY: 'auto', overflowX: 'hidden', py: 2 }}>
+        {navGroups.map((group, index) => (
+          <Box key={group.group} sx={{ mb: 2 }}>
+            {!collapsed && (
+              <Typography
+                variant="overline"
+                color="text.disabled"
+                sx={{ px: 3, display: 'block', mb: 0.5, fontSize: '0.7rem', fontWeight: 700, letterSpacing: 1, lineHeight: 1.5 }}
               >
-                <ListItemIcon sx={{ minWidth: 36, color: active ? 'primary.main' : 'text.secondary' }}>
-                  {item.icon}
-                </ListItemIcon>
-                <ListItemText
-                  primary={item.label}
-                  slotProps={{ primaryTypography: { fontSize: '0.875rem', fontWeight: active ? 600 : 400 } }}
-                />
-              </ListItemButton>
-            </ListItem>
-          );
-        })}
-      </List>
+                {group.group}
+              </Typography>
+            )}
+            {collapsed && index > 0 && <Divider sx={{ mx: 2, my: 1 }} />}
+            <List disablePadding>
+              {group.items.map((item) => (
+                <NavItem key={item.path} item={item} collapsed={collapsed} />
+              ))}
+            </List>
+          </Box>
+        ))}
+      </Box>
 
       <Divider />
-      <List>
-        <ListItem disablePadding>
-          <ListItemButton onClick={handleLogout} sx={{ mx: 1, borderRadius: 2, color: 'error.main' }}>
-            <ListItemIcon sx={{ minWidth: 38, color: 'error.main' }}>
-              <Logout />
-            </ListItemIcon>
-            <ListItemText primary="Cerrar sesión" slotProps={{ primaryTypography: { fontSize: '0.875rem' } }} />
-          </ListItemButton>
-        </ListItem>
-      </List>
+
+      {/* Perfil Usuario Fixed Bottom */}
+      <Box sx={{ p: collapsed ? 1 : 2 }}>
+        <Box
+          onClick={(e) => setAnchorEl(e.currentTarget)}
+          sx={{
+            display: 'flex', alignItems: 'center', gap: 1.5, p: collapsed ? 0.5 : 1, borderRadius: 2, cursor: 'pointer',
+            transition: 'background 0.2s', justifyContent: collapsed ? 'center' : 'flex-start',
+            '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' }
+          }}
+        >
+          <Avatar sx={{ bgcolor: 'primary.main', width: 36, height: 36, fontSize: '0.85rem', flexShrink: 0 }}>
+            {getInitials(user?.nombres, user?.apellidoPaterno)}
+          </Avatar>
+          {!collapsed && (
+            <Box sx={{ overflow: 'hidden', flexGrow: 1 }}>
+              <Typography variant="body2" fontWeight={600} color="text.primary" noWrap>
+                {user?.nombres?.split(' ')[0]} {user?.apellidoPaterno}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.2, textTransform: 'capitalize' }} noWrap>
+                {(typeof user?.roles?.[0] === 'string' ? user.roles[0] : user?.roles?.[0]?.authority || '').replace(/_/g, ' ').toLowerCase()}
+              </Typography>
+            </Box>
+          )}
+        </Box>
+      </Box>
+
+      {/* Menu desplegable de perfil flotante */}
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={() => setAnchorEl(null)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        slotProps={{ paper: { sx: { borderRadius: 2, mb: 1, ml: 1, minWidth: 200, boxShadow: '0 4px 20px rgba(0,0,0,0.08)', border: '1px solid', borderColor: 'divider' } } }}
+      >
+        <Box sx={{ px: 2, py: 1.5, outline: 'none' }}>
+          <Typography variant="body2" fontWeight={700} color="text.primary">
+            {user?.nombres} {user?.apellidoPaterno}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">{user?.email}</Typography>
+        </Box>
+        <Divider />
+        <MenuItem onClick={() => { setAnchorEl(null); navigate('/perfil'); }} sx={{ py: 1.5 }}>
+          <AccountCircle sx={{ mr: 1.5, fontSize: 20, color: 'text.secondary' }} /> <Typography variant="body2" fontWeight={500}>Mi perfil</Typography>
+        </MenuItem>
+        <MenuItem onClick={handleLogout} sx={{ py: 1.5, color: 'error.main' }}>
+          <Logout sx={{ mr: 1.5, fontSize: 20 }} /> <Typography variant="body2" fontWeight={500}>Cerrar sesión</Typography>
+        </MenuItem>
+      </Menu>
+
     </Box>
   );
 
   return (
-    <Box sx={{ display: 'flex', bgcolor: 'background.default' }}>
-      {/* AppBar fijo: solo compensa el sidebar cuando está visible en desktop */}
+    <Box sx={{ display: 'flex', bgcolor: '#f8fafc', minHeight: '100vh' }}>
+      {/* AppBar */}
       <AppBar
         position="fixed"
         elevation={0}
         sx={{
-          zIndex: (t) => t.zIndex.drawer + 1,
-          bgcolor: '#fff',
-          borderBottom: '1px solid #e0e0e0',
-          width: sidebarVisible ? `calc(100% - ${DRAWER_WIDTH}px)` : '100%',
-          ml: sidebarVisible ? `${DRAWER_WIDTH}px` : 0,
+          zIndex: theme.zIndex.drawer + 1,
+          bgcolor: 'rgba(255, 255, 255, 0.85)',
+          backdropFilter: 'blur(8px)',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          width: { md: `calc(100% - ${drawerWidth}px)` },
+          ml: { md: `${drawerWidth}px` },
           transition: theme.transitions.create(['width', 'margin'], {
             easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.leavingScreen,
+            duration: theme.transitions.duration.standard,
           }),
         }}
       >
-        <Toolbar sx={{ minHeight: { xs: 56, sm: 64 }, px: { xs: 1.5, sm: 2 }, gap: 1 }}>
-          {/* Toggle sidebar */}
-          <Tooltip title={drawerOpen ? 'Contraer menú' : 'Expandir menú'}>
-            <IconButton
-              onClick={() => setDrawerOpen((p) => !p)}
-              sx={{ color: 'text.primary', flexShrink: 0 }}
-              edge="start"
-              aria-label={drawerOpen ? 'Contraer menú lateral' : 'Expandir menú lateral'}
-            >
-              {drawerOpen ? <ChevronLeft /> : <ViewSidebar />}
-            </IconButton>
-          </Tooltip>
-
-          {/* Título de página */}
-          <Typography
-            variant="subtitle1"
-            fontWeight={600}
-            color="primary.dark"
-            noWrap
-            sx={{ flexGrow: 1, minWidth: 0 }}
+        <Toolbar sx={{ minHeight: { xs: 56, sm: 64 }, px: { xs: 1.5, sm: 3 } }}>
+          <IconButton
+            onClick={handleDrawerToggle}
+            edge="start"
+            sx={{ color: 'text.primary', mr: 2 }}
+            aria-label="toggle menu"
           >
-            {navItems.find((n) => n.path === location.pathname)?.label || 'SGPP'}
+            <MenuIcon />
+          </IconButton>
+
+          <Typography variant="subtitle1" fontWeight={600} color="text.primary" noWrap sx={{ flexGrow: 1 }}>
+            {navGroups.flatMap(g => g.items).find((n) => n.path === location.pathname)?.label || 'Sistema de Gestión'}
           </Typography>
 
-          {/* Acciones alineadas a la derecha */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0, ml: 'auto' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <NotificationsMenu />
-
-            <Tooltip title={user?.username}>
-              <IconButton
-                onClick={(e) => setAnchorEl(e.currentTarget)}
-                aria-label="Menú de usuario"
-                sx={{ p: 0.5 }}
-              >
-                <Avatar sx={{ bgcolor: 'primary.main', width: 34, height: 34, fontSize: '0.85rem' }}>
-                  {getInitials(user?.nombres, user?.apellidoPaterno)}
-                </Avatar>
-              </IconButton>
-            </Tooltip>
-            <Menu
-              anchorEl={anchorEl}
-              open={Boolean(anchorEl)}
-              onClose={() => setAnchorEl(null)}
-              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-              slotProps={{ paper: { sx: { borderRadius: 2, mt: 1, minWidth: 200 } } }}
-            >
-              <MenuItem disabled>
-                <Box>
-                  <Typography variant="body2" fontWeight={600}>
-                    {user?.nombres} {user?.apellidoPaterno}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">{user?.email}</Typography>
-                </Box>
-              </MenuItem>
-              <Divider />
-              <MenuItem onClick={() => { setAnchorEl(null); navigate('/perfil'); }}>
-                <AccountCircle sx={{ mr: 1, fontSize: 20 }} /> Mi perfil
-              </MenuItem>
-              <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
-                <Logout sx={{ mr: 1, fontSize: 20 }} /> Cerrar sesión
-              </MenuItem>
-            </Menu>
           </Box>
         </Toolbar>
       </AppBar>
 
-      {/* Sidebar: en desktop ocupa espacio en el flex; en móvil es overlay */}
-      <Drawer
-        variant={isMobile ? 'temporary' : 'persistent'}
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        sx={{
-          width: sidebarVisible ? DRAWER_WIDTH : 0,
-          flexShrink: 0,
-          transition: theme.transitions.create('width', {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.leavingScreen,
-          }),
-          '& .MuiDrawer-paper': {
-            width: DRAWER_WIDTH,
-            boxSizing: 'border-box',
-            borderRight: '1px solid #e0e0e0',
-          },
-        }}
-      >
-        {drawerContent}
-      </Drawer>
+      {/* Drawer */}
+      <Box component="nav" sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}>
+        {isMobile ? (
+          <Drawer
+            variant="temporary"
+            open={mobileOpen}
+            onClose={handleDrawerToggle}
+            ModalProps={{ keepMounted: true }}
+            sx={{
+              display: { xs: 'block', md: 'none' },
+              '& .MuiDrawer-paper': { width: DRAWER_WIDTH_EXPANDED, boxSizing: 'border-box', borderRight: 'none', boxShadow: '4px 0 24px rgba(0,0,0,0.05)' },
+            }}
+          >
+            {drawerContent}
+          </Drawer>
+        ) : (
+          <Drawer
+            variant="permanent"
+            sx={{
+              display: { xs: 'none', md: 'block' },
+              '& .MuiDrawer-paper': {
+                width: drawerWidth,
+                boxSizing: 'border-box',
+                borderRight: '1px solid',
+                borderColor: 'divider',
+                transition: theme.transitions.create('width', {
+                  easing: theme.transitions.easing.sharp,
+                  duration: theme.transitions.duration.standard,
+                }),
+                overflowX: 'hidden'
+              },
+            }}
+            open
+          >
+            {drawerContent}
+          </Drawer>
+        )}
+      </Box>
 
-      {/* Contenido: sin margin-left extra (el drawer ya reserva su espacio en flex) */}
+      {/* Main Content */}
       <Box
         component="main"
         sx={{
           flexGrow: 1,
-          minWidth: 0,
-          width: '100%',
+          width: { xs: '100%', md: `calc(100% - ${drawerWidth}px)` },
           mt: { xs: '56px', sm: '64px' },
-          px: { xs: 2, sm: 2.5, md: 3 },
-          py: { xs: 2, md: 2.5 },
+          p: { xs: 2, sm: 3, md: 4 },
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column'
         }}
       >
-        <PageContainer>
+        <PageContainer sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
           <Outlet />
         </PageContainer>
       </Box>

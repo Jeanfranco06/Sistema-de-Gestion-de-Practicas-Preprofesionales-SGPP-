@@ -32,8 +32,20 @@ public class LoginResponse {
         private String apellidoMaterno;
         private String numeroDocumento;
         private String tipoDocumento;
-        private List<String> roles;
+        private String telefono;
+        private String tipoUsuario;
         private Boolean activo;
+        private Boolean cuentaBloqueada;
+        private List<String> roles;
+        private String codigoMatricula;
+        private String semestre;
+        private String codigoDocente;
+        private String categoria;
+        private String especialidad;
+        private String departamento;
+        private String empresaNombre;
+        private String cargo;
+        private String area;
     }
 }
 

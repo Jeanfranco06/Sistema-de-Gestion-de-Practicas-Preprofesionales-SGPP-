@@ -143,6 +143,9 @@ export const DashboardCoordinacion = () => {
         <Alert severity="info" sx={{ mb: 3 }}>No hay expedientes registrados en el sistema.</Alert>
       )}
 
+      <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
+        Indicadores Estadísticos
+      </Typography>
       <StatStrip items={stats} />
 
       <Grid container spacing={3}>

@@ -10,5 +10,6 @@ public interface EmpresaService {
     List<EmpresaDTO> findAll();
     void disable(Long id);
     void validate(Long id);
+    boolean checkRucAvailable(String ruc, Long excludeId);
 }
 

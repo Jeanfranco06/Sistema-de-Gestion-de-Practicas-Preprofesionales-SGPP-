@@ -23,5 +23,16 @@ public class UsuarioDTO {
     private Boolean activo;
     private Boolean cuentaBloqueada;
     private java.util.List<String> roles;
+    private String password;
+    private String codigoMatricula;
+    private String semestre;
+    private String codigoDocente;
+    private String categoria;
+    private String especialidad;
+    private String departamento;
+    private Long idEmpresa;
+    private Long idSede;
+    private String empresaNombre;
+    private String cargo;
+    private String area;
 }
-

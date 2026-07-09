@@ -49,3 +49,9 @@ INSERT INTO parametro_sistema (clave, valor, descripcion, tipo_dato, activo, cre
 ('NOTA_MINIMA_APROBACION', '13', 'Nota mínima para aprobar práctica (escala 0-20)', 'INTEGER', TRUE, 'SYSTEM'),
 ('DIAS_ANTICIPACION_REPORTE', '7', 'Días de anticipación para presentación de reportes', 'INTEGER', TRUE, 'SYSTEM')
 ON CONFLICT (clave) DO NOTHING;
+
+-- Parámetros de validación de requisitos académicos
+INSERT INTO parametro_sistema (clave, valor, descripcion, tipo_dato, activo, creado_por) VALUES
+('CREDITOS_REQUERIDOS_PRACTICA', '140', 'Créditos mínimos aprobados requeridos por defecto para práctica inicial (Art. 25 Reglamento PP-RG-01.09)', 'INTEGER', TRUE, 'SYSTEM'),
+('REQUISITO_SEMESTRE_MINIMO', '8', 'Semestre mínimo requerido para iniciar prácticas preprofesionales (octavo ciclo)', 'INTEGER', TRUE, 'SYSTEM')
+ON CONFLICT (clave) DO NOTHING;

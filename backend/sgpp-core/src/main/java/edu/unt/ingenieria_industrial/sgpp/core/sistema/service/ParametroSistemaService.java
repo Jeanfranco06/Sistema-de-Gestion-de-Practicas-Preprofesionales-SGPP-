@@ -38,6 +38,14 @@ public class ParametroSistemaService {
         return Integer.parseInt(getValorByClave(clave));
     }
 
+    public Integer getValorIntegerByClave(String clave, Integer defaultVal) {
+        try {
+            return Integer.parseInt(getValorByClave(clave));
+        } catch (ResourceNotFoundException | NumberFormatException e) {
+            return defaultVal;
+        }
+    }
+
     public ParametroSistema create(ParametroSistema parametro) {
         if (parametroSistemaRepository.existsByClave(parametro.getClave())) {
             throw new IllegalArgumentException("Ya existe un parámetro con la clave: " + parametro.getClave());

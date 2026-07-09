@@ -21,7 +21,7 @@ import java.util.Set;
 @RequestMapping("/usuarios")
 @RequiredArgsConstructor
 @Tag(name = "Gestión de Usuarios", description = "Endpoints para la administración de usuarios y roles")
-@PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COORDINADOR', 'DIRECTOR')")
+@PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COORDINADOR', 'DIRECTOR')")
 public class UsuarioController {
 
     private final UsuarioService usuarioService;
@@ -53,6 +53,23 @@ public class UsuarioController {
                 ApiResponse.<List<UsuarioDTO>>builder()
                         .success(true)
                         .data(usuarios)
+                        .timestamp(LocalDateTime.now())
+                        .build()
+        );
+    }
+
+    @GetMapping("/check-available")
+    @Operation(summary = "Verificar si un campo está disponible (no duplicado)")
+    public ResponseEntity<ApiResponse<Boolean>> checkFieldAvailable(
+            @Parameter(description = "Nombre del campo: username, email, numeroDocumento, codigoMatricula, codigoDocente") @RequestParam String field,
+            @Parameter(description = "Valor a verificar") @RequestParam String value,
+            @Parameter(description = "ID del usuario a excluir (para edición)") @RequestParam(required = false) Long excludeId) {
+        boolean available = usuarioService.checkFieldAvailable(field, value, excludeId);
+        return ResponseEntity.ok(
+                ApiResponse.<Boolean>builder()
+                        .success(true)
+                        .data(available)
+                        .message(available ? "Disponible" : "El valor ya está registrado")
                         .timestamp(LocalDateTime.now())
                         .build()
         );

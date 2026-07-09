@@ -22,5 +22,6 @@ public interface SedePracticaService {
     void cambiarEstado(Long id, String estado);
     List<SedeCatalogoDTO> getCatalogoSedes();
     SedeCatalogoDTO getDetalleSede(Long id);
+    boolean checkNombreDisponible(String nombre, Long empresaId, Long excludeId);
 }
 

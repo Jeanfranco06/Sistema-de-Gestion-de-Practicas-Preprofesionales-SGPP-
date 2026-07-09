@@ -19,7 +19,7 @@ import java.util.List;
 @RequestMapping("/tutores-externos")
 @RequiredArgsConstructor
 @Tag(name = "GestiÃ³n de Tutores Externos", description = "Endpoints para la administraciÃ³n de tutores externos")
-@PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COORDINADOR', 'DIRECTOR')")
+@PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'ADMINISTRADOR', 'COORDINADOR', 'DIRECTOR')")
 public class TutorExternoController {
 
     private final TutorExternoService tutorExternoService;

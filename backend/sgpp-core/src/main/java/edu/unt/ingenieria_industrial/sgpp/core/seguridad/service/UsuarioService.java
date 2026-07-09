@@ -17,5 +17,6 @@ public interface UsuarioService {
     void assignRoles(Long id, java.util.Set<String> roles);
     List<RolDTO> getRolesByUsuarioId(Long id);
     void revokeRol(Long usuarioId, Long rolId);
+    boolean checkFieldAvailable(String field, String value, Long excludeId);
 }
 

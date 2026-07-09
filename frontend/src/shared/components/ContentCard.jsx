@@ -1,6 +1,6 @@
 import { Paper } from '@mui/material';
 
-export default function ContentCard({ children, sx, noPadding = false, accent = false, ...props }) {
+export default function ContentCard({ children, sx, noPadding = false, accent = false }) {
   return (
     <Paper
       variant="outlined"
@@ -15,7 +15,6 @@ export default function ContentCard({ children, sx, noPadding = false, accent = 
         }),
         ...sx,
       }}
-      {...props}
     >
       {children}
     </Paper>

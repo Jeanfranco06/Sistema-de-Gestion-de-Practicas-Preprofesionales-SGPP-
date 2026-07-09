@@ -9,7 +9,10 @@ export const usuariosApi = {
     disable: (id) => api.delete(`/usuarios/${id}`),
     unlock: (id) => api.post(`/usuarios/${id}/unlock`),
     cambiarEstado: (id, data) => api.patch(`/usuarios/${id}/estado`, data),
-    assignRoles: (id, roles) => api.post(`/usuarios/${id}/roles`, roles)
+    assignRoles: (id, roles) => api.post(`/usuarios/${id}/roles`, roles),
+    checkField: (field, value, excludeId) => api.get('/usuarios/check-available', {
+        params: { field, value, excludeId: excludeId ?? undefined }
+    })
 };
 
 export const tutoresApi = {

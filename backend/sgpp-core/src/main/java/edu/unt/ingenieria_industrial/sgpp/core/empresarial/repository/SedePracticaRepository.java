@@ -7,9 +7,11 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface SedePracticaRepository extends JpaRepository<SedePractica, Long> {
+    Optional<SedePractica> findByNombreSedeAndEmpresaId(String nombreSede, Long empresaId);
     List<SedePractica> findByEmpresaIdAndActivoTrue(Long empresaId);
     List<SedePractica> findByActivoTrue();
 

@@ -195,7 +195,7 @@ export const ReportesCoordinacion = ({ variant = 'coordinacion' }) => {
     <ModulePageShell>
       <ModulePageHeader
         icon={<Assessment />}
-        title={isAdminView ? 'Reportes Administrativos' : 'Reportes Institucionales'}
+        title={isAdminView ? 'Reportes Administrativos' : 'Reportes Consolidados'}
         subtitle={
           isAdminView
             ? 'Consulta y exporta reportes operativos de expedientes, empresas, sedes y convenios para la gestión administrativa del SGPP.'

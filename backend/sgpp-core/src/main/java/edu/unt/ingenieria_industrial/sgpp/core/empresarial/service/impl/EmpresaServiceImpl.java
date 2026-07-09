@@ -81,6 +81,19 @@ public class EmpresaServiceImpl implements EmpresaService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public boolean checkRucAvailable(String ruc, Long excludeId) {
+        if (ruc == null || ruc.isBlank()) return true;
+        String normalized = ruc.trim();
+        if (excludeId != null) {
+            return empresaRepository.findByRuc(normalized)
+                    .map(e -> e.getId().equals(excludeId))
+                    .orElse(true);
+        }
+        return !empresaRepository.existsByRuc(normalized);
+    }
+
+    @Override
     @Transactional
     public void disable(Long id) {
         Empresa empresa = empresaRepository.findById(id)

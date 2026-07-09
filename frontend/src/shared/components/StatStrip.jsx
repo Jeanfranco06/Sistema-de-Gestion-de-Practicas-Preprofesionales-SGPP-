@@ -55,9 +55,7 @@ export default function StatStrip({ items = [], sx }) {
               <Typography
                 variant="caption"
                 color="text.secondary"
-                textTransform="uppercase"
-                letterSpacing={0.4}
-                display="block"
+                sx={{ textTransform: 'uppercase', letterSpacing: 0.4, display: 'block' }}
               >
                 {item.label}
               </Typography>

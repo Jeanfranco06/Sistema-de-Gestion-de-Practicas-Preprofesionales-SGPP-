@@ -8,7 +8,10 @@ export const empresaApi = {
     create: (data) => api.post('/empresas', data),
     update: (id, data) => api.put(`/empresas/${id}`, data),
     disable: (id) => api.delete(`/empresas/${id}/disable`),
-    validate: (id) => api.put(`/empresas/${id}/validate`)
+    validate: (id) => api.put(`/empresas/${id}/validate`),
+    checkRuc: (ruc, excludeId) => api.get('/empresas/check-ruc', {
+        params: { ruc, excludeId: excludeId ?? undefined }
+    })
 };
 
 export const sedeApi = {
@@ -19,7 +22,10 @@ export const sedeApi = {
     getDetalle: (id) => api.get(`/sedes/${id}/detalle`),
     create: (data) => api.post('/sedes', data),
     update: (id, data) => api.put(`/sedes/${id}`, data),
-    disable: (id) => api.delete(`/sedes/${id}/disable`)
+    disable: (id) => api.delete(`/sedes/${id}/disable`),
+    checkNombre: (nombre, empresaId, excludeId) => api.get('/sedes/check-nombre', {
+        params: { nombre, empresaId, excludeId: excludeId ?? undefined }
+    })
 };
 
 export const convenioApi = {

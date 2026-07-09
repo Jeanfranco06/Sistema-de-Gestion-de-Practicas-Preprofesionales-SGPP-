@@ -7,6 +7,7 @@ import edu.unt.ingenieria_industrial.sgpp.core.seguridad.dto.ValidacionRequisito
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.model.Estudiante;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.repository.EstudianteRepository;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.service.SecretariaService;
+import edu.unt.ingenieria_industrial.sgpp.core.sistema.service.ParametroSistemaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +33,7 @@ public class SecretariaServiceImpl implements SecretariaService {
     private final ExpedienteEstadoRepository estadoRepository;
     private final UsuarioRepository usuarioRepository;
     private final ExportacionService exportacionService;
+    private final ParametroSistemaService parametroSistemaService;
 
     @Override
     @Transactional(readOnly = true)
@@ -47,8 +49,9 @@ public class SecretariaServiceImpl implements SecretariaService {
         Estudiante estudiante = estudianteRepository.findById(estudianteId)
                 .orElseThrow(() -> new BusinessException("Estudiante no encontrado"));
 
+        Integer semestreRequerido = parametroSistemaService.getValorIntegerByClave("REQUISITO_SEMESTRE_MINIMO", 8);
         boolean cumpleCreditos = estudiante.getCreditosAprobados() >= estudiante.getCreditosRequeridosPractica();
-        boolean cumpleSemestre = estudiante.getSemestreActual() >= 8;
+        boolean cumpleSemestre = estudiante.getSemestreActual() >= semestreRequerido;
         boolean matriculaActiva = estudiante.getEstadoAcademico() == EstadoAcademico.ACTIVO;
 
         return ValidacionRequisitosDTO.builder()
@@ -57,7 +60,7 @@ public class SecretariaServiceImpl implements SecretariaService {
                 .creditosRequeridos(estudiante.getCreditosRequeridosPractica())
                 .cumpleSemestre(cumpleSemestre)
                 .semestreActual(estudiante.getSemestreActual())
-                .semestreRequerido(8)
+                .semestreRequerido(semestreRequerido)
                 .matriculaActiva(matriculaActiva)
                 .estadoAcademico(estudiante.getEstadoAcademico().name())
                 .aptoParaPracticas(cumpleCreditos && cumpleSemestre && matriculaActiva)

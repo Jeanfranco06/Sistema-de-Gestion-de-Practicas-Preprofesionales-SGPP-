@@ -51,16 +51,16 @@ export const GestionDocumental = () => {
 
   const fetchExpediente = async () => {
     try {
-        setLoading(true);
-        const res = await expedientesApi.getMisExpedientes();
-        const list = res.data?.data || [];
-        if (list.length > 0) {
-            setExpediente(list[0]);
-        }
+      setLoading(true);
+      const res = await expedientesApi.getMisExpedientes();
+      const list = res.data?.data || [];
+      if (list.length > 0) {
+        setExpediente(list[0]);
+      }
     } catch (err) {
-        console.error("Error fetching expediente:", err);
+      console.error("Error fetching expediente:", err);
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   };
 
@@ -74,32 +74,32 @@ export const GestionDocumental = () => {
 
   if (!expediente) {
     return (
-        <ModulePageShell>
+      <ModulePageShell>
         <ContentCard>
           <FolderZip sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
           <Typography variant="h6" gutterBottom>Sin expediente activo</Typography>
           <Typography variant="body2" color="text.secondary">No tienes ninguna práctica registrada para gestionar documentos.</Typography>
         </ContentCard>
-        </ModulePageShell>
+      </ModulePageShell>
     );
   }
 
-  const docObligatorios = expediente.codigoTipoPractica === 'INICIAL' 
-    ? DOCUMENTOS_OBLIGATORIOS_INICIAL 
+  const docObligatorios = expediente.codigoTipoPractica === 'INICIAL'
+    ? DOCUMENTOS_OBLIGATORIOS_INICIAL
     : DOCUMENTOS_OBLIGATORIOS_FINAL;
 
   const documentosConsolidados = [
-      ...(expediente.documentos || []).map(d => ({
-          id: d.id,
-          tipoId: d.tipoDocumento,
-          nombreOriginal: d.nombreArchivo || d.tipoDocumento,
-          fechaSubida: d.fechaSubida,
-          estado: 'APROBADO',
-          tamanio: 'N/A',
-          fileName: d.rutaArchivo || d.nombreArchivo
-      }))
+    ...(expediente.documentos || []).map(d => ({
+      id: d.id,
+      tipoId: d.tipoDocumento,
+      nombreOriginal: d.nombreArchivo || d.tipoDocumento,
+      fechaSubida: d.fechaSubida,
+      estado: 'APROBADO',
+      tamanio: 'N/A',
+      fileName: d.rutaArchivo || d.nombreArchivo
+    }))
   ];
-  
+
   const anexosList = documentosConsolidados.filter(d => d.tipoId === 'ANEXO');
 
   const handleTabChange = (event, newValue) => {
@@ -130,7 +130,7 @@ export const GestionDocumental = () => {
         });
         return;
       }
-      
+
       const maxMB = uploadDialog.isAnexo ? 10 : uploadDialog.docType.maxMB;
       if (file.size > maxMB * 1024 * 1024) {
         MySwal.fire({
@@ -142,7 +142,7 @@ export const GestionDocumental = () => {
         });
         return;
       }
-      
+
       setSelectedFile(file);
     }
   };
@@ -170,9 +170,9 @@ export const GestionDocumental = () => {
       // Guardar el documento en el Expediente
       const tipoDoc = uploadDialog.isAnexo ? 'ANEXO' : uploadDialog.docType.id;
       const nomDoc = uploadDialog.isAnexo ? anexoNombre : selectedFile.name;
-      
+
       await api.post(`/expedientes/${expediente.id}/documentos`, null, {
-          params: { tipoDocumento: tipoDoc, nombreDoc: nomDoc, fileName: fileName }
+        params: { tipoDocumento: tipoDoc, nombreDoc: nomDoc, fileName: fileName }
       });
 
       // Refrescar expediente
@@ -254,7 +254,7 @@ export const GestionDocumental = () => {
         ].map((item) => (
           <Grid item xs={12} sm={4} key={item.label}>
             <ContentCard sx={{ mb: 0, p: 2.25 }}>
-              <Typography variant="caption" color="text.secondary" textTransform="uppercase">
+              <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase' }}>
                 {item.label}
               </Typography>
               <Typography variant="h5" fontWeight={700} sx={{ color: item.color, mt: 0.5 }}>
