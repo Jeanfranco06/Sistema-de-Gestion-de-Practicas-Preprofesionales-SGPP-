@@ -22,6 +22,7 @@ import StatusChip from '../../../shared/components/StatusChip';
 const MySwal = withReactContent(Swal);
 
 const DOCUMENTOS_OBLIGATORIOS_INICIAL = [
+  { id: 'CARTA_ACEPTACION', nombre: 'Carta de Aceptación', formato: 'PDF', maxMB: 5 },
   { id: 'PLAN_PRACTICA', nombre: 'Plan de Prácticas', formato: 'PDF', maxMB: 5 },
   { id: 'INFORME_PARCIAL', nombre: 'Informes Parciales', formato: 'PDF', maxMB: 5 },
   { id: 'INFORME_FINAL', nombre: 'Informe Final', formato: 'PDF', maxMB: 10 },
@@ -174,6 +175,11 @@ export const GestionDocumental = () => {
       await api.post(`/expedientes/${expediente.id}/documentos`, null, {
         params: { tipoDocumento: tipoDoc, nombreDoc: nomDoc, fileName: fileName }
       });
+
+      // Si es Carta de Aceptación, notificar al sistema que el estudiante la presentó
+      if (tipoDoc === 'CARTA_ACEPTACION') {
+        await expedientesApi.presentarCartaAceptacion(expediente.id);
+      }
 
       // Refrescar expediente
       await fetchExpediente();

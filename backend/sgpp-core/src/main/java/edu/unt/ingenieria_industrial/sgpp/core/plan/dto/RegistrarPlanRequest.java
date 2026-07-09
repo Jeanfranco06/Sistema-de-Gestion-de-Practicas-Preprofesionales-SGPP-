@@ -29,6 +29,9 @@ public class RegistrarPlanRequest {
     @NotNull
     private EmpresaData datosEmpresa;
 
+    @Valid
+    private AreaDepartamentoData areaDepartamento;
+
     @NotBlank
     private String situacionProblematica;
 
@@ -38,6 +41,9 @@ public class RegistrarPlanRequest {
 
     @NotBlank
     private String tecnicasProcedimientos;
+
+    @Valid
+    private List<TeoriaTecnicaData> teoriasTecnicas;
 
     @NotEmpty
     @Valid
@@ -62,7 +68,6 @@ public class RegistrarPlanRequest {
         private String razonSocial;
         @NotBlank
         private String direccion;
-        @NotBlank
         private String representanteLegal;
         @NotBlank
         private String telefono;
@@ -70,6 +75,13 @@ public class RegistrarPlanRequest {
         private String celular;
         @NotBlank
         private String descripcionGeneral;
+    }
+
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class AreaDepartamentoData {
+        @NotBlank
+        private String areaDepartamento;
+        private String funcionarioACargo;
     }
 
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
@@ -83,14 +95,20 @@ public class RegistrarPlanRequest {
     }
 
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class TeoriaTecnicaData {
+        @NotBlank
+        private String nombre;
+        private String descripcion;
+    }
+
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor
     public static class ActividadData {
         private Long idObjetivoEspecifico;
         @NotBlank
         private String actividad;
-        @NotNull
         private LocalDate fechaInicioPrevista;
-        @NotNull
         private LocalDate fechaFinPrevista;
+        private Integer duracionSemanas;
         @NotNull
         private Integer orden;
     }

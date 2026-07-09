@@ -322,8 +322,10 @@ public class SedePracticaServiceImpl implements SedePracticaService {
         LocalDate fechaVigenciaValidacion = tieneValidacionVigente ? validacion.getFechaVigenciaHasta() : null;
 
         List<TutorExterno> tutores = tutorExternoRepository.findActiveBySedeId(sede.getId());
-        Boolean tieneTutorActivo = !tutores.isEmpty();
-        Integer cantidadTutoresActivos = tutores.size();
+        boolean tieneTutorTexto = sede.getNombreTutorEmpresa() != null
+                && !sede.getNombreTutorEmpresa().isBlank();
+        Boolean tieneTutorActivo = !tutores.isEmpty() || tieneTutorTexto;
+        Integer cantidadTutoresActivos = tutores.isEmpty() && tieneTutorTexto ? 1 : tutores.size();
         List<SedeCatalogoDTO.TutorInfoDTO> tutoresActivos = new ArrayList<>();
         for (TutorExterno t : tutores) {
             if (t.getUsuario() != null) {

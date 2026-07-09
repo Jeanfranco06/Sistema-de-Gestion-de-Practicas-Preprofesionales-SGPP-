@@ -53,7 +53,7 @@ Representante formal de la entidad receptora. Opera desde una interfaz restringi
 
 ### Secretaría Académica
 
-Verifica los requisitos de acceso del estudiante (mínimo 140 créditos aprobados para prácticas iniciales, o cursos hasta el octavo ciclo para prácticas finales), gestiona expedientes administrativos, emite constancias oficiales, resuelve incidencias de primer nivel y mantiene el historial inmutable de trazabilidad de todos los trámites.
+Verifica los requisitos de acceso del estudiante (mínimo 140 créditos aprobados para prácticas iniciales, o cursos hasta el octavo ciclo para prácticas finales), gestiona expedientes administrativos, revisa y valida que el trámite esté completo, lo marca como *listo para emisión*, resuelve incidencias de primer nivel y mantiene el historial inmutable de trazabilidad de todos los trámites. La emisión formal y firma de documentos oficiales (Carta de Presentación, Constancia de Prácticas) corresponde a la Dirección de Escuela.
 
 ### Comité de Prácticas
 
@@ -71,11 +71,11 @@ El sistema opera como una secuencia de etapas encadenadas, cada una habilitada p
 
 ### Etapa 1 — Validación de requisitos y solicitud
 
-El estudiante ingresa al portal con sus credenciales institucionales (`@unitru.edu.pe`). El sistema valida automáticamente si cumple los requisitos académicos: créditos mínimos, ciclo vigente y estado de matrícula. Si es apto, el estudiante selecciona una empresa del catálogo de sedes autorizadas por el Comité.
+El estudiante ingresa al portal con sus credenciales institucionales (`@unitru.edu.pe`). El sistema valida automáticamente si cumple los requisitos académicos: créditos mínimos, ciclo vigente y estado de matrícula. Si es apto, el estudiante selecciona una empresa del catálogo de sedes autorizadas por el Comité. El sistema crea automáticamente el expediente con la empresa y sede seleccionadas, quedando en estado `EMPRESA_SEDE_ASIGNADA`.
 
-### Etapa 2 — Generación automática de la Carta de Presentación
+### Etapa 2 — Validación administrativa y emisión de la Carta de Presentación
 
-Una vez seleccionada la sede, el sistema genera automáticamente la Carta de Presentación utilizando plantillas predefinidas con la identidad visual de la UNT, y la envía digitalmente tanto al estudiante como a la institución receptora. Este documento es firmado digitalmente por el Director de Escuela.
+La Secretaría Académica revisa la solicitud, verifica que los datos del estudiante y la sede sean correctos y que el expediente esté completo, y marca el expediente como *apto para carta* (transición `EMPRESA_SEDE_ASIGNADA → VALIDADO_SECRETARIA`). Una vez validado, el sistema —por cuenta de la Dirección de Escuela— genera la Carta de Presentación utilizando plantillas predefinidas con la identidad visual de la UNT, la cual es firmada digitalmente por el Director de Escuela y enviada digitalmente tanto al estudiante como a la institución receptora.
 
 ### Etapa 3 — Carga y aprobación del Plan de Prácticas
 
@@ -115,7 +115,7 @@ El SGPP gestiona en formato digital todos los documentos del proceso:
 
 | Documento | Generado por | Formato | Observaciones |
 |---|---|---|---|
-| Carta de Presentación | Sistema (automático) | PDF firmado digitalmente | Generado al aprobar sede |
+| Carta de Presentación | Sistema (previa validación de Secretaría y firma del Director) | PDF firmado digitalmente | Se genera tras validación administrativa de Secretaría; lo firma el Director |
 | Carta de Aceptación | Empresa receptora | PDF cargado por empresa | Requisito obligatorio |
 | Plan de Prácticas (Anexo 1) | Estudiante | PDF | Plazo: 15 días desde inicio |
 | Informes Parciales | Estudiante | PDF | Semanas 5 y 10 (iniciales) |
@@ -124,7 +124,7 @@ El SGPP gestiona en formato digital todos los documentos del proceso:
 | Constancia de Prácticas | Empresa receptora | PDF | Firmada por RRHH de la empresa |
 | Calificación del Expediente (Anexo 4) | Comité de Prácticas | Formulario digital | Plan + evaluación empresa + informe |
 | Reporte Consolidado | Sistema (automático) | PDF / CSV / XML | Para la Dirección de Escuela |
-| Constancia de Prácticas Concluidas | Dirección de Escuela | PDF firmado | Habilita condición de egresado |
+| Constancia de Prácticas Concluidas | Dirección de Escuela (previa validación de Secretaría) | PDF firmado | Habilita condición de egresado; Secretaría prepara el expediente y Dirección firma |
 
 ---
 

@@ -77,7 +77,9 @@ public class SedeElegibilidadServiceImpl implements SedeElegibilidadService {
 
         long tutoresActivos = tutorExternoRepository
                 .findActiveBySedeId(sede.getId()).size();
-        if (tutoresActivos == 0) {
+        boolean tieneTutorTexto = sede.getNombreTutorEmpresa() != null
+                && !sede.getNombreTutorEmpresa().isBlank();
+        if (tutoresActivos == 0 && !tieneTutorTexto) {
             motivos.add("No tiene un tutor de empresa activo asignado");
         }
 

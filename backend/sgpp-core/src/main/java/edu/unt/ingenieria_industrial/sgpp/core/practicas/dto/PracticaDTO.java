@@ -18,6 +18,10 @@ public class PracticaDTO {
     private String nombreEstudiante;
     private Long idSede;
     private String nombreSede;
+    private String razonSocialEmpresa;
+    private Long idTipoPractica;
+    private String codigoTipoPractica;
+    private String nombreTipoPractica;
     private Long idTutorExterno;
     private String nombreTutorExterno;
     private Long idEstado;

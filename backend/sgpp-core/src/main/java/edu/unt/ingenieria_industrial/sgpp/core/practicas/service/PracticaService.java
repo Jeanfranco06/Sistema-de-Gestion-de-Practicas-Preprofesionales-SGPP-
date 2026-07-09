@@ -13,4 +13,6 @@ public interface PracticaService {
     List<PracticaDTO> findAll();
     void disable(Long id);
     PracticaDTO seleccionarSede(Long estudianteId, Long sedeId);
+
+    PracticaDTO solicitarPractica(Long estudianteId, Long sedeId, Long tipoPracticaId);
 }

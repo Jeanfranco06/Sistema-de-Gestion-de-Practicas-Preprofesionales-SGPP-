@@ -34,6 +34,9 @@ public class PlanCronogramaActividad extends BaseEntity {
     @Column(name = "fecha_fin_prevista")
     private LocalDate fechaFinPrevista;
 
+    @Column(name = "duracion_semanas")
+    private Integer duracionSemanas;
+
     @Column(name = "orden", nullable = false)
     private Integer orden;
 

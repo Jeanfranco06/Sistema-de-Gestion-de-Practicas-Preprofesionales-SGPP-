@@ -9,7 +9,7 @@ import java.util.Optional;
 
 @Repository
 public interface RubricaRepository extends JpaRepository<Rubrica, Long> {
-    List<Rubrica> findByTipoEvaluadorAndActivoTrue(String tipoEvaluador);
+    List<Rubrica> findByComponenteAndActivoTrue(String componente);
     Optional<Rubrica> findByNombreAndActivoTrue(String nombre);
 }
 

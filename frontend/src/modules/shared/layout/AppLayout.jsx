@@ -32,7 +32,8 @@ function getNavGroups(roles = []) {
         group: 'Gestión Académica',
         items: [
           { label: 'Mi Práctica', icon: <Assignment />, path: '/estudiante/practica' },
-          { label: 'Documentos', icon: <Description />, path: '/estudiante/documentos' }, // Badge opcional aquí si hay observables
+          { label: 'Solicitar Práctica', icon: <Assignment />, path: '/estudiante/solicitar-practica' },
+          { label: 'Documentos', icon: <Description />, path: '/estudiante/documentos' },
           { label: 'Registro de Horas', icon: <AccessTime />, path: '/estudiante/horas' },
           { label: 'Informes', icon: <Assessment />, path: '/estudiante/informes' },
         ]

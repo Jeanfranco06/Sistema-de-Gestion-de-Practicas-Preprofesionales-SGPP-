@@ -6,6 +6,7 @@ import {
   Chip, TextField, MenuItem, Button, Alert, CircularProgress,
   Grid, Tooltip, Stack, LinearProgress, List, ListItem, ListItemText, ListItemIcon,
 } from '@mui/material';
+import { Description } from '@mui/icons-material';
 import {
   PeopleAlt, Assignment, PlaylistAddCheck, WarningAmber,
   RateReview, Business, CheckCircle, Refresh,
@@ -17,6 +18,11 @@ import {
 } from 'recharts';
 import { useAuth } from '../../../auth/AuthContext';
 import { expedientesApi } from '../../../api/expedientesApi';
+import { coordinacionApi } from '../../../api/coordinacionApi';
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
+
+const MySwal = withReactContent(Swal);
 import {
   ModulePageShell, ModulePageHeader,
 } from '../../../shared/components/module/ModulePageShell';
@@ -25,7 +31,8 @@ import StatStrip from '../../../shared/components/StatStrip';
 import StatusChip from '../../../shared/components/StatusChip';
 
 const ESTADOS = [
-  'SOLICITADO', 'EMPRESA_SEDE_ASIGNADA', 'ASESOR_ASIGNADO', 'COMITE_ASIGNADO',
+  'SOLICITADO', 'EMPRESA_SEDE_ASIGNADA', 'VALIDADO_SECRETARIA', 'CARTA_PRESENTACION_EMITIDA',
+  'ASESOR_ASIGNADO', 'COMITE_ASIGNADO',
   'CARTA_ACEPTACION_PRESENTADA', 'PLAN_PRESENTADO', 'EN_REVISION', 'OBSERVADO',
   'SUBSANADO', 'APROBADO', 'EN_EJECUCION', 'INFORME_PARCIAL_PRESENTADO',
   'INFORME_FINAL_PRESENTADO', 'EVALUADO', 'CERRADO',
@@ -33,6 +40,7 @@ const ESTADOS = [
 
 const ESTADO_COLOR = {
   SOLICITADO: '#94a3b8', EMPRESA_SEDE_ASIGNADA: '#3b82f6',
+  VALIDADO_SECRETARIA: '#10b981', CARTA_PRESENTACION_EMITIDA: '#6366f1',
   ASESOR_ASIGNADO: '#3b82f6', COMITE_ASIGNADO: '#3b82f6',
   CARTA_ACEPTACION_PRESENTADA: '#3b82f6', PLAN_PRESENTADO: '#eab308',
   EN_REVISION: '#eab308', OBSERVADO: '#ef4444', SUBSANADO: '#f59e0b',
@@ -54,6 +62,26 @@ export const DashboardCoordinacion = () => {
   const [filtroTipo, setFiltroTipo] = useState('TODOS');
   const [filtroEstado, setFiltroEstado] = useState('TODOS');
   const [searchTerm, setSearchTerm] = useState('');
+
+  const handleEmitirCarta = async (id) => {
+    try {
+      const res = await MySwal.fire({
+        title: 'Emitir Carta de Presentación',
+        text: '¿Estás seguro de emitir y firmar la Carta de Presentación para este expediente?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, emitir',
+        cancelButtonText: 'Cancelar',
+      });
+      if (res.isConfirmed) {
+        await coordinacionApi.emitirCartaPresentacion(id);
+        MySwal.fire('Éxito', 'Carta de Presentación emitida y firmada electrónicamente.', 'success');
+        fetchData();
+      }
+    } catch {
+      MySwal.fire('Error', 'No se pudo emitir la Carta de Presentación.', 'error');
+    }
+  };
 
   const fetchData = () => {
     setLoading(true);
@@ -80,6 +108,7 @@ export const DashboardCoordinacion = () => {
     cerrados: expedientes.filter(e => e.estado === 'CERRADO').length,
     enEjecucion: expedientes.filter(e => e.estado === 'EN_EJECUCION').length,
     observados: expedientes.filter(e => e.estado === 'OBSERVADO').length,
+    pendientesCarta: expedientes.filter(e => e.estado === 'VALIDADO_SECRETARIA').length,
     planPendiente: expedientes.filter(e => ['ASESOR_ASIGNADO', 'COMITE_ASIGNADO', 'CARTA_ACEPTACION_PRESENTADA'].includes(e.estado)).length,
     porEvaluar: expedientes.filter(e => ['INFORME_PARCIAL_PRESENTADO', 'INFORME_FINAL_PRESENTADO'].includes(e.estado)).length,
   }), [expedientes]);
@@ -121,8 +150,9 @@ export const DashboardCoordinacion = () => {
   const stats = [
     { label: 'Total', value: kpis.total, icon: <PeopleAlt fontSize="small" />, accent: 'blue' },
     { label: 'Activos', value: kpis.activos, icon: <PlaylistAddCheck fontSize="small" />, accent: 'teal' },
-    { label: 'Plan pendiente', value: kpis.planPendiente, icon: <Assignment fontSize="small" />, accent: 'violet' },
-    { label: 'Por evaluar', value: kpis.porEvaluar, icon: <RateReview fontSize="small" />, accent: 'emerald' },
+    { label: 'Pendientes carta', value: kpis.pendientesCarta, icon: <Description fontSize="small" />, accent: 'violet' },
+    { label: 'Plan pendiente', value: kpis.planPendiente, icon: <Assignment fontSize="small" />, accent: 'emerald' },
+    { label: 'Por evaluar', value: kpis.porEvaluar, icon: <RateReview fontSize="small" />, accent: 'orange' },
   ];
 
   return (
@@ -332,11 +362,22 @@ export const DashboardCoordinacion = () => {
                     <Typography variant="caption" color="text.secondary">{e.nombreEmpresa || ''}</Typography>
                   </TableCell>
                   <TableCell align="center">
-                    <Tooltip title="Ver detalle">
-                      <Button size="small" variant="outlined" onClick={() => navigate(`/coordinacion/expedientes/${e.id}`)}>
-                        <Visibility fontSize="small" />
-                      </Button>
-                    </Tooltip>
+                    <Stack direction="row" spacing={0.5} justifyContent="center">
+                      {e.estado === 'VALIDADO_SECRETARIA' && (
+                        <Tooltip title="Emitir y firmar Carta de Presentación">
+                          <Button size="small" variant="contained" color="success"
+                            onClick={() => handleEmitirCarta(e.id)}
+                            sx={{ fontWeight: 600, fontSize: '0.7rem', whiteSpace: 'nowrap', px: 1 }}>
+                            Emitir Carta
+                          </Button>
+                        </Tooltip>
+                      )}
+                      <Tooltip title="Ver detalle">
+                        <Button size="small" variant="outlined" onClick={() => navigate(`/coordinacion/expedientes/${e.id}`)}>
+                          <Visibility fontSize="small" />
+                        </Button>
+                      </Tooltip>
+                    </Stack>
                   </TableCell>
                 </TableRow>
               ))}

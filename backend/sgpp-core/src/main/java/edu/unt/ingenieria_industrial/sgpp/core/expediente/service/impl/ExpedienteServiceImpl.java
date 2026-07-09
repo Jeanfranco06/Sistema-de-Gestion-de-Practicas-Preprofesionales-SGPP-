@@ -47,6 +47,8 @@ public class ExpedienteServiceImpl implements ExpedienteService {
     private static final String TIPO_INICIAL = "INICIAL";
     private static final String TIPO_FINAL = "FINAL";
     private static final String TIPO_PROFESIONAL = "PROFESIONAL";
+    private static final String VALIDADO_SECRETARIA = "VALIDADO_SECRETARIA";
+    private static final String CARTA_PRESENTACION_EMITIDA = "CARTA_PRESENTACION_EMITIDA";
 
     private final ExpedienteRepository expedienteRepository;
     private final ExpedienteEstadoRepository estadoRepository;
@@ -156,7 +158,8 @@ public class ExpedienteServiceImpl implements ExpedienteService {
         if (!TIPO_INICIAL.equals(tipoCodigo)) {
             throw new BusinessException("Solo las prácticas iniciales requieren asignación de asesor individual");
         }
-        validarEstadoPara(expediente, "ASESOR_ASIGNADO", "EMPRESA_SEDE_ASIGNADA");
+        validarEstadoPara(expediente, "ASESOR_ASIGNADO", "EMPRESA_SEDE_ASIGNADA",
+                VALIDADO_SECRETARIA, CARTA_PRESENTACION_EMITIDA, "CARTA_ACEPTACION_PRESENTADA");
 
         Usuario asesor = usuarioRepository.findById(request.getIdAsesor())
                 .orElseThrow(() -> new ResourceNotFoundException("Docente asesor no encontrado"));
@@ -194,7 +197,8 @@ public class ExpedienteServiceImpl implements ExpedienteService {
         if (TIPO_INICIAL.equals(tipoCodigo)) {
             throw new BusinessException("Las prácticas iniciales no requieren asignación de comité");
         }
-        validarEstadoPara(expediente, "COMITE_ASIGNADO", "CARTA_ACEPTACION_PRESENTADA", "EMPRESA_SEDE_ASIGNADA");
+        validarEstadoPara(expediente, "COMITE_ASIGNADO", "CARTA_ACEPTACION_PRESENTADA", "EMPRESA_SEDE_ASIGNADA",
+                VALIDADO_SECRETARIA, CARTA_PRESENTACION_EMITIDA);
 
         List<ExpedienteComite> activos = comiteRepository.findByExpedienteIdAndActivoTrue(idExpediente);
         if (!activos.isEmpty()) {
@@ -225,6 +229,54 @@ public class ExpedienteServiceImpl implements ExpedienteService {
         plazoService.iniciarPlazo(expediente.getId(), "PRESENTACION_PLAN_FINAL",
                 fechaBaseFinal, null, null,
                 "Inicio de plazo para presentación del plan - Práctica Final/Profesional");
+
+        return toResponse(expediente);
+    }
+
+    @Override
+    public ExpedienteResponse validarExpediente(Long idExpediente, Long idUsuario) {
+        Expediente expediente = findExpediente(idExpediente);
+        validarEstadoPara(expediente, VALIDADO_SECRETARIA, "EMPRESA_SEDE_ASIGNADA");
+
+        expediente.setEstado(VALIDADO_SECRETARIA);
+        expediente = expedienteRepository.save(expediente);
+        registrarCambioEstado(expediente, "EMPRESA_SEDE_ASIGNADA", VALIDADO_SECRETARIA, idUsuario,
+                "Secretaría validó el expediente y lo marcó como listo para emisión de carta", "VALIDACION_SECRETARIA");
+
+        notificacionEventoService.notificarCambioEstadoExpediente(
+                expediente.getEstudiante().getUsuario().getId(),
+                expediente.getCodigoExpediente(), VALIDADO_SECRETARIA);
+
+        return toResponse(expediente);
+    }
+
+    @Override
+    public ExpedienteResponse emitirCartaPresentacion(Long idExpediente, Long idUsuario) {
+        Expediente expediente = findExpediente(idExpediente);
+        validarEstadoPara(expediente, CARTA_PRESENTACION_EMITIDA, VALIDADO_SECRETARIA);
+
+        expediente.setEstado(CARTA_PRESENTACION_EMITIDA);
+        expediente = expedienteRepository.save(expediente);
+        registrarCambioEstado(expediente, VALIDADO_SECRETARIA, CARTA_PRESENTACION_EMITIDA, idUsuario,
+                "Director emitió y firmó la Carta de Presentación", "EMISION_CARTA");
+
+        notificacionEventoService.notificarCambioEstadoExpediente(
+                expediente.getEstudiante().getUsuario().getId(),
+                expediente.getCodigoExpediente(), CARTA_PRESENTACION_EMITIDA);
+
+        return toResponse(expediente);
+    }
+
+    @Override
+    public ExpedienteResponse presentarCartaAceptacion(Long idExpediente, Long idUsuario) {
+        Expediente expediente = findExpediente(idExpediente);
+        validarEstadoPara(expediente, "CARTA_ACEPTACION_PRESENTADA", CARTA_PRESENTACION_EMITIDA);
+
+        expediente.setCartaAceptacionPresentada(true);
+        expediente.setEstado("CARTA_ACEPTACION_PRESENTADA");
+        expediente = expedienteRepository.save(expediente);
+        registrarCambioEstado(expediente, CARTA_PRESENTACION_EMITIDA, "CARTA_ACEPTACION_PRESENTADA", idUsuario,
+                "Estudiante presentó la Carta de Aceptación de la empresa", "PRESENTACION_ACEPTACION");
 
         return toResponse(expediente);
     }
@@ -721,13 +773,17 @@ public class ExpedienteServiceImpl implements ExpedienteService {
 
     private void validarTransicionManual(String actual, String destino, String tipoCodigo) {
         Map<String, Set<String>> transiciones = new HashMap<>();
-        Set<String> estadosInicial = Set.of("SOLICITADO", "EMPRESA_SEDE_ASIGNADA", "ASESOR_ASIGNADO",
-                "COMITE_ASIGNADO", "PLAN_PRESENTADO", "EN_REVISION", "OBSERVADO", "SUBSANADO",
-                "APROBADO", "EN_EJECUCION", "INFORME_PARCIAL_PRESENTADO", "INFORME_FINAL_PRESENTADO",
+        Set<String> estadosInicial = Set.of("SOLICITADO", "EMPRESA_SEDE_ASIGNADA",
+                VALIDADO_SECRETARIA, CARTA_PRESENTACION_EMITIDA,
+                "ASESOR_ASIGNADO", "COMITE_ASIGNADO", "PLAN_PRESENTADO", "EN_REVISION",
+                "OBSERVADO", "SUBSANADO", "APROBADO", "EN_EJECUCION",
+                "INFORME_PARCIAL_PRESENTADO", "INFORME_FINAL_PRESENTADO",
                 "EVALUADO", "CARTA_ACEPTACION_PRESENTADA");
 
         transiciones.put("SOLICITADO", estadosInicial);
         transiciones.put("EMPRESA_SEDE_ASIGNADA", estadosInicial);
+        transiciones.put(VALIDADO_SECRETARIA, estadosInicial);
+        transiciones.put(CARTA_PRESENTACION_EMITIDA, estadosInicial);
         transiciones.put("CARTA_ACEPTACION_PRESENTADA", estadosInicial);
         transiciones.put("ASESOR_ASIGNADO", estadosInicial);
         transiciones.put("COMITE_ASIGNADO", estadosInicial);

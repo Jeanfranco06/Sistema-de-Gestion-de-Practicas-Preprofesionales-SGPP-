@@ -80,3 +80,7 @@ export const horasApi = {
   getRegistros: (idExpediente) => api.get(`/horas/registros/${idExpediente}`),
 };
 
+export const coordinacionApi = {
+    emitirCartaPresentacion: (id) => api.put(`/coordinacion/expediente/${id}/emitir-carta-presentacion`),
+    emitirConstancia: (id) => api.put(`/coordinacion/expediente/${id}/emitir-constancia`),
+};

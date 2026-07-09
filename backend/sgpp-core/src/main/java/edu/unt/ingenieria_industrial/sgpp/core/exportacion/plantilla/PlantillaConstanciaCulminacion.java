@@ -9,15 +9,18 @@ import edu.unt.ingenieria_industrial.sgpp.shared.enums.TipoDocumentoInstituciona
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Locale;
 
 @Component
 @RequiredArgsConstructor
 public class PlantillaConstanciaCulminacion implements PlantillaDocumento<ContextoExpedienteDocumental> {
 
     private final ExportacionProperties properties;
+    private static final DateTimeFormatter FECHA_CONSTANCIA = DateTimeFormatter.ofPattern("d 'de' MMMM 'de' yyyy", new Locale("es", "PE"));
 
     @Override
     public TipoDocumentoInstitucional getTipoDocumento() {
@@ -29,59 +32,81 @@ public class PlantillaConstanciaCulminacion implements PlantillaDocumento<Contex
         Expediente e = ctx.getExpediente();
         var estudiante = e.getEstudiante();
         var usuarioEst = estudiante.getUsuario();
+        var empresa = e.getEmpresa();
 
-        Map<String, String> campos = new LinkedHashMap<>();
-        campos.put("Código expediente", e.getCodigoExpediente());
-        campos.put("Estudiante / egresado", UsuarioAutenticadoHelper.nombreCompleto(usuarioEst));
-        campos.put("Código estudiantil", estudiante.getCodigoEstudiantil());
-        campos.put("Condición solicitante", e.getCondicionSolicitante());
-        campos.put("Tipo de práctica", e.getTipoPractica().getNombre() + " (" + e.getTipoPractica().getCodigo() + ")");
-        campos.put("Periodo académico", e.getPeriodoAcademico());
-        campos.put("Empresa receptora", e.getEmpresa() != null ? e.getEmpresa().getRazonSocial() : "—");
-        campos.put("Sede de práctica", e.getSedePractica() != null ? e.getSedePractica().getNombreSede() : "—");
-        campos.put("Asesor académico", e.getAsesor() != null ? UsuarioAutenticadoHelper.nombreCompleto(e.getAsesor()) : "—");
-        campos.put("Fecha inicio práctica", String.valueOf(e.getFechaInicioPractica()));
-        campos.put("Fecha fin práctica", String.valueOf(e.getFechaFinPractica()));
-        campos.put("Estado del trámite", e.getEstado());
-        campos.put("Calificación final", e.getCalificacionFinal() != null ? e.getCalificacionFinal().toString() : "—");
-        campos.put("Emitido por", UsuarioAutenticadoHelper.nombreCompleto(ctx.getSolicitante()));
+        String nombreEstudiante = UsuarioAutenticadoHelper.nombreCompleto(usuarioEst);
+        String dniEstudiante = usuarioEst.getNumeroDocumento();
+        String codigoEstudiantil = estudiante.getCodigoEstudiantil();
+        String razonSocialEmpresa = empresa != null ? empresa.getRazonSocial() : "Empresa receptora";
+        String rucEmpresa = empresa != null ? empresa.getRuc() : "";
+        String direccionEmpresa = empresa != null ? empresa.getDireccion() : "";
+        String telefonoEmpresa = empresa != null ? empresa.getTelefono() : "";
+        String emailEmpresa = empresa != null ? empresa.getEmail() : "";
+        String fechaInicio = e.getFechaInicioPractica() != null ? e.getFechaInicioPractica().format(FECHA_CONSTANCIA) : "—";
+        String fechaFin = e.getFechaFinPractica() != null ? e.getFechaFinPractica().format(FECHA_CONSTANCIA) : "la fecha";
+        String calificacion = e.getCalificacionFinal() != null ? e.getCalificacionFinal().toString() : "—";
+        String escuela = properties.getUnidadAcademica();
+        String facultad = properties.getFacultad();
+        String ciudad = properties.getCiudad();
+        String fechaActual = LocalDate.now().format(FECHA_CONSTANCIA);
+        String nombreDirector = properties.getDirectorNombre() != null ? properties.getDirectorNombre() : "Director de la Escuela";
+        String dniDirector = properties.getDirectorDni() != null ? properties.getDirectorDni() : "";
 
-        String cuerpo = """
-                Por medio de la presente, la %s, a través de la %s, deja constancia \
-                que el(la) estudiante/egresado(a) identificado(a) ha llevado y concluido \
-                satisfactoriamente sus prácticas preprofesionales conforme al reglamento \
-                vigente y al expediente administrativo correspondiente.
+        String parrafoConstancia = String.format(
+                "%s, con R.U.C. %s, por medio del presente documento hace constar que el Sr. (Srta.):",
+                razonSocialEmpresa, rucEmpresa);
 
-                La presente constancia se emite para los fines que el interesado estime convenientes.
-                """.formatted(properties.getNombreInstitucion(), properties.getUnidadAcademica());
+        String parrafoDetalle = String.format(
+                "realiza prácticas profesionales en la Empresa desde el %s a %s, "
+                + "como requisito para la obtención del Título Profesional de la Escuela Profesional de %s, "
+                + "Facultad de %s – Universidad Nacional de Trujillo.",
+                fechaInicio, fechaFin, escuela, facultad);
+
+        String parrafoEmision = "Se emite el presente documento a solicitud del (de la) interesado (a) para los fines que estime convenientes.";
 
         return DocumentoRenderizable.builder()
-                .metadatos(metaBase(ctx, "CONSTANCIA DE CULMINACIÓN DE PRÁCTICAS PREPROFESIONALES"))
+                .metadatos(DocumentoRenderizable.MetadatosDocumento.builder()
+                        .titulo("CONSTANCIA DE PRÁCTICAS PROFESIONALES")
+                        .institucion(properties.getNombreInstitucion())
+                        .unidadAcademica(facultad + " / " + escuela)
+                        .tipoDocumento(TipoDocumentoInstitucional.CONSTANCIA_CULMINACION.name())
+                        .periodoConsultado(e.getPeriodoAcademico())
+                        .generadoPor(UsuarioAutenticadoHelper.nombreCompleto(ctx.getSolicitante()))
+                        .fechaGeneracion(ctx.getFechaGeneracion())
+                        .codigoTrazabilidad(ctx.getCodigoTrazabilidad())
+                        .build())
                 .secciones(List.of(
                         DocumentoRenderizable.SeccionDocumento.builder()
-                                .titulo("Datos del practicante y práctica")
-                                .tipo(DocumentoRenderizable.TipoSeccion.CAMPOS)
-                                .campos(campos)
+                                .tipo(DocumentoRenderizable.TipoSeccion.TEXTO)
+                                .contenidoTexto(ciudad + ", " + fechaActual)
                                 .build(),
                         DocumentoRenderizable.SeccionDocumento.builder()
-                                .titulo("Texto institucional")
                                 .tipo(DocumentoRenderizable.TipoSeccion.TEXTO)
-                                .contenidoTexto(cuerpo)
+                                .contenidoTexto(parrafoConstancia)
+                                .build(),
+                        DocumentoRenderizable.SeccionDocumento.builder()
+                                .tipo(DocumentoRenderizable.TipoSeccion.TEXTO)
+                                .contenidoTexto(nombreEstudiante.toUpperCase(Locale.ROOT)
+                                        + "\nCon DNI: " + dniEstudiante)
+                                .build(),
+                        DocumentoRenderizable.SeccionDocumento.builder()
+                                .tipo(DocumentoRenderizable.TipoSeccion.TEXTO)
+                                .contenidoTexto(parrafoDetalle)
+                                .build(),
+                        DocumentoRenderizable.SeccionDocumento.builder()
+                                .tipo(DocumentoRenderizable.TipoSeccion.TEXTO)
+                                .contenidoTexto(parrafoEmision)
+                                .build(),
+                        DocumentoRenderizable.SeccionDocumento.builder()
+                                .tipo(DocumentoRenderizable.TipoSeccion.TEXTO)
+                                .contenidoTexto(ciudad + ", " + fechaActual)
+                                .build(),
+                        DocumentoRenderizable.SeccionDocumento.builder()
+                                .tipo(DocumentoRenderizable.TipoSeccion.TEXTO)
+                                .contenidoTexto(nombreDirector
+                                        + "\nDIRECTOR\nDNI. " + dniDirector)
                                 .build()
                 ))
-                .build();
-    }
-
-    private DocumentoRenderizable.MetadatosDocumento metaBase(ContextoExpedienteDocumental ctx, String titulo) {
-        return DocumentoRenderizable.MetadatosDocumento.builder()
-                .titulo(titulo)
-                .institucion(properties.getNombreInstitucion())
-                .unidadAcademica(properties.getUnidadAcademica())
-                .tipoDocumento(TipoDocumentoInstitucional.CONSTANCIA_CULMINACION.name())
-                .periodoConsultado(ctx.getExpediente().getPeriodoAcademico())
-                .generadoPor(UsuarioAutenticadoHelper.nombreCompleto(ctx.getSolicitante()))
-                .fechaGeneracion(ctx.getFechaGeneracion())
-                .codigoTrazabilidad(ctx.getCodigoTrazabilidad())
                 .build();
     }
 }

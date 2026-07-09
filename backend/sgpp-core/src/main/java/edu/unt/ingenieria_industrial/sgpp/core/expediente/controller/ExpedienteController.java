@@ -53,6 +53,39 @@ public class ExpedienteController {
                 .success(true).message("Empresa y sede asignadas").data(response).timestamp(LocalDateTime.now()).build());
     }
 
+    @PutMapping("/{id}/validar")
+    @Operation(summary = "Validar expediente por Secretaría y marcarlo como listo para carta")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'SECRETARIA')")
+    public ResponseEntity<ApiResponse<ExpedienteResponse>> validarExpediente(
+            @PathVariable Long id,
+            @RequestAttribute(value = "idUsuario", required = false) Long idUsuario) {
+        ExpedienteResponse response = expedienteService.validarExpediente(id, idUsuario != null ? idUsuario : 1L);
+        return ResponseEntity.ok(ApiResponse.<ExpedienteResponse>builder()
+                .success(true).message("Expediente validado y marcado como listo para carta").data(response).timestamp(LocalDateTime.now()).build());
+    }
+
+    @PutMapping("/{id}/emitir-carta-presentacion")
+    @Operation(summary = "Emitir Carta de Presentación (Director/Coordinador)")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COORDINADOR', 'DIRECTOR')")
+    public ResponseEntity<ApiResponse<ExpedienteResponse>> emitirCartaPresentacion(
+            @PathVariable Long id,
+            @RequestAttribute(value = "idUsuario", required = false) Long idUsuario) {
+        ExpedienteResponse response = expedienteService.emitirCartaPresentacion(id, idUsuario != null ? idUsuario : 1L);
+        return ResponseEntity.ok(ApiResponse.<ExpedienteResponse>builder()
+                .success(true).message("Carta de Presentación emitida y firmada").data(response).timestamp(LocalDateTime.now()).build());
+    }
+
+    @PutMapping("/{id}/presentar-carta-aceptacion")
+    @Operation(summary = "Presentar Carta de Aceptación de la empresa (Estudiante)")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'ESTUDIANTE', 'SECRETARIA')")
+    public ResponseEntity<ApiResponse<ExpedienteResponse>> presentarCartaAceptacion(
+            @PathVariable Long id,
+            @RequestAttribute(value = "idUsuario", required = false) Long idUsuario) {
+        ExpedienteResponse response = expedienteService.presentarCartaAceptacion(id, idUsuario != null ? idUsuario : 1L);
+        return ResponseEntity.ok(ApiResponse.<ExpedienteResponse>builder()
+                .success(true).message("Carta de Aceptación registrada").data(response).timestamp(LocalDateTime.now()).build());
+    }
+
     @PutMapping("/{id}/asignar-asesor")
     @Operation(summary = "Asignar asesor docente (solo práctica inicial)")
     @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COORDINADOR', 'DIRECTOR', 'SECRETARIA')")

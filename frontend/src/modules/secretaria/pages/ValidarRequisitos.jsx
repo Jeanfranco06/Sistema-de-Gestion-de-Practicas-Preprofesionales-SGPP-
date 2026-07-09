@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
-    Typography, Box, Button, Table, TableBody, TableCell, TableHead, TableRow,
+    Typography, Box, Button, Paper, Table, TableBody, TableCell, TableHead, TableRow,
     Chip, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, InputAdornment, Tooltip,
-    TablePagination, MenuItem, FormControl, InputLabel, Select, Alert, CircularProgress, TableSortLabel, TableContainer,
-    Stack, LinearProgress, Card, CardContent, Collapse
+    TablePagination, MenuItem, FormControl, InputLabel, Select, Alert, CircularProgress, TableSortLabel,
+    Stack, LinearProgress, Card, CardContent, Collapse, Avatar, Fade
 } from '@mui/material';
 import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -11,7 +11,6 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import ErrorIcon from '@mui/icons-material/Error';
 import WarningIcon from '@mui/icons-material/Warning';
 import EditIcon from '@mui/icons-material/Edit';
-import VisibilityIcon from '@mui/icons-material/Visibility';
 import SearchIcon from '@mui/icons-material/Search';
 import GavelIcon from '@mui/icons-material/Gavel';
 import RuleIcon from '@mui/icons-material/Rule';
@@ -22,11 +21,6 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import SaveIcon from '@mui/icons-material/Save';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
-import {
-    ModulePageShell, ModulePageHeader,
-} from '../../../shared/components/module/ModulePageShell';
-import ContentCard from '../../../shared/components/ContentCard';
-import StatStrip from '../../../shared/components/StatStrip';
 import { secretariaApi } from '../../../api/usuariosApi';
 import { academicoApi } from '../../../api/validacionesApi';
 import Swal from 'sweetalert2';
@@ -38,9 +32,12 @@ const TIPO_PRACTICA_OPTS = ['INICIAL', 'FINAL'];
 
 const ESTADOS_ACADEMICOS = ['MATRICULADO', 'ACTIVO', 'SUSPENDIDO', 'EGRESADO', 'GRADUADO'];
 
-const ESTADO_ACADEMICO_COLOR = {
-    MATRICULADO: 'info', ACTIVO: 'success', SUSPENDIDO: 'warning',
-    EGRESADO: 'default', GRADUADO: 'secondary'
+const ESTADO_ACADEMICO_DOT = {
+    MATRICULADO: { dot: '#3b82f6', bg: '#eff6ff' },
+    ACTIVO: { dot: '#10b981', bg: '#ecfdf5' },
+    SUSPENDIDO: { dot: '#f59e0b', bg: '#fffbeb' },
+    EGRESADO: { dot: '#64748b', bg: '#f1f5f9' },
+    GRADUADO: { dot: '#8b5cf6', bg: '#f5f3ff' }
 };
 
 const getInitials = (nombre, apellido) => {
@@ -49,10 +46,51 @@ const getInitials = (nombre, apellido) => {
     return n + a || '?';
 };
 
+const DashboardCard = ({ title, action, children, sx }) => (
+    <Paper
+        elevation={0}
+        sx={{
+            p: { xs: 2.5, sm: 3, md: 4 }, borderRadius: 4, border: '1px solid', borderColor: 'divider',
+            bgcolor: 'background.paper', boxShadow: '0 4px 20px -10px rgba(0,0,0,0.05)',
+            display: 'flex', flexDirection: 'column', ...sx
+        }}
+    >
+        {(title || action) && (
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 2, mb: 3 }}>
+                {title && <Typography variant="h6" fontWeight={700} color="text.primary">{title}</Typography>}
+                {action && <Box sx={{ alignSelf: { xs: 'flex-start', sm: 'center' } }}>{action}</Box>}
+            </Box>
+        )}
+        <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>{children}</Box>
+    </Paper>
+);
+
+const StatCard = ({ label, value, icon, accent }) => {
+    const accentColors = {
+        blue: { bg: '#eff6ff', text: '#1e40af', icon: '#3b82f6' },
+        emerald: { bg: '#ecfdf5', text: '#065f46', icon: '#10b981' },
+        violet: { bg: '#f5f3ff', text: '#5b21b6', icon: '#8b5cf6' },
+        orange: { bg: '#fff7ed', text: '#9a3412', icon: '#f97316' }
+    };
+    const colors = accentColors[accent] || accentColors.blue;
+    return (
+        <Paper elevation={0} sx={{ flex: 1, minWidth: 140, p: 2.5, borderRadius: 3, bgcolor: colors.bg, border: '1px solid', borderColor: `${colors.icon}20` }}>
+            <Stack direction="row" spacing={1.5} alignItems="center">
+                <Box sx={{ color: colors.icon }}>{icon}</Box>
+                <Box>
+                    <Typography variant="h5" fontWeight={800} color={colors.text}>{value}</Typography>
+                    <Typography variant="caption" fontWeight={600} color={colors.text} sx={{ opacity: 0.8 }}>{label}</Typography>
+                </Box>
+            </Stack>
+        </Paper>
+    );
+};
+
 export const ValidarRequisitos = () => {
     const [estudiantes, setEstudiantes] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(true);
+    const [initialLoad, setInitialLoad] = useState(true);
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [order, setOrder] = useState('asc');
@@ -81,10 +119,6 @@ export const ValidarRequisitos = () => {
 
     const [ultimoResultado, setUltimoResultado] = useState(null);
 
-    useEffect(() => {
-        loadEstudiantes();
-    }, []);
-
     const loadEstudiantes = async () => {
         try {
             setLoading(true);
@@ -95,8 +129,13 @@ export const ValidarRequisitos = () => {
             MySwal.fire('Error', 'No se pudieron cargar los estudiantes.', 'error');
         } finally {
             setLoading(false);
+            setInitialLoad(false);
         }
     };
+
+    useEffect(() => {
+        loadEstudiantes(); // eslint-disable-line react-hooks/set-state-in-effect
+    }, []);
 
     const handleOpenValidar = async (estudiante) => {
         setSelectedEstudiante(estudiante);
@@ -110,9 +149,7 @@ export const ValidarRequisitos = () => {
             if (ultimo) {
                 setUltimoResultado(ultimo);
             }
-        } catch (e) {
-            // No tiene último resultado
-        }
+        } catch { /* ignore */ }
 
         setOpenValidarDialog(true);
     };
@@ -252,135 +289,186 @@ export const ValidarRequisitos = () => {
         { id: 'acciones', label: 'Acciones', sortable: false }
     ];
 
-    if (loading && estudiantes.length === 0) {
+    if (initialLoad) {
         return (
-            <ModulePageShell sx={{ textAlign: 'center' }}>
-                <CircularProgress />
-                <Typography variant="body1" sx={{ mt: 2 }}>Cargando estudiantes...</Typography>
-            </ModulePageShell>
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh', flexDirection: 'column', gap: 3 }}>
+                <CircularProgress size={48} thickness={4} sx={{ color: '#1a365d' }} />
+                <Typography variant="body1" color="text.secondary" fontWeight={500}>Cargando estudiantes...</Typography>
+            </Box>
         );
     }
 
     return (
-        <ModulePageShell>
-            <ModulePageHeader
-                icon={<AssignmentTurnedInIcon />}
-                title="Validación Académica y Administrativa"
-                subtitle="Verificación de requisitos académicos y normativos para inicio de prácticas preprofesionales."
-            />
+        <Box sx={{ px: { xs: 1.5, sm: 2, md: 2.5 }, py: { xs: 2, md: 4 }, width: '100%', pb: 8 }}>
+            <Fade in timeout={600}>
+                <Box>
+                    <Paper elevation={0} sx={{ mb: 4, borderRadius: { xs: 3, md: 4 }, overflow: 'hidden', bgcolor: '#1a365d', color: 'white', display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' }, p: { xs: 3, md: 5 }, gap: { xs: 4, md: 3 }, position: 'relative' }}>
+                        <Box sx={{ position: 'absolute', right: { xs: -20, md: 20 }, top: { xs: 10, md: -20 }, opacity: 0.1 }}>
+                            <AssignmentTurnedInIcon sx={{ fontSize: { xs: 150, md: 220 } }} />
+                        </Box>
+                        <Box sx={{ position: 'relative', zIndex: 1, width: '100%' }}>
+                            <Typography variant="overline" sx={{ opacity: 0.8, letterSpacing: 1.5, fontWeight: 600, display: 'block', mb: 0.5 }}>Secretaría Académica</Typography>
+                            <Typography variant="h3" fontWeight={800} sx={{ mt: 0, mb: 1.5, fontSize: { xs: '1.75rem', sm: '2rem', md: '2.5rem' }, wordBreak: 'break-word' }}>Validación de Requisitos</Typography>
+                            <Typography variant="subtitle1" sx={{ opacity: 0.9 }}>Verificación de requisitos académicos y normativos para inicio de prácticas preprofesionales.</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', position: 'relative', zIndex: 1, alignSelf: { xs: 'flex-end', md: 'center' } }}>
+                            <Tooltip title="Actualizar listado">
+                                <IconButton onClick={loadEstudiantes} sx={{ bgcolor: 'rgba(255,255,255,0.1)', color: 'white', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}>
+                                    <RefreshIcon />
+                                </IconButton>
+                            </Tooltip>
+                        </Box>
+                    </Paper>
 
-            <StatStrip items={stats} />
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 4 }}>
+                        {stats.map((s, i) => <StatCard key={i} {...s} />)}
+                    </Box>
 
-            <ContentCard accent>
-                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>Listado de Estudiantes</Typography>
+                    <DashboardCard sx={{ mb: 4 }}>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
+                            <TextField
+                                size="small" variant="outlined"
+                                placeholder="Buscar por código o nombre del estudiante..."
+                                value={searchTerm}
+                                onChange={handleSearchChange}
+                                sx={{ flexGrow: 1, minWidth: { xs: '100%', md: 300 } }}
+                                slotProps={{
+                                    input: {
+                                        startAdornment: <InputAdornment position="start"><SearchIcon color="action" /></InputAdornment>,
+                                        sx: { borderRadius: 2, bgcolor: '#f8fafc', '& fieldset': { borderColor: '#e2e8f0' } }
+                                    }
+                                }}
+                            />
+                            <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 200 } }}>
+                                <InputLabel>Estado Académico</InputLabel>
+                                <Select value={filtroEstadoAc} label="Estado Académico" onChange={(e) => setFiltroEstadoAc(e.target.value)} sx={{ borderRadius: 2, bgcolor: '#f8fafc' }}>
+                                    <MenuItem value="todos">Todos</MenuItem>
+                                    {ESTADOS_ACADEMICOS.map(ea => <MenuItem key={ea} value={ea}>{ea}</MenuItem>)}
+                                </Select>
+                            </FormControl>
+                            <Tooltip title="Limpiar filtros">
+                                <IconButton onClick={limpiarFiltros} sx={{ bgcolor: '#f1f5f9', color: '#64748b', borderRadius: 2, '&:hover': { bgcolor: '#e2e8f0' } }}>
+                                    <FilterListIcon />
+                                </IconButton>
+                            </Tooltip>
+                        </Box>
+                    </DashboardCard>
 
-                <Box sx={{ p: 2, mb: 3, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap', bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-                    <TextField
-                        size="small"
-                        variant="outlined"
-                        placeholder="Buscar por código o nombre del estudiante..."
-                        value={searchTerm}
-                        onChange={handleSearchChange}
-                        InputProps={{ startAdornment: <SearchIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} /> }}
-                        sx={{ minWidth: { xs: '100%', sm: 320 } }}
-                    />
-                    <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 200 } }}>
-                        <InputLabel>Estado Académico</InputLabel>
-                        <Select value={filtroEstadoAc} label="Estado Académico" onChange={(e) => setFiltroEstadoAc(e.target.value)} sx={{ borderRadius: 2, bgcolor: '#fff' }}>
-                            <MenuItem value="todos">Todos</MenuItem>
-                            {ESTADOS_ACADEMICOS.map(ea => <MenuItem key={ea} value={ea}>{ea}</MenuItem>)}
-                        </Select>
-                    </FormControl>
-                    <Button variant="outlined" size="medium" onClick={loadEstudiantes} startIcon={<RefreshIcon />}
-                        sx={{ borderRadius: 2, px: 3, fontWeight: 600, width: { xs: '100%', sm: 'auto' }, minHeight: '40px' }}>
-                        Actualizar
-                    </Button>
-                    <Button variant="outlined" size="medium" onClick={limpiarFiltros} startIcon={<FilterListIcon />}
-                        sx={{ borderRadius: 2, px: 3, fontWeight: 600 }}>Limpiar Filtros</Button>
-                </Box>
-
-                <TableContainer sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
-                    <Table size="small">
-                        <TableHead sx={{ bgcolor: 'background.default' }}>
-                            <TableRow>
-                                {headCells.map(hc => (
-                                    <TableCell key={hc.id} sx={{ fontWeight: 600 }}>
-                                        {hc.sortable !== false ? (
-                                            <TableSortLabel active={orderBy === hc.id} direction={orderBy === hc.id ? order : 'asc'}
-                                                onClick={() => handleSort(hc.id)}>
-                                                {hc.label}
-                                            </TableSortLabel>
-                                        ) : hc.label}
-                                    </TableCell>
-                                ))}
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {paginated.map((est) => {
-                                const nombre = `${est.nombres || ''} ${est.apellidoPaterno || ''}${est.apellidoMaterno ? ' ' + est.apellidoMaterno : ''}`;
-                                return (
-                                    <TableRow key={est.id} hover>
-                                        <TableCell sx={{ fontFamily: 'monospace', fontSize: 12 }}>{est.codigoEstudiantil}</TableCell>
-                                        <TableCell>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                                <Box sx={{ width: 32, height: 32, borderRadius: '50%', bgcolor: 'primary.light', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 'bold' }}>
-                                                    {getInitials(est.nombres, est.apellidoPaterno)}
-                                                </Box>
-                                                <Typography variant="body2">{nombre}</Typography>
-                                            </Box>
-                                        </TableCell>
-                                        <TableCell><Chip label={`${est.semestreActual || '—'}°`} size="small" variant="outlined" /></TableCell>
-                                        <TableCell>{est.creditosAprobados ?? '—'}</TableCell>
-                                        <TableCell>{est.promedioPonderado ?? '—'}</TableCell>
-                                        <TableCell><Chip label={est.estadoAcademico || '—'} size="small" color={ESTADO_ACADEMICO_COLOR[est.estadoAcademico] || 'default'} /></TableCell>
-                                        <TableCell align="center">
-                                            <Stack direction="row" spacing={0.3}>
-                                                <Tooltip title="Validar requisitos">
-                                                    <IconButton size="small" color="success" onClick={() => handleOpenValidar(est)}>
-                                                        <AssignmentTurnedInIcon fontSize="small" />
-                                                    </IconButton>
-                                                </Tooltip>
-                                                <Tooltip title="Historial de validaciones">
-                                                    <IconButton size="small" color="info" onClick={() => handleOpenHistorial(est)}>
-                                                        <HistoryIcon fontSize="small" />
-                                                    </IconButton>
-                                                </Tooltip>
-                                                <Tooltip title="Editar datos académicos">
-                                                    <IconButton size="small" color="primary" onClick={() => handleEdit(est)}>
-                                                        <EditIcon fontSize="small" />
-                                                    </IconButton>
-                                                </Tooltip>
-                                            </Stack>
-                                        </TableCell>
+                    <DashboardCard sx={{ p: { xs: 0, sm: 0, md: 0 }, overflow: 'hidden', position: 'relative' }}>
+                        {loading && (
+                            <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 }}>
+                                <LinearProgress sx={{ height: 3, '& .MuiLinearProgress-bar': { bgcolor: '#1a365d' }, bgcolor: '#e2e8f0' }} />
+                            </Box>
+                        )}
+                        <Box sx={{ overflowX: 'auto', opacity: loading ? 0.6 : 1, transition: 'opacity 0.2s ease-in-out' }}>
+                            <Table sx={{ minWidth: 800 }}>
+                                <TableHead sx={{ bgcolor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                                    <TableRow>
+                                        {headCells.map(hc => (
+                                            <TableCell key={hc.id} sx={{ fontWeight: 700, color: '#475569', py: 2 }}>
+                                                {hc.sortable !== false ? (
+                                                    <TableSortLabel active={orderBy === hc.id} direction={orderBy === hc.id ? order : 'asc'}
+                                                        onClick={() => handleSort(hc.id)}>
+                                                        {hc.label}
+                                                    </TableSortLabel>
+                                                ) : hc.label}
+                                            </TableCell>
+                                        ))}
                                     </TableRow>
-                                );
-                            })}
-                            {sortedEstudiantes.length === 0 && !loading && (
-                                <TableRow>
-                                    <TableCell colSpan={7} align="center" sx={{ py: 4, color: 'text.secondary' }}>No se encontraron estudiantes</TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                    <TablePagination rowsPerPageOptions={[5, 10, 25]} component="div" count={sortedEstudiantes.length}
-                        rowsPerPage={rowsPerPage} page={page} onPageChange={(_, p) => setPage(p)}
-                        onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
-                        labelRowsPerPage="Filas por página:" labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`} />
-                </TableContainer>
-            </ContentCard>
+                                </TableHead>
+                                <TableBody>
+                                    {paginated.map((est) => {
+                                        const nombre = `${est.nombres || ''} ${est.apellidoPaterno || ''}${est.apellidoMaterno ? ' ' + est.apellidoMaterno : ''}`;
+                                        const sc = ESTADO_ACADEMICO_DOT[est.estadoAcademico] || { dot: '#94a3b8', bg: '#f1f5f9' };
+                                        return (
+                                            <TableRow key={est.id} hover sx={{ '&:last-child td': { border: 0 } }}>
+                                                <TableCell>
+                                                    <Typography variant="body2" fontFamily="monospace" fontWeight={600} color="text.secondary">{est.codigoEstudiantil}</Typography>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                                        <Avatar sx={{ width: 36, height: 36, bgcolor: sc.bg, color: sc.dot, fontWeight: 700, fontSize: 13, border: '1px solid', borderColor: `${sc.dot}40` }}>
+                                                            {getInitials(est.nombres, est.apellidoPaterno)}
+                                                        </Avatar>
+                                                        <Box>
+                                                            <Typography variant="body2" fontWeight={700} color="text.primary">{nombre}</Typography>
+                                                        </Box>
+                                                    </Box>
+                                                </TableCell>
+                                                <TableCell><Chip label={`${est.semestreActual || '—'}°`} size="small" variant="outlined" /></TableCell>
+                                                <TableCell>
+                                                    <Typography variant="body2" fontWeight={600}>{est.creditosAprobados ?? '—'}</Typography>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Typography variant="body2">{est.promedioPonderado ?? '—'}</Typography>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Stack direction="row" spacing={1} alignItems="center">
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                                                            <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: sc.dot }} />
+                                                            <Typography variant="caption" fontWeight={700} color={sc.dot}>{est.estadoAcademico || '—'}</Typography>
+                                                        </Box>
+                                                    </Stack>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Stack direction="row" spacing={0.5} justifyContent="center">
+                                                        <Tooltip title="Validar requisitos" arrow>
+                                                            <IconButton size="small" onClick={() => handleOpenValidar(est)} sx={{ color: '#10b981', bgcolor: '#ecfdf5', '&:hover': { color: '#059669', bgcolor: '#d1fae5' } }}>
+                                                                <AssignmentTurnedInIcon fontSize="small" />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                        <Tooltip title="Historial de validaciones" arrow>
+                                                            <IconButton size="small" onClick={() => handleOpenHistorial(est)} sx={{ color: '#3b82f6', bgcolor: '#eff6ff', '&:hover': { color: '#2563eb', bgcolor: '#dbeafe' } }}>
+                                                                <HistoryIcon fontSize="small" />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                        <Tooltip title="Editar datos académicos" arrow>
+                                                            <IconButton size="small" onClick={() => handleEdit(est)} sx={{ color: '#8b5cf6', bgcolor: '#f5f3ff', '&:hover': { color: '#7c3aed', bgcolor: '#ede9fe' } }}>
+                                                                <EditIcon fontSize="small" />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                    </Stack>
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })}
+                                    {sortedEstudiantes.length === 0 && !loading && (
+                                        <TableRow>
+                                            <TableCell colSpan={7} align="center" sx={{ py: 8 }}>
+                                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, color: '#94a3b8' }}>
+                                                    <SearchIcon sx={{ fontSize: 48, opacity: 0.5 }} />
+                                                    <Typography variant="subtitle1" fontWeight={600}>No se encontraron estudiantes</Typography>
+                                                    <Typography variant="body2">Intenta ajustar los filtros o verifica la conexión.</Typography>
+                                                </Box>
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </Box>
+                        <TablePagination rowsPerPageOptions={[5, 10, 25]} component="div" count={sortedEstudiantes.length}
+                            rowsPerPage={rowsPerPage} page={page} onPageChange={(_, p) => setPage(p)}
+                            onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
+                            labelRowsPerPage="Filas por página:" labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`}
+                            sx={{ borderTop: '1px solid #e2e8f0' }} />
+                    </DashboardCard>
+                </Box>
+            </Fade>
 
             <Dialog open={openValidarDialog} onClose={() => { if (!validando) setOpenValidarDialog(false); }}
-                maxWidth="md" fullWidth slotProps={{ paper: { sx: { borderRadius: 3 } } }}>
+                maxWidth="md" fullWidth slotProps={{ paper: { sx: { borderRadius: 4, overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' } } }}>
                 <DialogTitle sx={{
                     bgcolor: resultadoValidacion
-                        ? (resultadoValidacion.apto ? 'success.main' : 'warning.main')
-                        : 'primary.main',
-                    color: '#fff', display: 'flex', alignItems: 'center', gap: 1, pb: 2
+                        ? (resultadoValidacion.apto ? '#065f46' : '#9a3412')
+                        : '#1a365d',
+                    color: '#fff', display: 'flex', alignItems: 'center', gap: 1.5, py: 2.5, px: 4
                 }}>
                     <GavelIcon />
-                    Validación Académica: {selectedEstudiante?.codigoEstudiantil || ''}
+                    <Typography variant="h6" fontWeight={700}>
+                        Validación Académica: {selectedEstudiante?.codigoEstudiantil || ''}
+                    </Typography>
                 </DialogTitle>
-                <DialogContent dividers sx={{ p: { xs: 2, md: 3 }, bgcolor: '#fbfbfb' }}>
+                <DialogContent sx={{ p: { xs: 2, md: 4 }, bgcolor: '#fff' }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
                         <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', md: 'row' }, alignItems: { md: 'flex-end' } }}>
                             <FormControl sx={{ minWidth: 200 }}>
@@ -415,9 +503,9 @@ export const ValidarRequisitos = () => {
                                     <Typography variant="body2">{resultadoValidacion.observacionesGenerales}</Typography>
                                 </Alert>
 
-                                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                                    <Chip label={`Normas aplicadas: ${(resultadoValidacion.normasAplicadas || []).join(', ')}`} color="info" variant="outlined" />
-                                    <Chip label={`Reglas cumplidas: ${resultadoValidacion.reglasCumplidas}/${resultadoValidacion.totalReglas}`}
+                                <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+                                    <Chip label={`Normas: ${(resultadoValidacion.normasAplicadas || []).join(', ')}`} color="info" variant="outlined" />
+                                    <Chip label={`Reglas: ${resultadoValidacion.reglasCumplidas}/${resultadoValidacion.totalReglas}`}
                                         color="success" variant="outlined" />
                                     <Chip label={`Tipo: ${resultadoValidacion.tipoPractica}`} variant="outlined" />
                                     <Chip label={`Periodo: ${resultadoValidacion.periodoAcademico || '—'}`} variant="outlined" />
@@ -439,19 +527,19 @@ export const ValidarRequisitos = () => {
                                     </Alert>
                                 )}
 
-                                <Typography variant="h6" sx={{ borderBottom: '2px solid', borderColor: 'primary.main', pb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Typography variant="h6" sx={{ borderBottom: '2px solid', borderColor: '#1a365d', pb: 1, display: 'flex', alignItems: 'center', gap: 1, color: '#1a365d' }}>
                                     <RuleIcon /> Detalle de Reglas Evaluadas
                                 </Typography>
 
                                 {(resultadoValidacion.detalles || []).map((detalle, idx) => {
                                     const isExpanded = detalleExpandido === idx;
                                     return (
-                                        <Card key={idx} variant="outlined" sx={{ borderRadius: 2, borderLeft: 4, borderLeftColor: detalle.cumplido ? 'success.main' : 'error.main' }}>
+                                        <Card key={idx} variant="outlined" sx={{ borderRadius: 2, borderLeft: 4, borderLeftColor: detalle.cumplido ? '#10b981' : '#ef4444' }}>
                                             <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
                                                 <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
                                                     {detalle.cumplido
-                                                        ? <CheckCircleIcon color="success" fontSize="small" sx={{ mt: 0.3 }} />
-                                                        : <CancelIcon color="error" fontSize="small" sx={{ mt: 0.3 }} />}
+                                                        ? <CheckCircleIcon sx={{ color: '#10b981', mt: 0.3 }} fontSize="small" />
+                                                        : <CancelIcon sx={{ color: '#ef4444', mt: 0.3 }} fontSize="small" />}
                                                     <Box sx={{ flex: 1 }}>
                                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                             <Box>
@@ -469,12 +557,12 @@ export const ValidarRequisitos = () => {
                                                             <Box sx={{ mt: 1.5, p: 1.5, bgcolor: '#f8fafc', borderRadius: 1 }}>
                                                                 {detalle.descripcion && (
                                                                     <Typography variant="body2" sx={{ mb: 0.5 }}>
-                                                                        <strong>Descripción:</strong> {detalle.descripcion}
-                                                                    </Typography>
+                                                        <strong>Descripción:</strong> {detalle.descripcion}
+                                                    </Typography>
                                                                 )}
                                                                 <Typography variant="body2">
-                                                                    <strong>Observación:</strong> {detalle.observaciones || '—'}
-                                                                </Typography>
+                                                        <strong>Observación:</strong> {detalle.observaciones || '—'}
+                                                    </Typography>
                                                             </Box>
                                                         </Collapse>
                                                     </Box>
@@ -506,16 +594,16 @@ export const ValidarRequisitos = () => {
                         )}
                     </Box>
                 </DialogContent>
-                <DialogActions sx={{ p: 2, px: 3, bgcolor: '#f4f6f8' }}>
-                    <Button onClick={() => setOpenValidarDialog(false)} color="inherit" disabled={validando} sx={{ fontWeight: 'bold' }}>Cerrar</Button>
+                <DialogActions sx={{ p: 3, bgcolor: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+                    <Button onClick={() => setOpenValidarDialog(false)} color="inherit" disabled={validando} sx={{ fontWeight: 600, color: '#64748b' }}>Cerrar</Button>
                 </DialogActions>
             </Dialog>
 
-            <Dialog open={openHistorialDialog} onClose={() => setOpenHistorialDialog(false)} maxWidth="md" fullWidth slotProps={{ paper: { sx: { borderRadius: 3 } } }}>
-                <DialogTitle sx={{ bgcolor: 'info.main', color: '#fff', display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <HistoryIcon /> Historial de Validaciones: {selectedEstudiante?.codigoEstudiantil}
+            <Dialog open={openHistorialDialog} onClose={() => setOpenHistorialDialog(false)} maxWidth="md" fullWidth slotProps={{ paper: { sx: { borderRadius: 4, overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' } } }}>
+                <DialogTitle sx={{ bgcolor: '#1a365d', color: '#fff', display: 'flex', alignItems: 'center', gap: 1.5, py: 2.5, px: 4 }}>
+                    <HistoryIcon /> <Typography variant="h6" fontWeight={700}>Historial de Validaciones: {selectedEstudiante?.codigoEstudiantil}</Typography>
                 </DialogTitle>
-                <DialogContent dividers sx={{ p: { xs: 2, md: 3 } }}>
+                <DialogContent sx={{ p: { xs: 2, md: 4 }, bgcolor: '#fff' }}>
                     {historialLoading ? (
                         <Box sx={{ textAlign: 'center', py: 4 }}><CircularProgress /></Box>
                     ) : historialValidaciones.length === 0 ? (
@@ -531,8 +619,8 @@ export const ValidarRequisitos = () => {
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, flexWrap: 'wrap', gap: 1 }}>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 {h.apto
-                                                    ? <CheckCircleIcon color="success" fontSize="small" />
-                                                    : <CancelIcon color="error" fontSize="small" />}
+                                                    ? <CheckCircleIcon sx={{ color: '#10b981' }} fontSize="small" />
+                                                    : <CancelIcon sx={{ color: '#ef4444' }} fontSize="small" />}
                                                 <Typography variant="subtitle2" fontWeight="bold">
                                                     {h.apto ? 'APTO' : 'NO APTO'} — {h.tipoPractica}
                                                 </Typography>
@@ -567,16 +655,16 @@ export const ValidarRequisitos = () => {
                         </Stack>
                     )}
                 </DialogContent>
-                <DialogActions sx={{ p: 2, px: 3, bgcolor: '#f4f6f8' }}>
-                    <Button onClick={() => setOpenHistorialDialog(false)} color="inherit">Cerrar</Button>
+                <DialogActions sx={{ p: 3, bgcolor: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+                    <Button onClick={() => setOpenHistorialDialog(false)} color="inherit" sx={{ fontWeight: 600, color: '#64748b' }}>Cerrar</Button>
                 </DialogActions>
             </Dialog>
 
-            <Dialog open={openEditDialog} onClose={() => setOpenEditDialog(false)} maxWidth="sm" fullWidth slotProps={{ paper: { sx: { borderRadius: 3 } } }}>
-                <DialogTitle sx={{ bgcolor: 'primary.main', color: '#fff', display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <EditIcon /> Editar Datos Académicos
+            <Dialog open={openEditDialog} onClose={() => setOpenEditDialog(false)} maxWidth="sm" fullWidth slotProps={{ paper: { sx: { borderRadius: 4, overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' } } }}>
+                <DialogTitle sx={{ bgcolor: '#1a365d', color: '#fff', display: 'flex', alignItems: 'center', gap: 1.5, py: 2.5, px: 4 }}>
+                    <EditIcon /> <Typography variant="h6" fontWeight={700}>Editar Datos Académicos</Typography>
                 </DialogTitle>
-                <DialogContent dividers sx={{ p: { xs: 2, md: 3 }, bgcolor: '#fbfbfb' }}>
+                <DialogContent sx={{ p: { xs: 2, md: 4 }, bgcolor: '#fff' }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, mt: 1 }}>
                         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2 }}>
                             <TextField fullWidth label="Semestre Actual" type="number" value={editForm.semestreActual}
@@ -600,13 +688,13 @@ export const ValidarRequisitos = () => {
                         </FormControl>
                     </Box>
                 </DialogContent>
-                <DialogActions sx={{ p: 2, px: 3, bgcolor: '#f4f6f8' }}>
-                    <Button onClick={() => setOpenEditDialog(false)} color="inherit">Cancelar</Button>
-                    <Button variant="contained" onClick={handleSaveEdit} disabled={editSaving} startIcon={editSaving ? <CircularProgress size={18} /> : <SaveIcon />} sx={{ px: 4, borderRadius: 2 }}>
+                <DialogActions sx={{ p: 3, bgcolor: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+                    <Button onClick={() => setOpenEditDialog(false)} color="inherit" sx={{ fontWeight: 600, color: '#64748b' }}>Cancelar</Button>
+                    <Button variant="contained" onClick={handleSaveEdit} disabled={editSaving} startIcon={editSaving ? <CircularProgress size={18} /> : <SaveIcon />} sx={{ px: 4, borderRadius: 2, fontWeight: 700, bgcolor: '#1a365d', '&:hover': { bgcolor: '#1e40af' } }}>
                         Guardar Cambios
                     </Button>
                 </DialogActions>
             </Dialog>
-        </ModulePageShell>
+        </Box>
     );
 };

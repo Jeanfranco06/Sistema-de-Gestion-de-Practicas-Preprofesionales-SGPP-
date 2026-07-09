@@ -45,10 +45,11 @@ Este documento sirve como guía paso a paso para verificar el flujo completo del
 ## 4. Flujo Completo de una Práctica (Paso a Paso)
 
 **Inicio del Trámite**
-- [ ] **Estudiante**: Solicita práctica inicial (elige entre Inicial, Intermedia o Final/Profesional) seleccionando la sede y empresa recién registrada.
-- [ ] **Secretaría**: Revisa la solicitud, valida los requisitos administrativos en sistema y emite la "Carta de Presentación".
-- [ ] **Estudiante**: Una vez entregada la carta física, sube al sistema la "Carta de Aceptación" firmada por la empresa receptora.
-
+- [x] **Estudiante**: Solicita práctica inicial (elige entre Inicial, Intermedia o Final/Profesional) seleccionando la sede y empresa recién registrada.
+- [ ] **Secretaría**: Revisa la solicitud, valida los requisitos administrativos en sistema y marca el expediente como *listo para emisión*.
+- [ ] **Director de Escuela**: Revisa el expediente validado y emite/firma la "Carta de Presentación" oficial.
+- [ ] **Estudiante**: Una vez recibida la carta, sube al sistema la "Carta de Aceptación" firmada por la empresa receptora.
+  
 **Plan de Prácticas**
 - [ ] **Estudiante**: Sube el documento o completa el formulario del "Plan de Prácticas".
 - [ ] **Docente Asesor**: Revisa el Plan de Prácticas y registra de manera intencional una *observación de prueba*.
@@ -69,7 +70,8 @@ Este documento sirve como guía paso a paso para verificar el flujo completo del
 - [ ] **Comité de Prácticas**: Revisa el expediente consolidado (informes, notas, plan) y emite un "Dictamen Final Aprobatorio".
 - [ ] **Secretaría**: Realiza la última validación de requisitos de egreso o término de trámite.
 - [ ] **Sistema**: El expediente cambia automáticamente a estado `CERRADO` o `FINALIZADO`.
-- [ ] **Secretaría**: Genera y emite la "Constancia de Prácticas" oficial para el estudiante.
+- [ ] **Secretaría**: Prepara el expediente y lo marca como listo para constancia.
+- [ ] **Director de Escuela**: Emite y firma la "Constancia de Prácticas" oficial para el estudiante.
 
 ## 5. Verificación de Reglas Normativas
 
@@ -103,7 +105,8 @@ Durante la ejecución del flujo anterior, se deben validar las siguientes reglas
 | 5   | Alta de Empresa y Sede | Secretaría | | |
 | 6   | Alta y vinculación de Convenio | Secretaría | | |
 | 7   | Solicitud de Trámite Inicial | Estudiante | | |
-| 8   | Emisión Carta de Presentación | Secretaría | | |
+| 8   | Validación administrativa y marcado "listo para carta" | Secretaría | | |
+| 8b  | Emisión y firma de Carta de Presentación | Director de Escuela | | |
 | 9   | Subida Carta de Aceptación | Estudiante | | |
 | 10  | Presentación del Plan de Prácticas | Estudiante | | |
 | 11  | Observación generada al Plan | Docente Asesor | | |
@@ -116,7 +119,7 @@ Durante la ejecución del flujo anterior, se deben validar las siguientes reglas
 | 18  | Calificación Tutor Externo | Tutor Externo | | |
 | 19  | Dictamen de Comité | Comité | | |
 | 20  | Validación Final / Cierre Expediente | Secretaría | | |
-| 21  | Emisión Constancia de Prácticas | Secretaría | | |
+| 21  | Emisión Constancia de Prácticas | Dirección de Escuela | | |
 | 22  | Test de Restricciones (Horas, Notas)| Sistema | | |
 | 23  | Test de Plazos y Bloqueos | Sistema | | |
 | 24  | Test de Aislamiento de Roles (Auth)| QA / Todos | | |

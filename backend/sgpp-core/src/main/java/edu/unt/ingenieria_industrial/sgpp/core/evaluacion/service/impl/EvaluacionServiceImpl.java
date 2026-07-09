@@ -38,17 +38,13 @@ public class EvaluacionServiceImpl implements EvaluacionService {
         Expediente expediente = expedienteRepository.findById(request.getIdExpediente())
                 .orElseThrow(() -> new ResourceNotFoundException("Expediente", "id", request.getIdExpediente()));
 
-        // Calcular puntaje ponderado de la evaluacion
-        // El puntaje ingresado por el usuario es sobre 20. El puntaje máximo del criterio es el peso (%)
         int puntajeTotal = request.getDetalles().stream()
                 .mapToInt(DetalleEvaluacionRequestDTO::getPuntajeObtenido)
-                .sum(); // Suma simple de notas para tracking o estadisticas
+                .sum();
 
-        // Determinar tipo de calificación
         String tipoPractica = expediente.getTipoPractica() != null ? expediente.getTipoPractica().getCodigo() : "FINAL";
         String tipoCalificacion = "INICIAL".equals(tipoPractica) ? "CUALITATIVA" : "VIGESIMAL";
 
-        // Crear evaluación
         Evaluacion evaluacionToSave = Evaluacion.builder()
                 .expediente(expediente)
                 .tipoEvaluador(request.getTipoEvaluador())
@@ -65,12 +61,9 @@ public class EvaluacionServiceImpl implements EvaluacionService {
 
         final Evaluacion evaluacion = evaluacionRepository.save(evaluacionToSave);
 
-        // Crear detalles de evaluación
         List<DetalleEvaluacion> detalles = request.getDetalles().stream()
                 .map(dto -> {
-                    CriterioEvaluacion criterio = criterioEvaluacionRepository.findById(dto.getIdCriterio())
-                            .orElseThrow(() -> new ResourceNotFoundException("Criterio de Evaluación", "id", dto.getIdCriterio()));
-
+                    CriterioEvaluacion criterio = buscarCriterio(dto.getIdCriterio());
                     return DetalleEvaluacion.builder()
                             .evaluacion(evaluacion)
                             .criterio(criterio)
@@ -82,7 +75,6 @@ public class EvaluacionServiceImpl implements EvaluacionService {
 
         detalleEvaluacionRepository.saveAll(detalles);
 
-        // Calcular promedio final
         BigDecimal promedio = calcularPromedioFinal(expediente.getId());
         String calificacionCualitativa = calcularCalificacionCualitativa(promedio.doubleValue());
 
@@ -122,10 +114,19 @@ public class EvaluacionServiceImpl implements EvaluacionService {
     public List<CriterioEvaluacionDTO> obtenerCriteriosPorTipoEvaluador(String componente) {
         List<CriterioEvaluacion> criterios = criterioEvaluacionRepository.findByComponenteAndActivoTrue(componente);
         log.info("Consultando criterios para componente: {}, encontrados: {}", componente, criterios.size());
-        return criterios
-                .stream()
+        return criterios.stream()
                 .map(this::toCriterioDTO)
                 .collect(Collectors.toList());
+    }
+
+    private CriterioEvaluacion buscarCriterio(Object idCriterio) {
+        if (idCriterio instanceof Number numId) {
+            return criterioEvaluacionRepository.findById(numId.longValue())
+                    .orElseThrow(() -> new ResourceNotFoundException("Criterio de Evaluación", "id", numId));
+        }
+        String codigo = String.valueOf(idCriterio);
+        return criterioEvaluacionRepository.findByCodigoAndActivoTrue(codigo)
+                .orElseThrow(() -> new ResourceNotFoundException("Criterio de Evaluación", "codigo", codigo));
     }
 
     private BigDecimal calcularPromedioFinal(Long idExpediente) {
@@ -135,22 +136,23 @@ public class EvaluacionServiceImpl implements EvaluacionService {
             return BigDecimal.ZERO;
         }
 
-        double promedioPonderadoTotal = 0;
+        int totalObtenido = 0;
+        int totalMaximo = 0;
 
         for (Evaluacion ev : evaluaciones) {
             List<DetalleEvaluacion> detalles = detalleEvaluacionRepository.findByEvaluacionId(ev.getId());
-            double puntajeComponente = 0;
-
             for (DetalleEvaluacion d : detalles) {
-                // Formula: Nota final = Suma(Nota * Peso%).
-                double nota = d.getPuntajeObtenido();
-                double pesoPorcentaje = d.getCriterio().getPuntajeMaximo() / 100.0;
-                puntajeComponente += nota * pesoPorcentaje;
+                totalObtenido += d.getPuntajeObtenido();
+                totalMaximo += d.getCriterio().getPuntajeMaximo();
             }
-            promedioPonderadoTotal += puntajeComponente;
         }
 
-        return BigDecimal.valueOf(promedioPonderadoTotal)
+        if (totalMaximo == 0) {
+            return BigDecimal.ZERO;
+        }
+
+        double promedioVigesimal = (totalObtenido * 20.0) / totalMaximo;
+        return BigDecimal.valueOf(promedioVigesimal)
                 .setScale(2, RoundingMode.HALF_UP);
     }
 

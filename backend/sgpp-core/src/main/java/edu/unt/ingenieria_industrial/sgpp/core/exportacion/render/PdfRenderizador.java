@@ -1,19 +1,29 @@
 package edu.unt.ingenieria_industrial.sgpp.core.exportacion.render;
 
 import com.lowagie.text.*;
+import com.lowagie.text.pdf.PdfContentByte;
+import com.lowagie.text.pdf.PdfGState;
 import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
+import com.lowagie.text.pdf.PdfReader;
+import com.lowagie.text.pdf.PdfStamper;
 import com.lowagie.text.pdf.PdfWriter;
 import edu.unt.ingenieria_industrial.sgpp.core.exportacion.domain.DocumentoRenderizable;
 import edu.unt.ingenieria_industrial.sgpp.shared.enums.FormatoExportacion;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 
 import java.awt.Color;
+import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import javax.imageio.ImageIO;
 
+@Slf4j
 @Component
 public class PdfRenderizador implements RenderizadorDocumento {
 
@@ -33,10 +43,14 @@ public class PdfRenderizador implements RenderizadorDocumento {
     public byte[] renderizar(DocumentoRenderizable documento) {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             Document pdf = new Document(PageSize.A4, 40, 40, 50, 50);
-            PdfWriter.getInstance(pdf, baos);
+            PdfWriter writer = PdfWriter.getInstance(pdf, baos);
             pdf.open();
 
-            agregarEncabezadoInstitucional(pdf, documento.getMetadatos());
+            boolean tieneLogos = tieneLogos(documento.getMetadatos());
+
+            if (!tieneLogos) {
+                agregarEncabezadoInstitucional(pdf, documento.getMetadatos());
+            }
             agregarMetadatosReporte(pdf, documento.getMetadatos());
 
             for (DocumentoRenderizable.SeccionDocumento seccion : documento.getSecciones()) {
@@ -45,9 +59,115 @@ public class PdfRenderizador implements RenderizadorDocumento {
 
             agregarPieTrazabilidad(pdf, documento.getMetadatos());
             pdf.close();
+
+            if (tieneLogos) {
+                byte[] contenido = baos.toByteArray();
+                byte[] conLogos = agregarLogosYMarcaDeAgua(contenido, documento.getMetadatos());
+                return conLogos;
+            }
+
             return baos.toByteArray();
         } catch (Exception e) {
             throw new IllegalStateException("Error al generar PDF institucional", e);
+        }
+    }
+
+    private boolean tieneLogos(DocumentoRenderizable.MetadatosDocumento meta) {
+        return (meta.getLogoIzquierdaPath() != null && !meta.getLogoIzquierdaPath().isBlank())
+                || (meta.getLogoDerechaPath() != null && !meta.getLogoDerechaPath().isBlank());
+    }
+
+    private byte[] agregarLogosYMarcaDeAgua(byte[] contenidoPdf, DocumentoRenderizable.MetadatosDocumento meta) throws Exception {
+        ByteArrayOutputStream baosFinal = new ByteArrayOutputStream();
+        PdfReader reader = new PdfReader(contenidoPdf);
+        PdfStamper stamper = new PdfStamper(reader, baosFinal);
+        PdfContentByte over;
+        PdfContentByte under;
+
+        int totalPaginas = reader.getNumberOfPages();
+
+        for (int i = 1; i <= totalPaginas; i++) {
+            Rectangle pageSize = reader.getPageSize(i);
+            float pageWidth = pageSize.getWidth();
+            float pageHeight = pageSize.getHeight();
+
+            over = stamper.getOverContent(i);
+
+            float logoHeight = 50;
+            float logoWidthIzq = 70;
+            float logoWidthDer = 50;
+            float topY = pageHeight - 35;
+            float leftX = 40;
+            float rightX = pageWidth - 40 - logoWidthDer;
+
+            if (meta.getLogoIzquierdaPath() != null && !meta.getLogoIzquierdaPath().isBlank()) {
+                Image logoIzq = cargarImagen(meta.getLogoIzquierdaPath());
+                if (logoIzq != null) {
+                    logoIzq.scaleToFit(logoWidthIzq, logoHeight);
+                    logoIzq.setAbsolutePosition(leftX, topY - logoHeight);
+                    over.addImage(logoIzq);
+                }
+            }
+
+            if (meta.getLogoDerechaPath() != null && !meta.getLogoDerechaPath().isBlank()) {
+                Image logoDer = cargarImagen(meta.getLogoDerechaPath());
+                if (logoDer != null) {
+                    logoDer.scaleToFit(logoWidthDer, logoHeight);
+                    logoDer.setAbsolutePosition(rightX, topY - logoHeight);
+                    over.addImage(logoDer);
+                }
+            }
+
+            if (i == 1 && meta.getMarcaDeAguaPath() != null && !meta.getMarcaDeAguaPath().isBlank()) {
+                Image marcaDeAgua = cargarImagen(meta.getMarcaDeAguaPath());
+                if (marcaDeAgua != null) {
+                    float wmSize = 250;
+                    marcaDeAgua.scaleToFit(wmSize, wmSize);
+                    float wmX = (pageWidth - wmSize) / 2;
+                    float wmY = (pageHeight - wmSize) / 2;
+
+                    PdfGState gs = new PdfGState();
+                    gs.setFillOpacity(0.08f);
+                    gs.setStrokeOpacity(0.08f);
+
+                    over.setGState(gs);
+                    marcaDeAgua.setAbsolutePosition(wmX, wmY);
+                    over.addImage(marcaDeAgua);
+                }
+            }
+
+            PdfContentByte underContent = stamper.getUnderContent(i);
+            Rectangle headerArea = new Rectangle(leftX, topY - logoHeight - 5, rightX + logoWidthDer, topY + 5);
+            underContent.setColorStroke(Color.WHITE);
+            underContent.rectangle(headerArea);
+            underContent.fill();
+        }
+
+        stamper.close();
+        reader.close();
+        return baosFinal.toByteArray();
+    }
+
+    private Image cargarImagen(String path) {
+        try {
+            ClassPathResource resource = new ClassPathResource(path);
+            if (resource.exists()) {
+                try (InputStream is = resource.getInputStream()) {
+                    BufferedImage bimg = ImageIO.read(is);
+                    if (bimg != null) {
+                        return Image.getInstance(bimg, null);
+                    }
+                }
+            }
+            java.io.File file = new java.io.File(path);
+            if (file.exists()) {
+                return Image.getInstance(path);
+            }
+            log.warn("Imagen no encontrada: {}", path);
+            return null;
+        } catch (Exception e) {
+            log.warn("Error cargando imagen {}: {}", path, e.getMessage());
+            return null;
         }
     }
 
@@ -107,10 +227,13 @@ public class PdfRenderizador implements RenderizadorDocumento {
         switch (seccion.getTipo()) {
             case TEXTO -> {
                 if (seccion.getContenidoTexto() != null) {
-                    Paragraph p = new Paragraph(seccion.getContenidoTexto(), FONT_NORMAL);
-                    p.setAlignment(Element.ALIGN_JUSTIFIED);
-                    p.setSpacingAfter(8);
-                    pdf.add(p);
+                    String[] lineas = seccion.getContenidoTexto().split("\n");
+                    for (String linea : lineas) {
+                        Paragraph p = new Paragraph(linea, FONT_NORMAL);
+                        p.setAlignment(Element.ALIGN_JUSTIFIED);
+                        p.setSpacingAfter(4);
+                        pdf.add(p);
+                    }
                 }
             }
             case CAMPOS -> agregarCampos(pdf, seccion.getCampos());

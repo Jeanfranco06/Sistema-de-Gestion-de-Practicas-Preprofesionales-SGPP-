@@ -19,6 +19,7 @@ import DashboardTutor from './modules/tutor/pages/DashboardTutor';
 import NoAutorizado from './modules/shared/NoAutorizado';
 import PaginaEnConstruccion from './modules/shared/PaginaEnConstruccion';
 import { CatalogoSedes } from './modules/sedes/pages/CatalogoSedes';
+import { SolicitarPractica } from './modules/estudiante/pages/SolicitarPractica';
 import { GestionSedes } from './modules/sedes/pages/GestionSedes';
 import { GestionEmpresas } from './modules/sedes/pages/GestionEmpresas';
 import { GestionConvenios } from './modules/sedes/pages/GestionConvenios';
@@ -70,7 +71,16 @@ export default function App() {
                   </ProtectedRoute>
                 }
               />
-              <Route path="/estudiante/practica" element={<PaginaEnConstruccion titulo="Mi Práctica" />} />
+              <Route path="/estudiante/practica" element={
+                <ProtectedRoute allowedRoles={['ESTUDIANTE']}>
+                  <PaginaEnConstruccion titulo="Mi Práctica" />
+                </ProtectedRoute>
+              } />
+              <Route path="/estudiante/solicitar-practica" element={
+                <ProtectedRoute allowedRoles={['ESTUDIANTE']}>
+                  <SolicitarPractica />
+                </ProtectedRoute>
+              } />
               <Route path="/estudiante/documentos" element={
                 <ProtectedRoute allowedRoles={['ESTUDIANTE']}>
                   <GestionDocumental />

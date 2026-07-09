@@ -23,8 +23,8 @@ public class Rubrica extends BaseEntity {
     @Column(name = "descripcion", columnDefinition = "TEXT")
     private String descripcion;
 
-    @Column(name = "tipo_evaluador", length = 50, nullable = false)
-    private String tipoEvaluador;
+    @Column(name = "componente", length = 50, nullable = false)
+    private String componente;
 
     @Column(name = "puntaje_total", nullable = false)
     private Integer puntajeTotal;

@@ -25,9 +25,11 @@ public class PlanGeneralResponse {
 
     private CaratulaResponse caratula;
     private EmpresaResponse datosEmpresa;
+    private AreaDepartamentoResponse areaDepartamento;
     private String situacionProblematica;
     private List<ObjetivoResponse> objetivos;
     private String tecnicasProcedimientos;
+    private List<TeoriaTecnicaResponse> teoriasTecnicas;
     private List<ActividadResponse> cronograma;
     private List<ObservacionResponse> observaciones;
     private List<HistorialEstadoResponse> historialEstados;
@@ -56,11 +58,23 @@ public class PlanGeneralResponse {
     }
 
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class AreaDepartamentoResponse {
+        private String areaDepartamento;
+        private String funcionarioACargo;
+    }
+
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor
     public static class ObjetivoResponse {
         private Long id;
         private String tipo;
         private String descripcion;
         private Integer orden;
+    }
+
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class TeoriaTecnicaResponse {
+        private String nombre;
+        private String descripcion;
     }
 
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
@@ -70,6 +84,7 @@ public class PlanGeneralResponse {
         private String actividad;
         private LocalDate fechaInicioPrevista;
         private LocalDate fechaFinPrevista;
+        private Integer duracionSemanas;
         private Integer orden;
     }
 

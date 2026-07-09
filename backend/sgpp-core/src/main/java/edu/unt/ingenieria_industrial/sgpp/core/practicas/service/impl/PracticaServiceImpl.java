@@ -6,7 +6,9 @@ import edu.unt.ingenieria_industrial.sgpp.core.empresarial.service.SedeElegibili
 import edu.unt.ingenieria_industrial.sgpp.core.model.EstadoPractica;
 import edu.unt.ingenieria_industrial.sgpp.core.practicas.dto.PracticaDTO;
 import edu.unt.ingenieria_industrial.sgpp.core.practicas.model.Practica;
+import edu.unt.ingenieria_industrial.sgpp.core.practicas.model.TipoPractica;
 import edu.unt.ingenieria_industrial.sgpp.core.practicas.repository.PracticaRepository;
+import edu.unt.ingenieria_industrial.sgpp.core.practicas.repository.TipoPracticaRepository;
 import edu.unt.ingenieria_industrial.sgpp.core.practicas.service.PracticaService;
 import edu.unt.ingenieria_industrial.sgpp.core.repository.EstadoPracticaRepository;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.model.Estudiante;
@@ -29,17 +31,20 @@ public class PracticaServiceImpl implements PracticaService {
     private final SedePracticaRepository sedePracticaRepository;
     private final EstadoPracticaRepository estadoPracticaRepository;
     private final SedeElegibilidadService sedeElegibilidadService;
+    private final TipoPracticaRepository tipoPracticaRepository;
 
     public PracticaServiceImpl(PracticaRepository practicaRepository,
                                 EstudianteRepository estudianteRepository,
                                 SedePracticaRepository sedePracticaRepository,
                                 EstadoPracticaRepository estadoPracticaRepository,
-                                SedeElegibilidadService sedeElegibilidadService) {
+                                SedeElegibilidadService sedeElegibilidadService,
+                                TipoPracticaRepository tipoPracticaRepository) {
         this.practicaRepository = practicaRepository;
         this.estudianteRepository = estudianteRepository;
         this.sedePracticaRepository = sedePracticaRepository;
         this.estadoPracticaRepository = estadoPracticaRepository;
         this.sedeElegibilidadService = sedeElegibilidadService;
+        this.tipoPracticaRepository = tipoPracticaRepository;
     }
 
     @Override
@@ -68,6 +73,49 @@ public class PracticaServiceImpl implements PracticaService {
         Practica practica = Practica.builder()
                 .estudiante(estudiante)
                 .sede(sede)
+                .estado(estadoRegistrada)
+                .fechaInicio(LocalDate.now())
+                .fechaFin(LocalDate.now().plusMonths(6))
+                .activo(true)
+                .build();
+
+        return toDto(practicaRepository.save(practica));
+    }
+
+    @Override
+    @Transactional
+    public PracticaDTO solicitarPractica(Long estudianteId, Long sedeId, Long tipoPracticaId) {
+        Estudiante estudiante = estudianteRepository.findById(estudianteId)
+                .orElseThrow(() -> new ResourceNotFoundException("Estudiante", "id", estudianteId));
+
+        SedePractica sede = sedePracticaRepository.findById(sedeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Sede", "id", sedeId));
+
+        TipoPractica tipoPractica = tipoPracticaRepository.findById(tipoPracticaId)
+                .orElseThrow(() -> new ResourceNotFoundException("TipoPractica", "id", tipoPracticaId));
+
+        if (!Boolean.TRUE.equals(tipoPractica.getActivo())) {
+            throw new BusinessException("El tipo de práctica seleccionado no está disponible actualmente.");
+        }
+
+        Optional<Practica> existing = practicaRepository.findByEstudianteIdAndActivoTrue(estudianteId);
+        if (existing.isPresent()) {
+            throw new BusinessException("El estudiante ya tiene una práctica activa. Debe finalizarla antes de solicitar una nueva.");
+        }
+
+        SedeElegibilidadService.ResultadoElegibilidad elegibilidad =
+                sedeElegibilidadService.evaluarElegibilidad(sede);
+        if (!elegibilidad.isElegible()) {
+            throw new BusinessException("La sede no está disponible para selección: " + elegibilidad.getMotivoResumen());
+        }
+
+        EstadoPractica estadoRegistrada = estadoPracticaRepository.findByCodigo("REGISTRADA")
+                .orElseThrow(() -> new RuntimeException("Estado REGISTRADA no configurado en el sistema"));
+
+        Practica practica = Practica.builder()
+                .estudiante(estudiante)
+                .sede(sede)
+                .tipoPractica(tipoPractica)
                 .estado(estadoRegistrada)
                 .fechaInicio(LocalDate.now())
                 .fechaFin(LocalDate.now().plusMonths(6))
@@ -181,13 +229,14 @@ public class PracticaServiceImpl implements PracticaService {
     }
 
     private PracticaDTO toDto(Practica entity) {
-        return PracticaDTO.builder()
+        PracticaDTO.PracticaDTOBuilder builder = PracticaDTO.builder()
                 .id(entity.getId())
                 .idEstudiante(entity.getEstudiante().getId())
                 .nombreEstudiante(entity.getEstudiante().getUsuario().getNombres()
                         + " " + entity.getEstudiante().getUsuario().getApellidoPaterno())
                 .idSede(entity.getSede().getId())
                 .nombreSede(entity.getSede().getNombreSede())
+                .razonSocialEmpresa(entity.getSede().getEmpresa().getRazonSocial())
                 .idEstado(entity.getEstado().getId())
                 .codigoEstado(entity.getEstado().getCodigo())
                 .fechaInicio(entity.getFechaInicio())
@@ -198,7 +247,14 @@ public class PracticaServiceImpl implements PracticaService {
                 .descripcionPuesto(entity.getDescripcionPuesto())
                 .remunerado(entity.getRemunerado())
                 .montoRemuneracion(entity.getMontoRemuneracion())
-                .activo(entity.getActivo())
-                .build();
+                .activo(entity.getActivo());
+
+        if (entity.getTipoPractica() != null) {
+            builder.idTipoPractica(entity.getTipoPractica().getId())
+                    .codigoTipoPractica(entity.getTipoPractica().getCodigo())
+                    .nombreTipoPractica(entity.getTipoPractica().getNombre());
+        }
+
+        return builder.build();
     }
 }

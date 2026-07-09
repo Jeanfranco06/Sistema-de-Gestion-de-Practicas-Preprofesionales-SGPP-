@@ -41,8 +41,10 @@ public class PlanGeneralServiceImpl implements PlanGeneralService {
 
     private static final String SECCION_CARATULA = "CARATULA";
     private static final String SECCION_DATOS_EMPRESA = "DATOS_EMPRESA";
+    private static final String SECCION_AREA_DEPARTAMENTO = "AREA_DEPARTAMENTO";
     private static final String SECCION_SITUACION_PROBLEMATICA = "SITUACION_PROBLEMATICA";
     private static final String SECCION_TECNICAS_PROCEDIMIENTOS = "TECNICAS_PROCEDIMIENTOS";
+    private static final String SECCION_TEORIAS_TECNICAS = "TEORIAS_TECNICAS";
 
     private final PlanGeneralRepository planRepository;
     private final PlanSeccionRepository seccionRepository;
@@ -533,8 +535,14 @@ public class PlanGeneralServiceImpl implements PlanGeneralService {
     private void guardarSecciones(PlanGeneral plan, RegistrarPlanRequest request) {
         guardarSeccion(plan, SECCION_CARATULA, toJson(request.getCaratula()), 1);
         guardarSeccion(plan, SECCION_DATOS_EMPRESA, toJson(request.getDatosEmpresa()), 2);
-        guardarSeccion(plan, SECCION_SITUACION_PROBLEMATICA, request.getSituacionProblematica(), 3);
-        guardarSeccion(plan, SECCION_TECNICAS_PROCEDIMIENTOS, request.getTecnicasProcedimientos(), 4);
+        if (request.getAreaDepartamento() != null) {
+            guardarSeccion(plan, SECCION_AREA_DEPARTAMENTO, toJson(request.getAreaDepartamento()), 3);
+        }
+        guardarSeccion(plan, SECCION_SITUACION_PROBLEMATICA, request.getSituacionProblematica(), 4);
+        guardarSeccion(plan, SECCION_TECNICAS_PROCEDIMIENTOS, request.getTecnicasProcedimientos(), 5);
+        if (request.getTeoriasTecnicas() != null && !request.getTeoriasTecnicas().isEmpty()) {
+            guardarSeccion(plan, SECCION_TEORIAS_TECNICAS, toJson(request.getTeoriasTecnicas()), 6);
+        }
     }
 
     private void guardarSeccion(PlanGeneral plan, String tipo, String contenido, int orden) {
@@ -591,6 +599,7 @@ public class PlanGeneralServiceImpl implements PlanGeneralService {
                     .actividad(ad.getActividad())
                     .fechaInicioPrevista(ad.getFechaInicioPrevista())
                     .fechaFinPrevista(ad.getFechaFinPrevista())
+                    .duracionSemanas(ad.getDuracionSemanas())
                     .orden(ad.getOrden() != null ? ad.getOrden() : i + 1)
                     .build();
             cronogramaRepository.save(act);
@@ -604,8 +613,14 @@ public class PlanGeneralServiceImpl implements PlanGeneralService {
 
         actualizarOReemplazarSeccion(plan, seccionMap, SECCION_CARATULA, toJson(request.getCaratula()), 1);
         actualizarOReemplazarSeccion(plan, seccionMap, SECCION_DATOS_EMPRESA, toJson(request.getDatosEmpresa()), 2);
-        actualizarOReemplazarSeccion(plan, seccionMap, SECCION_SITUACION_PROBLEMATICA, request.getSituacionProblematica(), 3);
-        actualizarOReemplazarSeccion(plan, seccionMap, SECCION_TECNICAS_PROCEDIMIENTOS, request.getTecnicasProcedimientos(), 4);
+        if (request.getAreaDepartamento() != null) {
+            actualizarOReemplazarSeccion(plan, seccionMap, SECCION_AREA_DEPARTAMENTO, toJson(request.getAreaDepartamento()), 3);
+        }
+        actualizarOReemplazarSeccion(plan, seccionMap, SECCION_SITUACION_PROBLEMATICA, request.getSituacionProblematica(), 4);
+        actualizarOReemplazarSeccion(plan, seccionMap, SECCION_TECNICAS_PROCEDIMIENTOS, request.getTecnicasProcedimientos(), 5);
+        if (request.getTeoriasTecnicas() != null && !request.getTeoriasTecnicas().isEmpty()) {
+            actualizarOReemplazarSeccion(plan, seccionMap, SECCION_TEORIAS_TECNICAS, toJson(request.getTeoriasTecnicas()), 6);
+        }
     }
 
     private void actualizarOReemplazarSeccion(PlanGeneral plan, Map<String, PlanSeccion> seccionMap,
@@ -716,11 +731,30 @@ public class PlanGeneralServiceImpl implements PlanGeneralService {
                                 .descripcionGeneral(emp.getDescripcionGeneral())
                                 .build());
                         break;
+                    case SECCION_AREA_DEPARTAMENTO:
+                        RegistrarPlanRequest.AreaDepartamentoData area = objectMapper.readValue(
+                                s.getContenido(), RegistrarPlanRequest.AreaDepartamentoData.class);
+                        builder.areaDepartamento(PlanGeneralResponse.AreaDepartamentoResponse.builder()
+                                .areaDepartamento(area.getAreaDepartamento())
+                                .funcionarioACargo(area.getFuncionarioACargo())
+                                .build());
+                        break;
                     case SECCION_SITUACION_PROBLEMATICA:
                         builder.situacionProblematica(s.getContenido());
                         break;
                     case SECCION_TECNICAS_PROCEDIMIENTOS:
                         builder.tecnicasProcedimientos(s.getContenido());
+                        break;
+                    case SECCION_TEORIAS_TECNICAS:
+                        List<RegistrarPlanRequest.TeoriaTecnicaData> teorias = objectMapper.readValue(
+                                s.getContenido(),
+                                objectMapper.getTypeFactory().constructCollectionType(List.class, RegistrarPlanRequest.TeoriaTecnicaData.class));
+                        builder.teoriasTecnicas(teorias.stream()
+                                .map(t -> PlanGeneralResponse.TeoriaTecnicaResponse.builder()
+                                        .nombre(t.getNombre())
+                                        .descripcion(t.getDescripcion())
+                                        .build())
+                                .collect(Collectors.toList()));
                         break;
                 }
             } catch (JsonProcessingException e) {
@@ -748,6 +782,7 @@ public class PlanGeneralServiceImpl implements PlanGeneralService {
                         .actividad(a.getActividad())
                         .fechaInicioPrevista(a.getFechaInicioPrevista())
                         .fechaFinPrevista(a.getFechaFinPrevista())
+                        .duracionSemanas(a.getDuracionSemanas())
                         .orden(a.getOrden())
                         .build())
                 .sorted(Comparator.comparing(PlanGeneralResponse.ActividadResponse::getOrden))

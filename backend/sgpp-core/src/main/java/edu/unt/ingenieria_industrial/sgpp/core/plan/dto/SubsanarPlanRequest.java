@@ -9,7 +9,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
 import java.util.List;
 
 @Data
@@ -32,6 +31,9 @@ public class SubsanarPlanRequest {
     @NotNull
     private RegistrarPlanRequest.EmpresaData datosEmpresa;
 
+    @Valid
+    private RegistrarPlanRequest.AreaDepartamentoData areaDepartamento;
+
     @NotBlank
     private String situacionProblematica;
 
@@ -41,6 +43,9 @@ public class SubsanarPlanRequest {
 
     @NotBlank
     private String tecnicasProcedimientos;
+
+    @Valid
+    private List<RegistrarPlanRequest.TeoriaTecnicaData> teoriasTecnicas;
 
     @NotEmpty
     @Valid

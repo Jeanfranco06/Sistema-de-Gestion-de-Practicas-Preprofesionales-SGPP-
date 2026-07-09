@@ -1206,13 +1206,21 @@ export const GestionSedes = () => {
                             />
 
                             <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', md: 'row' } }}>
-                                <TextField fullWidth type="date" label="Vigencia desde" InputLabelProps={{ shrink: true }}
+                                <TextField
+                                    fullWidth
+                                    type="date"
+                                    label="Vigencia desde"
                                     value={validacionForm.fechaVigenciaDesde}
                                     onChange={e => setValidacionForm({ ...validacionForm, fechaVigenciaDesde: e.target.value })}
+                                    slotProps={{ inputLabel: { shrink: true } }}
                                 />
-                                <TextField fullWidth type="date" label="Vigencia hasta" InputLabelProps={{ shrink: true }}
+                                <TextField
+                                    fullWidth
+                                    type="date"
+                                    label="Vigencia hasta"
                                     value={validacionForm.fechaVigenciaHasta}
                                     onChange={e => setValidacionForm({ ...validacionForm, fechaVigenciaHasta: e.target.value })}
+                                    slotProps={{ inputLabel: { shrink: true } }}
                                 />
                             </Box>
                         </Box>

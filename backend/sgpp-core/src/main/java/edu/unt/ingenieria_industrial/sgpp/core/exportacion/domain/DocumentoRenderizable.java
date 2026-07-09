@@ -11,10 +11,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Representación neutral del documento a renderizar.
- * Desacopla la fuente de datos y la plantilla del formato de salida (PDF/CSV).
- */
 @Data
 @Builder
 @NoArgsConstructor
@@ -43,6 +39,9 @@ public class DocumentoRenderizable {
         private String generadoPor;
         private LocalDateTime fechaGeneracion;
         private String codigoTrazabilidad;
+        private String logoIzquierdaPath;
+        private String logoDerechaPath;
+        private String marcaDeAguaPath;
     }
 
     @Data
