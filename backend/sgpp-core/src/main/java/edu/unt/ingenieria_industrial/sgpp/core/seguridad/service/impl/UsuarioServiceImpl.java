@@ -691,4 +691,56 @@ public class UsuarioServiceImpl implements UsuarioService {
                         .build() : null)
                 .build();
     }
+
+    @Override
+    @Transactional
+    public EstudianteDTO actualizarPerfilAcademico(String username, EstudianteUpdateDTO dto) {
+        Usuario usuario = usuarioRepository.findByUsername(username)
+                .orElseThrow(() -> new BusinessException("Usuario no encontrado"));
+        
+        Estudiante estudiante = estudianteRepository.findByUsuarioId(usuario.getId())
+                .orElseThrow(() -> new BusinessException("Perfil de estudiante no encontrado"));
+        
+        estudiante.setSemestreActual(dto.getSemestreActual());
+        estudiante.setCreditosAprobados(dto.getCreditosAprobados());
+        estudiante.setPromedioPonderado(dto.getPromedioPonderado());
+        estudiante.setFechaIngreso(dto.getFechaIngreso() != null ? dto.getFechaIngreso() : estudiante.getFechaIngreso());
+        estudiante.setEstadoAcademico(dto.getEstadoAcademico());
+        
+        estudiante = estudianteRepository.save(estudiante);
+        
+        return EstudianteDTO.builder()
+                .id(estudiante.getId())
+                .idUsuario(estudiante.getUsuario().getId())
+                .codigoEstudiantil(estudiante.getCodigoEstudiantil())
+                .semestreActual(estudiante.getSemestreActual())
+                .creditosAprobados(estudiante.getCreditosAprobados())
+                .creditosRequeridosPractica(estudiante.getCreditosRequeridosPractica())
+                .promedioPonderado(estudiante.getPromedioPonderado())
+                .fechaIngreso(estudiante.getFechaIngreso())
+                .estadoAcademico(estudiante.getEstadoAcademico())
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public EstudianteDTO obtenerPerfilAcademico(String username) {
+        Usuario usuario = usuarioRepository.findByUsername(username)
+                .orElseThrow(() -> new BusinessException("Usuario no encontrado"));
+        
+        Estudiante estudiante = estudianteRepository.findByUsuarioId(usuario.getId())
+                .orElseThrow(() -> new BusinessException("Perfil de estudiante no encontrado"));
+        
+        return EstudianteDTO.builder()
+                .id(estudiante.getId())
+                .idUsuario(estudiante.getUsuario().getId())
+                .codigoEstudiantil(estudiante.getCodigoEstudiantil())
+                .semestreActual(estudiante.getSemestreActual())
+                .creditosAprobados(estudiante.getCreditosAprobados())
+                .creditosRequeridosPractica(estudiante.getCreditosRequeridosPractica())
+                .promedioPonderado(estudiante.getPromedioPonderado())
+                .fechaIngreso(estudiante.getFechaIngreso())
+                .estadoAcademico(estudiante.getEstadoAcademico())
+                .build();
+    }
 }

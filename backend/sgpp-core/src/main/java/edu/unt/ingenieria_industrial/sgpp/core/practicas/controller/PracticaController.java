@@ -10,6 +10,9 @@ import edu.unt.ingenieria_industrial.sgpp.core.practicas.service.PracticaService
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.model.Usuario;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.repository.EstudianteRepository;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.repository.UsuarioRepository;
+import edu.unt.ingenieria_industrial.sgpp.core.academico.service.ValidacionAcademicaService;
+import edu.unt.ingenieria_industrial.sgpp.core.academico.dto.ValidacionAcademicaRequest;
+import edu.unt.ingenieria_industrial.sgpp.core.practicas.repository.TipoPracticaRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +23,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Year;
 import java.util.Map;
 
 @Slf4j
@@ -34,6 +38,8 @@ public class PracticaController {
     private final UsuarioRepository usuarioRepository;
     private final ExpedienteService expedienteService;
     private final SedePracticaRepository sedePracticaRepository;
+    private final ValidacionAcademicaService validacionAcademicaService;
+    private final TipoPracticaRepository tipoPracticaRepository;
 
     @PostMapping("/solicitar")
     @Operation(summary = "Solicitar una nueva práctica")
@@ -50,30 +56,63 @@ public class PracticaController {
         Long sedeId = Long.valueOf(request.get("sedeId").toString());
         Long tipoPracticaId = Long.valueOf(request.get("tipoPracticaId").toString());
 
-        PracticaDTO result = practicaService.solicitarPractica(estudianteId, sedeId, tipoPracticaId);
-
+        // Validar requisitos académicos antes de crear el expediente
         try {
-            CrearExpedienteRequest crearReq = CrearExpedienteRequest.builder()
-                    .idEstudiante(estudianteId)
-                    .idTipoPractica(tipoPracticaId)
-                    .condicionSolicitante("ESTUDIANTE")
+            var tipoPractica = tipoPracticaRepository.findById(tipoPracticaId)
+                    .orElseThrow(() -> new RuntimeException("Tipo de práctica no encontrado"));
+            
+            String periodoAcademico = Year.now().getValue() + "-II";
+            
+            ValidacionAcademicaRequest validacionRequest = ValidacionAcademicaRequest.builder()
+                    .estudianteId(estudianteId)
+                    .codigoTipoPractica(tipoPractica.getCodigo())
+                    .periodoAcademico(periodoAcademico)
                     .build();
-            var expediente = expedienteService.crear(crearReq, usuario.getId());
-
-            SedePractica sede = sedePracticaRepository.findById(sedeId)
-                    .orElseThrow(() -> new RuntimeException("Sede no encontrada"));
-
-            AsignarEmpresaSedeRequest asignarReq = AsignarEmpresaSedeRequest.builder()
-                    .idEmpresa(sede.getEmpresa().getId())
-                    .idSedePractica(sedeId)
-                    .build();
-            expedienteService.asignarEmpresaSede(expediente.getId(), asignarReq, usuario.getId());
-
-            log.info("Expediente {} creado automáticamente desde solicitud de práctica {}", expediente.getCodigoExpediente(), result.getId());
+            
+            var resultadoValidacion = validacionAcademicaService.validarEstudiante(validacionRequest);
+            
+            if (!resultadoValidacion.getApto()) {
+                StringBuilder errores = new StringBuilder("No cumple con los requisitos académicos para este tipo de práctica:\n");
+                resultadoValidacion.getDetalles().forEach(detalle -> {
+                    if (!detalle.getCumplido()) {
+                        errores.append("- ").append(detalle.getDescripcion()).append("\n");
+                    }
+                });
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", errores.toString(),
+                    "detalles", resultadoValidacion.getDetalles()
+                ));
+            }
         } catch (Exception e) {
-            log.error("Error al crear expediente automático desde solicitud de práctica: {}", e.getMessage(), e);
+            log.error("Error al validar requisitos académicos: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "success", false,
+                "message", "Error al validar requisitos académicos: " + e.getMessage()
+            ));
         }
 
+        String periodoAcademico = Year.now().getValue() + "-II";
+        CrearExpedienteRequest crearReq = CrearExpedienteRequest.builder()
+                .idEstudiante(estudianteId)
+                .idTipoPractica(tipoPracticaId)
+                .periodoAcademico(periodoAcademico)
+                .condicionSolicitante("ESTUDIANTE")
+                .build();
+        var expediente = expedienteService.crear(crearReq, usuario.getId());
+
+        SedePractica sede = sedePracticaRepository.findById(sedeId)
+                .orElseThrow(() -> new RuntimeException("Sede no encontrada"));
+
+        AsignarEmpresaSedeRequest asignarReq = AsignarEmpresaSedeRequest.builder()
+                .idEmpresa(sede.getEmpresa().getId())
+                .idSedePractica(sedeId)
+                .build();
+        expedienteService.asignarEmpresaSede(expediente.getId(), asignarReq, usuario.getId());
+
+        PracticaDTO result = practicaService.solicitarPractica(estudianteId, sedeId, tipoPracticaId);
+
+        log.info("Expediente {} creado automáticamente desde solicitud de práctica {}", expediente.getCodigoExpediente(), result.getId());
         return new ResponseEntity<>(result, HttpStatus.CREATED);
     }
 

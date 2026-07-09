@@ -11,8 +11,10 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
@@ -31,7 +33,6 @@ public class PlantillaCartaPresentacion implements PlantillaDocumento<ContextoEx
         Expediente e = ctx.getExpediente();
         var usuarioEst = e.getEstudiante().getUsuario();
         var empresa = e.getEmpresa();
-        var tutor = e.getTutorEmpresa();
 
         String nombreEstudiante = UsuarioAutenticadoHelper.nombreCompleto(usuarioEst);
         String dniEstudiante = usuarioEst.getNumeroDocumento();
@@ -55,49 +56,51 @@ public class PlantillaCartaPresentacion implements PlantillaDocumento<ContextoEx
         String razonSocialInstitucion = properties.getRazonSocialInstitucion();
         String direccionInstitucion = properties.getDireccionInstitucion();
 
+        String numRef = "N°" + numeroCarta;
+
         String parrafoSaludo = String.format(
                 "Es grato dirigirme a usted, para expresarle mi cordial saludo y, a la vez, presentarle al Sr.: %s, "
                 + "identificado con D.N.I. %s %s, de la Facultad de %s – Universidad Nacional de Trujillo, "
                 + "de la Escuela Profesional de %s, quien desea realizar sus Prácticas Profesionales en su empresa "
-                + "(con RUC: %s) bajo la supervisión de un funcionario designado; a fin de complementar la formación "
-                + "recibida en nuestra Casa Superior de Estudios. Esta modalidad formativa se desarrollará según lo "
-                + "dispuesto en la Ley sobre Modalidades Formativas Laborales, Ley N° 28518.",
+                + "(con RUC: %s) ubicado en el distrito de %s, a fin de complementar la formación recibida en "
+                + "nuestra Casa Superior de Estudios. Esta modalidad formativa se desarrollará según lo dispuesto en "
+                + "la Ley sobre Modalidades Formativas Laborales, Ley N° 28518.",
                 nombreEstudiante, dniEstudiante, condicion.toUpperCase(Locale.ROOT),
-                facultad, escuela, rucEmpresa);
+                facultad, escuela, rucEmpresa, direccionEmpresa);
 
         String parrafoPeriodo = String.format(
                 "El periodo mínimo requerido por la Escuela de %s para la realización de Prácticas Profesionales "
                 + "es de %d horas. Dichas Prácticas son requisito obligatorio para la obtención del Título Profesional "
-                + "de Ingeniero(a) Industrial, recomendando que, a solicitud del interesado, se establezca un periodo "
+                + "de Ingeniero Industrial, recomendando que, a solicitud del interesado, se establezca un periodo "
                 + "de al menos TRES MESES.",
                 escuela, horasMinimas);
 
-        String textoCierre = "Sin otro particular, quedo a su disposición.";
+        String textoCierre = "Sin otro particular, quedo de usted.";
 
         String textoDespedida = "Atentamente:";
 
-        String ccInstitucion = String.format(
-                "UNIVERSIDAD NACIONAL DE TRUJILLO\n"
-                + "Razón Social: %s\n"
-                + "R.U.C.: %s\n"
-                + "Representante: %s\n"
-                + "Cargo: Director\n"
-                + "D.N.I. %s\n"
-                + "Dirección: %s\n"
-                + "DATOS DEL POSTULANTE\n"
-                + "E_mail: %s\n"
-                + "Celular: %s",
+        String ccInstitucionText = String.format(
+                "UNIVERSIDAD NACIONAL DE TRUJILLO\n" +
+                "Razón Social: %s\n" +
+                "R.U.C.: %s\n" +
+                "Representante: %s\n" +
+                "Cargo: Director\n" +
+                "D.N.I.: %s\n" +
+                "Dirección: %s\n" +
+                "DATOS DEL POSTULANTE\n" +
+                "E_mail: %s\n" +
+                "Celular: %s",
                 razonSocialInstitucion, rucInstitucion, nombreDirector, dniDirector,
                 direccionInstitucion, emailEstudiante, telefonoEstudiante);
-
-        String numRef = "N°" + numeroCarta;
 
         return DocumentoRenderizable.builder()
                 .metadatos(DocumentoRenderizable.MetadatosDocumento.builder()
                         .titulo("CARTA DE PRESENTACIÓN")
-                        .subtitulo(numRef + " – " + escuela)
-                        .institucion(properties.getNombreInstitucion())
-                        .unidadAcademica(facultad + " / " + escuela)
+                        .subtitulo("")
+                        .institucion("UNIVERSIDAD NACIONAL DE TRUJILLO\n" +
+                                     "FACULTAD DE INGENIERÍA\n" +
+                                     "ESCUELA PROFESIONAL DE INGENIERÍA INDUSTRIAL")
+                        .unidadAcademica("")
                         .tipoDocumento(TipoDocumentoInstitucional.CARTA_PRESENTACION.name())
                         .periodoConsultado(e.getPeriodoAcademico())
                         .generadoPor(UsuarioAutenticadoHelper.nombreCompleto(ctx.getSolicitante()))
@@ -108,39 +111,61 @@ public class PlantillaCartaPresentacion implements PlantillaDocumento<ContextoEx
                         .marcaDeAguaPath(properties.getMarcaDeAguaPath())
                         .build())
                 .secciones(List.of(
-                        DocumentoRenderizable.SeccionDocumento.builder()
-                                .tipo(DocumentoRenderizable.TipoSeccion.TEXTO)
-                                .contenidoTexto(ciudad + ", " + fechaCarta)
-                                .build(),
-                        DocumentoRenderizable.SeccionDocumento.builder()
-                                .tipo(DocumentoRenderizable.TipoSeccion.TEXTO)
-                                .contenidoTexto("Señor:\n" + razonSocialEmpresa + "\nPresente -")
-                                .build(),
-                        DocumentoRenderizable.SeccionDocumento.builder()
-                                .tipo(DocumentoRenderizable.TipoSeccion.TEXTO)
-                                .contenidoTexto(parrafoSaludo)
-                                .build(),
-                        DocumentoRenderizable.SeccionDocumento.builder()
-                                .tipo(DocumentoRenderizable.TipoSeccion.TEXTO)
-                                .contenidoTexto(parrafoPeriodo)
-                                .build(),
-                        DocumentoRenderizable.SeccionDocumento.builder()
-                                .tipo(DocumentoRenderizable.TipoSeccion.TEXTO)
-                                .contenidoTexto(textoCierre)
-                                .build(),
-                        DocumentoRenderizable.SeccionDocumento.builder()
-                                .tipo(DocumentoRenderizable.TipoSeccion.TEXTO)
-                                .contenidoTexto(textoDespedida)
-                                .build(),
-                        DocumentoRenderizable.SeccionDocumento.builder()
-                                .tipo(DocumentoRenderizable.TipoSeccion.TEXTO)
-                                .contenidoTexto(nombreDirector + "\nDIRECTOR\nDNI. " + dniDirector)
-                                .build(),
-                        DocumentoRenderizable.SeccionDocumento.builder()
-                                .titulo("Cc.")
-                                .tipo(DocumentoRenderizable.TipoSeccion.TEXTO)
-                                .contenidoTexto(ccInstitucion)
-                                .build()
+                    // Número de carta (alineado a la derecha)
+                    DocumentoRenderizable.SeccionDocumento.builder()
+                            .tipo(DocumentoRenderizable.TipoSeccion.TEXTO)
+                            .contenidoTexto(numRef)
+                            .alineacion(DocumentoRenderizable.Alineacion.DERECHA)
+                            .build(),
+                    // Fecha y lugar
+                    DocumentoRenderizable.SeccionDocumento.builder()
+                            .tipo(DocumentoRenderizable.TipoSeccion.TEXTO)
+                            .contenidoTexto(ciudad + ", " + fechaCarta)
+                            .alineacion(DocumentoRenderizable.Alineacion.IZQUIERDA)
+                            .build(),
+                    // Destinatario
+                    DocumentoRenderizable.SeccionDocumento.builder()
+                            .tipo(DocumentoRenderizable.TipoSeccion.TEXTO)
+                            .contenidoTexto("Señor:\n" + razonSocialEmpresa + "\nPresente.-")
+                            .alineacion(DocumentoRenderizable.Alineacion.IZQUIERDA)
+                            .build(),
+                    // Cuerpo 1
+                    DocumentoRenderizable.SeccionDocumento.builder()
+                            .tipo(DocumentoRenderizable.TipoSeccion.TEXTO)
+                            .contenidoTexto(parrafoSaludo)
+                            .alineacion(DocumentoRenderizable.Alineacion.JUSTIFICADO)
+                            .build(),
+                    // Cuerpo 2
+                    DocumentoRenderizable.SeccionDocumento.builder()
+                            .tipo(DocumentoRenderizable.TipoSeccion.TEXTO)
+                            .contenidoTexto(parrafoPeriodo)
+                            .alineacion(DocumentoRenderizable.Alineacion.JUSTIFICADO)
+                            .build(),
+                    // Cierre
+                    DocumentoRenderizable.SeccionDocumento.builder()
+                            .tipo(DocumentoRenderizable.TipoSeccion.TEXTO)
+                            .contenidoTexto(textoCierre)
+                            .alineacion(DocumentoRenderizable.Alineacion.IZQUIERDA)
+                            .build(),
+                    // Despedida
+                    DocumentoRenderizable.SeccionDocumento.builder()
+                            .tipo(DocumentoRenderizable.TipoSeccion.TEXTO)
+                            .contenidoTexto(textoDespedida)
+                            .alineacion(DocumentoRenderizable.Alineacion.IZQUIERDA)
+                            .build(),
+                    // Firma del director
+                    DocumentoRenderizable.SeccionDocumento.builder()
+                            .tipo(DocumentoRenderizable.TipoSeccion.TEXTO)
+                            .contenidoTexto("\n\n\n" + nombreDirector + "\nDIRECTOR\nDNI. " + dniDirector)
+                            .alineacion(DocumentoRenderizable.Alineacion.IZQUIERDA)
+                            .build(),
+                    // Copia
+                    DocumentoRenderizable.SeccionDocumento.builder()
+                            .titulo("Cc.")
+                            .tipo(DocumentoRenderizable.TipoSeccion.TEXTO)
+                            .contenidoTexto(ccInstitucionText)
+                            .alineacion(DocumentoRenderizable.Alineacion.IZQUIERDA)
+                            .build()
                 ))
                 .build();
     }

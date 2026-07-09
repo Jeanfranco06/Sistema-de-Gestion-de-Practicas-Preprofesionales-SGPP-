@@ -1,10 +1,12 @@
 package edu.unt.ingenieria_industrial.sgpp.core.exportacion.render;
 
 import com.lowagie.text.*;
+import com.lowagie.text.pdf.ColumnText;
 import com.lowagie.text.pdf.PdfContentByte;
 import com.lowagie.text.pdf.PdfGState;
 import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
+import com.lowagie.text.pdf.PdfPageEventHelper;
 import com.lowagie.text.pdf.PdfReader;
 import com.lowagie.text.pdf.PdfStamper;
 import com.lowagie.text.pdf.PdfWriter;
@@ -42,22 +44,45 @@ public class PdfRenderizador implements RenderizadorDocumento {
     @Override
     public byte[] renderizar(DocumentoRenderizable documento) {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-            Document pdf = new Document(PageSize.A4, 40, 40, 50, 50);
+            Document pdf = new Document(PageSize.A4, 40, 40, 110, 80);
             PdfWriter writer = PdfWriter.getInstance(pdf, baos);
+            
+            // Agregar pie de página personalizado
+            writer.setPageEvent(new PdfPageEventHelper() {
+                @Override
+                public void onEndPage(PdfWriter writer, Document document) {
+                    try {
+                        agregarPiePaginaInstitucional(writer, document);
+                    } catch (Exception e) {
+                        log.warn("Error al agregar pie de página: {}", e.getMessage());
+                    }
+                }
+            });
+            
             pdf.open();
 
             boolean tieneLogos = tieneLogos(documento.getMetadatos());
+            boolean esCartaInstitucional = documento.getMetadatos().getTipoDocumento() != null && 
+                (documento.getMetadatos().getTipoDocumento().contains("CARTA") || 
+                 documento.getMetadatos().getTipoDocumento().contains("CONSTANCIA"));
 
-            if (!tieneLogos) {
-                agregarEncabezadoInstitucional(pdf, documento.getMetadatos());
+            // Agregamos encabezado institucional SIEMPRE, incluso cuando hay logos!
+            agregarEncabezadoInstitucional(pdf, documento.getMetadatos());
+            
+            // Solo agregar metadatos si NO es una carta institucional
+            if (!esCartaInstitucional) {
+                agregarMetadatosReporte(pdf, documento.getMetadatos());
             }
-            agregarMetadatosReporte(pdf, documento.getMetadatos());
 
             for (DocumentoRenderizable.SeccionDocumento seccion : documento.getSecciones()) {
                 renderizarSeccion(pdf, seccion);
             }
 
-            agregarPieTrazabilidad(pdf, documento.getMetadatos());
+            // Solo agregar pie de trazabilidad si NO es una carta institucional
+            if (!esCartaInstitucional) {
+                agregarPieTrazabilidad(pdf, documento.getMetadatos());
+            }
+            
             pdf.close();
 
             if (tieneLogos) {
@@ -70,6 +95,38 @@ public class PdfRenderizador implements RenderizadorDocumento {
         } catch (Exception e) {
             throw new IllegalStateException("Error al generar PDF institucional", e);
         }
+    }
+    
+    private void agregarPiePaginaInstitucional(PdfWriter writer, Document document) throws DocumentException {
+        PdfContentByte cb = writer.getDirectContent();
+        
+        // Agregar línea azul superior del pie de página
+        cb.setColorStroke(new Color(0, 102, 204));
+        cb.setLineWidth(2);
+        cb.moveTo(document.left(), document.bottom() - 20);
+        cb.lineTo(document.right(), document.bottom() - 20);
+        cb.stroke();
+        
+        // Agregar texto del pie de página
+        ColumnText ct = new ColumnText(cb);
+        Phrase phrase = new Phrase();
+        Font fontPie = FontFactory.getFont(FontFactory.HELVETICA, 9);
+        
+        phrase.add(new Chunk("Av. Juan Pablo II S/N (Ciudad Universitaria)      ", fontPie));
+        phrase.add(new Chunk("(044) 202866      ", fontPie));
+        phrase.add(new Chunk("industrial@unitru.edu.pe", fontPie));
+        
+        ct.setSimpleColumn(document.left(), document.bottom() - 45, document.right(), document.bottom() - 10);
+        ct.setAlignment(Element.ALIGN_CENTER);
+        ct.addText(phrase);
+        ct.go();
+        
+        // Agregar línea azul inferior del pie de página
+        cb.setColorStroke(new Color(0, 102, 204));
+        cb.setLineWidth(5);
+        cb.moveTo(document.left(), document.bottom() - 50);
+        cb.lineTo(document.right(), document.bottom() - 50);
+        cb.stroke();
     }
 
     private boolean tieneLogos(DocumentoRenderizable.MetadatosDocumento meta) {
@@ -96,7 +153,7 @@ public class PdfRenderizador implements RenderizadorDocumento {
             float logoHeight = 50;
             float logoWidthIzq = 70;
             float logoWidthDer = 50;
-            float topY = pageHeight - 35;
+            float topY = pageHeight - 5;
             float leftX = 40;
             float rightX = pageWidth - 40 - logoWidthDer;
 
@@ -227,10 +284,23 @@ public class PdfRenderizador implements RenderizadorDocumento {
         switch (seccion.getTipo()) {
             case TEXTO -> {
                 if (seccion.getContenidoTexto() != null) {
+                    // Determinar la alineación
+                    int alignment;
+                    if (seccion.getAlineacion() == DocumentoRenderizable.Alineacion.CENTRO) {
+                        alignment = Element.ALIGN_CENTER;
+                    } else if (seccion.getAlineacion() == DocumentoRenderizable.Alineacion.DERECHA) {
+                        alignment = Element.ALIGN_RIGHT;
+                    } else if (seccion.getAlineacion() == DocumentoRenderizable.Alineacion.JUSTIFICADO) {
+                        alignment = Element.ALIGN_JUSTIFIED;
+                    } else {
+                        // IZQUIERDA: alineación izquierda
+                        alignment = Element.ALIGN_LEFT;
+                    }
+                    
                     String[] lineas = seccion.getContenidoTexto().split("\n");
                     for (String linea : lineas) {
                         Paragraph p = new Paragraph(linea, FONT_NORMAL);
-                        p.setAlignment(Element.ALIGN_JUSTIFIED);
+                        p.setAlignment(alignment);
                         p.setSpacingAfter(4);
                         pdf.add(p);
                     }
@@ -245,15 +315,31 @@ public class PdfRenderizador implements RenderizadorDocumento {
         if (campos == null || campos.isEmpty()) return;
         PdfPTable table = new PdfPTable(2);
         table.setWidthPercentage(100);
-        table.setSpacingAfter(10);
+        table.setSpacingBefore(8);
+        table.setSpacingAfter(12);
         for (Map.Entry<String, String> entry : campos.entrySet()) {
-            PdfPCell label = new PdfPCell(new Phrase(entry.getKey(), FONT_SUBTITULO));
-            label.setBackgroundColor(new Color(240, 240, 240));
-            label.setPadding(5);
-            PdfPCell value = new PdfPCell(new Phrase(valor(entry.getValue()), FONT_NORMAL));
-            value.setPadding(5);
-            table.addCell(label);
-            table.addCell(value);
+            String valorCampo = valor(entry.getValue());
+            if (valorCampo == null || valorCampo.isBlank() || valorCampo.equals("—")) {
+                // Si el valor está vacío, usar una celda de ancho completo para la etiqueta
+                PdfPCell fullCell = new PdfPCell(new Phrase(entry.getKey(), FONT_TITULO));
+                fullCell.setColspan(2);
+                fullCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                fullCell.setPadding(8);
+                fullCell.setBorder(Rectangle.NO_BORDER);
+                table.addCell(fullCell);
+            } else {
+                PdfPCell label = new PdfPCell(new Phrase(entry.getKey(), FONT_SUBTITULO));
+                label.setBackgroundColor(new Color(240, 240, 240));
+                label.setPadding(6);
+                label.setBorderWidth(1);
+                label.setBorderColor(new Color(200, 200, 200));
+                PdfPCell value = new PdfPCell(new Phrase(valorCampo, FONT_NORMAL));
+                value.setPadding(6);
+                value.setBorderWidth(1);
+                value.setBorderColor(new Color(200, 200, 200));
+                table.addCell(label);
+                table.addCell(value);
+            }
         }
         pdf.add(table);
     }

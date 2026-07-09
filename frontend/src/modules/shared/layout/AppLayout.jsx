@@ -386,7 +386,7 @@ export default function AppLayout() {
           <Typography variant="caption" color="text.secondary">{user?.email}</Typography>
         </Box>
         <Divider />
-        <MenuItem onClick={() => { setAnchorEl(null); navigate('/perfil'); }} sx={{ py: 1.5 }}>
+        <MenuItem onClick={() => { setAnchorEl(null); navigate('/estudiante/perfil'); }} sx={{ py: 1.5 }}>
           <AccountCircle sx={{ mr: 1.5, fontSize: 20, color: 'text.secondary' }} /> <Typography variant="body2" fontWeight={500}>Mi perfil</Typography>
         </MenuItem>
         <MenuItem onClick={handleLogout} sx={{ py: 1.5, color: 'error.main' }}>
@@ -483,15 +483,15 @@ export default function AppLayout() {
           flexGrow: 1,
           width: { xs: '100%', md: `calc(100% - ${drawerWidth}px)` },
           mt: { xs: '56px', sm: '64px' },
-          p: { xs: 2, sm: 3, md: 4 },
+          p: { xs: 1, sm: 2, md: 2 },
           minHeight: '100vh',
           display: 'flex',
           flexDirection: 'column'
         }}
       >
-        <PageContainer sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', width: '100%' }}>
           <Outlet />
-        </PageContainer>
+        </Box>
       </Box>
     </Box>
   );

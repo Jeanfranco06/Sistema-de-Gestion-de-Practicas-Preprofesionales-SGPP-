@@ -15,5 +15,10 @@ public class TipoPracticaDTO {
     private String nombre;
     private String descripcion;
     private Integer horasRequeridas;
+    private Boolean curricular;
+    private Integer duracionMinimaDias;
+    private Integer cicloMinimo;
+    private Integer creditos;
+    private String condicionAcceso;
     private Boolean activo;
 }

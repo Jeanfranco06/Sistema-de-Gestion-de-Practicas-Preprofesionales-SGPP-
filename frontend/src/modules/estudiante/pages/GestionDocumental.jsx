@@ -22,20 +22,32 @@ import StatusChip from '../../../shared/components/StatusChip';
 const MySwal = withReactContent(Swal);
 
 const DOCUMENTOS_OBLIGATORIOS_INICIAL = [
-  { id: 'CARTA_ACEPTACION', nombre: 'Carta de Aceptación', formato: 'PDF', maxMB: 5 },
-  { id: 'PLAN_PRACTICA', nombre: 'Plan de Prácticas', formato: 'PDF', maxMB: 5 },
-  { id: 'INFORME_PARCIAL', nombre: 'Informes Parciales', formato: 'PDF', maxMB: 5 },
-  { id: 'INFORME_FINAL', nombre: 'Informe Final', formato: 'PDF', maxMB: 10 },
-  { id: 'CONSTANCIA_CULMINACION', nombre: 'Constancia de Terminación', formato: 'PDF', maxMB: 5 },
-  { id: 'VISTO_BUENO', nombre: 'Visto Bueno del Asesor', formato: 'PDF', maxMB: 5 }
+  { id: 'CARTA_PRESENTACION', nombre: 'Carta de Presentación (Escuela)', formato: 'PDF', maxMB: 5 },
+  { id: 'CARTA_ACEPTACION', nombre: 'Carta de Aceptación (Empresa)', formato: 'PDF', maxMB: 5 },
+  { id: 'PLAN_PRACTICA', nombre: 'Plan de Prácticas (Anexo 1)', formato: 'PDF', maxMB: 5 },
+  { id: 'INFORME_PARCIAL_1', nombre: 'Informe Parcial Semana 5', formato: 'PDF', maxMB: 5 },
+  { id: 'INFORME_PARCIAL_2', nombre: 'Informe Parcial Semana 10', formato: 'PDF', maxMB: 5 },
+  { id: 'INFORME_FINAL', nombre: 'Informe Final Semana 15', formato: 'PDF', maxMB: 10 },
+  { id: 'FICHA_EVALUACION', nombre: 'Ficha de Evaluación (Anexo 2)', formato: 'PDF', maxMB: 5 },
+  { id: 'CONSTANCIA_EMPRESA', nombre: 'Constancia de Prácticas (Empresa)', formato: 'PDF', maxMB: 5 }
 ];
 
 const DOCUMENTOS_OBLIGATORIOS_FINAL = [
-  { id: 'CARTA_ACEPTACION', nombre: 'Carta de Aceptación', formato: 'PDF', maxMB: 5 },
-  { id: 'PLAN_PRACTICA', nombre: 'Plan de Prácticas', formato: 'PDF', maxMB: 5 },
+  { id: 'CARTA_PRESENTACION', nombre: 'Carta de Presentación (Escuela)', formato: 'PDF', maxMB: 5 },
+  { id: 'CARTA_ACEPTACION', nombre: 'Carta de Aceptación (Empresa)', formato: 'PDF', maxMB: 5 },
+  { id: 'PLAN_PRACTICA', nombre: 'Plan de Prácticas (Anexo 1)', formato: 'PDF', maxMB: 5 },
   { id: 'INFORME_FINAL', nombre: 'Informe Final', formato: 'PDF', maxMB: 10 },
-  { id: 'CONSTANCIA_CULMINACION', nombre: 'Constancia de Terminación', formato: 'PDF', maxMB: 5 },
-  { id: 'FICHA_EVALUACION', nombre: 'Ficha de Evaluación Empresarial', formato: 'PDF', maxMB: 5 }
+  { id: 'FICHA_EVALUACION', nombre: 'Ficha de Evaluación (Anexo 2)', formato: 'PDF', maxMB: 5 },
+  { id: 'CONSTANCIA_EMPRESA', nombre: 'Constancia de Prácticas (Empresa)', formato: 'PDF', maxMB: 5 }
+];
+
+const DOCUMENTOS_OBLIGATORIOS_PROFESIONAL = [
+  { id: 'CARTA_PRESENTACION', nombre: 'Carta de Presentación (Escuela)', formato: 'PDF', maxMB: 5 },
+  { id: 'CARTA_ACEPTACION', nombre: 'Carta de Aceptación (Empresa)', formato: 'PDF', maxMB: 5 },
+  { id: 'PLAN_PRACTICA', nombre: 'Plan de Prácticas (Anexo 1)', formato: 'PDF', maxMB: 5 },
+  { id: 'INFORME_FINAL', nombre: 'Informe Final', formato: 'PDF', maxMB: 10 },
+  { id: 'FICHA_EVALUACION', nombre: 'Ficha de Evaluación (Anexo 2)', formato: 'PDF', maxMB: 5 },
+  { id: 'CONSTANCIA_EMPRESA', nombre: 'Constancia de Prácticas (Empresa)', formato: 'PDF', maxMB: 5 }
 ];
 
 export const GestionDocumental = () => {
@@ -87,7 +99,9 @@ export const GestionDocumental = () => {
 
   const docObligatorios = expediente.codigoTipoPractica === 'INICIAL'
     ? DOCUMENTOS_OBLIGATORIOS_INICIAL
-    : DOCUMENTOS_OBLIGATORIOS_FINAL;
+    : expediente.codigoTipoPractica === 'FINAL'
+    ? DOCUMENTOS_OBLIGATORIOS_FINAL
+    : DOCUMENTOS_OBLIGATORIOS_PROFESIONAL;
 
   const documentosConsolidados = [
     ...(expediente.documentos || []).map(d => ({
@@ -202,15 +216,34 @@ export const GestionDocumental = () => {
   const handleDownload = async (doc) => {
     try {
       MySwal.fire({ title: 'Descargando...', allowOutsideClick: false, didOpen: () => MySwal.showLoading() });
-      const res = await api.get(`/documentos/download/${doc.fileName}`, { responseType: 'blob' });
-      const url = window.URL.createObjectURL(new Blob([res.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', doc.nombreOriginal || doc.fileName);
-      document.body.appendChild(link);
-      link.click();
-      link.parentNode.removeChild(link);
-      MySwal.close();
+
+      // Si es un documento generado por el servicio de exportación (rutaArchivo o fileName empieza con "registro:")
+      const isRegistroDoc = (doc.rutaArchivo && doc.rutaArchivo.startsWith('registro:')) ||
+                           (doc.fileName && doc.fileName.startsWith('registro:'));
+
+      if (isRegistroDoc) {
+        const registroId = (doc.rutaArchivo || doc.fileName).replace('registro:', '');
+        const res = await api.get(`/api/v1/exportacion/descargar/${registroId}`, { responseType: 'blob' });
+        const url = window.URL.createObjectURL(new Blob([res.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', doc.nombreOriginal || doc.nombreArchivo || doc.fileName);
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode.removeChild(link);
+        MySwal.close();
+      } else {
+        // Descarga normal de documentos subidos
+        const res = await api.get(`/documentos/download/${doc.fileName}`, { responseType: 'blob' });
+        const url = window.URL.createObjectURL(new Blob([res.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', doc.nombreOriginal || doc.fileName);
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode.removeChild(link);
+        MySwal.close();
+      }
     } catch (error) {
       console.error('Download error:', error);
       MySwal.fire('Error', 'No se pudo descargar el archivo.', 'error');
@@ -257,14 +290,14 @@ export const GestionDocumental = () => {
           { label: 'Documentos cargados', value: documentosConsolidados.length, color: 'primary.main' },
           { label: 'Pendientes', value: pendientes, color: 'warning.main' },
           { label: 'Anexos', value: anexosList.length, color: 'secondary.main' },
-        ].map((item) => (
-          <Grid item xs={12} sm={4} key={item.label}>
+        ].map((stat) => (
+          <Grid item xs={12} sm={4} key={stat.label}>
             <ContentCard sx={{ mb: 0, p: 2.25 }}>
               <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase' }}>
-                {item.label}
+                {stat.label}
               </Typography>
-              <Typography variant="h5" fontWeight={700} sx={{ color: item.color, mt: 0.5 }}>
-                {item.value}
+              <Typography variant="h5" fontWeight={700} sx={{ color: stat.color, mt: 0.5 }}>
+                {stat.value}
               </Typography>
             </ContentCard>
           </Grid>

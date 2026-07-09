@@ -18,5 +18,7 @@ public interface UsuarioService {
     List<RolDTO> getRolesByUsuarioId(Long id);
     void revokeRol(Long usuarioId, Long rolId);
     boolean checkFieldAvailable(String field, String value, Long excludeId);
+    EstudianteDTO actualizarPerfilAcademico(String username, EstudianteUpdateDTO dto);
+    EstudianteDTO obtenerPerfilAcademico(String username);
 }
 

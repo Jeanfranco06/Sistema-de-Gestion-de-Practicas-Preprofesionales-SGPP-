@@ -28,6 +28,8 @@ import { GestionTutores } from './modules/admin/pages/GestionTutores';
 import { ValidarRequisitos } from './modules/secretaria/pages/ValidarRequisitos';
 import { GestionDocumental } from './modules/estudiante/pages/GestionDocumental';
 import { InformesPeriodicos } from './modules/estudiante/pages/InformesPeriodicos';
+import { PerfilEstudiante } from './modules/estudiante/pages/PerfilEstudiante';
+import { MiPractica } from './modules/estudiante/pages/MiPractica';
 import { RevisionDocumental } from './modules/shared/pages/RevisionDocumental';
 import { EvaluacionTutorExterno } from './modules/evaluacion/EvaluacionTutorExterno';
 import { EvaluacionDocenteAsesor } from './modules/evaluacion/EvaluacionDocenteAsesor';
@@ -73,7 +75,7 @@ export default function App() {
               />
               <Route path="/estudiante/practica" element={
                 <ProtectedRoute allowedRoles={['ESTUDIANTE']}>
-                  <PaginaEnConstruccion titulo="Mi Práctica" />
+                  <MiPractica />
                 </ProtectedRoute>
               } />
               <Route path="/estudiante/solicitar-practica" element={
@@ -89,6 +91,11 @@ export default function App() {
               <Route path="/estudiante/informes" element={
                 <ProtectedRoute allowedRoles={['ESTUDIANTE']}>
                   <InformesPeriodicos />
+                </ProtectedRoute>
+              } />
+              <Route path="/estudiante/perfil" element={
+                <ProtectedRoute allowedRoles={['ESTUDIANTE']}>
+                  <PerfilEstudiante />
                 </ProtectedRoute>
               } />
               <Route path="/estudiante/horas" element={<PaginaEnConstruccion titulo="Registro de Horas" />} />
@@ -262,8 +269,6 @@ export default function App() {
                   </ProtectedRoute>
                 }
               />
-
-              <Route path="/perfil" element={<PaginaEnConstruccion titulo="Mi Perfil" />} />
             </Route>
 
             {/* Raíz → login */}

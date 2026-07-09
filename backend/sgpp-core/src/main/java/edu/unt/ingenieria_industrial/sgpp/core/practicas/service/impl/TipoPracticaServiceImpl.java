@@ -43,6 +43,11 @@ public class TipoPracticaServiceImpl implements TipoPracticaService {
                 .nombre(entity.getNombre())
                 .descripcion(entity.getDescripcion())
                 .horasRequeridas(entity.getHorasRequeridas())
+                .curricular(entity.getCurricular())
+                .duracionMinimaDias(entity.getDuracionMinimaDias())
+                .cicloMinimo(entity.getCicloMinimo())
+                .creditos(entity.getCreditos())
+                .condicionAcceso(entity.getCondicionAcceso())
                 .activo(entity.getActivo())
                 .build();
     }

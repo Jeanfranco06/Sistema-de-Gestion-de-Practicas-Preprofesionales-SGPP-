@@ -82,7 +82,8 @@ public class ExpedienteResponse {
         private String tipoDocumento;
         private String nombreArchivo;
         private String rutaArchivo;
-        private String estado;
+        // Campo estado eliminado - ya no existe en la base de datos
+        // private String estado;
         private Long idUsuario;
         private LocalDateTime fechaSubida;
         private String observaciones;

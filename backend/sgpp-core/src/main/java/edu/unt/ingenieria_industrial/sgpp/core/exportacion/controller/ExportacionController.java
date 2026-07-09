@@ -3,6 +3,8 @@ package edu.unt.ingenieria_industrial.sgpp.core.exportacion.controller;
 import edu.unt.ingenieria_industrial.sgpp.core.exportacion.dto.ArchivoExportadoDTO;
 import edu.unt.ingenieria_industrial.sgpp.core.exportacion.dto.GenerarDocumentoInternoRequest;
 import edu.unt.ingenieria_industrial.sgpp.core.exportacion.dto.RegistroGeneracionDTO;
+import edu.unt.ingenieria_industrial.sgpp.core.exportacion.model.RegistroGeneracionDocumental;
+import edu.unt.ingenieria_industrial.sgpp.core.exportacion.repository.RegistroGeneracionDocumentalRepository;
 import edu.unt.ingenieria_industrial.sgpp.core.exportacion.service.ExportacionService;
 import edu.unt.ingenieria_industrial.sgpp.core.reporte.dto.ReporteFiltroDTO;
 import edu.unt.ingenieria_industrial.sgpp.shared.common.ApiResponse;
@@ -12,12 +14,17 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -29,6 +36,7 @@ import java.util.List;
 public class ExportacionController {
 
     private final ExportacionService exportacionService;
+    private final RegistroGeneracionDocumentalRepository registroRepository;
 
     @GetMapping("/reportes/{tipoReporte}")
     @Operation(summary = "Exportar reporte consolidado a PDF o CSV")
@@ -63,6 +71,50 @@ public class ExportacionController {
                 .data(historial)
                 .timestamp(LocalDateTime.now())
                 .build());
+    }
+
+    @GetMapping("/descargar/{id}")
+    @Operation(summary = "Descargar documento generado por ID de registro")
+    public ResponseEntity<Resource> descargarPorId(@PathVariable Long id) throws IOException {
+        RegistroGeneracionDocumental registro = registroRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Registro de documento no encontrado"));
+
+        Path archivoPath = Paths.get(registro.getRutaArchivo());
+        Resource resource = new UrlResource(archivoPath.toUri());
+
+        if (!resource.exists() || !resource.isReadable()) {
+            throw new RuntimeException("Archivo no encontrado o no accesible");
+        }
+
+        String contentType = registro.getFormatoSalida().equals("PDF") ? "application/pdf" : "text/csv";
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + registro.getNombreArchivo() + "\"")
+                .body(resource);
+    }
+
+    @GetMapping("/publico/descargar/{id}")
+    @Operation(summary = "Descargar documento generado por ID de registro (acceso público para estudiantes)")
+    public ResponseEntity<Resource> descargarPorIdPublico(@PathVariable Long id) throws IOException {
+        RegistroGeneracionDocumental registro = registroRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Registro de documento no encontrado"));
+
+        Path archivoPath = Paths.get(registro.getRutaArchivo());
+        Resource resource = new UrlResource(archivoPath.toUri());
+
+        if (!resource.exists() || !resource.isReadable()) {
+            throw new RuntimeException("Archivo no encontrado o no accesible");
+        }
+
+        String contentType = registro.getFormatoSalida().equals("PDF") ? "application/pdf" : "text/csv";
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + registro.getNombreArchivo() + "\"")
+                .body(resource);
     }
 
     private ResponseEntity<byte[]> respuestaArchivo(ArchivoExportadoDTO archivo) {

@@ -46,9 +46,9 @@ Este documento sirve como guía paso a paso para verificar el flujo completo del
 
 **Inicio del Trámite**
 - [x] **Estudiante**: Solicita práctica inicial (elige entre Inicial, Intermedia o Final/Profesional) seleccionando la sede y empresa recién registrada.
-- [ ] **Secretaría**: Revisa la solicitud, valida los requisitos administrativos en sistema y marca el expediente como *listo para emisión*.
-- [ ] **Director de Escuela**: Revisa el expediente validado y emite/firma la "Carta de Presentación" oficial.
-- [ ] **Estudiante**: Una vez recibida la carta, sube al sistema la "Carta de Aceptación" firmada por la empresa receptora.
+- [x] **Secretaría**: Revisa la solicitud, valida los requisitos administrativos en sistema y marca el expediente como *listo para emisión*.
+- [x] **Director de Escuela**: Revisa el expediente validado y emite/firma la "Carta de Presentación" oficial.
+- [x] **Estudiante**: Una vez recibida la carta, sube al sistema la "Carta de Aceptación" firmada por la empresa receptora.
   
 **Plan de Prácticas**
 - [ ] **Estudiante**: Sube el documento o completa el formulario del "Plan de Prácticas".

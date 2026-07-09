@@ -10,6 +10,11 @@ import {
   Assignment, Visibility, Refresh, Search, FolderOpen,
 } from '@mui/icons-material';
 import { expedientesApi } from '../../../api/expedientesApi';
+import { coordinacionApi } from '../../../api/coordinacionApi';
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
+
+const MySwal = withReactContent(Swal);
 import {
   ModulePageShell, ModulePageHeader,
 } from '../../../shared/components/module/ModulePageShell';
@@ -40,6 +45,26 @@ export const GestionExpedientes = () => {
       .then(({ data }) => setExpedientes(data?.data ?? data ?? []))
       .catch(() => setError('No se pudieron cargar los expedientes.'))
       .finally(() => setLoading(false));
+  };
+
+  const handleEmitirCarta = async (id) => {
+    try {
+      const res = await MySwal.fire({
+        title: 'Emitir Carta de Presentación',
+        text: '¿Estás seguro de emitir y firmar la Carta de Presentación para este expediente?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, emitir',
+        cancelButtonText: 'Cancelar',
+      });
+      if (res.isConfirmed) {
+        await coordinacionApi.emitirCartaPresentacion(id);
+        MySwal.fire('Éxito', 'Carta de Presentación emitida y firmada electrónicamente.', 'success');
+        loadExpedientes();
+      }
+    } catch (error) {
+      MySwal.fire('Error', 'No se pudo emitir la Carta de Presentación.', 'error');
+    }
   };
 
   useEffect(() => {
@@ -157,11 +182,22 @@ export const GestionExpedientes = () => {
                     <Typography variant="caption" color="text.secondary">{e.nombreEmpresa || ''}</Typography>
                   </TableCell>
                   <TableCell align="center">
-                    <Tooltip title="Ver detalle">
-                      <Button size="small" variant="outlined" onClick={() => navigate(`/coordinacion/expedientes/${e.id}`)}>
-                        <Visibility fontSize="small" />
-                      </Button>
-                    </Tooltip>
+                    <Stack direction="row" spacing={0.5} justifyContent="center">
+                      {(e.estado?.includes('VALIDADO') && e.estado?.includes('SECRETARIA')) && (
+                        <Tooltip title="Emitir y firmar Carta de Presentación">
+                          <Button size="small" variant="contained" color="success"
+                            onClick={() => handleEmitirCarta(e.id)}
+                            sx={{ fontWeight: 600, fontSize: '0.7rem', whiteSpace: 'nowrap', px: 1 }}>
+                            Emitir Carta
+                          </Button>
+                        </Tooltip>
+                      )}
+                      <Tooltip title="Ver detalle">
+                        <Button size="small" variant="outlined" onClick={() => navigate(`/coordinacion/expedientes/${e.id}`)}>
+                          <Visibility fontSize="small" />
+                        </Button>
+                      </Tooltip>
+                    </Stack>
                   </TableCell>
                 </TableRow>
               ))}

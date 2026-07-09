@@ -21,14 +21,12 @@ const STEPS = ['Tipo de Práctica', 'Empresa y Sede', 'Confirmación'];
 
 const tipoIcons = {
     INICIAL: <School sx={{ fontSize: 48 }} />,
-    INTERMEDIA: <MilitaryTech sx={{ fontSize: 48 }} />,
     FINAL: <Star sx={{ fontSize: 48 }} />,
     PROFESIONAL: <EmojiEvents sx={{ fontSize: 48 }} />,
 };
 
 const tipoColors = {
     INICIAL: { bg: '#e3f2fd', border: '#1976d2', icon: '#1976d2' },
-    INTERMEDIA: { bg: '#fce4ec', border: '#d32f2f', icon: '#d32f2f' },
     FINAL: { bg: '#e8f5e9', border: '#2e7d32', icon: '#2e7d32' },
     PROFESIONAL: { bg: '#f3e5f5', border: '#7b1fa2', icon: '#7b1fa2' },
 };
@@ -108,7 +106,28 @@ export const SolicitarPractica = () => {
         } catch (err) {
             console.error('Error solicitando práctica:', err);
             const msg = err.response?.data?.message || err.response?.data?.error || 'No se pudo completar la solicitud. Intenta nuevamente.';
-            MySwal.fire('Error', msg, 'error');
+            const detalles = err.response?.data?.detalles;
+            
+            if (detalles && detalles.length > 0) {
+                // Mostrar detalles de validación académica
+                const detallesHtml = detalles.map(d => 
+                    `<li style="text-align: left; margin-bottom: 8px;">${d.descripcion || d.nombreRegla || d}</li>`
+                ).join('');
+                
+                MySwal.fire({
+                    icon: 'warning',
+                    title: 'Requisitos académicos no cumplidos',
+                    html: `<div style="text-align: left; font-size: 0.9rem;">
+                        <p style="margin-bottom: 12px;">No cumples con los requisitos académicos para este tipo de práctica:</p>
+                        <ul style="padding-left: 20px; margin: 0;">${detallesHtml}</ul>
+                        <p style="margin-top: 12px; color: #666;">Por favor, completa los requisitos faltantes antes de solicitar la práctica.</p>
+                    </div>`,
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#f59e0b',
+                });
+            } else {
+                MySwal.fire('Error', msg, 'error');
+            }
         } finally {
             setSubmitting(false);
         }
@@ -237,9 +256,11 @@ export const SolicitarPractica = () => {
                         <Typography variant="h6" fontWeight={600} gutterBottom>
                             Selecciona la empresa y sede para tu práctica
                         </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                            Las sedes marcadas con <Chip icon={<CheckCircle />} label="Elegible" size="small" color="success" variant="outlined" sx={{ mx: 0.5 }} /> cumplen todos los requisitos y pueden ser seleccionadas.
-                        </Typography>
+                        <Box sx={{ mb: 3 }}>
+                            <Typography variant="body2" color="text.secondary" component="div">
+                                Las sedes marcadas con <Chip icon={<CheckCircle />} label="Elegible" size="small" color="success" variant="outlined" sx={{ mx: 0.5 }} /> cumplen todos los requisitos y pueden ser seleccionadas.
+                            </Typography>
+                        </Box>
 
                         {sedes.length === 0 ? (
                             <Box sx={{ textAlign: 'center', py: 6 }}>

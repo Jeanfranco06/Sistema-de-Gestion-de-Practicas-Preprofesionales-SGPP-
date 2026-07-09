@@ -22,6 +22,9 @@ import edu.unt.ingenieria_industrial.sgpp.core.service.NotificacionEventoService
 import edu.unt.ingenieria_industrial.sgpp.core.integridad.dto.RegistrarEventoAuditoriaDTO;
 import edu.unt.ingenieria_industrial.sgpp.core.integridad.service.AuditoriaTransaccionalService;
 import edu.unt.ingenieria_industrial.sgpp.core.integridad.service.ReglasIntegridadService;
+import edu.unt.ingenieria_industrial.sgpp.core.exportacion.dto.GenerarDocumentoInternoRequest;
+import edu.unt.ingenieria_industrial.sgpp.core.exportacion.service.ExportacionService;
+import edu.unt.ingenieria_industrial.sgpp.shared.enums.TipoDocumentoInstitucional;
 import edu.unt.ingenieria_industrial.sgpp.shared.enums.AccionAuditoria;
 import edu.unt.ingenieria_industrial.sgpp.shared.enums.TipoEntidadAuditable;
 import edu.unt.ingenieria_industrial.sgpp.shared.exception.BusinessException;
@@ -67,6 +70,8 @@ public class ExpedienteServiceImpl implements ExpedienteService {
     private final ReglasIntegridadService reglasIntegridadService;
     private final ExpedienteAccesoService expedienteAccesoService;
     private final NotificacionEventoService notificacionEventoService;
+    private final edu.unt.ingenieria_industrial.sgpp.core.evaluacion.service.ComponenteEvaluacionService componenteEvaluacionService;
+    private final ExportacionService exportacionService;
 
     @Override
     public ExpedienteResponse crear(CrearExpedienteRequest request, Long idUsuario) {
@@ -86,6 +91,7 @@ public class ExpedienteServiceImpl implements ExpedienteService {
         }
 
         String codigo = generarCodigoExpediente(tipoPractica.getCodigo());
+        String numeroExpediente = generarNumeroExpediente(estudiante.getCodigoEstudiantil(), tipoPractica.getCodigo());
         String periodo = request.getPeriodoAcademico();
         if (periodo == null && estudiante.getIdPeriodoAcademicoActual() != null) {
             periodo = String.valueOf(estudiante.getIdPeriodoAcademicoActual());
@@ -93,6 +99,8 @@ public class ExpedienteServiceImpl implements ExpedienteService {
 
         Expediente expediente = Expediente.builder()
                 .codigoExpediente(codigo)
+                .numeroExpediente(numeroExpediente)
+                .fechaApertura(LocalDate.now())
                 .estudiante(estudiante)
                 .tipoPractica(tipoPractica)
                 .periodoAcademico(periodo)
@@ -101,20 +109,66 @@ public class ExpedienteServiceImpl implements ExpedienteService {
                 .build();
 
         expediente = expedienteRepository.save(expediente);
+        // Forzar flush para asegurar que el expediente se guarde en la base de datos
+        expedienteRepository.flush();
         registrarCambioEstado(expediente, null, "SOLICITADO", idUsuario, "Expediente creado", "CREACION");
 
-        auditoriaService.registrar(RegistrarEventoAuditoriaDTO.builder()
-                .tipoEntidad(TipoEntidadAuditable.EXPEDIENTE)
-                .entidadId(expediente.getId())
-                .idExpediente(expediente.getId())
-                .accion(AccionAuditoria.CREATE)
-                .idUsuario(idUsuario)
-                .valorNuevo(Map.of(
-                        "codigoExpediente", codigo,
-                        "tipoPractica", tipoPractica.getCodigo(),
-                        "estudiante", estudiante.getCodigoEstudiantil()))
-                .motivo("Creación de expediente de práctica")
-                .build());
+        // Generar documento de solicitud automáticamente (desactivado temporalmente)
+        // try {
+        //     if (expediente.getId() != null && expediente.getId() > 0) {
+        //         Usuario usuario = usuarioRepository.findById(idUsuario).orElse(null);
+        //         if (usuario != null) {
+        //             ExpedienteDocumento documentoSolicitud = ExpedienteDocumento.builder()
+        //                     .expediente(expediente)
+        //                     .tipoDocumento("SOLICITUD_PRACTICA")
+        //                     .nombreArchivo("Solicitud_Practica_" + expediente.getCodigoExpediente() + ".pdf")
+        //                     .rutaArchivo("/documentos/solicitudes/" + expediente.getCodigoExpediente() + ".pdf")
+        //                     .usuario(usuario)
+        //                     .observaciones("Documento de solicitud generado automáticamente al crear expediente")
+        //                     .estado("APROBADO")
+        //                     .build();
+        //             documentoRepository.save(documentoSolicitud);
+        //             log.info("Documento de solicitud generado automáticamente para expediente {}", expediente.getCodigoExpediente());
+        //         } else {
+        //             log.warn("No se pudo generar documento de solicitud: usuario con ID {} no encontrado", idUsuario);
+        //         }
+        //     } else {
+        //         log.warn("No se pudo generar documento de solicitud: expediente no tiene ID válido");
+        //     }
+        // } catch (Exception e) {
+        //     log.warn("No se pudo generar documento de solicitud para expediente {}: {}",
+        //             expediente.getId(), e.getMessage());
+        // }
+
+        // Inicializar componentes de evaluación según normativa (desactivado temporalmente)
+        // try {
+        //     componenteEvaluacionService.inicializarComponentes(expediente.getId(), tipoPractica.getCodigo());
+        // } catch (Exception e) {
+        //     log.warn("No se pudieron inicializar componentes de evaluación para expediente {}: {}",
+        //             expediente.getId(), e.getMessage());
+        // }
+
+        // Solo registrar auditoría si el expediente existe en la base de datos
+        if (expediente.getId() != null && expediente.getId() > 0 && expedienteRepository.existsById(expediente.getId())) {
+            try {
+                auditoriaService.registrar(RegistrarEventoAuditoriaDTO.builder()
+                        .tipoEntidad(TipoEntidadAuditable.EXPEDIENTE)
+                        .entidadId(expediente.getId())
+                        .idExpediente(expediente.getId())
+                        .accion(AccionAuditoria.CREATE)
+                        .idUsuario(idUsuario)
+                        .valorNuevo(Map.of(
+                                "codigoExpediente", codigo,
+                                "tipoPractica", tipoPractica.getCodigo(),
+                                "estudiante", estudiante.getCodigoEstudiantil()))
+                        .motivo("Creación de expediente de práctica")
+                        .build());
+            } catch (Exception e) {
+                log.warn("No se pudo registrar auditoría de creación para expediente {}: {}", expediente.getId(), e.getMessage());
+            }
+        } else {
+            log.warn("No se pudo registrar auditoría de creación: expediente con ID {} no existe en la base de datos", expediente.getId());
+        }
 
         log.info("Expediente {} creado para estudiante {}", codigo, estudiante.getCodigoEstudiantil());
         return toResponse(expediente);
@@ -260,6 +314,23 @@ public class ExpedienteServiceImpl implements ExpedienteService {
         registrarCambioEstado(expediente, VALIDADO_SECRETARIA, CARTA_PRESENTACION_EMITIDA, idUsuario,
                 "Director emitió y firmó la Carta de Presentación", "EMISION_CARTA");
 
+        // Generar documento de Carta de Presentación usando el servicio de exportación
+        try {
+            GenerarDocumentoInternoRequest request = GenerarDocumentoInternoRequest.builder()
+                    .tipoDocumento(TipoDocumentoInstitucional.CARTA_PRESENTACION)
+                    .idExpediente(expediente.getId())
+                    .observacionesAdicionales("Carta de Presentación emitida y firmada por el Director")
+                    .build();
+
+            var archivoExportado = exportacionService.generarDocumentoInterno(request);
+            log.info("Documento de Carta de Presentación generado para expediente {}: {}",
+                    expediente.getCodigoExpediente(), archivoExportado.getCodigoTrazabilidad());
+        } catch (Exception e) {
+            log.warn("No se pudo generar documento de Carta de Presentación para expediente {}: {}",
+                    expediente.getId(), e.getMessage());
+            // No fallar toda la operación si falla la generación del documento
+        }
+
         notificacionEventoService.notificarCambioEstadoExpediente(
                 expediente.getEstudiante().getUsuario().getId(),
                 expediente.getCodigoExpediente(), CARTA_PRESENTACION_EMITIDA);
@@ -344,8 +415,9 @@ public class ExpedienteServiceImpl implements ExpedienteService {
         if (!doc.getExpediente().getId().equals(idExpediente)) {
             throw new BusinessException("El documento no pertenece a este expediente");
         }
-        
-        doc.setEstado(estado);
+
+        // Campo estado eliminado del modelo - ya no existe en la base de datos
+        // doc.setEstado(estado);
         doc.setObservaciones(observaciones);
         doc.setUsuario(usuarioRepository.getReferenceById(idUsuario));
         
@@ -772,6 +844,23 @@ public class ExpedienteServiceImpl implements ExpedienteService {
     }
 
     private void validarTransicionManual(String actual, String destino, String tipoCodigo) {
+        try {
+            EstadoExpediente estadoActual = EstadoExpediente.fromCodigo(actual);
+            EstadoExpediente estadoDestino = EstadoExpediente.fromCodigo(destino);
+            
+            if (!estadoDestino.esTransicionValidaDesde(estadoActual)) {
+                throw new BusinessException(
+                    "Transición manual no válida de " + actual + " a " + destino + 
+                    ". Consulte el flujo normativo para transiciones válidas.");
+            }
+        } catch (IllegalArgumentException e) {
+            // Si los estados no están en el enum, usar validación legacy para compatibilidad
+            log.warn("Usando validación legacy para estados: {} -> {}", actual, destino);
+            validarTransicionManualLegacy(actual, destino);
+        }
+    }
+
+    private void validarTransicionManualLegacy(String actual, String destino) {
         Map<String, Set<String>> transiciones = new HashMap<>();
         Set<String> estadosInicial = Set.of("SOLICITADO", "EMPRESA_SEDE_ASIGNADA",
                 VALIDADO_SECRETARIA, CARTA_PRESENTACION_EMITIDA,
@@ -807,12 +896,23 @@ public class ExpedienteServiceImpl implements ExpedienteService {
                 .build();
         estadoRepository.save(estado);
 
-        try {
-            auditoriaService.registrarCambioEstado(
-                    expediente.getId(), idUsuario, anterior, nuevo, tipoCambio, observacion);
-        } catch (Exception e) {
-            log.warn("No se pudo registrar evento de auditoría para expediente {}: {}",
-                    expediente.getId(), e.getMessage());
+        // Solo registrar auditoría si el expediente tiene un ID válido
+        if (expediente.getId() != null && expediente.getId() > 0) {
+            try {
+                // Verificar que el expediente existe en la base de datos
+                if (expedienteRepository.existsById(expediente.getId())) {
+                    auditoriaService.registrarCambioEstado(
+                            expediente.getId(), idUsuario, anterior, nuevo, tipoCambio, observacion);
+                } else {
+                    log.warn("No se pudo registrar auditoría: expediente con ID {} no existe en la base de datos",
+                            expediente.getId());
+                }
+            } catch (Exception e) {
+                log.warn("No se pudo registrar evento de auditoría para expediente {}: {}",
+                        expediente.getId(), e.getMessage());
+            }
+        } else {
+            log.warn("No se pudo registrar auditoría: expediente no tiene ID válido");
         }
     }
 
@@ -820,6 +920,11 @@ public class ExpedienteServiceImpl implements ExpedienteService {
         String anio = String.valueOf(LocalDate.now().getYear());
         int correlativo = expedienteRepository.findMaxCorrelativoByPrefix("EXP-" + anio + "-" + tipoCodigo + "-") + 1;
         return String.format("EXP-%s-%s-%04d", anio, tipoCodigo, correlativo);
+    }
+
+    private String generarNumeroExpediente(String codigoEstudiantil, String tipoCodigo) {
+        String anio = String.valueOf(LocalDate.now().getYear());
+        return String.format("%s-%s-%s", codigoEstudiantil, tipoCodigo, anio);
     }
 
     private String truncar(String texto, int max) {
@@ -893,7 +998,8 @@ public class ExpedienteServiceImpl implements ExpedienteService {
                         .tipoDocumento(doc.getTipoDocumento())
                         .nombreArchivo(doc.getNombreArchivo())
                         .rutaArchivo(doc.getRutaArchivo())
-                        .estado(doc.getEstado())
+                        // Campo estado eliminado del modelo - ya no existe en la base de datos
+                        // .estado(doc.getEstado())
                         .idUsuario(doc.getUsuario() != null ? doc.getUsuario().getId() : null)
                         .fechaSubida(doc.getFechaSubida())
                         .observaciones(doc.getObservaciones())

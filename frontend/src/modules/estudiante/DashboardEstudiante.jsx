@@ -7,7 +7,7 @@ import {
 import {
   Description, Business, Visibility, TrendingUp, Refresh, InfoOutlined,
   Assignment, AccessTime, FolderOpen, School, TaskAlt, PendingActions,
-  ArrowForwardIos, PlayArrow
+  ArrowForwardIos, PlayArrow, Person
 } from '@mui/icons-material';
 import { useAuth } from '../../auth/AuthContext';
 import { expedientesApi } from '../../api/expedientesApi';
@@ -136,22 +136,60 @@ export default function DashboardEstudiante() {
     );
   }
 
-  const horasTotales = expediente.codigoTipoPractica === 'INICIAL' ? 120 : (expediente.codigoTipoPractica === 'FINAL' ? 180 : 200);
+  const horasTotales = expediente.codigoTipoPractica === 'INICIAL' ? 64 : 360;
   const horasEjecutadas = expediente.estado === 'CERRADO' || expediente.estado === 'EVALUADO' ? horasTotales : (expediente.estado === 'EN_EJECUCION' ? Math.floor(horasTotales * 0.5) : 0);
   const pct = Math.round((horasEjecutadas / horasTotales) * 100);
 
   const obsActivas = expediente.observacionesList?.filter((o) => !o.subsanado) || [];
-  const docsObligatorios = ['PLAN_PRACTICA', 'CARTA_ACEPTACION', 'INFORME_FINAL', 'CONSTANCIA_CULMINACION'];
+  
+  // Documentos obligatorios según tipo de práctica
+  const docsObligatorios = expediente.codigoTipoPractica === 'INICIAL'
+    ? ['CARTA_PRESENTACION', 'CARTA_ACEPTACION', 'PLAN_PRACTICA', 'INFORME_PARCIAL_1', 'INFORME_PARCIAL_2', 'INFORME_FINAL_INICIAL', 'FICHA_EVALUACION', 'CONSTANCIA_EMPRESA']
+    : ['CARTA_PRESENTACION', 'CARTA_ACEPTACION', 'PLAN_PRACTICA', 'INFORME_FINAL', 'FICHA_EVALUACION', 'CONSTANCIA_EMPRESA'];
+  
   const docsSubidos = expediente.documentos?.map((d) => d.tipoDocumento) || [];
   const docsAprobados = docsObligatorios.filter((d) => docsSubidos.includes(d)).length;
+  
   const docLabels = {
-    PLAN_PRACTICA: 'Plan de prácticas',
-    CARTA_ACEPTACION: 'Carta de aceptación',
-    INFORME_FINAL: 'Informe final',
-    CONSTANCIA_CULMINACION: 'Constancia de culminación',
+    CARTA_PRESENTACION: 'Carta de Presentación',
+    CARTA_ACEPTACION: 'Carta de Aceptación',
+    PLAN_PRACTICA: 'Plan de Prácticas',
+    INFORME_PARCIAL_1: 'Informe Parcial Semana 5',
+    INFORME_PARCIAL_2: 'Informe Parcial Semana 10',
+    INFORME_FINAL_INICIAL: 'Informe Final Semana 15',
+    INFORME_FINAL: 'Informe Final',
+    FICHA_EVALUACION: 'Ficha de Evaluación',
+    CONSTANCIA_EMPRESA: 'Constancia de Prácticas',
   };
 
   const expStatus = getStatusProps(expediente.estado);
+  
+  // Información específica según tipo de práctica
+  const tipoInfo = {
+    INICIAL: {
+      nombre: 'Práctica Inicial',
+      horas: '64 horas',
+      creditos: '2 créditos',
+      requisitos: 'VIII ciclo, matrícula activa',
+      informes: '3 informes parciales (semanas 5, 10, 15)'
+    },
+    FINAL: {
+      nombre: 'Práctica Final',
+      horas: '360 horas (3 meses mínimo)',
+      creditos: 'Sin créditos',
+      requisitos: 'IX/X ciclo, aprobación de iniciales',
+      informes: '1 informe final'
+    },
+    PROFESIONAL: {
+      nombre: 'Práctica Profesional',
+      horas: '360 horas (egresados)',
+      creditos: 'Sin créditos',
+      requisitos: 'Egresado (máx. 1 año)',
+      informes: '1 informe final'
+    }
+  };
+  
+  const info = tipoInfo[expediente.codigoTipoPractica] || tipoInfo.INICIAL;
 
   return (
     <Box sx={{ px: { xs: 1.5, sm: 2, md: 2.5 }, py: { xs: 2, md: 4 }, width: '100%' }}>
@@ -192,6 +230,11 @@ export default function DashboardEstudiante() {
             </Box>
 
             <Box sx={{ display: 'flex', flexDirection: { xs: 'column-reverse', sm: 'row' }, gap: 2, alignItems: { xs: 'stretch', sm: 'center' }, width: { xs: '100%', md: 'auto' }, position: 'relative', zIndex: 1 }}>
+              <Tooltip title="Actualizar Perfil Académico">
+                <IconButton onClick={() => navigate('/estudiante/perfil')} sx={{ bgcolor: 'rgba(255,255,255,0.1)', color: 'white', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' }, alignSelf: { xs: 'flex-end', sm: 'auto' } }}>
+                  <Person />
+                </IconButton>
+              </Tooltip>
               <Tooltip title="Sincronizar Datos">
                 <IconButton onClick={fetchData} sx={{ bgcolor: 'rgba(255,255,255,0.1)', color: 'white', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' }, alignSelf: { xs: 'flex-end', sm: 'auto' } }}>
                   <Refresh />

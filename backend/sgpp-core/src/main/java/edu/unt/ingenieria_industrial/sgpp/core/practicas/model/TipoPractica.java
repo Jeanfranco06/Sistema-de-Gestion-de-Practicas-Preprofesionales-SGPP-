@@ -26,6 +26,22 @@ public class TipoPractica extends BaseEntity {
     @Column(name = "horas_requeridas")
     private Integer horasRequeridas;
 
+    @Column(name = "curricular", nullable = false)
+    @Builder.Default
+    private Boolean curricular = true;
+
+    @Column(name = "duracion_minima_dias")
+    private Integer duracionMinimaDias;
+
+    @Column(name = "ciclo_minimo")
+    private Integer cicloMinimo;
+
+    @Column(name = "creditos")
+    private Integer creditos;
+
+    @Column(name = "condicion_acceso", length = 50)
+    private String condicionAcceso;
+
     @Column(name = "activo", nullable = false)
     @Builder.Default
     private Boolean activo = true;

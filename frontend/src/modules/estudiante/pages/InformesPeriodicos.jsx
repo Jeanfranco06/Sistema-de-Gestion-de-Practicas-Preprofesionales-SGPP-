@@ -18,9 +18,9 @@ import ContentCard from '../../../shared/components/ContentCard';
 const MySwal = withReactContent(Swal);
 
 const HITOS = [
-  { id: 1, nombre: 'Informe Parcial 1', semana: 5, estado: 'APROBADO', fechaLimite: '2025-10-15', bloqueado: false, archivo: 'informe_semana5.pdf', fileName: 'mock-file.pdf' },
-  { id: 2, nombre: 'Informe Parcial 2', semana: 10, estado: 'PENDIENTE', fechaLimite: '2025-11-20', bloqueado: false, archivo: null, fileName: null },
-  { id: 3, nombre: 'Informe Final', semana: 15, estado: 'BLOQUEADO', fechaLimite: '2025-12-25', bloqueado: true, archivo: null, fileName: null },
+  { id: 1, nombre: 'Informe Parcial Semana 5', semana: 5, descripcion: 'Informe de avance correspondiente a la semana 5', estado: 'APROBADO', fechaLimite: '2025-10-15', bloqueado: false, archivo: 'informe_semana5.pdf', fileName: 'mock-file.pdf', tipo: 'INFORME_PARCIAL_1' },
+  { id: 2, nombre: 'Informe Parcial Semana 10', semana: 10, descripcion: 'Informe de avance correspondiente a la semana 10', estado: 'PENDIENTE', fechaLimite: '2025-11-20', bloqueado: false, archivo: null, fileName: null, tipo: 'INFORME_PARCIAL_2' },
+  { id: 3, nombre: 'Informe Final Semana 15', semana: 15, descripcion: 'Informe final de prácticas', estado: 'BLOQUEADO', fechaLimite: '2025-12-25', bloqueado: true, archivo: null, fileName: null, tipo: 'INFORME_FINAL_INICIAL' },
 ];
 
 export const InformesPeriodicos = () => {

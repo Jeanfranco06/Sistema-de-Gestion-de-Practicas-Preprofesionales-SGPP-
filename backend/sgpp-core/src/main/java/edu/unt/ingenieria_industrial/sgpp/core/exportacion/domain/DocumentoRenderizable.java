@@ -58,6 +58,15 @@ public class DocumentoRenderizable {
         private List<List<String>> filas = new ArrayList<>();
         @Builder.Default
         private Map<String, String> campos = new LinkedHashMap<>();
+        @Builder.Default
+        private Alineacion alineacion = Alineacion.IZQUIERDA;
+    }
+
+    public enum Alineacion {
+        IZQUIERDA,
+        CENTRO,
+        DERECHA,
+        JUSTIFICADO
     }
 
     public enum TipoSeccion {

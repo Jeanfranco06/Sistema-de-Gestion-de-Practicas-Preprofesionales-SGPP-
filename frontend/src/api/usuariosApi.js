@@ -12,7 +12,9 @@ export const usuariosApi = {
     assignRoles: (id, roles) => api.post(`/usuarios/${id}/roles`, roles),
     checkField: (field, value, excludeId) => api.get('/usuarios/check-available', {
         params: { field, value, excludeId: excludeId ?? undefined }
-    })
+    }),
+    actualizarPerfilAcademico: (data) => api.put('/estudiante/perfil-academico', data),
+    obtenerPerfilAcademico: () => api.get('/estudiante/perfil-academico')
 };
 
 export const tutoresApi = {

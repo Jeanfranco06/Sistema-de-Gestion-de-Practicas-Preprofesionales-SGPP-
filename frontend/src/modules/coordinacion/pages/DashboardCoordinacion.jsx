@@ -349,7 +349,9 @@ export const DashboardCoordinacion = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {filtered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map(e => (
+              {filtered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map(e => {
+                console.log('Renderizando expediente:', e.id, 'Estado:', e.estado);
+                return (
                 <TableRow key={e.id} hover>
                   <TableCell sx={{ fontFamily: 'monospace', fontSize: 12 }}>{e.codigoExpediente}</TableCell>
                   <TableCell>
@@ -363,15 +365,15 @@ export const DashboardCoordinacion = () => {
                   </TableCell>
                   <TableCell align="center">
                     <Stack direction="row" spacing={0.5} justifyContent="center">
-                      {e.estado === 'VALIDADO_SECRETARIA' && (
-                        <Tooltip title="Emitir y firmar Carta de Presentación">
-                          <Button size="small" variant="contained" color="success"
-                            onClick={() => handleEmitirCarta(e.id)}
-                            sx={{ fontWeight: 600, fontSize: '0.7rem', whiteSpace: 'nowrap', px: 1 }}>
-                            Emitir Carta
-                          </Button>
-                        </Tooltip>
-                      )}
+                      {/* Debug: console.log('Estado:', e.estado, 'Tipo:', typeof e.estado) */}
+                      {/* Temporal: mostrar botón siempre para debug */}
+                      <Tooltip title="Emitir y firmar Carta de Presentación">
+                        <Button size="small" variant="contained" color="success"
+                          onClick={() => handleEmitirCarta(e.id)}
+                          sx={{ fontWeight: 600, fontSize: '0.7rem', whiteSpace: 'nowrap', px: 1 }}>
+                          Emitir Carta
+                        </Button>
+                      </Tooltip>
                       <Tooltip title="Ver detalle">
                         <Button size="small" variant="outlined" onClick={() => navigate(`/coordinacion/expedientes/${e.id}`)}>
                           <Visibility fontSize="small" />
@@ -380,7 +382,8 @@ export const DashboardCoordinacion = () => {
                     </Stack>
                   </TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
               {filtered.length === 0 && (
                 <TableRow><TableCell colSpan={6} align="center" sx={{ py: 4, color: 'text.secondary' }}>No se encontraron expedientes</TableCell></TableRow>
               )}

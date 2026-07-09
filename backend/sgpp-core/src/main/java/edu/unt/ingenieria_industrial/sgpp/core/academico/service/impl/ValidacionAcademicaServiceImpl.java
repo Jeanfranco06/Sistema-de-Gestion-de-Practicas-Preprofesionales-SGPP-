@@ -22,7 +22,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -269,7 +268,10 @@ public class ValidacionAcademicaServiceImpl implements ValidacionAcademicaServic
                 case "PPI_APROBADAS" -> evaluarPPIAprobadas(estudiante);
                 case "CURSOS_HASTA_OCTAVO" -> evaluarSemestreMinimo(estudiante, parametros, 8);
                 case "CURSOS_HASTA_NOVENO" -> evaluarSemestreMinimo(estudiante, parametros, 9);
+                case "CURSOS_HASTA_DECIMO" -> evaluarSemestreMinimo(estudiante, parametros, 10);
                 case "CREDITOS_MINIMOS" -> evaluarCreditosMinimos(estudiante, parametros);
+                case "EGRESADO" -> evaluarEgresado(estudiante);
+                case "ANIO_EGRESO_MAXIMO" -> evaluarAnioEgresoMaximo(estudiante, parametros);
                 default -> {
                     log.warn("Regla de validación no reconocida: {} (id={})", regla.getCodigo(), regla.getId());
                     yield new ResultadoEvaluacion(false, true,
@@ -360,6 +362,39 @@ public class ValidacionAcademicaServiceImpl implements ValidacionAcademicaServic
                         ? "Créditos aprobados: " + creditos + " (mínimo " + creditosMinimos + ")"
                         : "Créditos insuficientes: " + creditos + " de " + creditosMinimos,
                 cumple ? null : "Aprobar " + (creditosMinimos - creditos) + " créditos más");
+    }
+
+    private ResultadoEvaluacion evaluarEgresado(Estudiante estudiante) {
+        // Nota: Se usa fechaEgresoEstimada. Se debería agregar campo fechaEgreso real cuando el estudiante egrese
+        boolean egresado = estudiante.getFechaEgresoEstimada() != null && 
+                estudiante.getEstadoAcademico() != null && 
+                estudiante.getEstadoAcademico().name().contains("EGRESADO");
+        
+        return new ResultadoEvaluacion(egresado, false,
+                egresado
+                        ? "Egresado verificado (fecha estimada: " + estudiante.getFechaEgresoEstimada() + ")"
+                        : "El estudiante no ha egresado aún",
+                egresado ? null : "Completar estudios y egresar");
+    }
+
+    private ResultadoEvaluacion evaluarAnioEgresoMaximo(Estudiante estudiante, List<ParametroRegla> parametros) {
+        if (estudiante.getFechaEgresoEstimada() == null) {
+            return new ResultadoEvaluacion(false, true,
+                    "No se puede verificar año de egreso: estudiante no egresado",
+                    "Egresar primero");
+        }
+
+        int aniosMaximos = buscarParametroInt(parametros, "ANIOS_MAXIMOS", 1);
+        int aniosDesdeEgreso = java.time.Period.between(
+                estudiante.getFechaEgresoEstimada(), java.time.LocalDate.now()).getYears();
+        
+        boolean cumple = aniosDesdeEgreso <= aniosMaximos;
+
+        return new ResultadoEvaluacion(cumple, false,
+                cumple
+                        ? "Tiempo desde egreso: " + aniosDesdeEgreso + " años (máximo " + aniosMaximos + ")"
+                        : "Tiempo desde egreso excedido: " + aniosDesdeEgreso + " años (máximo " + aniosMaximos + ")",
+                cumple ? null : "El tiempo desde egreso excede el máximo permitido");
     }
 
     private int buscarParametroInt(List<ParametroRegla> parametros, String clave, int defaultValue) {

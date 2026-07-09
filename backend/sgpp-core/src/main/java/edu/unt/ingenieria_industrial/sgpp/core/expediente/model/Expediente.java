@@ -29,6 +29,15 @@ public class Expediente extends BaseEntity {
     @Column(name = "codigo_expediente", unique = true, nullable = false, length = 30)
     private String codigoExpediente;
 
+    @Column(name = "numero_expediente", nullable = false, length = 50)
+    private String numeroExpediente;
+
+    @Column(name = "fecha_apertura", nullable = false)
+    private LocalDate fechaApertura;
+
+    @Column(name = "fecha_cierre")
+    private LocalDate fechaCierre;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_estudiante", nullable = false)
     @JsonIgnore

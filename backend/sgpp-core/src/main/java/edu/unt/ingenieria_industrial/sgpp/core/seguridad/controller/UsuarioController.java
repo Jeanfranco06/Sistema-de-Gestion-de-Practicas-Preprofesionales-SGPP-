@@ -21,13 +21,13 @@ import java.util.Set;
 @RequestMapping("/usuarios")
 @RequiredArgsConstructor
 @Tag(name = "Gestión de Usuarios", description = "Endpoints para la administración de usuarios y roles")
-@PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COORDINADOR', 'DIRECTOR')")
 public class UsuarioController {
 
     private final UsuarioService usuarioService;
 
     @PostMapping
     @Operation(summary = "Crear un nuevo usuario")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COORDINADOR', 'DIRECTOR')")
     public ResponseEntity<ApiResponse<UsuarioDTO>> create(@Valid @RequestBody UsuarioCreateDTO dto) {
         UsuarioDTO created = usuarioService.create(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(
@@ -42,6 +42,7 @@ public class UsuarioController {
 
     @GetMapping
     @Operation(summary = "Listar todos los usuarios")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COORDINADOR', 'DIRECTOR')")
     public ResponseEntity<ApiResponse<List<UsuarioDTO>>> findAll(
             @Parameter(description = "Filtro por nombre") @RequestParam(required = false) String nombre,
             @Parameter(description = "Filtro por correo") @RequestParam(required = false) String correo,
@@ -60,6 +61,7 @@ public class UsuarioController {
 
     @GetMapping("/check-available")
     @Operation(summary = "Verificar si un campo está disponible (no duplicado)")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COORDINADOR', 'DIRECTOR')")
     public ResponseEntity<ApiResponse<Boolean>> checkFieldAvailable(
             @Parameter(description = "Nombre del campo: username, email, numeroDocumento, codigoMatricula, codigoDocente") @RequestParam String field,
             @Parameter(description = "Valor a verificar") @RequestParam String value,
@@ -77,6 +79,7 @@ public class UsuarioController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Obtener un usuario por ID")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COORDINADOR', 'DIRECTOR')")
     public ResponseEntity<ApiResponse<UsuarioDTO>> findById(@PathVariable Long id) {
         UsuarioDTO usuario = usuarioService.findById(id);
         return ResponseEntity.ok(
@@ -90,6 +93,7 @@ public class UsuarioController {
 
     @GetMapping("/{id}/detalle")
     @Operation(summary = "Obtener detalle completo de un usuario")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COORDINADOR', 'DIRECTOR')")
     public ResponseEntity<ApiResponse<UsuarioDetalleResponse>> findDetalleById(@PathVariable Long id) {
         UsuarioDetalleResponse usuario = usuarioService.findDetalleById(id);
         return ResponseEntity.ok(
@@ -103,6 +107,7 @@ public class UsuarioController {
 
     @PutMapping("/{id}")
     @Operation(summary = "Actualizar un usuario")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COORDINADOR', 'DIRECTOR')")
     public ResponseEntity<ApiResponse<UsuarioDTO>> update(@PathVariable Long id, @Valid @RequestBody UsuarioDTO dto) {
         UsuarioDTO updated = usuarioService.update(id, dto);
         return ResponseEntity.ok(
@@ -117,6 +122,7 @@ public class UsuarioController {
 
     @PatchMapping("/{id}/estado")
     @Operation(summary = "Actualizar estado de un usuario (ACTIVO, INACTIVO, BLOQUEADO)")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COORDINADOR', 'DIRECTOR')")
     public ResponseEntity<ApiResponse<Void>> updateEstado(@PathVariable Long id, @Valid @RequestBody EstadoUsuarioRequest request) {
         usuarioService.updateEstado(id, request);
         return ResponseEntity.ok(
@@ -130,6 +136,7 @@ public class UsuarioController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Deshabilitar un usuario")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COORDINADOR', 'DIRECTOR')")
     public ResponseEntity<ApiResponse<Void>> disable(@PathVariable Long id) {
         usuarioService.disable(id);
         return ResponseEntity.ok(
@@ -143,6 +150,7 @@ public class UsuarioController {
 
     @PostMapping("/{id}/unlock")
     @Operation(summary = "Desbloquear una cuenta de usuario")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COORDINADOR', 'DIRECTOR')")
     public ResponseEntity<ApiResponse<Void>> unlock(@PathVariable Long id) {
         usuarioService.unlock(id);
         return ResponseEntity.ok(
@@ -156,6 +164,7 @@ public class UsuarioController {
 
     @GetMapping("/{id}/roles")
     @Operation(summary = "Obtener roles de un usuario")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COORDINADOR', 'DIRECTOR')")
     public ResponseEntity<ApiResponse<List<RolDTO>>> getRolesByUsuarioId(@PathVariable Long id) {
         List<RolDTO> roles = usuarioService.getRolesByUsuarioId(id);
         return ResponseEntity.ok(
@@ -169,6 +178,7 @@ public class UsuarioController {
 
     @PostMapping("/{id}/roles")
     @Operation(summary = "Asignar roles a un usuario")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COORDINADOR', 'DIRECTOR')")
     public ResponseEntity<ApiResponse<Void>> assignRoles(@PathVariable Long id, @RequestBody Set<String> roles) {
         usuarioService.assignRoles(id, roles);
         return ResponseEntity.ok(
@@ -182,6 +192,7 @@ public class UsuarioController {
 
     @DeleteMapping("/{id}/roles/{rolId}")
     @Operation(summary = "Revocar un rol de un usuario")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COORDINADOR', 'DIRECTOR')")
     public ResponseEntity<ApiResponse<Void>> revokeRol(@PathVariable Long id, @PathVariable Long rolId) {
         usuarioService.revokeRol(id, rolId);
         return ResponseEntity.ok(
