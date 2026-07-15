@@ -16,9 +16,11 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { Download, FilterAlt, Visibility } from '@mui/icons-material';
+import { Download, FilterAlt, Visibility, Assessment } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import PageContainer from '../../../shared/components/PageContainer';
+import {
+  ModulePageShell, ModulePageHeader, ModuleToolbar, ModuleTableContainer, moduleHeadCellSx,
+} from '../../../shared/components/module/ModulePageShell';
 import { empresaApi, sedeApi } from '../../../api/sedesApi';
 import { reportesCoordinacionApi } from '../../../api/coordinacionApi';
 
@@ -189,19 +191,18 @@ export const ReportesCoordinacion = ({ variant = 'coordinacion' }) => {
   }, [resultado, tipoReporte]);
 
   return (
-    <PageContainer>
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" fontWeight={800} color="primary.main" sx={{ mb: 0.75 }}>
-          {isAdminView ? 'Reportes Administrativos' : 'Reportes Institucionales'}
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 860 }}>
-          {isAdminView
+    <ModulePageShell>
+      <ModulePageHeader
+        icon={<Assessment />}
+        title={isAdminView ? 'Reportes Administrativos' : 'Reportes Institucionales'}
+        subtitle={
+          isAdminView
             ? 'Consulta y exporta reportes operativos de expedientes, empresas, sedes y convenios para la gestión administrativa del SGPP.'
-            : 'Genera reportes ejecutivos por periodo, tipo de práctica, estado, empresa y sede. La exportación se conecta con el backend institucional y permite descargar salidas en PDF o CSV.'}
-        </Typography>
-      </Box>
+            : 'Genera reportes ejecutivos por periodo, tipo de práctica, estado, empresa y sede.'
+        }
+      />
 
-      <Paper sx={{ p: 2.5, mb: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+      <ModuleToolbar>
         <Box
           sx={{
             display: 'grid',
@@ -293,13 +294,8 @@ export const ReportesCoordinacion = ({ variant = 'coordinacion' }) => {
           </TextField>
         </Box>
 
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mt: 2.5 }}>
-          <Button variant="contained" startIcon={<FilterAlt />} onClick={generarReporte} disabled={loading}>
-            Generar reporte
-          </Button>
-          <Button
-            variant="outlined"
-            onClick={() =>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mt: 2.5, justifyContent: 'flex-end' }}>
+          <Button variant="outlined" onClick={() =>
               setFiltros({
                 periodoAcademico: '',
                 codigoTipoPractica: '',
@@ -311,14 +307,17 @@ export const ReportesCoordinacion = ({ variant = 'coordinacion' }) => {
           >
             Limpiar filtros
           </Button>
+          <Button variant="contained" startIcon={<FilterAlt />} onClick={generarReporte} disabled={loading}>
+            Generar reporte
+          </Button>
         </Box>
-      </Paper>
+      </ModuleToolbar>
 
       {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
       {exportMessage && <Alert severity="info" sx={{ mb: 3 }}>{exportMessage}</Alert>}
 
       {loading ? (
-        <Paper sx={{ p: 5, borderRadius: 3, textAlign: 'center' }}>
+        <Paper elevation={1} sx={{ p: 5, borderRadius: 3, textAlign: 'center', border: '1px solid #e0e0e0' }}>
           <CircularProgress />
           <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
             Generando reporte...
@@ -326,42 +325,14 @@ export const ReportesCoordinacion = ({ variant = 'coordinacion' }) => {
         </Paper>
       ) : resultado ? (
         <>
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: { xs: '1fr', md: 'repeat(4, minmax(0, 1fr))' },
-              gap: 2,
-              mb: 3,
-            }}
-          >
-            <Paper variant="outlined" sx={{ p: 2, borderRadius: 2.5 }}>
-              <Typography variant="body2" color="text.secondary">Reporte</Typography>
-              <Typography variant="h6" fontWeight={700}>{resultado.titulo || REPORT_TYPES.find((item) => item.value === tipoReporte)?.label}</Typography>
-            </Paper>
-            <Paper variant="outlined" sx={{ p: 2, borderRadius: 2.5 }}>
-              <Typography variant="body2" color="text.secondary">Registros</Typography>
-              <Typography variant="h6" fontWeight={700}>{resultado.totalRegistros || 0}</Typography>
-            </Paper>
-            <Paper variant="outlined" sx={{ p: 2, borderRadius: 2.5 }}>
-              <Typography variant="body2" color="text.secondary">Generado en</Typography>
-              <Typography variant="h6" fontWeight={700}>{resultado.generadoEn ? new Date(resultado.generadoEn).toLocaleString('es-PE') : 'No disponible'}</Typography>
-            </Paper>
-            <Paper variant="outlined" sx={{ p: 2, borderRadius: 2.5 }}>
-              <Typography variant="body2" color="text.secondary">Resumen</Typography>
-              <Typography variant="h6" fontWeight={700}>
-                {resultado.resumen?.totalRegistros ?? resultado.totalRegistros ?? 0}
-              </Typography>
-            </Paper>
-          </Box>
-
-          <Paper sx={{ p: 2.5, mb: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap', alignItems: 'center', mb: 1.5 }}>
+          <ModuleToolbar>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
               <Box>
-                <Typography variant="h6" fontWeight={700}>
-                  Resultados del reporte
+                <Typography variant="subtitle1" fontWeight="bold" color="primary">
+                  {resultado.titulo || REPORT_TYPES.find((item) => item.value === tipoReporte)?.label}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  {resultado.descripcion || 'Consulta consolidada conectada al backend institucional.'}
+                  {resultado.totalRegistros || 0} registros · {resultado.descripcion || 'Consulta consolidada del SGPP.'}
                 </Typography>
               </Box>
               <Box sx={{ display: 'flex', gap: 1 }}>
@@ -373,58 +344,56 @@ export const ReportesCoordinacion = ({ variant = 'coordinacion' }) => {
                 </Button>
               </Box>
             </Box>
+          </ModuleToolbar>
 
-            {resultado.registros?.length > 0 ? (
-              <TableContainer>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
+          {resultado.registros?.length > 0 ? (
+            <ModuleTableContainer>
+              <Table size="small">
+                <TableHead sx={{ bgcolor: 'primary.main' }}>
+                  <TableRow>
+                    {columnas.map((col) => (
+                      <TableCell key={col.key} sx={moduleHeadCellSx}>{col.label}</TableCell>
+                    ))}
+                    <TableCell align="right" sx={moduleHeadCellSx}>Acciones</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {resultado.registros.map((row, index) => (
+                    <TableRow key={row.idExpediente || row.id || index} hover>
                       {columnas.map((col) => (
-                        <TableCell key={col.key}>{col.label}</TableCell>
-                      ))}
-                      <TableCell align="right">Acciones</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {resultado.registros.map((row, index) => (
-                      <TableRow key={row.idExpediente || row.id || index} hover>
-                        {columnas.map((col) => (
-                          <TableCell key={`${col.key}-${row.idExpediente || row.id || index}`}>
-                            {col.key.toLowerCase().includes('estado') ? (
-                              <Chip size="small" label={formatValue(row[col.key])} color="primary" variant="outlined" />
-                            ) : (
-                              formatValue(row[col.key])
-                            )}
-                          </TableCell>
-                        ))}
-                        <TableCell align="right">
-                          {row.idExpediente ? (
-                            <Button
-                              size="small"
-                              startIcon={<Visibility />}
-                              onClick={() => navigate(`/coordinacion/expedientes/${row.idExpediente}`)}
-                            >
-                              Ver detalle
-                            </Button>
+                        <TableCell key={`${col.key}-${row.idExpediente || row.id || index}`}>
+                          {col.key.toLowerCase().includes('estado') ? (
+                            <Chip size="small" label={formatValue(row[col.key])} color="primary" variant="outlined" />
                           ) : (
-                            <Typography variant="caption" color="text.secondary">
-                              Sin detalle
-                            </Typography>
+                            formatValue(row[col.key])
                           )}
                         </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            ) : (
-              <Alert severity="info">El reporte no devolvió registros con los filtros seleccionados.</Alert>
-            )}
-          </Paper>
+                      ))}
+                      <TableCell align="right">
+                        {row.idExpediente ? (
+                          <Button
+                            size="small"
+                            startIcon={<Visibility />}
+                            onClick={() => navigate(`/coordinacion/expedientes/${row.idExpediente}`)}
+                          >
+                            Ver detalle
+                          </Button>
+                        ) : (
+                          <Typography variant="caption" color="text.secondary">Sin detalle</Typography>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </ModuleTableContainer>
+          ) : (
+            <Alert severity="info">El reporte no devolvió registros con los filtros seleccionados.</Alert>
+          )}
         </>
       ) : (
-        <Paper sx={{ p: 4, borderRadius: 3, textAlign: 'center', border: '1px dashed', borderColor: 'divider' }}>
-          <Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>
+        <Paper elevation={1} sx={{ p: 4, borderRadius: 3, textAlign: 'center', border: '1px solid #e0e0e0' }}>
+          <Typography variant="h6" fontWeight="bold" color="primary" sx={{ mb: 1 }}>
             Aún no se ha generado un reporte
           </Typography>
           <Typography variant="body2" color="text.secondary">
@@ -432,6 +401,6 @@ export const ReportesCoordinacion = ({ variant = 'coordinacion' }) => {
           </Typography>
         </Paper>
       )}
-    </PageContainer>
+    </ModulePageShell>
   );
 };

@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Box, Typography, Chip, Button, TextField, InputAdornment,
+  Box, Typography, Button, TextField, InputAdornment,
   LinearProgress, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Paper, IconButton,
 } from '@mui/material';
-import { Search, Description, ChevronRight } from '@mui/icons-material';
+import { Search, Description, ChevronRight, Groups } from '@mui/icons-material';
 import { useAuth } from '../../auth/AuthContext';
 import { expedientesApi } from '../../api/expedientesApi';
 import { useNavigate } from 'react-router-dom';
 import { hasAnyRole } from '../../shared/utils/roleRoutes';
-import PageHeader from '../../shared/components/PageHeader';
-import ContentCard from '../../shared/components/ContentCard';
+import StatusChip from '../../shared/components/StatusChip';
+import {
+  ModulePageShell, ModulePageHeader, ModuleToolbar, ModuleTableContainer, moduleHeadCellSx,
+} from '../../shared/components/module/ModulePageShell';
 
 export const ListaPracticantes = () => {
   const { user } = useAuth();
@@ -65,13 +67,14 @@ export const ListaPracticantes = () => {
   };
 
   return (
-    <Box sx={{ maxWidth: 1100, mx: 'auto' }}>
-      <PageHeader
+    <ModulePageShell>
+      <ModulePageHeader
+        icon={<Groups />}
         title="Practicantes asignados"
         subtitle="Gestione y evalúe a los estudiantes a su cargo"
       />
 
-      <ContentCard sx={{ mb: 2 }}>
+      <ModuleToolbar>
         <TextField
           fullWidth
           size="small"
@@ -84,33 +87,34 @@ export const ListaPracticantes = () => {
                 <Search fontSize="small" color="action" />
               </InputAdornment>
             ),
+            sx: { bgcolor: '#fff', borderRadius: 2 },
           }}
         />
-      </ContentCard>
+      </ModuleToolbar>
 
       {loading ? (
         <LinearProgress />
       ) : filteredPracticantes.length === 0 ? (
-        <ContentCard>
-          <Typography variant="body2" color="text.secondary" textAlign="center" py={4}>
+        <Paper elevation={1} sx={{ p: 4, borderRadius: 3, textAlign: 'center', border: '1px solid #e0e0e0' }}>
+          <Typography variant="body2" color="text.secondary">
             {search ? 'No hay resultados para la búsqueda.' : 'No hay practicantes asignados.'}
           </Typography>
           {search && (
-            <Box textAlign="center">
+            <Box sx={{ mt: 2 }}>
               <Button size="small" onClick={() => setSearch('')}>Limpiar búsqueda</Button>
             </Box>
           )}
-        </ContentCard>
+        </Paper>
       ) : (
-        <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
+        <ModuleTableContainer>
           <Table size="small">
-            <TableHead>
+            <TableHead sx={{ bgcolor: 'primary.main' }}>
               <TableRow>
-                <TableCell>Estudiante</TableCell>
-                <TableCell>Empresa</TableCell>
-                <TableCell>Modalidad</TableCell>
-                <TableCell>Estado</TableCell>
-                <TableCell align="right">Acciones</TableCell>
+                <TableCell sx={moduleHeadCellSx}>Estudiante</TableCell>
+                <TableCell sx={moduleHeadCellSx}>Empresa</TableCell>
+                <TableCell sx={moduleHeadCellSx}>Modalidad</TableCell>
+                <TableCell sx={moduleHeadCellSx}>Estado</TableCell>
+                <TableCell align="right" sx={moduleHeadCellSx}>Acciones</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -130,11 +134,12 @@ export const ListaPracticantes = () => {
                     <Typography variant="body2">{p.nombreTipoPractica || '—'}</Typography>
                   </TableCell>
                   <TableCell>
-                    <Chip label={estadoLabel(p.estado)} size="small" variant="outlined" />
+                    <StatusChip status={p.estado} label={estadoLabel(p.estado)} />
                   </TableCell>
                   <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
                     <IconButton
                       size="small"
+                      color="primary"
                       onClick={() => navigate(`/docente/documentos/${p.id}`)}
                       title="Documentos"
                     >
@@ -142,6 +147,7 @@ export const ListaPracticantes = () => {
                     </IconButton>
                     <Button
                       size="small"
+                      variant="contained"
                       endIcon={<ChevronRight />}
                       onClick={() => handleEvaluar(p.id)}
                     >
@@ -152,8 +158,8 @@ export const ListaPracticantes = () => {
               ))}
             </TableBody>
           </Table>
-        </TableContainer>
+        </ModuleTableContainer>
       )}
-    </Box>
+    </ModulePageShell>
   );
 };

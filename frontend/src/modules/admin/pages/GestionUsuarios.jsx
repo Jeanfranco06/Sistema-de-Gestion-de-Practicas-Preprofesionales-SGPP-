@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
-    Container, Typography, Box, Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-    Chip, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Grid, InputAdornment, Tooltip,
+    Typography, Box, Button, Table, TableBody, TableCell, TableHead, TableRow,
+    Chip, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, InputAdornment, Tooltip,
     TablePagination, MenuItem, Checkbox, ListItemText, OutlinedInput, Select, FormControl, InputLabel,
-    Drawer, Divider, Alert, CircularProgress, TableSortLabel, Avatar, Stack, Badge, Switch, FormControlLabel
+    Drawer, Divider, Alert, CircularProgress, TableSortLabel, Avatar, Stack
 } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import EditIcon from '@mui/icons-material/Edit';
@@ -20,7 +20,9 @@ import LockIcon from '@mui/icons-material/Lock';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SaveIcon from '@mui/icons-material/Save';
-import { motion } from 'framer-motion';
+import {
+    ModulePageShell, ModulePageHeader, ModuleToolbar, ModuleTableContainer, moduleHeadCellSx, moduleSortLabelSx,
+} from '../../../shared/components/module/ModulePageShell';
 import { usuariosApi } from '../../../api/usuariosApi';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
@@ -297,79 +299,69 @@ export const GestionUsuarios = () => {
 
     if (loading && usuarios.length === 0) {
         return (
-            <Container maxWidth="xl" sx={{ mt: 4, mb: 6, textAlign: 'center' }}>
+            <ModulePageShell sx={{ textAlign: 'center' }}>
                 <CircularProgress />
                 <Typography variant="body1" sx={{ mt: 2 }}>Cargando usuarios...</Typography>
-            </Container>
+            </ModulePageShell>
         );
     }
 
     return (
-        <Container maxWidth="xl" sx={{ mt: 4, mb: 6 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 4, p: 4, borderRadius: 4, bgcolor: 'primary.main', color: 'white', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', position: 'relative', overflow: 'hidden' }}>
-                <Box sx={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <AdminPanelSettingsIcon sx={{ fontSize: 48, color: 'rgba(255,255,255,0.9)' }} />
-                    <Box>
-                        <Typography variant="h4" fontWeight="bold">Gestión de Usuarios</Typography>
-                        <Typography variant="subtitle1" sx={{ opacity: 0.9 }}>
-                            Administración de cuentas, roles y acceso al sistema SGPP.
-                        </Typography>
-                    </Box>
-                </Box>
-            </Box>
+        <ModulePageShell>
+            <ModulePageHeader
+                icon={<AdminPanelSettingsIcon />}
+                title="Gestión de Usuarios"
+                subtitle="Administración de cuentas, roles y acceso al sistema SGPP."
+            />
 
-            <Paper component={motion.div} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}
-                elevation={0} sx={{ p: 4, mb: 4, borderRadius: 4, bgcolor: '#fff', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)' }}>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-                        <Typography variant="h6" fontWeight="bold" color="primary">Filtros de Búsqueda</Typography>
+            <ModuleToolbar>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, width: '100%' }}>
+                    <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', lg: 'row' }, alignItems: { lg: 'center' }, justifyContent: 'space-between', flexWrap: 'wrap' }}>
+                        <Box sx={{ display: 'flex', gap: 2, flex: 1, flexWrap: 'wrap', width: { xs: '100%', lg: 'auto' } }}>
+                            <TextField size="small" variant="outlined" placeholder="Buscar por nombre, correo o documento..."
+                                value={searchTerm} onChange={handleSearchChange}
+                                slotProps={{ input: { startAdornment: (<InputAdornment position="start"><SearchIcon color="action" fontSize="small" /></InputAdornment>), sx: { bgcolor: '#fff', borderRadius: 2, minWidth: { xs: '100%', sm: 280 } } } }} />
+                            <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 140 } }}>
+                                <InputLabel>Estado</InputLabel>
+                                <Select value={filtroEstado} label="Estado" onChange={(e) => setFiltroEstado(e.target.value)} sx={{ borderRadius: 2, bgcolor: '#fff' }}>
+                                    {ESTADOS_FILTRO.map(e => <MenuItem key={e} value={e}>{e === 'todos' ? 'Todos' : e.charAt(0) + e.slice(1).toLowerCase()}</MenuItem>)}
+                                </Select>
+                            </FormControl>
+                            <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 160 } }}>
+                                <InputLabel>Rol</InputLabel>
+                                <Select value={filtroRol} label="Rol" onChange={(e) => setFiltroRol(e.target.value)} sx={{ borderRadius: 2, bgcolor: '#fff' }}>
+                                    <MenuItem value="todos">Todos</MenuItem>
+                                    {ROLES_DISPONIBLES.map(r => <MenuItem key={r} value={r}>{r.replace(/_/g, ' ')}</MenuItem>)}
+                                </Select>
+                            </FormControl>
+                            <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 150 } }}>
+                                <InputLabel>Tipo Usuario</InputLabel>
+                                <Select value={filtroTipoUsuario} label="Tipo Usuario" onChange={(e) => setFiltroTipoUsuario(e.target.value)} sx={{ borderRadius: 2, bgcolor: '#fff' }}>
+                                    {TIPO_USUARIO_FILTRO.map(t => <MenuItem key={t} value={t}>{t === 'todos' ? 'Todos' : t}</MenuItem>)}
+                                </Select>
+                            </FormControl>
+                        </Box>
                         <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={() => handleOpenDialog()}
-                            sx={{ px: 3, py: 1.2, borderRadius: 1.2, boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', whiteSpace: 'nowrap' }}>
+                            sx={{ px: 3, py: 1, borderRadius: 2, boxShadow: 2, whiteSpace: 'nowrap', width: { xs: '100%', sm: 'auto' }, minHeight: '40px' }}>
                             Nuevo Usuario
                         </Button>
                     </Box>
-                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '2fr 1fr 1fr 1fr' }, gap: 2.5 }}>
-                        <TextField size="small" variant="outlined" placeholder="Buscar por nombre, correo o documento..."
-                            value={searchTerm} onChange={handleSearchChange}
-                            slotProps={{ input: { startAdornment: (<InputAdornment position="start"><SearchIcon color="action" fontSize="small" /></InputAdornment>), sx: { bgcolor: '#fff', borderRadius: 1.2 } } }} />
-                        <FormControl size="small" fullWidth>
-                            <InputLabel>Estado</InputLabel>
-                            <Select value={filtroEstado} label="Estado" onChange={(e) => setFiltroEstado(e.target.value)} sx={{ borderRadius: 1.2, bgcolor: '#fff' }}>
-                                {ESTADOS_FILTRO.map(e => <MenuItem key={e} value={e}>{e === 'todos' ? 'Todos' : e.charAt(0) + e.slice(1).toLowerCase()}</MenuItem>)}
-                            </Select>
-                        </FormControl>
-                        <FormControl size="small" fullWidth>
-                            <InputLabel>Rol</InputLabel>
-                            <Select value={filtroRol} label="Rol" onChange={(e) => setFiltroRol(e.target.value)} sx={{ borderRadius: 1.2, bgcolor: '#fff' }}>
-                                <MenuItem value="todos">Todos</MenuItem>
-                                {ROLES_DISPONIBLES.map(r => <MenuItem key={r} value={r}>{r.replace(/_/g, ' ')}</MenuItem>)}
-                            </Select>
-                        </FormControl>
-                        <FormControl size="small" fullWidth>
-                            <InputLabel>Tipo Usuario</InputLabel>
-                            <Select value={filtroTipoUsuario} label="Tipo Usuario" onChange={(e) => setFiltroTipoUsuario(e.target.value)} sx={{ borderRadius: 1.2, bgcolor: '#fff' }}>
-                                {TIPO_USUARIO_FILTRO.map(t => <MenuItem key={t} value={t}>{t === 'todos' ? 'Todos' : t}</MenuItem>)}
-                            </Select>
-                        </FormControl>
-                    </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                         <Button variant="outlined" size="medium" onClick={limpiarFiltros} startIcon={<FilterListIcon />}
-                            sx={{ borderRadius: 1.2, px: 3, fontWeight: 600 }}>Limpiar Filtros</Button>
+                            sx={{ borderRadius: 2, px: 3, fontWeight: 600 }}>Limpiar Filtros</Button>
                     </Box>
                 </Box>
-            </Paper>
+            </ModuleToolbar>
 
-            <TableContainer component={motion.div} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.2 }}
-                elevation={0} sx={{ borderRadius: 4, border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)', overflow: 'hidden', bgcolor: '#fff' }}>
+            <ModuleTableContainer>
                 <Table>
                     <TableHead sx={{ bgcolor: 'primary.main' }}>
                         <TableRow>
                             {headCells.map((hc) => (
-                                <TableCell key={hc.id} sx={{ color: '#fff', fontWeight: 'bold' }}>
+                                <TableCell key={hc.id} sx={moduleHeadCellSx}>
                                     {hc.sortable !== false ? (
                                         <TableSortLabel active={orderBy === hc.id} direction={orderBy === hc.id ? order : 'asc'}
-                                            onClick={() => handleSort(hc.id)}
-                                            sx={{ color: '#fff !important', '& .MuiTableSortLabel-icon': { color: '#fff !important' } }}>
+                                            onClick={() => handleSort(hc.id)} sx={moduleSortLabelSx}>
                                             {hc.label}
                                         </TableSortLabel>
                                     ) : hc.label}
@@ -467,7 +459,7 @@ export const GestionUsuarios = () => {
                         )}
                     </TableBody>
                 </Table>
-            </TableContainer>
+            </ModuleTableContainer>
 
             <TablePagination rowsPerPageOptions={[5, 10, 25]} component="div" count={sortedUsuarios.length}
                 rowsPerPage={rowsPerPage} page={page} onPageChange={(e, p) => setPage(p)}
@@ -721,6 +713,6 @@ export const GestionUsuarios = () => {
                     </Box>
                 ) : null}
             </Drawer>
-        </Container>
+        </ModulePageShell>
     );
 };

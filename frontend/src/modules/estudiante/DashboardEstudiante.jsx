@@ -1,27 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box, Grid, Typography, Chip, List, ListItem, ListItemText, ListItemIcon,
-  Button, Divider, Alert, CircularProgress, IconButton, Paper, Stack,
-  Dialog, DialogTitle, DialogContent, DialogActions, FormControl, InputLabel, Select, MenuItem,
+  Button, Divider, Alert, CircularProgress, IconButton, Stack,
 } from '@mui/material';
 import {
   Description, Business, Visibility, TrendingUp, Refresh, InfoOutlined,
+  Assignment, AccessTime, FolderOpen, School,
 } from '@mui/icons-material';
 import { useAuth } from '../../auth/AuthContext';
 import { expedientesApi } from '../../api/expedientesApi';
 import { useNavigate } from 'react-router-dom';
-import PageHeader from '../../shared/components/PageHeader';
+import {
+  ModulePageShell, ModulePageHeader,
+} from '../../shared/components/module/ModulePageShell';
 import ContentCard from '../../shared/components/ContentCard';
-import Swal from 'sweetalert2';
+import StatStrip from '../../shared/components/StatStrip';
+import StatusChip from '../../shared/components/StatusChip';
 
 export default function DashboardEstudiante() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [expediente, setExpediente] = useState(null);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [tipoPractica, setTipoPractica] = useState(1); // 1 = INICIAL, 2 = FINAL
-  const [creando, setCreando] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -46,59 +46,17 @@ export default function DashboardEstudiante() {
     );
   }
 
-  const handleCrear = async () => {
-    try {
-      setCreando(true);
-      await expedientesApi.crear({
-        idEstudiante: user.id,
-        idTipoPractica: tipoPractica,
-        condicionSolicitante: 'REGULAR',
-        periodoAcademico: '2025-I'
-      });
-      setOpenDialog(false);
-      Swal.fire('Éxito', 'Expediente creado correctamente', 'success');
-      fetchData();
-    } catch (err) {
-      console.error(err);
-      Swal.fire('Error', 'No se pudo crear el expediente', 'error');
-    } finally {
-      setCreando(false);
-    }
-  };
-
   if (!expediente) {
     return (
-      <Box sx={{ maxWidth: 480, mx: 'auto', textAlign: 'center', py: 8 }}>
+      <ModulePageShell>
         <ContentCard>
           <Typography variant="h6" gutterBottom>Sin práctica registrada</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
             Solicita el inicio de tus prácticas para comenzar a registrar tu progreso.
           </Typography>
-          <Button variant="contained" onClick={() => setOpenDialog(true)}>Solicitar práctica</Button>
+          <Button variant="contained">Solicitar práctica</Button>
         </ContentCard>
-
-        <Dialog open={openDialog} onClose={() => !creando && setOpenDialog(false)}>
-          <DialogTitle>Solicitar Práctica</DialogTitle>
-          <DialogContent>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2, mt: 1 }}>
-              Selecciona el tipo de práctica que deseas registrar.
-            </Typography>
-            <FormControl fullWidth size="small">
-              <InputLabel>Tipo de Práctica</InputLabel>
-              <Select value={tipoPractica} label="Tipo de Práctica" onChange={(e) => setTipoPractica(e.target.value)}>
-                <MenuItem value={1}>Práctica Preprofesional Inicial</MenuItem>
-                <MenuItem value={2}>Práctica Preprofesional Final</MenuItem>
-              </Select>
-            </FormControl>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setOpenDialog(false)} disabled={creando}>Cancelar</Button>
-            <Button onClick={handleCrear} variant="contained" disabled={creando}>
-              {creando ? 'Creando...' : 'Crear Expediente'}
-            </Button>
-          </DialogActions>
-        </Dialog>
-      </Box>
+      </ModulePageShell>
     );
   }
 
@@ -120,51 +78,22 @@ export default function DashboardEstudiante() {
   };
 
   const stats = [
-    { label: 'Modalidad', value: expediente.codigoTipoPractica },
-    { label: 'Horas', value: `${horasEjecutadas} / ${horasTotales}` },
-    { label: 'Estado', value: expediente.estado?.replace(/_/g, ' ').toLowerCase() },
-    { label: 'Documentos', value: `${docsAprobados} / ${docsObligatorios.length}` },
+    { label: 'Modalidad', value: expediente.codigoTipoPractica, icon: <Assignment fontSize="small" />, accent: 'blue' },
+    { label: 'Horas', value: `${horasEjecutadas} / ${horasTotales}`, icon: <AccessTime fontSize="small" />, accent: 'teal' },
+    { label: 'Estado', value: expediente.estado?.replace(/_/g, ' ').toLowerCase(), icon: <FolderOpen fontSize="small" />, accent: 'violet' },
+    { label: 'Documentos', value: `${docsAprobados} / ${docsObligatorios.length}`, icon: <Description fontSize="small" />, accent: 'emerald' },
   ];
 
-  const handleCancelar = async () => {
-    const result = await Swal.fire({
-      title: '¿Estás seguro?',
-      text: "Se cancelará tu solicitud actual y podrás iniciar una nueva.",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, cancelar',
-      cancelButtonText: 'No'
-    });
-    if (result.isConfirmed) {
-      try {
-        setLoading(true);
-        await expedientesApi.disable(expediente.id);
-        Swal.fire('Cancelada', 'La solicitud ha sido cancelada.', 'success');
-        setExpediente(null);
-        fetchData();
-      } catch (err) {
-        Swal.fire('Error', 'No se pudo cancelar la solicitud', 'error');
-        setLoading(false);
-      }
-    }
-  };
-
   return (
-    <Box sx={{ maxWidth: 1100, mx: 'auto' }}>
-      <PageHeader
+    <ModulePageShell>
+      <ModulePageHeader
+        icon={<School />}
         title={`Hola, ${user?.nombres?.split(' ')[0]}`}
         subtitle={`${expediente.nombreTipoPractica} · ${expediente.nombreEmpresa || 'Empresa no asignada'}`}
         action={
-          <Box display="flex" alignItems="center" gap={1}>
-            {expediente.estado === 'BORRADOR' && (
-              <Button color="error" variant="outlined" size="small" onClick={handleCancelar}>
-                Cancelar Solicitud
-              </Button>
-            )}
-            <IconButton onClick={fetchData} size="small" aria-label="Actualizar">
-              <Refresh fontSize="small" />
-            </IconButton>
-          </Box>
+          <IconButton onClick={fetchData} size="small" aria-label="Actualizar">
+            <Refresh fontSize="small" />
+          </IconButton>
         }
       />
 
@@ -175,33 +104,14 @@ export default function DashboardEstudiante() {
         </Alert>
       )}
 
-      <Paper variant="outlined" sx={{ mb: 3, borderRadius: 2, display: 'flex', flexWrap: 'wrap' }}>
-        {stats.map((s, i) => (
-          <Box
-            key={s.label}
-            sx={{
-              flex: '1 1 140px',
-              px: 2.5, py: 2,
-              borderRight: i < stats.length - 1 ? '1px solid' : 'none',
-              borderColor: 'divider',
-            }}
-          >
-            <Typography variant="caption" color="text.secondary" textTransform="uppercase" letterSpacing={0.5}>
-              {s.label}
-            </Typography>
-            <Typography variant="subtitle1" fontWeight={600} sx={{ mt: 0.25, textTransform: 'capitalize' }}>
-              {s.value}
-            </Typography>
-          </Box>
-        ))}
-      </Paper>
+      <StatStrip items={stats} />
 
       <Grid container spacing={3}>
         <Grid item xs={12} lg={8}>
           <ContentCard>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <Typography variant="subtitle1" fontWeight={600}>Progreso de práctica</Typography>
-              <Chip label={`${pct}%`} size="small" variant="outlined" />
+              <Chip label={`${pct}%`} size="small" color="primary" variant="outlined" />
             </Box>
             <Box className="wow-progress-bg" sx={{ mb: 1 }}>
               <div className="wow-progress-fill" style={{ width: `${pct}%` }} />
@@ -223,15 +133,17 @@ export default function DashboardEstudiante() {
                     key={docType}
                     sx={{
                       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                      py: 1.25, px: 1.5, borderRadius: 1,
-                      border: '1px solid', borderColor: 'divider',
+                      py: 1.25, px: 1.5, borderRadius: 1.5,
+                      border: '1px solid',
+                      borderColor: listo ? 'success.light' : 'divider',
+                      bgcolor: listo ? 'success.light' : 'background.paper',
                     }}
                   >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                      <Description fontSize="small" color={listo ? 'action' : 'disabled'} />
+                      <Description fontSize="small" sx={{ color: listo ? 'success.main' : 'text.disabled' }} />
                       <Typography variant="body2">{docLabels[docType] || docType}</Typography>
                     </Box>
-                    <Chip label={listo ? 'Listo' : 'Pendiente'} size="small" variant="outlined" />
+                    <StatusChip status={listo ? 'APROBADO' : 'PENDIENTE'} label={listo ? 'Listo' : 'Pendiente'} />
                   </Box>
                 );
               })}
@@ -241,15 +153,15 @@ export default function DashboardEstudiante() {
 
         <Grid item xs={12} lg={4}>
           <ContentCard>
-            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>Accesos</Typography>
+            <Typography variant="subtitle2" color="primary.dark" sx={{ mb: 2 }}>Accesos rápidos</Typography>
             <Stack spacing={1}>
-              <Button variant="text" startIcon={<Visibility />} onClick={() => navigate('/estudiante/documentos')} sx={{ justifyContent: 'flex-start' }}>
+              <Button variant="outlined" color="primary" startIcon={<Visibility />} onClick={() => navigate('/estudiante/documentos')} sx={{ justifyContent: 'flex-start' }}>
                 Gestionar documentos
               </Button>
-              <Button variant="text" startIcon={<Business />} onClick={() => navigate('/estudiante/sedes')} sx={{ justifyContent: 'flex-start' }}>
+              <Button variant="outlined" color="secondary" startIcon={<Business />} onClick={() => navigate('/estudiante/sedes')} sx={{ justifyContent: 'flex-start' }}>
                 Información de empresa
               </Button>
-              <Button variant="text" startIcon={<TrendingUp />} onClick={() => navigate('/estudiante/evaluacion')} sx={{ justifyContent: 'flex-start' }}>
+              <Button variant="outlined" startIcon={<TrendingUp />} onClick={() => navigate('/estudiante/evaluacion')} sx={{ justifyContent: 'flex-start', borderColor: 'divider', color: 'text.primary' }}>
                 Ver evaluaciones
               </Button>
             </Stack>
@@ -261,7 +173,7 @@ export default function DashboardEstudiante() {
               {expediente.estadoHistorial?.slice(-4).reverse().map((h) => (
                 <ListItem key={h.id} disablePadding sx={{ mb: 1 }}>
                   <ListItemIcon sx={{ minWidth: 28 }}>
-                    <InfoOutlined fontSize="small" color="action" />
+                    <InfoOutlined fontSize="small" color="primary" />
                   </ListItemIcon>
                   <ListItemText
                     primary={h.estadoNuevo?.replace(/_/g, ' ')}
@@ -278,6 +190,6 @@ export default function DashboardEstudiante() {
           </ContentCard>
         </Grid>
       </Grid>
-    </Box>
+    </ModulePageShell>
   );
 }

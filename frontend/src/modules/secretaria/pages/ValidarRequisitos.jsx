@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
-    Container, Typography, Box, Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-    Chip, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Grid, InputAdornment, Tooltip,
-    TablePagination, MenuItem, FormControl, InputLabel, Select, Divider, Alert, CircularProgress, TableSortLabel,
-    Stack, LinearProgress, Card, CardContent, List, ListItem, ListItemIcon, ListItemText, Collapse
+    Typography, Box, Button, Table, TableBody, TableCell, TableHead, TableRow,
+    Chip, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, InputAdornment, Tooltip,
+    TablePagination, MenuItem, FormControl, InputLabel, Select, Alert, CircularProgress, TableSortLabel,
+    Stack, LinearProgress, Card, CardContent, Collapse
 } from '@mui/material';
 import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -22,7 +22,9 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import SaveIcon from '@mui/icons-material/Save';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
-import { motion } from 'framer-motion';
+import {
+    ModulePageShell, ModulePageHeader, ModuleToolbar, ModuleTableContainer, moduleHeadCellSx, moduleSortLabelSx,
+} from '../../../shared/components/module/ModulePageShell';
 import { secretariaApi } from '../../../api/usuariosApi';
 import { academicoApi } from '../../../api/validacionesApi';
 import Swal from 'sweetalert2';
@@ -234,65 +236,57 @@ export const ValidarRequisitos = () => {
 
     if (loading && estudiantes.length === 0) {
         return (
-            <Container maxWidth="xl" sx={{ mt: 4, mb: 6, textAlign: 'center' }}>
+            <ModulePageShell sx={{ textAlign: 'center' }}>
                 <CircularProgress />
                 <Typography variant="body1" sx={{ mt: 2 }}>Cargando estudiantes...</Typography>
-            </Container>
+            </ModulePageShell>
         );
     }
 
     return (
-        <Container maxWidth="xl" sx={{ mt: 4, mb: 6 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 4, p: 4, borderRadius: 4, bgcolor: 'primary.main', color: 'white', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', position: 'relative', overflow: 'hidden' }}>
-                <Box sx={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <AssignmentTurnedInIcon sx={{ fontSize: 48, color: 'rgba(255,255,255,0.9)' }} />
-                    <Box>
-                        <Typography variant="h4" fontWeight="bold">Validación Académica y Administrativa</Typography>
-                        <Typography variant="subtitle1" sx={{ opacity: 0.9 }}>
-                            Verificación de requisitos académicos y normativos para inicio de prácticas pre-profesionales.
-                        </Typography>
-                    </Box>
-                </Box>
-            </Box>
+        <ModulePageShell>
+            <ModulePageHeader
+                icon={<AssignmentTurnedInIcon />}
+                title="Validación Académica y Administrativa"
+                subtitle="Verificación de requisitos académicos y normativos para inicio de prácticas preprofesionales."
+            />
 
-            <Paper component={motion.div} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}
-                elevation={0} sx={{ p: 4, mb: 4, borderRadius: 4, bgcolor: '#fff', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)' }}>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-                        <Typography variant="h6" fontWeight="bold" color="primary">Filtros de Búsqueda</Typography>
+            <ModuleToolbar>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, width: '100%' }}>
+                    <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', lg: 'row' }, alignItems: { lg: 'center' }, justifyContent: 'space-between', flexWrap: 'wrap' }}>
+                        <Box sx={{ display: 'flex', gap: 2, flex: 1, flexWrap: 'wrap', width: { xs: '100%', lg: 'auto' } }}>
+                            <TextField size="small" variant="outlined" placeholder="Buscar por código o nombre del estudiante..."
+                                value={searchTerm} onChange={handleSearchChange}
+                                slotProps={{ input: { startAdornment: (<InputAdornment position="start"><SearchIcon color="action" fontSize="small" /></InputAdornment>), sx: { bgcolor: '#fff', borderRadius: 2, minWidth: { xs: '100%', sm: 320 } } } }} />
+                            <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 200 } }}>
+                                <InputLabel>Estado Académico</InputLabel>
+                                <Select value={filtroEstadoAc} label="Estado Académico" onChange={(e) => setFiltroEstadoAc(e.target.value)} sx={{ borderRadius: 2, bgcolor: '#fff' }}>
+                                    <MenuItem value="todos">Todos</MenuItem>
+                                    {ESTADOS_ACADEMICOS.map(ea => <MenuItem key={ea} value={ea}>{ea}</MenuItem>)}
+                                </Select>
+                            </FormControl>
+                        </Box>
                         <Button variant="outlined" size="medium" onClick={loadEstudiantes} startIcon={<RefreshIcon />}
-                            sx={{ borderRadius: 1.2, px: 3, fontWeight: 600 }}>Actualizar</Button>
+                            sx={{ borderRadius: 2, px: 3, fontWeight: 600, width: { xs: '100%', sm: 'auto' }, minHeight: '40px' }}>
+                            Actualizar
+                        </Button>
                     </Box>
-                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' }, gap: 2.5 }}>
-                        <TextField size="small" variant="outlined" placeholder="Buscar por código o nombre del estudiante..."
-                            value={searchTerm} onChange={handleSearchChange}
-                            slotProps={{ input: { startAdornment: (<InputAdornment position="start"><SearchIcon color="action" fontSize="small" /></InputAdornment>), sx: { bgcolor: '#fff', borderRadius: 1.2 } } }} />
-                        <FormControl size="small" fullWidth>
-                            <InputLabel>Estado Académico</InputLabel>
-                            <Select value={filtroEstadoAc} label="Estado Académico" onChange={(e) => setFiltroEstadoAc(e.target.value)} sx={{ borderRadius: 1.2, bgcolor: '#fff' }}>
-                                <MenuItem value="todos">Todos</MenuItem>
-                                {ESTADOS_ACADEMICOS.map(ea => <MenuItem key={ea} value={ea}>{ea}</MenuItem>)}
-                            </Select>
-                        </FormControl>
-                    </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                         <Button variant="outlined" size="medium" onClick={limpiarFiltros} startIcon={<FilterListIcon />}
-                            sx={{ borderRadius: 1.2, px: 3, fontWeight: 600 }}>Limpiar Filtros</Button>
+                            sx={{ borderRadius: 2, px: 3, fontWeight: 600 }}>Limpiar Filtros</Button>
                     </Box>
                 </Box>
-            </Paper>
+            </ModuleToolbar>
 
-            <TableContainer component={motion.div} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.2 }}
-                elevation={0} sx={{ borderRadius: 4, border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)', overflow: 'hidden', bgcolor: '#fff' }}>
+            <ModuleTableContainer>
                 <Table>
                     <TableHead sx={{ bgcolor: 'primary.main' }}>
                         <TableRow>
                             {headCells.map(hc => (
-                                <TableCell key={hc.id} sx={{ color: '#fff', fontWeight: 'bold' }}>
+                                <TableCell key={hc.id} sx={moduleHeadCellSx}>
                                     {hc.sortable !== false ? (
                                         <TableSortLabel active={orderBy === hc.id} direction={orderBy === hc.id ? order : 'asc'}
-                                            onClick={() => handleSort(hc.id)}
-                                            sx={{ color: '#fff !important', '& .MuiTableSortLabel-icon': { color: '#fff !important' } }}>
+                                            onClick={() => handleSort(hc.id)} sx={moduleSortLabelSx}>
                                             {hc.label}
                                         </TableSortLabel>
                                     ) : hc.label}
@@ -356,7 +350,7 @@ export const ValidarRequisitos = () => {
                         )}
                     </TableBody>
                 </Table>
-            </TableContainer>
+            </ModuleTableContainer>
 
             <TablePagination rowsPerPageOptions={[5, 10, 25]} component="div" count={sortedEstudiantes.length}
                 rowsPerPage={rowsPerPage} page={page} onPageChange={(e, p) => setPage(p)}
@@ -601,6 +595,6 @@ export const ValidarRequisitos = () => {
                     </Button>
                 </DialogActions>
             </Dialog>
-        </Container>
+        </ModulePageShell>
     );
 };

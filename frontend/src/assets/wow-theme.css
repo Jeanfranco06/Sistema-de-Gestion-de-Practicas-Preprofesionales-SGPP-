@@ -1,25 +1,25 @@
-/* SGPP — tema minimalista (compatibilidad con clases wow-*) */
+/* SGPP — tema minimalista con acentos institucionales */
 
 :root {
-  --wow-primary: #18181b;
-  --wow-primary-hover: #27272a;
-  --wow-secondary: #3f3f46;
-  --wow-accent: #52525b;
+  --wow-primary: #2563eb;
+  --wow-primary-hover: #1d4ed8;
+  --wow-secondary: #0d9488;
+  --wow-accent: #7c3aed;
 
-  --wow-success: #166534;
-  --wow-warning: #a16207;
-  --wow-danger: #b91c1c;
+  --wow-success: #059669;
+  --wow-warning: #d97706;
+  --wow-danger: #e11d48;
 
-  --wow-surface: #fafafa;
+  --wow-surface: #f8fafc;
   --wow-surface-card: #ffffff;
-  --wow-surface-card-hover: #fafafa;
+  --wow-surface-card-hover: #f1f5f9;
 
-  --wow-text-main: #18181b;
-  --wow-text-muted: #71717a;
+  --wow-text-main: #0f172a;
+  --wow-text-muted: #64748b;
 
-  --wow-border: #e4e4e7;
-  --wow-shadow-sm: none;
-  --wow-shadow-md: none;
+  --wow-border: #e2e8f0;
+  --wow-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --wow-shadow-md: 0 4px 12px rgba(15, 23, 42, 0.06);
   --wow-shadow-lg: none;
   --wow-shadow-float: none;
 
@@ -45,23 +45,23 @@ h1, h2, h3, h4, h5, h6 {
 
 .wow-card {
   background: var(--wow-surface-card);
-  border-radius: 8px;
+  border-radius: 10px;
   border: 1px solid var(--wow-border);
-  box-shadow: none;
+  box-shadow: var(--wow-shadow-sm);
 }
 
 .wow-glass-card {
   background: var(--wow-surface-card);
-  border-radius: 8px;
+  border-radius: 10px;
   border: 1px solid var(--wow-border);
-  box-shadow: none;
+  box-shadow: var(--wow-shadow-sm);
 }
 
 .wow-btn {
   background: var(--wow-primary);
   color: #fff;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   padding: 8px 16px;
   font-family: var(--wow-font-sans);
   font-weight: 500;
@@ -82,7 +82,7 @@ h1, h2, h3, h4, h5, h6 {
 .wow-text-gradient {
   background: none;
   -webkit-text-fill-color: currentColor;
-  color: var(--wow-text-main);
+  color: var(--wow-primary);
 }
 
 .wow-animate-in {
@@ -95,20 +95,20 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .wow-progress-bg {
-  background-color: #f4f4f5;
-  border-radius: 4px;
+  background-color: #e2e8f0;
+  border-radius: 6px;
   overflow: hidden;
-  height: 6px;
+  height: 8px;
 }
 
 .wow-progress-fill {
   height: 100%;
-  border-radius: 4px;
-  background: var(--wow-primary);
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--wow-primary), var(--wow-secondary));
   transition: width 0.4s ease;
 }
 
 .wow-input .MuiOutlinedInput-root,
 .wow-input {
-  border-radius: 6px;
+  border-radius: 8px;
 }

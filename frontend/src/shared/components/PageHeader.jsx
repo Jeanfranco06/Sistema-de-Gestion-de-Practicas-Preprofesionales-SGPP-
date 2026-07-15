@@ -6,8 +6,8 @@ export default function PageHeader({ title, subtitle, action }) {
       sx={{
         mb: 3,
         pb: 2,
-        borderBottom: '1px solid',
-        borderColor: 'divider',
+        borderBottom: '2px solid',
+        borderColor: 'primary.light',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'flex-start',
@@ -15,8 +15,8 @@ export default function PageHeader({ title, subtitle, action }) {
         flexWrap: 'wrap',
       }}
     >
-      <Box>
-        <Typography variant="h5" component="h1">
+      <Box sx={{ pl: 1.5, borderLeft: '4px solid', borderColor: 'primary.main' }}>
+        <Typography variant="h5" component="h1" color="primary.dark">
           {title}
         </Typography>
         {subtitle && (

@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link as RouterLink } from 'react-router-dom';
 import {
   Box, Card, CardContent, TextField, Button, Typography,
-  InputAdornment, IconButton, Alert, CircularProgress, Divider,
+  InputAdornment, IconButton, Alert, CircularProgress, Divider, Link,
 } from '@mui/material';
 import {
   Visibility, VisibilityOff, School, LockOutlined, AccountCircleOutlined,
@@ -82,7 +82,16 @@ export default function LoginPage() {
       const status = err.response?.status;
       if (status === 401) setError('Usuario o contraseña incorrectos.');
       else if (status === 403) setError('Tu cuenta está deshabilitada o bloqueada. Contacta a Secretaría.');
-      else setError('No se pudo conectar con el servidor. Intenta de nuevo.');
+      else if (!err.response) {
+        setError(
+          'No se pudo conectar con el servidor. Usa http://localhost (Docker) o, en desarrollo, '
+          + 'verifica que el backend esté en marcha en el puerto 8081.'
+        );
+      } else if (status === 404) {
+        setError('Ruta de API no encontrada. Entra por http://localhost (no uses el puerto 8080; puede estar ocupado por XAMPP).');
+      } else {
+        setError(`El servicio respondió con error (${status}). Espera unos segundos e intenta de nuevo.`);
+      }
     } finally {
       setLoading(false);
     }
@@ -98,7 +107,7 @@ export default function LoginPage() {
     <Box
       sx={{
         minHeight: '100vh',
-        bgcolor: 'background.default',
+        background: 'linear-gradient(160deg, #eff6ff 0%, #f8fafc 45%, #f0fdfa 100%)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -109,14 +118,15 @@ export default function LoginPage() {
       <Box sx={{ textAlign: 'center', mb: 3 }}>
         <Box
           sx={{
-            width: 56, height: 56, borderRadius: 2, bgcolor: 'grey.100',
-            border: '1px solid', borderColor: 'divider',
+            width: 64, height: 64, borderRadius: 2,
+            bgcolor: 'primary.main',
             display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 1.5,
+            boxShadow: '0 4px 14px rgba(37, 99, 235, 0.25)',
           }}
         >
-          <School sx={{ fontSize: 28, color: 'text.primary' }} />
+          <School sx={{ fontSize: 32, color: '#fff' }} />
         </Box>
-        <Typography variant="h5" fontWeight={600} lineHeight={1.2}>
+        <Typography variant="h5" fontWeight={600} lineHeight={1.2} color="primary.dark">
           SGPP – UNT
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
@@ -127,7 +137,7 @@ export default function LoginPage() {
         </Typography>
       </Box>
 
-      <Card variant="outlined" sx={{ width: '100%', maxWidth: 420, borderRadius: 2 }}>
+      <Card variant="outlined" sx={{ width: '100%', maxWidth: 420, borderRadius: 2, borderTop: '4px solid', borderTopColor: 'primary.main', boxShadow: '0 8px 24px rgba(15, 23, 42, 0.08)' }}>
         <CardContent sx={{ p: 4 }}>
           <Typography variant="h6" sx={{ mb: 0.5, fontWeight: 600 }}>
             Iniciar sesión
@@ -189,9 +199,15 @@ export default function LoginPage() {
                   ),
                 },
               }}
-              sx={{ mb: 3 }}
+              sx={{ mb: 1 }}
               autoComplete="current-password"
             />
+
+            <Box sx={{ textAlign: 'right', mb: 2 }}>
+              <Link component={RouterLink} to="/forgot-password" variant="body2" underline="hover" color="primary.main">
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </Box>
 
             <Button
               type="submit"
