@@ -236,13 +236,56 @@ export const GestionDocumental = () => {
 
   const pctCargados = Math.round((documentosConsolidados.length / docObligatorios.length) * 100);
 
+  const planSubido = documentosConsolidados.some(d => d.tipoId === 'PLAN_TRABAJO' || d.tipoId === 'PLAN_TRABAJO_FAS_03');
+  const puedePresentarPlan = planSubido && (expediente.estado === 'REGISTRADO' || expediente.estado === 'PLAN_PRESENTADO' || expediente.estado === 'ASESOR_ASIGNADO' || expediente.estado === 'COMITE_ASIGNADO');
+
+  const informeFinalSubido = documentosConsolidados.some(d => d.tipoId === 'INFORME_FINAL' || d.tipoId === 'INFORME_FINAL_FAS_06');
+  const puedePresentarInforme = informeFinalSubido && expediente.estado === 'EN_EJECUCION';
+
+  const handlePresentarPlan = async () => {
+      try {
+          await expedientesApi.presentarPlan(expediente.id, { fechaPresentacion: new Date().toISOString() });
+          MySwal.fire('Éxito', 'Plan de trabajo presentado para revisión.', 'success');
+          fetchExpediente();
+      } catch (e) {
+          console.error(e);
+          MySwal.fire('Error', 'No se pudo presentar el plan', 'error');
+      }
+  };
+
+  const handlePresentarInforme = async () => {
+      try {
+          await expedientesApi.presentarInformeFinal(expediente.id, { fechaPresentacion: new Date().toISOString() });
+          MySwal.fire('Éxito', 'Informe final presentado para revisión.', 'success');
+          fetchExpediente();
+      } catch (e) {
+          console.error(e);
+          MySwal.fire('Error', 'No se pudo presentar el informe final', 'error');
+      }
+  };
+
+
   return (
     <ModulePageShell>
       <ModulePageHeader
         icon={<Folder />}
         title="Gestor documental"
         subtitle={`Expediente: ${expediente.nombreTipoPractica}`}
-        action={<Chip label={`${pctCargados}% completado`} size="small" color="primary" variant="outlined" />}
+        action={
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            {puedePresentarPlan && (
+              <Button variant="contained" color="primary" onClick={handlePresentarPlan}>
+                Presentar Plan
+              </Button>
+            )}
+            {puedePresentarInforme && (
+              <Button variant="contained" color="secondary" onClick={handlePresentarInforme}>
+                Presentar Informe
+              </Button>
+            )}
+            <Chip label={`${pctCargados}% completado`} size="small" color="primary" variant="outlined" />
+          </Box>
+        }
       />
 
       <ContentCard noPadding sx={{ mb: 0 }}>
