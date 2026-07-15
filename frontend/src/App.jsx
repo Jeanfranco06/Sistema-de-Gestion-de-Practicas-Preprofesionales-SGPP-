@@ -22,8 +22,6 @@ import MiPerfil from './modules/shared/MiPerfil';
 import MiPractica from './modules/estudiante/pages/MiPractica';
 import RegistroHoras from './modules/estudiante/pages/RegistroHoras';
 import EvaluacionEstudiante from './modules/estudiante/pages/EvaluacionEstudiante';
-import DashboardDocente from './modules/docente/DashboardDocente';
-import DashboardTutor from './modules/tutor/DashboardTutor';
 import { CatalogoSedes } from './modules/sedes/pages/CatalogoSedes';
 import { GestionSedes } from './modules/sedes/pages/GestionSedes';
 import { GestionEmpresas } from './modules/sedes/pages/GestionEmpresas';
