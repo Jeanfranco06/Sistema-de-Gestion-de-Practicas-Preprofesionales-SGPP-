@@ -142,16 +142,39 @@ public class EvaluacionServiceImpl implements EvaluacionService {
             double puntajeComponente = 0;
 
             for (DetalleEvaluacion d : detalles) {
-                // Formula: Nota final = Suma(Nota * Peso%).
-                double nota = d.getPuntajeObtenido();
-                double pesoPorcentaje = d.getCriterio().getPuntajeMaximo() / 100.0;
-                puntajeComponente += nota * pesoPorcentaje;
+                // Asumimos que los criterios dentro de una evaluación están ponderados entre sí para sumar 100% o tienen pesos relativos.
+                // Sin embargo, si todos valen sobre 20, su promedio simple es la nota del componente.
+                puntajeComponente += d.getPuntajeObtenido();
             }
-            promedioPonderadoTotal += puntajeComponente;
+            if (!detalles.isEmpty()) {
+                puntajeComponente /= detalles.size(); // Promedio de los criterios sobre 20
+            }
+
+            // Obtener el peso del componente desde Rubrica (ej. 30%, 10%)
+            double pesoComponente = 0.0;
+            Optional<Rubrica> rubricaOpt = rubricaRepository.findByComponenteAndActivoTrue(ev.getComponente()).stream().findFirst();
+            if (rubricaOpt.isPresent()) {
+                pesoComponente = rubricaOpt.get().getPuntajeTotal() / 100.0;
+            } else {
+                // Fallback a pesos predeterminados según reglamento
+                switch (ev.getComponente()) {
+                    case "EMPRESA":
+                    case "DOCENTE":
+                    case "INFORME":
+                        pesoComponente = 0.30;
+                        break;
+                    case "SUSTENTACION":
+                        pesoComponente = 0.10;
+                        break;
+                    default:
+                        pesoComponente = 1.0;
+                }
+            }
+
+            promedioPonderadoTotal += (puntajeComponente * pesoComponente);
         }
 
-        return BigDecimal.valueOf(promedioPonderadoTotal)
-                .setScale(2, RoundingMode.HALF_UP);
+        return BigDecimal.valueOf(promedioPonderadoTotal).setScale(2, RoundingMode.HALF_UP);
     }
 
     private String calcularCalificacionCualitativa(double promedio) {

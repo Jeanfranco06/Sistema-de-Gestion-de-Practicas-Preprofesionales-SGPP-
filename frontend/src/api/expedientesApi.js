@@ -1,6 +1,10 @@
 import api from './axios';
 
 export const expedientesApi = {
+    crear: (payload) => api.post('/expedientes', payload),
+    asignarEmpresaSede: (id, payload) => api.put(`/expedientes/${id}/asignar-empresa`, payload),
+    asignarAsesor: (id, payload) => api.put(`/expedientes/${id}/asignar-asesor`, payload),
+    asignarTutorExterno: (id, payload) => api.put(`/expedientes/${id}/asignar-tutor-externo`, payload),
     getAll: () => api.get('/expedientes'),
     getById: (id) => api.get(`/expedientes/${id}`),
     getMisExpedientes: () => api.get('/expedientes/mis-expedientes'),
@@ -15,6 +19,9 @@ export const expedientesApi = {
     presentarInformeParcial: (id) => api.put(`/expedientes/${id}/informe-parcial`),
     presentarInformeFinal: (id) => api.put(`/expedientes/${id}/informe-final`),
     evaluar: (id, payload) => api.put(`/expedientes/${id}/evaluar`, payload),
+    iniciarEjecucion: (id, fechaInicio, duracionSemanas) => 
+        api.put(`/expedientes/${id}/iniciar-ejecucion?fechaInicio=${fechaInicio}&duracionSemanas=${duracionSemanas}`),
+    disable: (id) => api.delete(`/expedientes/${id}/disable`),
     uploadFile: (file) => {
         const formData = new FormData();
         formData.append('file', file);

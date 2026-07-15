@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
     Box, Typography, Paper, Table, TableBody, TableCell, 
     TableContainer, TableHead, TableRow, TablePagination, 
@@ -10,10 +11,12 @@ import withReactContent from 'sweetalert2-react-content';
 import { expedientesApi } from '../../../api/expedientesApi';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import GavelIcon from '@mui/icons-material/Gavel';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 
 const MySwal = withReactContent(Swal);
 
 export const PanelComite = () => {
+    const navigate = useNavigate();
     const [expedientes, setExpedientes] = useState([]);
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -111,7 +114,7 @@ export const PanelComite = () => {
 
     return (
         <Box sx={{ p: 3 }}>
-            <Typography variant="h4" gutterBottom>Panel del Comité de Prácticas</Typography>
+            <Typography variant="h4" gutterBottom>Gestión de Expedientes</Typography>
             
             <Paper sx={{ p: 2, mb: 3, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
                 <TextField
@@ -174,6 +177,16 @@ export const PanelComite = () => {
                                 <TableCell><Chip label={exp.nombreTipoPractica} size="small" color="primary" variant="outlined" /></TableCell>
                                 <TableCell><Chip label={exp.estado} size="small" color={exp.estado === 'APROBADO' ? 'success' : 'default'} /></TableCell>
                                 <TableCell align="center">
+                                    <Button 
+                                        size="small" 
+                                        variant="outlined" 
+                                        color="primary" 
+                                        startIcon={<VisibilityIcon />}
+                                        onClick={() => navigate(`/coordinacion/expedientes/${exp.id}`)}
+                                        sx={{ mr: 1 }}
+                                    >
+                                        Ver
+                                    </Button>
                                     <Button 
                                         size="small" 
                                         variant="contained" 

@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box, Typography, Paper, Button, Chip, Dialog, DialogTitle, DialogContent,
-  DialogActions, Alert, LinearProgress, Divider
+  DialogActions, Alert, LinearProgress, Divider, CircularProgress
 } from '@mui/material';
 import { CloudUpload, Download, AccessTime, CheckCircle, Lock } from '@mui/icons-material';
 import Swal from 'sweetalert2';
@@ -11,16 +11,56 @@ import api from '../../../api/axios';
 
 const MySwal = withReactContent(Swal);
 
-const HITOS = [
-  { id: 1, nombre: 'Informe Parcial 1', semana: 5, estado: 'APROBADO', fechaLimite: '2025-10-15', bloqueado: false, archivo: 'informe_semana5.pdf', fileName: 'mock-file.pdf' },
-  { id: 2, nombre: 'Informe Parcial 2', semana: 10, estado: 'PENDIENTE', fechaLimite: '2025-11-20', bloqueado: false, archivo: null, fileName: null },
-  { id: 3, nombre: 'Informe Final', semana: 15, estado: 'BLOQUEADO', fechaLimite: '2025-12-25', bloqueado: true, archivo: null, fileName: null }
-];
-
 export const InformesPeriodicos = () => {
-  const [hitos, setHitos] = useState(HITOS);
+  const [expediente, setExpediente] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [hitos, setHitos] = useState([]);
   const [uploadDialog, setUploadDialog] = useState({ open: false, hito: null });
   const [selectedFile, setSelectedFile] = useState(null);
+
+  const fetchExpediente = async () => {
+    try {
+      setLoading(true);
+      const res = await expedientesApi.getMisExpedientes();
+      const list = res.data?.data || [];
+      if (list.length > 0) {
+        const activeExp = list[0];
+        setExpediente(activeExp);
+        buildHitos(activeExp);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchExpediente();
+  }, []);
+
+  const buildHitos = (exp) => {
+    const docs = exp.documentos || [];
+    const parciales = docs.filter(d => d.tipoDocumento === 'INFORME_PARCIAL');
+    const finalDoc = docs.find(d => d.tipoDocumento === 'INFORME_FINAL');
+
+    // Build 2 Parciales and 1 Final
+    const newHitos = [
+      {
+        id: 'PARCIAL_1', tipo: 'INFORME_PARCIAL', nombre: 'Informe Parcial 1', semana: 5,
+        doc: parciales[0] || null, bloqueado: false, fechaLimite: '2025-10-15'
+      },
+      {
+        id: 'PARCIAL_2', tipo: 'INFORME_PARCIAL', nombre: 'Informe Parcial 2', semana: 10,
+        doc: parciales[1] || null, bloqueado: !parciales[0], fechaLimite: '2025-11-20'
+      },
+      {
+        id: 'FINAL', tipo: 'INFORME_FINAL', nombre: 'Informe Final', semana: 15,
+        doc: finalDoc || null, bloqueado: !parciales[1], fechaLimite: '2025-12-25'
+      }
+    ];
+    setHitos(newHitos);
+  };
 
   const handleOpenUpload = (hito) => {
     setUploadDialog({ open: true, hito });
@@ -35,103 +75,74 @@ export const InformesPeriodicos = () => {
     const file = event.target.files[0];
     if (file) {
       if (file.name.split('.').pop().toLowerCase() !== 'pdf') {
-        MySwal.fire({
-          icon: 'error',
-          title: 'Formato Incorrecto',
-          text: 'Solo se permiten archivos en formato PDF.',
-          confirmButtonColor: '#d33'
-        });
+        MySwal.fire({ icon: 'error', title: 'Formato Incorrecto', text: 'Solo se permiten archivos en formato PDF.' });
         return;
       }
-      
-      if (file.size > 5 * 1024 * 1024) { // Max 5MB for informes
-        MySwal.fire({
-          icon: 'warning',
-          title: 'Archivo Demasiado Pesado',
-          text: 'El informe excede el tamaño máximo de 5MB. Por favor comprímalo.',
-          confirmButtonColor: '#f8bb86'
-        });
-        return;
-      }
-      
       setSelectedFile(file);
     }
   };
 
   const handleUpload = async () => {
-    if (!selectedFile) return;
+    if (!selectedFile || !expediente) return;
     
     try {
-      MySwal.fire({
-        title: 'Enviando Informe...',
-        html: 'Guardando el documento y notificando a su docente asesor.',
-        allowOutsideClick: false,
-        didOpen: () => {
-          MySwal.showLoading();
-        }
+      MySwal.fire({ title: 'Subiendo...', allowOutsideClick: false, didOpen: () => MySwal.showLoading() });
+      
+      const resUpload = await expedientesApi.uploadFile(selectedFile);
+      const { fileName } = resUpload.data;
+
+      await api.post(`/expedientes/${expediente.id}/documentos`, null, {
+          params: { tipoDocumento: uploadDialog.hito.tipo, nombreDoc: selectedFile.name, fileName: fileName }
       });
 
-      // Simular retraso de red
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      // Lógica real en producción:
-      const response = await expedientesApi.uploadFile(selectedFile);
-      const { fileName } = response.data;
-
-      setHitos(hitos.map(h => {
-        if (h.id === uploadDialog.hito.id) {
-          return { ...h, estado: 'EN_REVISION', archivo: selectedFile.name, fileName: fileName };
-        }
-        return h;
-      }));
+      if (uploadDialog.hito.tipo === 'INFORME_PARCIAL') {
+          await expedientesApi.presentarInformeParcial(expediente.id);
+      } else {
+          await expedientesApi.presentarInformeFinal(expediente.id);
+      }
 
       handleCloseUpload();
-      
-      MySwal.fire({
-        icon: 'success',
-        title: '¡Informe Enviado!',
-        text: 'Su docente asesor ha sido notificado para la revisión.',
-        timer: 2000,
-        showConfirmButton: false
-      });
+      MySwal.fire({ icon: 'success', title: '¡Informe Enviado!', timer: 2000, showConfirmButton: false });
+      fetchExpediente();
     } catch (error) {
-      MySwal.fire({
-        icon: 'error',
-        title: 'Error de Conexión',
-        text: 'Hubo un problema al subir el informe. Intente de nuevo.'
-      });
+      MySwal.fire({ icon: 'error', title: 'Error', text: 'Hubo un problema al subir el informe.' });
     }
   };
 
   const handleDownload = async (hito) => {
     try {
       MySwal.fire({ title: 'Descargando...', allowOutsideClick: false, didOpen: () => MySwal.showLoading() });
-      const res = await api.get(`/documentos/download/${hito.fileName}`, { responseType: 'blob' });
+      const res = await api.get(`/documentos/download/${hito.doc.rutaArchivo || hito.doc.nombreArchivo}`, { responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', hito.archivo);
+      link.setAttribute('download', hito.doc.nombreArchivo);
       document.body.appendChild(link);
       link.click();
       link.parentNode.removeChild(link);
       MySwal.close();
     } catch (error) {
-      console.error('Download error:', error);
       MySwal.fire('Error', 'No tienes permisos o el archivo no existe.', 'error');
     }
   };
 
-  const getEstadoChip = (estado) => {
-    switch(estado) {
-      case 'APROBADO': return <Chip size="small" icon={<CheckCircle />} label="Aprobado" color="success" />;
-      case 'EN_REVISION': return <Chip size="small" icon={<AccessTime />} label="En Revisión" color="warning" />;
-      case 'PENDIENTE': return <Chip size="small" label="Pendiente" color="primary" variant="outlined" />;
-      case 'BLOQUEADO': return <Chip size="small" icon={<Lock />} label="Bloqueado" color="default" />;
-      default: return null;
-    }
+  const getEstadoChip = (hito) => {
+    if (hito.doc) return <Chip size="small" icon={<CheckCircle />} label="Enviado" color="success" />;
+    if (hito.bloqueado) return <Chip size="small" icon={<Lock />} label="Bloqueado" color="default" />;
+    return <Chip size="small" label="Pendiente" color="primary" variant="outlined" />;
   };
 
-  const progreso = 65;
+  if (loading) return <Box p={4} display="flex" justifyContent="center"><CircularProgress /></Box>;
+  
+  if (!expediente) {
+    return (
+      <Box p={4}>
+        <Alert severity="info">No tienes ninguna práctica registrada.</Alert>
+      </Box>
+    );
+  }
+
+  const progreso = Math.round(((hitos.filter(h => h.doc).length) / hitos.length) * 100);
 
   return (
     <Box>
@@ -159,7 +170,7 @@ export const InformesPeriodicos = () => {
 
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 3 }}>
         {hitos.map((hito) => {
-          const isProximo = hito.estado === 'PENDIENTE' && !hito.bloqueado;
+          const isProximo = !hito.doc && !hito.bloqueado;
           return (
             <Paper
               key={hito.id}
@@ -176,28 +187,23 @@ export const InformesPeriodicos = () => {
                   <Typography variant="h6" color={hito.bloqueado ? 'text.disabled' : 'text.primary'}>
                     Semana {hito.semana}
                   </Typography>
-                  {getEstadoChip(hito.estado)}
+                  {getEstadoChip(hito)}
               </Box>
                 
               <Typography variant="subtitle2" mb={1}>{hito.nombre}</Typography>
                 
               <Box sx={{ mb: 3 }}>
                 <Typography variant="body2" color="text.secondary">
-                  Fecha límite: {new Date(hito.fechaLimite).toLocaleDateString()}
+                  Fecha límite aproximada: {new Date(hito.fechaLimite).toLocaleDateString()}
                 </Typography>
-                {isProximo && (
-                  <Alert severity="warning" sx={{ mt: 1, py: 0, px: 1 }}>
-                    Vence en 5 días
-                  </Alert>
-                )}
               </Box>
 
               <Divider sx={{ mb: 2 }} />
 
-              {hito.archivo ? (
+              {hito.doc ? (
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
-                  <Typography variant="body2" noWrap sx={{ maxWidth: '70%' }} title={hito.archivo}>
-                    {hito.archivo}
+                  <Typography variant="body2" noWrap sx={{ maxWidth: '70%' }} title={hito.doc.nombreArchivo}>
+                    {hito.doc.nombreArchivo}
                   </Typography>
                   <Button size="small" startIcon={<Download />} onClick={() => handleDownload(hito)}>Descargar</Button>
                 </Box>

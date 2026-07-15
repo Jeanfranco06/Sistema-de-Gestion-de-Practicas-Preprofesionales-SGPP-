@@ -49,6 +49,11 @@ public class FileStorageService {
                 throw new RuntimeException("El nombre del archivo contiene caracteres inválidos " + fileName);
             }
 
+            String contentType = file.getContentType();
+            if (contentType == null || !contentType.equals("application/pdf")) {
+                throw new RuntimeException("Error de seguridad: Solo se permiten subir archivos en formato PDF.");
+            }
+
             Path targetLocation = this.fileStorageLocation.resolve(fileName);
             Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
 

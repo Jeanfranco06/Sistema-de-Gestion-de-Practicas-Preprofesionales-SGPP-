@@ -78,5 +78,6 @@ export const horasApi = {
   getControl: (idExpediente) => api.get(`/horas/control/${idExpediente}`),
   getCumplimiento: (idExpediente) => api.get(`/horas/cumplimiento/${idExpediente}`),
   getRegistros: (idExpediente) => api.get(`/horas/registros/${idExpediente}`),
+  registrarHora: (idExpediente, payload, idUsuario) => api.post(`/horas/registrar/${idExpediente}?idUsuario=${idUsuario}`, payload),
 };
 

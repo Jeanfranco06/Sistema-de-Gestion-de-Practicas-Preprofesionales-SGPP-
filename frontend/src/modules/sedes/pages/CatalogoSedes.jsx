@@ -13,6 +13,7 @@ import {
 import { motion } from 'framer-motion';
 import { sedeApi } from '../../../api/sedesApi';
 import { practicaApi } from '../../../api/practicasApi';
+import { expedientesApi } from '../../../api/expedientesApi';
 import { useAuth } from '../../../auth/AuthContext';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
@@ -35,10 +36,24 @@ export const CatalogoSedes = () => {
     const [tieneTutor, setTieneTutor] = useState('todos');
     const [mostrarSoloElegibles, setMostrarSoloElegibles] = useState(false);
 
+    const [userExpediente, setUserExpediente] = useState(null);
+
     useEffect(() => {
         const fetchCatalogoSedes = async () => {
             try {
                 setLoading(true);
+                
+                // Cargar expediente del usuario para saber su estado
+                try {
+                    const resExp = await expedientesApi.getMisExpedientes();
+                    const expedientes = resExp.data?.data || [];
+                    if (expedientes.length > 0) {
+                        setUserExpediente(expedientes[0]);
+                    }
+                } catch (expErr) {
+                    console.error("Error cargando expediente:", expErr);
+                }
+
                 const response = await sedeApi.getCatalogo();
                 setSedes(response.data);
                 setFilteredSedes(response.data);
@@ -67,7 +82,10 @@ export const CatalogoSedes = () => {
             if (!matchesSearch) return false;
 
             // Filtro por tipo de entidad
-            if (tipoEntidad && sede.tipoEntidad !== tipoEntidad) return false;
+            if (tipoEntidad) {
+                const normalize = (str) => (str || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+                if (normalize(sede.tipoEntidad) !== normalize(tipoEntidad)) return false;
+            }
 
             // Filtro por vigencia de convenio
             if (vigenciaConvenio === 'vigente' && !sede.tieneConvenioVigente) return false;
@@ -125,22 +143,39 @@ export const CatalogoSedes = () => {
             return;
         }
 
-        const result = await MySwal.fire({
-            title: '¿Seleccionar esta sede?',
-            text: `Confirmas que deseas seleccionar "${sede.nombreSede}" en ${sede.razonSocialEmpresa} para tus prácticas preprofesionales.`,
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'Sí, seleccionar',
-            cancelButtonText: 'Cancelar',
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33'
-        });
-
-        if (!result.isConfirmed) return;
-
         try {
             setSelectingSedeId(sede.id);
-            await practicaApi.seleccionarSede(sede.id);
+            const resExp = await expedientesApi.getMisExpedientes();
+            const expedientes = resExp.data?.data || [];
+            if (expedientes.length === 0) {
+                MySwal.fire('Atención', 'Primero debes solicitar una práctica (crear tu expediente) en tu Dashboard antes de seleccionar una sede.', 'info');
+                setSelectingSedeId(null);
+                return;
+            }
+            
+            const expediente = expedientes[0];
+
+            const result = await MySwal.fire({
+                title: '¿Seleccionar esta sede?',
+                text: `Confirmas que deseas seleccionar "${sede.nombreSede}" en ${sede.razonSocialEmpresa} para tus prácticas preprofesionales.`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, seleccionar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33'
+            });
+
+            if (!result.isConfirmed) {
+                setSelectingSedeId(null);
+                return;
+            }
+
+            await expedientesApi.asignarEmpresaSede(expediente.id, {
+                idEmpresa: sede.empresaId,
+                idSedePractica: sede.id
+            });
+
             await MySwal.fire({
                 icon: 'success',
                 title: '¡Sede seleccionada!',
@@ -603,17 +638,30 @@ export const CatalogoSedes = () => {
                                     >
                                         Ver Detalle
                                     </Button>
-                                    <Button 
-                                        size="small" 
-                                        color="success" 
-                                        variant="contained" 
-                                        onClick={() => handleSeleccionarSede(sede)}
-                                        disabled={!sede.esElegible || selectingSedeId === sede.id}
-                                        startIcon={selectingSedeId === sede.id ? <CircularProgress size={16} color="inherit" /> : <CheckCircle />}
-                                        sx={{ flex: 1, borderRadius: 2, py: 1.5 }}
-                                    >
-                                        {selectingSedeId === sede.id ? 'Seleccionando...' : 'Seleccionar'}
-                                    </Button>
+                                    
+                                    {(!userExpediente || userExpediente.estado === 'SOLICITADO' || userExpediente.estado === 'BORRADOR') ? (
+                                        <Button 
+                                            size="small" 
+                                            color="success" 
+                                            variant="contained" 
+                                            onClick={() => handleSeleccionarSede(sede)}
+                                            disabled={!sede.esElegible || selectingSedeId === sede.id}
+                                            startIcon={selectingSedeId === sede.id ? <CircularProgress size={16} color="inherit" /> : <CheckCircle />}
+                                            sx={{ flex: 1, borderRadius: 2, py: 1.5 }}
+                                        >
+                                            {selectingSedeId === sede.id ? 'Seleccionando...' : 'Seleccionar'}
+                                        </Button>
+                                    ) : (
+                                        <Button 
+                                            size="small" 
+                                            color="inherit" 
+                                            variant="contained" 
+                                            disabled
+                                            sx={{ flex: 1, borderRadius: 2, py: 1.5 }}
+                                        >
+                                            Sede ya asignada
+                                        </Button>
+                                    )}
                                 </CardActions>
                             </Card>
                         </motion.div>
@@ -818,17 +866,29 @@ export const CatalogoSedes = () => {
                                     )}
 
                                     <Box sx={{ mt: 3, display: 'flex', gap: 2, pt: 2, borderTop: 1, borderColor: 'divider' }}>
-                                        <Button 
-                                            variant="contained" 
-                                            color="success" 
-                                            fullWidth
-                                            onClick={() => handleSeleccionarSede(selectedSede)}
-                                            disabled={!selectedSede.esElegible}
-                                            startIcon={<CheckCircle />}
-                                            sx={{ borderRadius: 2, py: 1.5, fontWeight: 'bold' }}
-                                        >
-                                            Seleccionar Sede
-                                        </Button>
+                                        {(!userExpediente || userExpediente.estado === 'SOLICITADO' || userExpediente.estado === 'BORRADOR') ? (
+                                            <Button 
+                                                variant="contained" 
+                                                color="success" 
+                                                fullWidth
+                                                onClick={() => handleSeleccionarSede(selectedSede)}
+                                                disabled={!selectedSede.esElegible}
+                                                startIcon={<CheckCircle />}
+                                                sx={{ borderRadius: 2, py: 1.5, fontWeight: 'bold' }}
+                                            >
+                                                Seleccionar Sede
+                                            </Button>
+                                        ) : (
+                                            <Button 
+                                                variant="contained" 
+                                                color="inherit" 
+                                                fullWidth
+                                                disabled
+                                                sx={{ borderRadius: 2, py: 1.5, fontWeight: 'bold' }}
+                                            >
+                                                Sede ya asignada
+                                            </Button>
+                                        )}
                                         <Button 
                                             variant="outlined" 
                                             onClick={handleCloseDetails}

@@ -9,6 +9,8 @@ public interface ExpedienteService {
     ExpedienteResponse asignarEmpresaSede(Long idExpediente, AsignarEmpresaSedeRequest request, Long idUsuario);
     ExpedienteResponse asignarAsesor(Long idExpediente, AsignarAsesorRequest request, Long idUsuario);
     ExpedienteResponse asignarComite(Long idExpediente, AsignarComiteRequest request, Long idUsuario);
+    ExpedienteResponse asignarTutorExterno(Long idExpediente, AsignarTutorRequest request, Long idUsuario);
+    
     ExpedienteResponse presentarPlan(Long idExpediente, PresentarPlanRequest request, Long idUsuario);
     ExpedienteResponse agregarDocumento(Long idExpediente, String tipoDocumento, String nombreDoc, String fileName, Long idUsuario);
     ExpedienteResponse evaluarDocumento(Long idExpediente, Long idDocumento, String estado, String observaciones, Long idUsuario);

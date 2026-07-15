@@ -39,6 +39,8 @@ public class ExpedienteResponse {
     private Long idConvenio;
     private String numeroConvenio;
 
+    private edu.unt.ingenieria_industrial.sgpp.core.seguridad.dto.TutorExternoDTO tutorEmpresa;
+
     private Boolean cartaAceptacionPresentada;
     private Boolean planTrabajoAprobado;
     private LocalDateTime fechaPresentacionPlan;

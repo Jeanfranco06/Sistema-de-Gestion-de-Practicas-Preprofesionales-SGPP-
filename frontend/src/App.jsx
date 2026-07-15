@@ -14,6 +14,12 @@ import LoginPage from './modules/auth/LoginPage';
 import DashboardEstudiante from './modules/estudiante/DashboardEstudiante';
 import NoAutorizado from './modules/shared/NoAutorizado';
 import PaginaEnConstruccion from './modules/shared/PaginaEnConstruccion';
+import MiPerfil from './modules/shared/MiPerfil';
+import MiPractica from './modules/estudiante/pages/MiPractica';
+import RegistroHoras from './modules/estudiante/pages/RegistroHoras';
+import EvaluacionEstudiante from './modules/estudiante/pages/EvaluacionEstudiante';
+import DashboardDocente from './modules/docente/DashboardDocente';
+import DashboardTutor from './modules/tutor/DashboardTutor';
 import { CatalogoSedes } from './modules/sedes/pages/CatalogoSedes';
 import { GestionSedes } from './modules/sedes/pages/GestionSedes';
 import { GestionEmpresas } from './modules/sedes/pages/GestionEmpresas';
@@ -63,7 +69,11 @@ export default function App() {
                   </ProtectedRoute>
                 }
               />
-              <Route path="/estudiante/practica" element={<PaginaEnConstruccion titulo="Mi Práctica" />} />
+              <Route path="/estudiante/practica" element={
+                <ProtectedRoute allowedRoles={['ESTUDIANTE']}>
+                  <MiPractica />
+                </ProtectedRoute>
+              } />
               <Route path="/estudiante/documentos" element={
                 <ProtectedRoute allowedRoles={['ESTUDIANTE']}>
                   <GestionDocumental />
@@ -74,8 +84,16 @@ export default function App() {
                   <InformesPeriodicos />
                 </ProtectedRoute>
               } />
-              <Route path="/estudiante/horas" element={<PaginaEnConstruccion titulo="Registro de Horas" />} />
-              <Route path="/estudiante/evaluacion" element={<PaginaEnConstruccion titulo="Evaluación" />} />
+              <Route path="/estudiante/horas" element={
+                <ProtectedRoute allowedRoles={['ESTUDIANTE']}>
+                  <RegistroHoras />
+                </ProtectedRoute>
+              } />
+              <Route path="/estudiante/evaluacion" element={
+                <ProtectedRoute allowedRoles={['ESTUDIANTE']}>
+                  <EvaluacionEstudiante />
+                </ProtectedRoute>
+              } />
               <Route
                 path="/estudiante/sedes"
                 element={
@@ -90,7 +108,7 @@ export default function App() {
                 path="/docente/dashboard"
                 element={
                   <ProtectedRoute allowedRoles={['DOCENTE_ASESOR']}>
-                    <PaginaEnConstruccion titulo="Dashboard Docente" />
+                    <DashboardDocente />
                   </ProtectedRoute>
                 }
               />
@@ -209,7 +227,7 @@ export default function App() {
                 path="/tutor/dashboard"
                 element={
                   <ProtectedRoute allowedRoles={['TUTOR_EXTERNO']}>
-                    <PaginaEnConstruccion titulo="Panel Tutor Externo" />
+                    <DashboardTutor />
                   </ProtectedRoute>
                 }
               />
@@ -230,7 +248,7 @@ export default function App() {
                 }
               />
 
-              <Route path="/perfil" element={<PaginaEnConstruccion titulo="Mi Perfil" />} />
+              <Route path="/perfil" element={<MiPerfil />} />
             </Route>
 
             {/* Raíz → login */}

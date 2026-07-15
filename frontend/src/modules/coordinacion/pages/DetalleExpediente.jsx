@@ -17,13 +17,24 @@ import {
   TableRow,
   Tabs,
   Typography,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Stack,
+  Autocomplete,
+  TextField,
+  MenuItem,
+  IconButton
 } from '@mui/material';
-import { ArrowBack, AssignmentTurnedIn, History, HourglassBottom } from '@mui/icons-material';
+import { ArrowBack, AssignmentTurnedIn, History, HourglassBottom, Delete as DeleteIcon, Add as AddIcon, Email, Assignment, Note, Description, Timeline, Verified, Download, PlayArrow } from '@mui/icons-material';
 import PageContainer from '../../../shared/components/PageContainer';
 import { useParams, useNavigate } from 'react-router-dom';
 import { expedientesApi } from '../../../api/expedientesApi';
 import { empresaApi, sedeApi } from '../../../api/sedesApi';
 import { horasApi, reportesCoordinacionApi, trazabilidadApi } from '../../../api/coordinacionApi';
+import { tutoresApi, usuariosApi } from '../../../api/usuariosApi';
+import Swal from 'sweetalert2';
 
 function TabPanel({ children, value, index }) {
   return (
@@ -88,8 +99,104 @@ export const DetalleExpediente = () => {
   const [cumplimientoHoras, setCumplimientoHoras] = useState(null);
   const [registrosHoras, setRegistrosHoras] = useState([]);
   const [trazabilidad, setTrazabilidad] = useState(null);
+
+  const [iniciarDialogOpen, setIniciarDialogOpen] = useState(false);
+  const [fechaInicio, setFechaInicio] = useState(new Date());
+  const [duracionSemanas, setDuracionSemanas] = useState(16);
+
   const [historialGeneracion, setHistorialGeneracion] = useState([]);
   const [warnings, setWarnings] = useState([]);
+
+  const [tutorDialog, setTutorDialog] = useState(false);
+  const [tutoresList, setTutoresList] = useState([]);
+  const [selectedTutor, setSelectedTutor] = useState('');
+
+  const fetchTutores = async () => {
+      try {
+          const res = await tutoresApi.getAll();
+          setTutoresList(getPayload(res) || []);
+      } catch (e) {
+          console.error(e);
+      }
+  };
+
+  const [asesorDialog, setAsesorDialog] = useState(false);
+  const [asesoresList, setAsesoresList] = useState([]);
+  const [selectedAsesor, setSelectedAsesor] = useState('');
+  const [resolucionAsesor, setResolucionAsesor] = useState('');
+
+  const fetchAsesores = async () => {
+      try {
+          const res = await usuariosApi.getAll({ params: { rol: 'DOCENTE_ASESOR' } });
+          setAsesoresList(getPayload(res) || []);
+      } catch (e) {
+          console.error(e);
+      }
+  };
+
+  const handleAssignAsesor = async () => {
+      if (!selectedAsesor || !resolucionAsesor) return;
+      try {
+          await expedientesApi.asignarAsesor(id, { idAsesor: selectedAsesor, resolucion: resolucionAsesor });
+          Swal.fire('Éxito', 'Docente asesor asignado correctamente', 'success');
+          setAsesorDialog(false);
+          cargarDetalle();
+      } catch (e) {
+          Swal.fire('Error', e.response?.data?.message || 'No se pudo asignar asesor', 'error');
+      }
+  };
+
+  const handleIniciarEjecucion = async () => {
+    try {
+        Swal.fire({ title: 'Iniciando ejecución...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        const isoDate = fechaInicio.toISOString().split('T')[0];
+        await expedientesApi.iniciarEjecucion(id, isoDate, duracionSemanas);
+        Swal.fire('Éxito', 'Ejecución de prácticas iniciada correctamente.', 'success');
+        setIniciarDialogOpen(false);
+        cargarDetalle();
+    } catch (error) {
+        console.error(error);
+        Swal.fire('Error', error.response?.data?.message || 'No se pudo iniciar la ejecución.', 'error');
+    }
+  };
+
+  const [comiteDialog, setComiteDialog] = useState(false);
+  const [comiteList, setComiteList] = useState([]);
+  const [selectedComite, setSelectedComite] = useState([{ idUsuario: '', rolComite: 'PRESIDENTE' }]);
+
+  const fetchComite = async () => {
+      try {
+          const res = await usuariosApi.getAll({ params: { rol: 'DOCENTE_ASESOR' } }); 
+          setComiteList(getPayload(res) || []);
+      } catch (e) {
+          console.error(e);
+      }
+  };
+
+  const handleAssignComite = async () => {
+      const validMembers = selectedComite.filter(m => m.idUsuario && m.rolComite);
+      if (validMembers.length === 0) return;
+      try {
+          await expedientesApi.asignarComite(id, { miembros: validMembers });
+          Swal.fire('Éxito', 'Comité asignado correctamente', 'success');
+          setComiteDialog(false);
+          cargarDetalle();
+      } catch (e) {
+          Swal.fire('Error', e.response?.data?.message || 'No se pudo asignar comité', 'error');
+      }
+  };
+
+  const handleAssignTutor = async () => {
+      if (!selectedTutor) return;
+      try {
+          await expedientesApi.asignarTutorExterno(id, { idTutorExterno: selectedTutor });
+          Swal.fire('Éxito', 'Tutor externo asignado correctamente', 'success');
+          setTutorDialog(false);
+          cargarDetalle();
+      } catch (e) {
+          Swal.fire('Error', e.response?.data?.message || 'No se pudo asignar comité', 'error');
+      }
+  };
 
   const cargarDetalle = useCallback(async () => {
     if (!id) return;
@@ -123,13 +230,10 @@ export const DetalleExpediente = () => {
       else if (sedeRes.reason) nextWarnings.push('No se pudo cargar el detalle ampliado de la sede.');
 
       if (controlRes.status === 'fulfilled') setControlHoras(getPayload(controlRes.value));
-      else nextWarnings.push('El control de horas no está disponible para tu rol o aún no fue iniciado.');
 
       if (cumplimientoRes.status === 'fulfilled') setCumplimientoHoras(getPayload(cumplimientoRes.value));
-      else nextWarnings.push('No se pudo verificar el cumplimiento de horas para este expediente.');
 
       if (registrosRes.status === 'fulfilled') setRegistrosHoras(getPayload(registrosRes.value) || []);
-      else nextWarnings.push('No se pudieron cargar los registros detallados de horas.');
 
       if (trazabilidadRes.status === 'fulfilled') setTrazabilidad(getPayload(trazabilidadRes.value));
       else nextWarnings.push('La trazabilidad integral no pudo reconstruirse en este momento.');
@@ -185,6 +289,34 @@ export const DetalleExpediente = () => {
     [expediente]
   );
 
+  const canModify = () => {
+      if (!expediente) return false;
+      const closedStates = [
+          'PLAN_PRESENTADO', 'PLAN_APROBADO', 'EN_EJECUCION', 
+          'EVALUADO', 'CERRADO', 'RECHAZADO', 'VENCIDO'
+      ];
+      return !closedStates.includes(expediente.estado?.toUpperCase());
+  };
+
+  const handleDownload = async (fileName, originalName) => {
+    if (!fileName) return;
+    try {
+        Swal.fire({ title: 'Descargando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        const res = await api.get(`/documentos/download/${fileName}`, { responseType: 'blob' });
+        const url = window.URL.createObjectURL(new Blob([res.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', originalName || fileName);
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode.removeChild(link);
+        Swal.close();
+    } catch (error) {
+        console.error('Download error:', error);
+        Swal.fire('Error', 'No se pudo descargar el archivo.', 'error');
+    }
+  };
+
   if (loading) {
     return (
       <PageContainer>
@@ -218,8 +350,22 @@ export const DetalleExpediente = () => {
               {expediente.codigoExpediente} · {expediente.nombreTipoPractica} · Periodo {expediente.periodoAcademico || 'No definido'}
             </Typography>
           </Box>
-          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-            <Chip label={expediente.estado} color={getEstadoColor(expediente.estado)} />
+          <Box display="flex" gap={2} alignItems="center">
+            {expediente.estado === 'APROBADO' && (
+              <Button 
+                variant="contained" 
+                color="success"
+                startIcon={<PlayArrow />}
+                onClick={() => setIniciarDialogOpen(true)}
+              >
+                Iniciar Ejecución
+              </Button>
+            )}
+            <Chip 
+              label={expediente.estado.replace(/_/g, ' ')} 
+              color="primary"
+              variant="outlined"
+            />
             <Button variant="outlined" startIcon={<ArrowBack />} onClick={() => navigate(-1)}>
               Volver
             </Button>
@@ -273,17 +419,57 @@ export const DetalleExpediente = () => {
             <InfoBlock
               title="Asesoría y Comité"
               rows={[
-                { label: 'Docente asesor', value: expediente.nombreAsesor },
+                { 
+                  label: 'Docente asesor', 
+                  value: expediente.nombreAsesor ? (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="body2">{expediente.nombreAsesor}</Typography>
+                        {canModify() && expediente.nombreTipoPractica?.toUpperCase().includes('INICIAL') && (
+                          <Button size="small" variant="outlined" color="primary" onClick={() => { fetchAsesores(); setAsesorDialog(true); }}>Cambiar Asesor</Button>
+                        )}
+                    </Box>
+                  ) : expediente.nombreTipoPractica?.toUpperCase().includes('INICIAL') ? (
+                    canModify() ? <Button size="small" variant="outlined" color="primary" onClick={() => { fetchAsesores(); setAsesorDialog(true); }}>Asignar Asesor</Button> : 'Sin asignar'
+                  ) : 'No aplica'
+                },
                 { label: 'Resolución', value: expediente.resolucionAsesor },
                 {
                   label: 'Comité asignado',
                   value: expediente.comite?.length
-                    ? expediente.comite.map((item) => `${item.nombreUsuario} (${item.rolComite})`).join(', ')
-                    : 'Sin miembros registrados',
+                    ? (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography variant="body2">{expediente.comite.map((item) => `${item.nombreUsuario} (${item.rolComite})`).join(', ')}</Typography>
+                            {canModify() && !expediente.nombreTipoPractica?.toUpperCase().includes('INICIAL') && (
+                              <Button size="small" variant="outlined" color="primary" onClick={() => { fetchComite(); setComiteDialog(true); }}>Cambiar Comité</Button>
+                            )}
+                        </Box>
+                      )
+                    : !expediente.nombreTipoPractica?.toUpperCase().includes('INICIAL') ? (
+                        canModify() ? <Button size="small" variant="outlined" color="primary" onClick={() => { fetchComite(); setComiteDialog(true); }}>Asignar Comité</Button> : 'Sin asignar'
+                    ) : 'No aplica',
                 },
                 {
                   label: 'Tutor externo',
-                  value: 'No disponible en la API actual del expediente',
+                  value: expediente.tutorEmpresa?.id 
+                      ? (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Typography variant="body2">
+                                  {`${expediente.tutorEmpresa.nombres || ''} ${expediente.tutorEmpresa.apellidoPaterno || ''}`.trim() || 'Tutor Externo asignado'}
+                              </Typography>
+                              {canModify() && (
+                                <Button size="small" variant="outlined" color="primary" onClick={() => { fetchTutores(); setTutorDialog(true); }}>
+                                    Cambiar Tutor
+                                </Button>
+                              )}
+                          </Box>
+                      )
+                      : (
+                          canModify() ? (
+                            <Button size="small" variant="outlined" color="primary" onClick={() => { fetchTutores(); setTutorDialog(true); }}>
+                                Asignar Tutor Externo
+                            </Button>
+                          ) : 'Sin asignar'
+                      ),
                 },
               ]}
             />
@@ -365,9 +551,18 @@ export const DetalleExpediente = () => {
                       <Typography variant="body2" color="text.secondary">
                         {doc.nombreArchivo}
                       </Typography>
-                      <Typography variant="caption" color="text.secondary">
+                      <Typography variant="caption" color="text.secondary" display="block">
                         Subido: {formatDateTime(doc.fechaSubida)}
                       </Typography>
+                      <Box sx={{ mt: 1, display: 'flex', gap: 1 }}>
+                        <Button 
+                            size="small" 
+                            variant="outlined" 
+                            onClick={() => handleDownload(doc.rutaArchivo || doc.nombreArchivo, doc.nombreArchivo)}
+                        >
+                            Descargar
+                        </Button>
+                      </Box>
                       {doc.observaciones && (
                         <Typography variant="caption" display="block" sx={{ mt: 0.5 }}>
                           {doc.observaciones}
@@ -605,6 +800,135 @@ export const DetalleExpediente = () => {
           </Box>
         </TabPanel>
       </Paper>
+
+      <Dialog open={tutorDialog} onClose={() => setTutorDialog(false)} maxWidth="sm" fullWidth>
+          <DialogTitle>Asignar Tutor Externo</DialogTitle>
+          <DialogContent dividers>
+              <Stack spacing={2} sx={{ mt: 1 }}>
+                  <Autocomplete
+                      options={tutoresList}
+                      getOptionLabel={(tutor) => `${tutor.nombres || ''} ${tutor.apellidoPaterno || ''} - ${tutor.cargo || 'Sin cargo'}`.trim()}
+                      onChange={(_, newValue) => setSelectedTutor(newValue ? newValue.idUsuario : '')}
+                      renderInput={(params) => <TextField {...params} label="Buscar Tutor Externo" variant="outlined" fullWidth />}
+                      noOptionsText="No hay tutores externos registrados"
+                  />
+              </Stack>
+          </DialogContent>
+          <DialogActions>
+              <Button onClick={() => setTutorDialog(false)}>Cancelar</Button>
+              <Button variant="contained" onClick={handleAssignTutor} disabled={!selectedTutor}>Asignar Tutor</Button>
+          </DialogActions>
+      </Dialog>
+
+      <Dialog open={asesorDialog} onClose={() => setAsesorDialog(false)} maxWidth="sm" fullWidth>
+          <DialogTitle>Asignar Docente Asesor</DialogTitle>
+          <DialogContent dividers>
+              <Stack spacing={2} sx={{ mt: 1 }}>
+                  <Autocomplete
+                      options={asesoresList}
+                      getOptionLabel={(u) => `${u.nombres || ''} ${u.apellidoPaterno || ''} ${u.apellidoMaterno || ''}`.trim()}
+                      onChange={(_, newValue) => setSelectedAsesor(newValue ? newValue.id : '')}
+                      renderInput={(params) => <TextField {...params} label="Buscar Docente Asesor" variant="outlined" fullWidth />}
+                      noOptionsText="No hay docentes registrados con ese rol"
+                  />
+                  <TextField 
+                      label="Número de Resolución" 
+                      variant="outlined" 
+                      fullWidth 
+                      value={resolucionAsesor}
+                      onChange={(e) => setResolucionAsesor(e.target.value)}
+                  />
+              </Stack>
+          </DialogContent>
+          <DialogActions>
+              <Button onClick={() => setAsesorDialog(false)}>Cancelar</Button>
+              <Button variant="contained" onClick={handleAssignAsesor} disabled={!selectedAsesor || !resolucionAsesor}>Asignar Asesor</Button>
+          </DialogActions>
+      </Dialog>
+
+      <Dialog open={comiteDialog} onClose={() => setComiteDialog(false)} maxWidth="md" fullWidth>
+          <DialogTitle>Asignar Miembros del Comité</DialogTitle>
+          <DialogContent dividers>
+              <Stack spacing={2} sx={{ mt: 1 }}>
+                  {selectedComite.map((miembro, index) => (
+                      <Box key={index} sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                          <Autocomplete
+                              sx={{ flex: 1 }}
+                              options={comiteList}
+                              getOptionLabel={(u) => `${u.nombres || ''} ${u.apellidoPaterno || ''}`.trim()}
+                              value={comiteList.find(c => c.id === miembro.idUsuario) || null}
+                              onChange={(_, newValue) => {
+                                  const newComite = [...selectedComite];
+                                  newComite[index].idUsuario = newValue ? newValue.id : '';
+                                  setSelectedComite(newComite);
+                              }}
+                              renderInput={(params) => <TextField {...params} label={`Miembro ${index + 1}`} variant="outlined" />}
+                              noOptionsText="No hay docentes"
+                          />
+                          <TextField
+                              select
+                              label="Rol en el Comité"
+                              value={miembro.rolComite}
+                              onChange={(e) => {
+                                  const newComite = [...selectedComite];
+                                  newComite[index].rolComite = e.target.value;
+                                  setSelectedComite(newComite);
+                              }}
+                              sx={{ width: 200 }}
+                          >
+                              <MenuItem value="PRESIDENTE">Presidente</MenuItem>
+                              <MenuItem value="SECRETARIO">Secretario</MenuItem>
+                              <MenuItem value="VOCAL">Vocal</MenuItem>
+                          </TextField>
+                          <IconButton color="error" onClick={() => {
+                              setSelectedComite(selectedComite.filter((_, i) => i !== index));
+                          }}>
+                              <DeleteIcon />
+                          </IconButton>
+                      </Box>
+                  ))}
+                  {selectedComite.length < 3 && (
+                      <Button startIcon={<AddIcon />} variant="outlined" onClick={() => setSelectedComite([...selectedComite, { idUsuario: '', rolComite: 'VOCAL' }])}>
+                          Agregar Miembro
+                      </Button>
+                  )}
+              </Stack>
+          </DialogContent>
+          <DialogActions>
+              <Button onClick={() => setComiteDialog(false)}>Cancelar</Button>
+              <Button variant="contained" onClick={handleAssignComite} disabled={selectedComite.length === 0 || selectedComite.some(m => !m.idUsuario)}>Asignar Comité</Button>
+          </DialogActions>
+      </Dialog>
+
+      <Dialog open={iniciarDialogOpen} onClose={() => setIniciarDialogOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Iniciar Ejecución de Prácticas</DialogTitle>
+        <DialogContent>
+            <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <TextField
+                    label="Fecha de Inicio"
+                    type="date"
+                    fullWidth
+                    value={fechaInicio.toISOString().split('T')[0]}
+                    onChange={(e) => setFechaInicio(new Date(e.target.value))}
+                    InputLabelProps={{ shrink: true }}
+                />
+                <TextField
+                    label="Duración (Semanas)"
+                    type="number"
+                    fullWidth
+                    value={duracionSemanas}
+                    onChange={(e) => setDuracionSemanas(e.target.value)}
+                    inputProps={{ min: 1 }}
+                />
+            </Box>
+        </DialogContent>
+        <DialogActions>
+            <Button onClick={() => setIniciarDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleIniciarEjecucion} variant="contained" color="success">
+                Iniciar Práctica
+            </Button>
+        </DialogActions>
+      </Dialog>
     </PageContainer>
   );
 };

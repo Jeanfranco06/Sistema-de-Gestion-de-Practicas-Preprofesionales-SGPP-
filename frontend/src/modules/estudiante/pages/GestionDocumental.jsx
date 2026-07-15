@@ -91,7 +91,7 @@ export const GestionDocumental = () => {
           tipoId: d.tipoDocumento,
           nombreOriginal: d.nombreArchivo || d.tipoDocumento,
           fechaSubida: d.fechaSubida,
-          estado: 'APROBADO',
+          estado: d.estado || 'REVISION',
           tamanio: 'N/A',
           fileName: d.rutaArchivo || d.nombreArchivo
       }))
@@ -104,6 +104,20 @@ export const GestionDocumental = () => {
   };
 
   const handleOpenUpload = (docType, isAnexo = false) => {
+    if (!isAnexo && docType.id === 'PLAN_PRACTICA') {
+        const invalidStates = ['SOLICITADO', 'EMPRESA_SEDE_ASIGNADA', 'CARTA_ACEPTACION_PRESENTADA'];
+        if (invalidStates.includes(expediente.estado)) {
+            MySwal.fire({
+                icon: 'warning',
+                title: 'No permitido',
+                text: 'Debes esperar a que el Comité te asigne un Docente Asesor o un Comité Evaluador para poder presentar tu Plan.',
+                confirmButtonColor: '#f8bb86',
+                customClass: { popup: 'wow-glass-card' }
+            });
+            return;
+        }
+    }
+
     setUploadDialog({ open: true, docType, isAnexo });
     setSelectedFile(null);
     setAnexoNombre('');
@@ -236,12 +250,35 @@ export const GestionDocumental = () => {
 
   const pctCargados = Math.round((documentosConsolidados.length / docObligatorios.length) * 100);
 
+  const planSubido = documentosConsolidados.some(d => d.tipoId === 'PLAN_PRACTICA');
+  const puedePresentar = planSubido && (expediente.estado === 'ASESOR_ASIGNADO' || expediente.estado === 'COMITE_ASIGNADO');
+
+  const handlePresentarPlan = async () => {
+    try {
+        await expedientesApi.presentarPlan(expediente.id, { fechaPresentacion: new Date().toISOString() });
+        MySwal.fire('Éxito', 'Plan de trabajo presentado para revisión.', 'success');
+        fetchExpediente();
+    } catch (e) {
+        console.error(e);
+        MySwal.fire('Error', 'No se pudo presentar el plan', 'error');
+    }
+  };
+
   return (
     <Box sx={{ maxWidth: 1100, mx: 'auto' }}>
       <PageHeader
         title="Gestor documental"
         subtitle={`Expediente: ${expediente.nombreTipoPractica}`}
-        action={<Chip label={`${pctCargados}% completado`} size="small" variant="outlined" />}
+        action={
+            <Box display="flex" gap={2} alignItems="center">
+                {puedePresentar && (
+                    <Button variant="contained" color="primary" onClick={handlePresentarPlan}>
+                        Presentar Plan
+                    </Button>
+                )}
+                <Chip label={`${pctCargados}% completado`} size="small" variant="outlined" />
+            </Box>
+        }
       />
 
       <ContentCard noPadding sx={{ mb: 0 }}>

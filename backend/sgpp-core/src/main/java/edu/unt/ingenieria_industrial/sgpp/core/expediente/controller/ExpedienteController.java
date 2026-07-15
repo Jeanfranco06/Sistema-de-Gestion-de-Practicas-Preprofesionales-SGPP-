@@ -21,7 +21,7 @@ import java.util.Objects;
 @RequestMapping("/expedientes")
 @RequiredArgsConstructor
 @Tag(name = "Expediente de Práctica", description = "Gestión del ciclo de vida del expediente de práctica pre-profesional")
-@PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR', 'DOCENTE_ASESOR')")
+@PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR', 'DOCENTE_ASESOR', 'ESTUDIANTE')")
 public class ExpedienteController {
 
     private final ExpedienteService expedienteService;
@@ -75,6 +75,18 @@ public class ExpedienteController {
         ExpedienteResponse response = expedienteService.asignarComite(id, request, idUsuario != null ? idUsuario : 1L);
         return ResponseEntity.ok(ApiResponse.<ExpedienteResponse>builder()
                 .success(true).message("Comité asignado").data(response).timestamp(LocalDateTime.now()).build());
+    }
+
+    @PutMapping("/{id}/asignar-tutor-externo")
+    @Operation(summary = "Asignar tutor externo de la empresa")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR', 'SECRETARIA')")
+    public ResponseEntity<ApiResponse<ExpedienteResponse>> asignarTutorExterno(
+            @PathVariable Long id,
+            @Valid @RequestBody AsignarTutorRequest request,
+            @RequestAttribute(value = "idUsuario", required = false) Long idUsuario) {
+        ExpedienteResponse response = expedienteService.asignarTutorExterno(id, request, idUsuario != null ? idUsuario : 1L);
+        return ResponseEntity.ok(ApiResponse.<ExpedienteResponse>builder()
+                .success(true).message("Tutor externo asignado").data(response).timestamp(LocalDateTime.now()).build());
     }
 
     @PutMapping("/{id}/presentar-plan")

@@ -47,7 +47,7 @@ import { convenioApi, empresaApi, sedeApi } from '../../../api/sedesApi';
 import { dashboardApi, reportesCoordinacionApi } from '../../../api/coordinacionApi';
 import { secretariaApi, tutoresApi, usuariosApi } from '../../../api/usuariosApi';
 
-const COLORS = ['#18181b', '#3f3f46', '#52525b', '#71717a', '#a1a1aa', '#d4d4d8', '#e4e4e7'];
+const COLORS = ['#2563eb', '#8b5cf6', '#14b8a6', '#f59e0b', '#ef4444', '#10b981', '#ec4899', '#06b6d4'];
 
 /** Datos de demostración cuando la BD local aún no tiene expedientes. */
 const DEMO_CHARTS = {
@@ -477,7 +477,7 @@ export const DashboardCoordinacion = ({ variant = 'coordinacion' }) => {
         </Stack>
       </Box>
 
-      <Paper variant="outlined" sx={{ p: 2.5, mb: 3, borderRadius: 2 }}>
+      <Paper id="tabla-expedientes" variant="outlined" sx={{ p: 2.5, mb: 3, borderRadius: 2 }}>
         <Box
           sx={{
             display: 'grid',
@@ -618,7 +618,12 @@ export const DashboardCoordinacion = ({ variant = 'coordinacion' }) => {
                   <QuickActionCard title="Usuarios" helper="Roles, bloqueos y accesos" icon={<People />} onClick={() => navigate('/admin/usuarios')} />
                   <QuickActionCard title="Tutores externos" helper="Administración del padrón" icon={<SupervisorAccount />} onClick={() => navigate('/admin/tutores')} />
                   <QuickActionCard title="Validar requisitos" helper="Control académico previo" icon={<Assessment />} onClick={() => navigate('/admin/validar-requisitos')} />
-                  <QuickActionCard title="Expedientes" helper="Seguimiento documental" icon={<FolderOpen />} onClick={() => navigate('/admin/expedientes')} />
+                  <QuickActionCard 
+                    title="Expedientes" 
+                    helper="Gestión y asignaciones" 
+                    icon={<FolderOpen />} 
+                    onClick={() => navigate('/comite/panel')} 
+                  />
                 </Box>
               </Paper>
 
@@ -661,8 +666,8 @@ export const DashboardCoordinacion = ({ variant = 'coordinacion' }) => {
                     <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
                     <Tooltip formatter={(value) => numberFormat(value)} />
                     <Legend />
-                    <Bar dataKey="activos" name="Activos" fill="#3f3f46" radius={[4, 4, 0, 0]} maxBarSize={48} />
-                    <Bar dataKey="cerrados" name="Cerrados" fill="#a1a1aa" radius={[4, 4, 0, 0]} maxBarSize={48} />
+                    <Bar dataKey="activos" name="Activos" fill="#2563eb" radius={[4, 4, 0, 0]} maxBarSize={48} />
+                    <Bar dataKey="cerrados" name="Cerrados" fill="#14b8a6" radius={[4, 4, 0, 0]} maxBarSize={48} />
                   </ReBarChart>
                 </ResponsiveContainer>
               ) : (
@@ -751,7 +756,7 @@ export const DashboardCoordinacion = ({ variant = 'coordinacion' }) => {
                     <XAxis type="number" allowDecimals={false} tick={{ fontSize: 12 }} />
                     <YAxis type="category" dataKey="name" width={130} tick={{ fontSize: 11 }} />
                     <Tooltip formatter={(value) => numberFormat(value)} />
-                    <Bar dataKey="total" name="Expedientes" fill="#52525b" radius={[0, 4, 4, 0]} maxBarSize={28} />
+                    <Bar dataKey="total" name="Expedientes" fill="#8b5cf6" radius={[0, 4, 4, 0]} maxBarSize={28} />
                   </ReBarChart>
                 </ResponsiveContainer>
               ) : (
@@ -773,7 +778,7 @@ export const DashboardCoordinacion = ({ variant = 'coordinacion' }) => {
                     <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} angle={-18} textAnchor="end" height={56} />
                     <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
                     <Tooltip formatter={(value) => numberFormat(value)} />
-                    <Line type="monotone" dataKey="total" name="Expedientes" stroke="#3f3f46" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                    <Line type="monotone" dataKey="total" name="Expedientes" stroke="#2563eb" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
                   </LineChart>
                 </ResponsiveContainer>
               ) : (
@@ -792,13 +797,13 @@ export const DashboardCoordinacion = ({ variant = 'coordinacion' }) => {
                 {hasChartData(displayAdminMetrics.roles, ['value']) ? (
                   <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
-                      <Pie data={displayAdminMetrics.roles} dataKey="value" nameKey="name" outerRadius={100} innerRadius={50}>
+                      <Pie data={displayAdminMetrics.roles} dataKey="value" nameKey="name" outerRadius={90} innerRadius={50}>
                         {displayAdminMetrics.roles.map((entry, index) => (
                           <Cell key={entry.name} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
                       <Tooltip formatter={(value) => numberFormat(value)} />
-                      <Legend />
+                      <Legend layout="horizontal" verticalAlign="bottom" wrapperStyle={{ paddingTop: 20, fontSize: '11px' }} />
                     </PieChart>
                   </ResponsiveContainer>
                 ) : (

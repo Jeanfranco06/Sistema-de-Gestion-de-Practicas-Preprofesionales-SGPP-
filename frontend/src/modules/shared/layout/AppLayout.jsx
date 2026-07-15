@@ -36,7 +36,7 @@ const NAV_ITEMS_ADMIN = [
   { label: 'Dashboard', icon: <Dashboard />, path: '/admin/dashboard' },
   { label: 'Validar Requisitos', icon: <FactCheck />, path: '/admin/validar-requisitos' },
   { label: 'Tutores Externos', icon: <SupervisorAccount />, path: '/admin/tutores' },
-  { label: 'Expedientes', icon: <Assignment />, path: '/admin/expedientes' },
+  { label: 'Expedientes', icon: <Assignment />, path: '/comite/panel' },
   { label: 'Empresas', icon: <Business />, path: '/admin/empresas' },
   { label: 'Sedes', icon: <Business />, path: '/admin/sedes' },
   { label: 'Convenios', icon: <Description />, path: '/admin/convenios' },
@@ -48,7 +48,7 @@ const NAV_ITEMS_ADMIN_SISTEMA = [
   { label: 'Validar Requisitos', icon: <FactCheck />, path: '/admin/validar-requisitos' },
   { label: 'Usuarios', icon: <People />, path: '/admin/usuarios' },
   { label: 'Tutores Externos', icon: <SupervisorAccount />, path: '/admin/tutores' },
-  { label: 'Expedientes', icon: <Assignment />, path: '/admin/expedientes' },
+  { label: 'Expedientes', icon: <Assignment />, path: '/comite/panel' },
   { label: 'Empresas', icon: <Business />, path: '/admin/empresas' },
   { label: 'Sedes', icon: <Business />, path: '/admin/sedes' },
   { label: 'Convenios', icon: <Description />, path: '/admin/convenios' },
@@ -60,7 +60,7 @@ const NAV_ITEMS_SECRETARIA = [
   { label: 'Reportes', icon: <BarChart />, path: '/admin/reportes' },
   { label: 'Recepción Admin.', icon: <Assignment />, path: '/secretaria/recepcion' },
   { label: 'Validar Requisitos', icon: <FactCheck />, path: '/admin/validar-requisitos' },
-  { label: 'Expedientes', icon: <Assignment />, path: '/admin/expedientes' },
+  { label: 'Expedientes', icon: <Assignment />, path: '/comite/panel' },
   { label: 'Empresas', icon: <Business />, path: '/admin/empresas' },
   { label: 'Sedes', icon: <Business />, path: '/admin/sedes' },
 ];
@@ -69,7 +69,6 @@ const NAV_ITEMS_COMITE = [
   { label: 'Panel Comité', icon: <FactCheck />, path: '/comite/panel' },
   { label: 'Panel Ejecutivo', icon: <Dashboard />, path: '/coordinacion/dashboard' },
   { label: 'Reportes', icon: <BarChart />, path: '/coordinacion/reportes' },
-  { label: 'Expedientes', icon: <Assignment />, path: '/admin/expedientes' },
   { label: 'Empresas', icon: <Business />, path: '/admin/empresas' },
   { label: 'Sedes', icon: <Business />, path: '/admin/sedes' },
 ];
@@ -82,8 +81,7 @@ const NAV_ITEMS_TUTOR_EXTERNO = [
 const NAV_ITEMS_COORDINACION = [
   { label: 'Panel Ejecutivo', icon: <Dashboard />, path: '/coordinacion/dashboard' },
   { label: 'Reportes', icon: <Assessment />, path: '/coordinacion/reportes' },
-  { label: 'Expedientes', icon: <Assignment />, path: '/admin/expedientes' },
-  { label: 'Panel Comité', icon: <FactCheck />, path: '/comite/panel' },
+  { label: 'Expedientes', icon: <Assignment />, path: '/comite/panel' },
   { label: 'Empresas', icon: <Business />, path: '/admin/empresas' },
   { label: 'Sedes', icon: <Business />, path: '/admin/sedes' },
 ];

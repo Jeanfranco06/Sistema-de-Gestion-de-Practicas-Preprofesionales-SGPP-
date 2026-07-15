@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Box, Grid, Typography, Chip, List, ListItem, ListItemText, ListItemIcon,
   Button, Divider, Alert, CircularProgress, IconButton, Paper, Stack,
+  Dialog, DialogTitle, DialogContent, DialogActions, FormControl, InputLabel, Select, MenuItem,
 } from '@mui/material';
 import {
   Description, Business, Visibility, TrendingUp, Refresh, InfoOutlined,
@@ -11,12 +12,16 @@ import { expedientesApi } from '../../api/expedientesApi';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../shared/components/PageHeader';
 import ContentCard from '../../shared/components/ContentCard';
+import Swal from 'sweetalert2';
 
 export default function DashboardEstudiante() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [expediente, setExpediente] = useState(null);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [tipoPractica, setTipoPractica] = useState(1); // 1 = INICIAL, 2 = FINAL
+  const [creando, setCreando] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -41,6 +46,26 @@ export default function DashboardEstudiante() {
     );
   }
 
+  const handleCrear = async () => {
+    try {
+      setCreando(true);
+      await expedientesApi.crear({
+        idEstudiante: user.id,
+        idTipoPractica: tipoPractica,
+        condicionSolicitante: 'REGULAR',
+        periodoAcademico: '2025-I'
+      });
+      setOpenDialog(false);
+      Swal.fire('Éxito', 'Expediente creado correctamente', 'success');
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      Swal.fire('Error', 'No se pudo crear el expediente', 'error');
+    } finally {
+      setCreando(false);
+    }
+  };
+
   if (!expediente) {
     return (
       <Box sx={{ maxWidth: 480, mx: 'auto', textAlign: 'center', py: 8 }}>
@@ -49,8 +74,30 @@ export default function DashboardEstudiante() {
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
             Solicita el inicio de tus prácticas para comenzar a registrar tu progreso.
           </Typography>
-          <Button variant="contained">Solicitar práctica</Button>
+          <Button variant="contained" onClick={() => setOpenDialog(true)}>Solicitar práctica</Button>
         </ContentCard>
+
+        <Dialog open={openDialog} onClose={() => !creando && setOpenDialog(false)}>
+          <DialogTitle>Solicitar Práctica</DialogTitle>
+          <DialogContent>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2, mt: 1 }}>
+              Selecciona el tipo de práctica que deseas registrar.
+            </Typography>
+            <FormControl fullWidth size="small">
+              <InputLabel>Tipo de Práctica</InputLabel>
+              <Select value={tipoPractica} label="Tipo de Práctica" onChange={(e) => setTipoPractica(e.target.value)}>
+                <MenuItem value={1}>Práctica Preprofesional Inicial</MenuItem>
+                <MenuItem value={2}>Práctica Preprofesional Final</MenuItem>
+              </Select>
+            </FormControl>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setOpenDialog(false)} disabled={creando}>Cancelar</Button>
+            <Button onClick={handleCrear} variant="contained" disabled={creando}>
+              {creando ? 'Creando...' : 'Crear Expediente'}
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Box>
     );
   }
@@ -79,15 +126,45 @@ export default function DashboardEstudiante() {
     { label: 'Documentos', value: `${docsAprobados} / ${docsObligatorios.length}` },
   ];
 
+  const handleCancelar = async () => {
+    const result = await Swal.fire({
+      title: '¿Estás seguro?',
+      text: "Se cancelará tu solicitud actual y podrás iniciar una nueva.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, cancelar',
+      cancelButtonText: 'No'
+    });
+    if (result.isConfirmed) {
+      try {
+        setLoading(true);
+        await expedientesApi.disable(expediente.id);
+        Swal.fire('Cancelada', 'La solicitud ha sido cancelada.', 'success');
+        setExpediente(null);
+        fetchData();
+      } catch (err) {
+        Swal.fire('Error', 'No se pudo cancelar la solicitud', 'error');
+        setLoading(false);
+      }
+    }
+  };
+
   return (
     <Box sx={{ maxWidth: 1100, mx: 'auto' }}>
       <PageHeader
         title={`Hola, ${user?.nombres?.split(' ')[0]}`}
         subtitle={`${expediente.nombreTipoPractica} · ${expediente.nombreEmpresa || 'Empresa no asignada'}`}
         action={
-          <IconButton onClick={fetchData} size="small" aria-label="Actualizar">
-            <Refresh fontSize="small" />
-          </IconButton>
+          <Box display="flex" alignItems="center" gap={1}>
+            {expediente.estado === 'BORRADOR' && (
+              <Button color="error" variant="outlined" size="small" onClick={handleCancelar}>
+                Cancelar Solicitud
+              </Button>
+            )}
+            <IconButton onClick={fetchData} size="small" aria-label="Actualizar">
+              <Refresh fontSize="small" />
+            </IconButton>
+          </Box>
         }
       />
 

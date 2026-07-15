@@ -16,6 +16,7 @@ import edu.unt.ingenieria_industrial.sgpp.core.practicas.repository.TipoPractica
 import edu.unt.ingenieria_industrial.sgpp.core.plazo.service.PlazoService;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.model.Estudiante;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.model.Usuario;
+import edu.unt.ingenieria_industrial.sgpp.core.seguridad.model.TutorExterno;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.repository.EstudianteRepository;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.repository.UsuarioRepository;
 import edu.unt.ingenieria_industrial.sgpp.core.service.NotificacionEventoService;
@@ -156,16 +157,21 @@ public class ExpedienteServiceImpl implements ExpedienteService {
         if (!TIPO_INICIAL.equals(tipoCodigo)) {
             throw new BusinessException("Solo las prácticas iniciales requieren asignación de asesor individual");
         }
-        validarEstadoPara(expediente, "ASESOR_ASIGNADO", "EMPRESA_SEDE_ASIGNADA");
+        validarEstadoPara(expediente, "ASESOR_ASIGNADO", "SOLICITADO", "EMPRESA_SEDE_ASIGNADA", "ASESOR_ASIGNADO", "TUTOR_EXTERNO_ASIGNADO", "PLAN_PRESENTADO", "PLAN_APROBADO", "EN_EJECUCION");
 
         Usuario asesor = usuarioRepository.findById(request.getIdAsesor())
                 .orElseThrow(() -> new ResourceNotFoundException("Docente asesor no encontrado"));
 
+        String estadoActual = expediente.getEstado();
         expediente.setAsesor(asesor);
         expediente.setResolucionAsesor(request.getResolucion());
-        expediente.setEstado("ASESOR_ASIGNADO");
+           boolean esNuevaAsignacion = ("EMPRESA_SEDE_ASIGNADA".equals(estadoActual) || "SOLICITADO".equals(estadoActual));
+        if (esNuevaAsignacion) {
+            expediente.setEstado("ASESOR_ASIGNADO");
+        }
+        
         expediente = expedienteRepository.save(expediente);
-        registrarCambioEstado(expediente, "EMPRESA_SEDE_ASIGNADA", "ASESOR_ASIGNADO", idUsuario,
+        registrarCambioEstado(expediente, estadoActual, expediente.getEstado(), idUsuario,
                 "Asesor: " + asesor.getNombres() + " " + asesor.getApellidoPaterno() +
                 " - Resolución: " + request.getResolucion(), "ASIGNACION_ASESOR");
 
@@ -175,13 +181,15 @@ public class ExpedienteServiceImpl implements ExpedienteService {
                 asesor.getId(), expediente.getCodigoExpediente(), nombreEstudiante);
         notificacionEventoService.notificarCambioEstadoExpediente(
                 expediente.getEstudiante().getUsuario().getId(),
-                expediente.getCodigoExpediente(), "ASESOR_ASIGNADO");
+                expediente.getCodigoExpediente(), expediente.getEstado());
 
-        LocalDate fechaBaseInicial = expediente.getFechaInicioPractica() != null
-                ? expediente.getFechaInicioPractica() : LocalDate.now();
-        plazoService.iniciarPlazo(expediente.getId(), "PRESENTACION_PLAN_INICIAL",
-                fechaBaseInicial, null, null,
-                "Inicio de plazo para presentación del plan - Práctica Inicial");
+        if (esNuevaAsignacion) {
+            LocalDate fechaBaseInicial = expediente.getFechaInicioPractica() != null && expediente.getFechaInicioPractica().isAfter(LocalDate.now())
+                    ? expediente.getFechaInicioPractica() : LocalDate.now();
+            plazoService.iniciarPlazo(expediente.getId(), "PRESENTACION_PLAN_INICIAL",
+                    fechaBaseInicial, null, null,
+                    "Inicio de plazo para presentación del plan - Práctica Inicial");
+        }
 
         return toResponse(expediente);
     }
@@ -192,9 +200,9 @@ public class ExpedienteServiceImpl implements ExpedienteService {
         String tipoCodigo = expediente.getTipoPractica().getCodigo();
 
         if (TIPO_INICIAL.equals(tipoCodigo)) {
-            throw new BusinessException("Las prácticas iniciales no requieren asignación de comité");
+            throw new BusinessException("Las prácticas iniciales no usan comité, se evalúan por el docente asesor");
         }
-        validarEstadoPara(expediente, "COMITE_ASIGNADO", "CARTA_ACEPTACION_PRESENTADA", "EMPRESA_SEDE_ASIGNADA");
+        validarEstadoPara(expediente, "COMITE_ASIGNADO", "SOLICITADO", "EMPRESA_SEDE_ASIGNADA", "COMITE_ASIGNADO", "TUTOR_EXTERNO_ASIGNADO", "PLAN_PRESENTADO", "PLAN_APROBADO", "EN_EJECUCION");
 
         List<ExpedienteComite> activos = comiteRepository.findByExpedienteIdAndActivoTrue(idExpediente);
         if (!activos.isEmpty()) {
@@ -230,13 +238,39 @@ public class ExpedienteServiceImpl implements ExpedienteService {
     }
 
     @Override
+    public ExpedienteResponse asignarTutorExterno(Long idExpediente, AsignarTutorRequest request, Long idUsuario) {
+        Expediente expediente = findExpediente(idExpediente);
+        validarEstadoPara(expediente, "TUTOR_EXTERNO_ASIGNADO", "SOLICITADO", "EMPRESA_SEDE_ASIGNADA", "ASESOR_ASIGNADO", "COMITE_ASIGNADO", "TUTOR_EXTERNO_ASIGNADO", "PLAN_PRESENTADO", "PLAN_APROBADO", "EN_EJECUCION");
+
+        Usuario tutorUsuario = usuarioRepository.findById(request.getIdTutorExterno())
+                .orElseThrow(() -> new ResourceNotFoundException("Tutor externo no encontrado"));
+
+        TutorExterno tutorExterno = tutorUsuario.getTutorExterno();
+        if (tutorExterno == null) {
+            throw new BusinessException("El usuario seleccionado no tiene un perfil de tutor externo");
+        }
+
+        String estadoActual = expediente.getEstado();
+        boolean esNuevaAsignacion = ("EMPRESA_SEDE_ASIGNADA".equals(estadoActual) || "SOLICITADO".equals(estadoActual));
+        if (esNuevaAsignacion) {
+            expediente.setEstado("TUTOR_EXTERNO_ASIGNADO");
+        }
+        expediente.setTutorEmpresa(tutorExterno);
+        expediente = expedienteRepository.save(expediente);
+
+        registrarCambioEstado(expediente, estadoActual, expediente.getEstado(), idUsuario,
+                "Tutor externo: " + tutorUsuario.getNombres() + " " + tutorUsuario.getApellidoPaterno(), "ASIGNACION_TUTOR_EXTERNO");
+
+        return toResponse(expediente);
+    }
+
+    @Override
     public ExpedienteResponse presentarPlan(Long idExpediente, PresentarPlanRequest request, Long idUsuario) {
         Expediente expediente = findExpediente(idExpediente);
         String tipoCodigo = expediente.getTipoPractica().getCodigo();
 
-        String esperado = TIPO_INICIAL.equals(tipoCodigo) ? "ASESOR_ASIGNADO" : "COMITE_ASIGNADO";
         String label = TIPO_INICIAL.equals(tipoCodigo) ? "ASESOR_ASIGNADO" : "COMITE_ASIGNADO";
-        validarEstadoPara(expediente, "PLAN_PRESENTADO", esperado);
+        validarEstadoPara(expediente, "PLAN_PRESENTADO", "ASESOR_ASIGNADO", "COMITE_ASIGNADO", "TUTOR_EXTERNO_ASIGNADO");
 
         expediente.setFechaPresentacionPlan(request.getFechaPresentacion());
         expediente.setEstado("PLAN_PRESENTADO");
@@ -722,7 +756,7 @@ public class ExpedienteServiceImpl implements ExpedienteService {
     private void validarTransicionManual(String actual, String destino, String tipoCodigo) {
         Map<String, Set<String>> transiciones = new HashMap<>();
         Set<String> estadosInicial = Set.of("SOLICITADO", "EMPRESA_SEDE_ASIGNADA", "ASESOR_ASIGNADO",
-                "COMITE_ASIGNADO", "PLAN_PRESENTADO", "EN_REVISION", "OBSERVADO", "SUBSANADO",
+                "COMITE_ASIGNADO", "TUTOR_EXTERNO_ASIGNADO", "PLAN_PRESENTADO", "EN_REVISION", "OBSERVADO", "SUBSANADO",
                 "APROBADO", "EN_EJECUCION", "INFORME_PARCIAL_PRESENTADO", "INFORME_FINAL_PRESENTADO",
                 "EVALUADO", "CARTA_ACEPTACION_PRESENTADA");
 
@@ -731,6 +765,7 @@ public class ExpedienteServiceImpl implements ExpedienteService {
         transiciones.put("CARTA_ACEPTACION_PRESENTADA", estadosInicial);
         transiciones.put("ASESOR_ASIGNADO", estadosInicial);
         transiciones.put("COMITE_ASIGNADO", estadosInicial);
+        transiciones.put("TUTOR_EXTERNO_ASIGNADO", estadosInicial);
 
         Set<String> compartido = transiciones.get("SOLICITADO");
 
@@ -815,6 +850,19 @@ public class ExpedienteServiceImpl implements ExpedienteService {
         if (e.getConvenio() != null) {
             builder.idConvenio(e.getConvenio().getId())
                    .numeroConvenio(e.getConvenio().getNumeroConvenio());
+        }
+        if (e.getTutorEmpresa() != null) {
+            edu.unt.ingenieria_industrial.sgpp.core.seguridad.model.TutorExterno tutor = e.getTutorEmpresa();
+            builder.tutorEmpresa(tutor == null ? null : edu.unt.ingenieria_industrial.sgpp.core.seguridad.dto.TutorExternoDTO.builder()
+                        .id(tutor.getId())
+                        .idUsuario(tutor.getUsuario() != null ? tutor.getUsuario().getId() : null)
+                        .nombres(tutor.getUsuario() != null ? tutor.getUsuario().getNombres() : null)
+                        .apellidoPaterno(tutor.getUsuario() != null ? tutor.getUsuario().getApellidoPaterno() : null)
+                        .apellidoMaterno(tutor.getUsuario() != null ? tutor.getUsuario().getApellidoMaterno() : null)
+                        .correo(tutor.getUsuario() != null ? tutor.getUsuario().getEmail() : null)
+                        .cargo(tutor.getCargo())
+                        .area(tutor.getArea())
+                        .build());
         }
 
         builder.estadoHistorial(e.getEstados().stream()
