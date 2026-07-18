@@ -134,10 +134,10 @@ export default function DashboardTutor() {
       <StatStrip items={stats} />
 
       <Grid container spacing={3}>
-        <Grid item xs={12} lg={8}>
+        <Grid size={{ xs: 12, lg: 8 }}>
           <ContentCard accent>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography variant="subtitle1" fontWeight={600}>Resumen de Evaluaciones</Typography>
+              <Typography sx={{ fontWeight: 600 }} variant="subtitle1">Resumen de Evaluaciones</Typography>
               <Chip label={`${avancePct}% en curso`} size="small" color="primary" variant="outlined" />
             </Box>
             <LinearProgress variant="determinate" value={avancePct} sx={{ height: 10, borderRadius: 999, mb: 1 }} />
@@ -146,8 +146,8 @@ export default function DashboardTutor() {
             </Typography>
 
             <Grid container spacing={2.5} sx={{ mt: 1.5 }}>
-              <Grid item xs={12} md={5}>
-                <Typography variant="caption" color="text.secondary" display="block" textAlign="center" sx={{ mb: 1 }}>
+              <Grid size={{ xs: 12, md: 5 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mb: 1 }}>
                   Evaluaciones vs Pendientes
                 </Typography>
                 <Box sx={{ height: 210, display: 'grid', placeItems: 'center' }}>
@@ -162,7 +162,7 @@ export default function DashboardTutor() {
                     }}
                   >
                     <Box sx={{ width: 104, height: 104, borderRadius: '50%', bgcolor: 'background.paper', display: 'grid', placeItems: 'center', textAlign: 'center' }}>
-                      <Typography variant="h5" fontWeight={700} color="success.main">{kpis.enEjecucion + expedientes.filter(e => e.estado === 'EVALUADO').length}</Typography>
+                      <Typography sx={{ fontWeight: 700 }} variant="h5" color="success.main">{kpis.enEjecucion + expedientes.filter(e => e.estado === 'EVALUADO').length}</Typography>
                       <Typography variant="caption" color="text.secondary">de {kpis.total}</Typography>
                     </Box>
                   </Box>
@@ -173,8 +173,8 @@ export default function DashboardTutor() {
                 </Stack>
               </Grid>
 
-              <Grid item xs={12} md={7}>
-                <Typography variant="caption" color="text.secondary" display="block" textAlign="center" sx={{ mb: 1 }}>
+              <Grid size={{ xs: 12, md: 7 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mb: 1 }}>
                   Distribución de Estados
                 </Typography>
                 <Box sx={{ height: 210, display: 'flex', alignItems: 'end', justifyContent: 'center', gap: 1.5, px: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
@@ -191,7 +191,7 @@ export default function DashboardTutor() {
                             bgcolor: item.color,
                           }}
                         />
-                        <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1, fontSize: '0.65rem', lineHeight: 1.2 }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, fontSize: '0.65rem', lineHeight: 1.2, display: 'block' }}>
                           {item.name}
                         </Typography>
                       </Box>
@@ -204,7 +204,7 @@ export default function DashboardTutor() {
           </ContentCard>
         </Grid>
 
-        <Grid item xs={12} lg={4}>
+        <Grid size={{ xs: 12, lg: 4 }}>
           <ContentCard accent sx={{ mb: 3 }}>
             <Typography variant="subtitle2" color="primary.dark" sx={{ mb: 2 }}>Accesos rápidos</Typography>
             <Stack spacing={1}>
@@ -249,7 +249,7 @@ export default function DashboardTutor() {
       </Grid>
 
       <ContentCard accent>
-        <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>Mis Practicantes Asignados</Typography>
+        <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>Mis Practicantes Asignados</Typography>
 
         <Box sx={{ p: 2, mb: 3, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap', bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
           <TextField
@@ -277,13 +277,13 @@ export default function DashboardTutor() {
               {filtered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map(e => (
                 <TableRow key={e.id} hover>
                   <TableCell>
-                    <Typography variant="body2" fontWeight={500}>{e.nombreEstudiante} {e.apellidoEstudiante}</Typography>
+                    <Typography sx={{ fontWeight: 500 }} variant="body2">{e.nombreEstudiante} {e.apellidoEstudiante}</Typography>
                     <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>{e.codigoExpediente}</Typography>
                   </TableCell>
                   <TableCell><Chip label={e.nombreTipoPractica} size="small" color="primary" variant="outlined" /></TableCell>
                   <TableCell><StatusChip status={e.estado} label={estadoLabel(e.estado)} /></TableCell>
                   <TableCell>
-                    <Typography variant="caption" display="block">{e.nombreEmpresa || '—'}</Typography>
+                    <Typography sx={{ display: 'block' }} variant="caption">{e.nombreEmpresa || '—'}</Typography>
                     <Typography variant="caption" color="text.secondary">{e.nombreSede || ''}</Typography>
                   </TableCell>
                   <TableCell align="center">

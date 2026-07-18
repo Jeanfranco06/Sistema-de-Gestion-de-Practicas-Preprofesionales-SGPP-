@@ -110,7 +110,8 @@ export const GestionDocumental = () => {
       fechaSubida: d.fechaSubida,
       estado: d.estado || 'PENDIENTE',
       tamanio: 'N/A',
-      fileName: d.rutaArchivo || d.nombreArchivo
+      fileName: d.rutaArchivo || d.nombreArchivo,
+      rutaArchivo: d.rutaArchivo,
     }))
   ];
 
@@ -120,7 +121,28 @@ export const GestionDocumental = () => {
     if (['INFORME_PARCIAL_1', 'INFORME_PARCIAL_2', 'INFORME_FINAL', 'INFORME_FINAL_INICIAL'].includes(tipoDocumento)) return false;
     if (tipoDocumento === 'CARTA_ACEPTACION') return expediente.estado === 'CARTA_PRESENTACION_EMITIDA';
     if (tipoDocumento === 'PLAN_PRACTICA') return ['ASESOR_ASIGNADO', 'COMITE_ASIGNADO'].includes(expediente.estado);
+    if (tipoDocumento === 'FICHA_EVALUACION') return false;
+    if (tipoDocumento === 'CONSTANCIA_EMPRESA') {
+      return ['EN_EJECUCION', 'INFORME_FINAL_PRESENTADO', 'INFORME_APROBADO',
+        'EVALUACION_PENDIENTE', 'EVALUACION_EMPRESA_PENDIENTE', 'EVALUACION_COMPLETA',
+        'DICTAMEN_EMITIDO', 'EVALUADO'].includes(expediente.estado);
+    }
     return true;
+  };
+
+  const mensajeDocumentoBloqueado = (tipoDocumento) => {
+    if (tipoDocumento === 'CARTA_PRESENTACION') return 'Generado por Dirección o Coordinación';
+    if (['INFORME_PARCIAL_1', 'INFORME_PARCIAL_2', 'INFORME_FINAL', 'INFORME_FINAL_INICIAL'].includes(tipoDocumento)) {
+      return 'Gestionar desde Informes';
+    }
+    if (tipoDocumento === 'PLAN_PRACTICA') {
+      return expediente.codigoTipoPractica === 'INICIAL'
+        ? 'Pendiente: Secretaría o Coordinación debe asignar un Docente Asesor.'
+        : 'Pendiente: Comité o Coordinación debe asignar el Comité de Prácticas.';
+    }
+    if (tipoDocumento === 'FICHA_EVALUACION') return 'Gestionada por el Tutor Externo.';
+    if (tipoDocumento === 'CONSTANCIA_EMPRESA') return 'Disponible cuando la práctica esté en ejecución.';
+    return 'Disponible en la etapa correspondiente';
   };
 
   const handleTabChange = (event, newValue) => {
@@ -234,7 +256,7 @@ export const GestionDocumental = () => {
 
       if (isRegistroDoc) {
         const registroId = (doc.rutaArchivo || doc.fileName).replace('registro:', '');
-        const res = await api.get(`/admin/exportacion/descargar/${registroId}`, { responseType: 'blob' });
+        const res = await api.get(`/exportacion/descargar/${registroId}`, { responseType: 'blob' });
         const url = window.URL.createObjectURL(new Blob([res.data]));
         const link = document.createElement('a');
         link.href = url;
@@ -245,7 +267,7 @@ export const GestionDocumental = () => {
         MySwal.close();
       } else {
         // Descarga normal de documentos subidos
-        const res = await api.get(`/documentos/download/${doc.fileName}`, { responseType: 'blob' });
+        const res = await api.get(`/documentos/expediente/${doc.id}/download`, { responseType: 'blob' });
         const url = window.URL.createObjectURL(new Blob([res.data]));
         const link = document.createElement('a');
         link.href = url;
@@ -257,7 +279,18 @@ export const GestionDocumental = () => {
       }
     } catch (error) {
       console.error('Download error:', error);
-      MySwal.fire('Error', 'No se pudo descargar el archivo.', 'error');
+      const status = error.response?.status;
+      let message = 'No se pudo descargar el archivo.';
+      if (status === 404) {
+        message = 'El archivo no fue encontrado en el servidor.';
+      } else if (status === 403 || status === 401) {
+        message = 'No tienes permiso para descargar este archivo.';
+      } else if (status === 400) {
+        message = error.response?.data?.message || 'Solicitud de descarga inválida.';
+      } else if (status >= 500) {
+        message = 'Error interno del servidor al descargar el archivo.';
+      }
+      MySwal.fire('Error', message, 'error');
     }
   };
 
@@ -287,9 +320,12 @@ export const GestionDocumental = () => {
     }
   };
 
-  const getEstadoChip = (estado) => {
+  const getEstadoChip = (estado, tipoDocumento) => {
+    if (tipoDocumento === 'CARTA_PRESENTACION') {
+      return <StatusChip status="CARTA_PRESENTACION_EMITIDA" label="Emitida por Dirección" />;
+    }
     const map = { APROBADO: 'APROBADO', OBSERVADO: 'OBSERVADO' };
-    return <StatusChip status={map[estado] || 'PENDIENTE'} label={estado === 'APROBADO' ? 'Aprobado' : estado === 'OBSERVADO' ? 'Observado' : 'En revisión'} />;
+    return <StatusChip status={map[estado] || 'PENDIENTE'} label={estado === 'APROBADO' ? 'Aprobado' : estado === 'OBSERVADO' ? 'Observado' : 'Pendiente de revisión'} />;
   };
 
   const pctCargados = Math.round((documentosConsolidados.length / docObligatorios.length) * 100);
@@ -310,12 +346,12 @@ export const GestionDocumental = () => {
           { label: 'Pendientes', value: pendientes, color: 'warning.main' },
           { label: 'Anexos', value: anexosList.length, color: 'secondary.main' },
         ].map((stat) => (
-          <Grid item xs={12} sm={4} key={stat.label}>
+          <Grid size={{ xs: 12, sm: 4 }} key={stat.label}>
             <ContentCard sx={{ mb: 0, p: 2.25 }}>
               <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase' }}>
                 {stat.label}
               </Typography>
-              <Typography variant="h5" fontWeight={700} sx={{ color: stat.color, mt: 0.5 }}>
+              <Typography variant="h5" sx={{ color: stat.color, mt: 0.5, fontWeight: 700 }}>
                 {stat.value}
               </Typography>
             </ContentCard>
@@ -325,7 +361,7 @@ export const GestionDocumental = () => {
 
       <ContentCard sx={{ p: 2.25 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, mb: 1 }}>
-          <Typography variant="subtitle2" fontWeight={600}>Avance documental</Typography>
+          <Typography sx={{ fontWeight: 600 }} variant="subtitle2">Avance documental</Typography>
           <Typography variant="body2" color="text.secondary">{pctCargados}%</Typography>
         </Box>
         <LinearProgress variant="determinate" value={pctCargados} sx={{ height: 9, borderRadius: 999 }} />
@@ -361,7 +397,7 @@ export const GestionDocumental = () => {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flex: '1 1 220px' }}>
                       <Description fontSize="small" sx={{ color: docCargado ? 'success.main' : 'text.disabled' }} />
                       <Box>
-                        <Typography variant="body2" fontWeight={500}>{docType.nombre}</Typography>
+                        <Typography sx={{ fontWeight: 500 }} variant="body2">{docType.nombre}</Typography>
                         <Typography variant="caption" color="text.secondary">
                           {docType.formato} · máx. {docType.maxMB}MB
                         </Typography>
@@ -384,11 +420,11 @@ export const GestionDocumental = () => {
                     </Box>
 
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      {docCargado && getEstadoChip(docCargado.estado)}
+                      {docCargado && getEstadoChip(docCargado.estado, docType.id)}
                       {docCargado ? (
                         <>
                           <IconButton size="small" onClick={() => handleDownload(docCargado)}><Download fontSize="small" /></IconButton>
-                          {docCargado.estado !== 'APROBADO' && (
+                          {docCargado.estado !== 'APROBADO' && !docCargado.fileName?.startsWith('registro:') && (
                             <IconButton size="small" onClick={() => handleDelete(docCargado.id)}><Delete fontSize="small" /></IconButton>
                           )}
                         </>
@@ -398,11 +434,7 @@ export const GestionDocumental = () => {
                         </Button>
                       ) : (
                         <Typography variant="caption" color="text.secondary">
-                          {docType.id === 'CARTA_PRESENTACION'
-                            ? 'Generado por Dirección'
-                            : ['INFORME_PARCIAL_1', 'INFORME_PARCIAL_2', 'INFORME_FINAL', 'INFORME_FINAL_INICIAL'].includes(docType.id)
-                              ? 'Gestionar desde Informes'
-                              : 'Disponible en la etapa correspondiente'}
+                          {mensajeDocumentoBloqueado(docType.id)}
                         </Typography>
                       )}
                     </Box>
@@ -438,7 +470,7 @@ export const GestionDocumental = () => {
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flex: 1 }}>
                         <Description fontSize="small" color="action" />
                         <Box>
-                          <Typography variant="body2" fontWeight={500}>{anexo.nombreOriginal}</Typography>
+                          <Typography sx={{ fontWeight: 500 }} variant="body2">{anexo.nombreOriginal}</Typography>
                           <Typography variant="caption" color="text.secondary">{anexo.fileName}</Typography>
                         </Box>
                       </Box>

@@ -213,8 +213,7 @@ public class ExpedienteServiceImpl implements ExpedienteService {
         if (!TIPO_INICIAL.equals(tipoCodigo)) {
             throw new BusinessException("Solo las prácticas iniciales requieren asignación de asesor individual");
         }
-        validarEstadoPara(expediente, "ASESOR_ASIGNADO", "EMPRESA_SEDE_ASIGNADA",
-                VALIDADO_SECRETARIA, CARTA_PRESENTACION_EMITIDA, "CARTA_ACEPTACION_PRESENTADA");
+        validarEstadoPara(expediente, "ASESOR_ASIGNADO", "CARTA_ACEPTACION_PRESENTADA");
 
         Usuario asesor = usuarioRepository.findById(request.getIdAsesor())
                 .orElseThrow(() -> new ResourceNotFoundException("Docente asesor no encontrado"));
@@ -253,8 +252,7 @@ public class ExpedienteServiceImpl implements ExpedienteService {
         if (TIPO_INICIAL.equals(tipoCodigo)) {
             throw new BusinessException("Las prácticas iniciales no requieren asignación de comité");
         }
-        validarEstadoPara(expediente, "COMITE_ASIGNADO", "CARTA_ACEPTACION_PRESENTADA", "EMPRESA_SEDE_ASIGNADA",
-                VALIDADO_SECRETARIA, CARTA_PRESENTACION_EMITIDA);
+        validarEstadoPara(expediente, "COMITE_ASIGNADO", "CARTA_ACEPTACION_PRESENTADA");
 
         List<ExpedienteComite> activos = comiteRepository.findByExpedienteIdAndActivoTrue(idExpediente);
         if (!activos.isEmpty()) {
@@ -418,6 +416,9 @@ public class ExpedienteServiceImpl implements ExpedienteService {
         }
         if ("APROBADO".equals(doc.getEstado())) {
             throw new BusinessException("No se puede eliminar un documento aprobado");
+        }
+        if (doc.getRutaArchivo() != null && doc.getRutaArchivo().startsWith("registro:")) {
+            throw new BusinessException("No se puede eliminar un documento institucional generado por el sistema");
         }
         documentoRepository.delete(doc);
         registrarCambioEstado(expediente, expediente.getEstado(), expediente.getEstado(), idUsuario,

@@ -24,9 +24,12 @@ import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import PageContainer from '../../../shared/components/PageContainer';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../../auth/AuthContext';
 import { expedientesApi } from '../../../api/expedientesApi';
 import { empresaApi, sedeApi } from '../../../api/sedesApi';
 import { coordinacionApi, horasApi, reportesCoordinacionApi, trazabilidadApi } from '../../../api/coordinacionApi';
+import { tieneControlHoras } from '../../../shared/utils/controlHoras';
+import { hasAnyRole } from '../../../shared/utils/roleRoutes';
 
 const MySwal = withReactContent(Swal);
 
@@ -62,7 +65,7 @@ const getEstadoColor = (estado = '') => {
 
 const InfoBlock = ({ title, rows }) => (
   <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 2.5, height: '100%' }}>
-    <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1.5 }}>
+    <Typography variant="subtitle1" sx={{ mb: 1.5, fontWeight: 700 }}>
       {title}
     </Typography>
     <Box sx={{ display: 'grid', gap: 1.25 }}>
@@ -81,6 +84,7 @@ const InfoBlock = ({ title, rows }) => (
 );
 
 export const DetalleExpediente = () => {
+  const { user } = useAuth();
   const { id } = useParams();
   const navigate = useNavigate();
   const [tabValue, setTabValue] = useState(0);
@@ -96,6 +100,14 @@ export const DetalleExpediente = () => {
   const [historialGeneracion, setHistorialGeneracion] = useState([]);
   const [warnings, setWarnings] = useState([]);
   const [accionEnCurso, setAccionEnCurso] = useState('');
+  const puedeEmitirDocumentosInstitucionales = hasAnyRole(
+    user?.roles,
+    ['ADMIN_SISTEMA', 'COORDINADOR', 'DIRECTOR']
+  );
+  const puedeRevisarExpediente = hasAnyRole(
+    user?.roles,
+    ['ADMIN_SISTEMA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR']
+  );
 
   const cargarDetalle = useCallback(async () => {
     if (!id) return;
@@ -108,12 +120,13 @@ export const DetalleExpediente = () => {
       const expedienteData = getPayload(expedienteRes);
       setExpediente(expedienteData);
 
+      const consultarHoras = tieneControlHoras(expedienteData?.estado);
       const secundarias = await Promise.allSettled([
         expedienteData?.idEmpresa ? empresaApi.getById(expedienteData.idEmpresa) : Promise.resolve(null),
         expedienteData?.idSedePractica ? sedeApi.getDetalle(expedienteData.idSedePractica) : Promise.resolve(null),
-        horasApi.getControl(id),
-        horasApi.getCumplimiento(id),
-        horasApi.getRegistros(id),
+        consultarHoras ? horasApi.getControl(id) : Promise.resolve(null),
+        consultarHoras ? horasApi.getCumplimiento(id) : Promise.resolve(null),
+        consultarHoras ? horasApi.getRegistros(id) : Promise.resolve(null),
         trazabilidadApi.getExpediente(id),
         reportesCoordinacionApi.getHistorialGeneracion({ idExpediente: id }),
       ]);
@@ -129,13 +142,13 @@ export const DetalleExpediente = () => {
       else if (sedeRes.reason) nextWarnings.push('No se pudo cargar el detalle ampliado de la sede.');
 
       if (controlRes.status === 'fulfilled') setControlHoras(getPayload(controlRes.value));
-      else nextWarnings.push('El control de horas no está disponible para tu rol o aún no fue iniciado.');
+      else if (consultarHoras) nextWarnings.push('El control de horas no está disponible para tu rol o aún no fue iniciado.');
 
       if (cumplimientoRes.status === 'fulfilled') setCumplimientoHoras(getPayload(cumplimientoRes.value));
-      else nextWarnings.push('No se pudo verificar el cumplimiento de horas para este expediente.');
+      else if (consultarHoras) nextWarnings.push('No se pudo verificar el cumplimiento de horas para este expediente.');
 
       if (registrosRes.status === 'fulfilled') setRegistrosHoras(getPayload(registrosRes.value) || []);
-      else nextWarnings.push('No se pudieron cargar los registros detallados de horas.');
+      else if (consultarHoras) nextWarnings.push('No se pudieron cargar los registros detallados de horas.');
 
       if (trazabilidadRes.status === 'fulfilled') setTrazabilidad(getPayload(trazabilidadRes.value));
       else nextWarnings.push('La trazabilidad integral no pudo reconstruirse en este momento.');
@@ -285,7 +298,7 @@ export const DetalleExpediente = () => {
       <Box sx={{ mb: 4 }}>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: 2, mb: 1.5 }}>
           <Box>
-            <Typography variant="h4" fontWeight={800} color="primary.main" sx={{ mb: 0.75 }}>
+            <Typography variant="h4" color="primary.main" sx={{ mb: 0.75, fontWeight: 800 }}>
               Detalle de Expediente
             </Typography>
             <Typography variant="body2" color="text.secondary">
@@ -294,7 +307,7 @@ export const DetalleExpediente = () => {
           </Box>
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
             <Chip label={expediente.estado} color={getEstadoColor(expediente.estado)} />
-            {expediente.estado === 'VALIDADO_SECRETARIA' && (
+            {puedeEmitirDocumentosInstitucionales && expediente.estado === 'VALIDADO_SECRETARIA' && (
               <Button
                 variant="contained"
                 startIcon={<Description />}
@@ -304,7 +317,7 @@ export const DetalleExpediente = () => {
                 {accionEnCurso === 'carta' ? 'Emitiendo...' : 'Emitir carta'}
               </Button>
             )}
-            {expediente.estado === 'PLAN_PRESENTADO' && (
+            {puedeRevisarExpediente && expediente.estado === 'PLAN_PRESENTADO' && (
               <Button
                 variant="contained"
                 color="success"
@@ -315,7 +328,7 @@ export const DetalleExpediente = () => {
                 {accionEnCurso === 'aprobarPlan' ? 'Aprobando...' : 'Aprobar plan'}
               </Button>
             )}
-            {expediente.estado === 'INFORME_FINAL_PRESENTADO' && (
+            {puedeRevisarExpediente && expediente.estado === 'INFORME_FINAL_PRESENTADO' && (
               <Button
                 variant="contained"
                 color="info"
@@ -326,7 +339,7 @@ export const DetalleExpediente = () => {
                 {accionEnCurso === 'aprobarInforme' ? 'Aprobando...' : 'Aprobar informe'}
               </Button>
             )}
-            {['INFORME_APROBADO', 'EVALUACION_COMPLETA', 'EVALUADO'].includes(expediente.estado) && (
+            {puedeRevisarExpediente && ['INFORME_APROBADO', 'EVALUACION_COMPLETA', 'EVALUADO'].includes(expediente.estado) && (
               <Button
                 variant="contained"
                 color="secondary"
@@ -337,7 +350,7 @@ export const DetalleExpediente = () => {
                 {accionEnCurso === 'dictamen' ? 'Emitiendo...' : 'Emitir dictamen'}
               </Button>
             )}
-            {['EVALUADO', 'DICTAMEN_EMITIDO'].includes(expediente.estado)
+            {puedeEmitirDocumentosInstitucionales && (['EVALUADO', 'DICTAMEN_EMITIDO'].includes(expediente.estado)
               || (expediente.estado === 'CERRADO' && !ultimaConstancia) ? (
                 <Button
                   variant="contained"
@@ -348,7 +361,7 @@ export const DetalleExpediente = () => {
                 >
                   {accionEnCurso === 'constancia' ? 'Emitiendo...' : 'Emitir constancia'}
                 </Button>
-              ) : null}
+              ) : null)}
             <Button variant="outlined" startIcon={<ArrowBack />} onClick={() => navigate(-1)}>
               Volver
             </Button>
@@ -435,7 +448,7 @@ export const DetalleExpediente = () => {
             }}
           >
             <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 2.5 }}>
-              <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1.5 }}>
+              <Typography variant="subtitle1" sx={{ mb: 1.5, fontWeight: 700 }}>
                 Plan, evaluaciones y dictamen
               </Typography>
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' }, gap: 2 }}>
@@ -444,7 +457,7 @@ export const DetalleExpediente = () => {
                     <Typography variant="caption" color="text.secondary">
                       {item.label}
                     </Typography>
-                    <Typography variant="body1" fontWeight={600}>
+                    <Typography sx={{ fontWeight: 600 }} variant="body1">
                       {item.value}
                     </Typography>
                   </Paper>
@@ -457,7 +470,7 @@ export const DetalleExpediente = () => {
             </Paper>
 
             <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 2.5 }}>
-              <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1.5 }}>
+              <Typography variant="subtitle1" sx={{ mb: 1.5, fontWeight: 700 }}>
                 Hitos del expediente
               </Typography>
               <StackList
@@ -481,14 +494,14 @@ export const DetalleExpediente = () => {
             }}
           >
             <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 2.5 }}>
-              <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1.5 }}>
+              <Typography variant="subtitle1" sx={{ mb: 1.5, fontWeight: 700 }}>
                 Documentos del expediente
               </Typography>
               {(expediente.documentos || []).length > 0 ? (
                 <Stack spacing={1.25}>
                   {expediente.documentos.map((doc) => (
                     <Paper key={doc.id} variant="outlined" sx={{ p: 1.5, borderRadius: 2 }}>
-                      <Typography variant="body2" fontWeight={700}>
+                      <Typography sx={{ fontWeight: 700 }} variant="body2">
                         {doc.tipoDocumento}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
@@ -498,7 +511,7 @@ export const DetalleExpediente = () => {
                         Subido: {formatDateTime(doc.fechaSubida)}
                       </Typography>
                       {doc.observaciones && (
-                        <Typography variant="caption" display="block" sx={{ mt: 0.5 }}>
+                        <Typography variant="caption" sx={{ mt: 0.5, display: 'block' }}>
                           {doc.observaciones}
                         </Typography>
                       )}
@@ -511,7 +524,7 @@ export const DetalleExpediente = () => {
             </Paper>
 
             <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 2.5 }}>
-              <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1.5 }}>
+              <Typography variant="subtitle1" sx={{ mb: 1.5, fontWeight: 700 }}>
                 Observaciones y subsanaciones
               </Typography>
               {(expediente.observacionesList || []).length > 0 ? (
@@ -519,7 +532,7 @@ export const DetalleExpediente = () => {
                   {expediente.observacionesList.map((obs) => (
                     <Paper key={obs.id} variant="outlined" sx={{ p: 1.5, borderRadius: 2 }}>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, flexWrap: 'wrap' }}>
-                        <Typography variant="body2" fontWeight={700}>
+                        <Typography sx={{ fontWeight: 700 }} variant="body2">
                           {obs.tipo}
                         </Typography>
                         <Chip
@@ -531,11 +544,11 @@ export const DetalleExpediente = () => {
                       <Typography variant="body2" sx={{ mt: 1 }}>
                         {obs.descripcion}
                       </Typography>
-                      <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
                         Registrado por {obs.nombreUsuarioOrigen} · {formatDateTime(obs.fechaCreacion)}
                       </Typography>
                       {obs.respuestaSubsanacion && (
-                        <Typography variant="caption" display="block" sx={{ mt: 0.75 }}>
+                        <Typography variant="caption" sx={{ mt: 0.75, display: 'block' }}>
                           Respuesta: {obs.respuestaSubsanacion}
                         </Typography>
                       )}
@@ -558,19 +571,19 @@ export const DetalleExpediente = () => {
             }}
           >
             <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 2.5 }}>
-              <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1.5 }}>
+              <Typography variant="subtitle1" sx={{ mb: 1.5, fontWeight: 700 }}>
                 Control de horas
               </Typography>
               {controlHoras ? (
                 <>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                     <Typography variant="body2">Avance acumulado</Typography>
-                    <Typography variant="body2" fontWeight={700}>
+                    <Typography sx={{ fontWeight: 700 }} variant="body2">
                       {controlHoras.horasAcumuladas || 0} / {controlHoras.horasRequeridas || 0} horas
                     </Typography>
                   </Box>
                   <LinearProgress variant="determinate" value={progresoHoras} sx={{ height: 10, borderRadius: 999, mb: 1.5 }} />
-                  <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 2 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block' }}>
                     Estado del control: {controlHoras.estado} · Inicio {formatDate(controlHoras.fechaInicio)} · Fin estimado {formatDate(controlHoras.fechaFinEstimada)}
                   </Typography>
 
@@ -578,19 +591,19 @@ export const DetalleExpediente = () => {
                     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 1.5 }}>
                       <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2 }}>
                         <Typography variant="caption" color="text.secondary">Cumplimiento</Typography>
-                        <Typography variant="body1" fontWeight={700}>
+                        <Typography sx={{ fontWeight: 700 }} variant="body1">
                           {cumplimientoHoras.cumplido ? 'Alcanzado' : 'Pendiente'}
                         </Typography>
                       </Paper>
                       <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2 }}>
                         <Typography variant="caption" color="text.secondary">Horas pendientes</Typography>
-                        <Typography variant="body1" fontWeight={700}>
+                        <Typography sx={{ fontWeight: 700 }} variant="body1">
                           {cumplimientoHoras.horasPendientes ?? 0}
                         </Typography>
                       </Paper>
                       <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2 }}>
                         <Typography variant="caption" color="text.secondary">Coherencia temporal</Typography>
-                        <Typography variant="body1" fontWeight={700}>
+                        <Typography sx={{ fontWeight: 700 }} variant="body1">
                           {cumplimientoHoras.coherenciaTemporalOk ? 'Correcta' : 'Revisar'}
                         </Typography>
                       </Paper>
@@ -613,7 +626,7 @@ export const DetalleExpediente = () => {
             </Paper>
 
             <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 2.5 }}>
-              <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1.5 }}>
+              <Typography variant="subtitle1" sx={{ mb: 1.5, fontWeight: 700 }}>
                 Registros de monitoreo y horas
               </Typography>
               {registrosHoras.length > 0 ? (
@@ -661,7 +674,7 @@ export const DetalleExpediente = () => {
             }}
           >
             <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 2.5 }}>
-              <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1.5 }}>
+              <Typography variant="subtitle1" sx={{ mb: 1.5, fontWeight: 700 }}>
                 Línea de tiempo y trazabilidad
               </Typography>
               {trazabilidad?.lineaTiempo?.length ? (
@@ -674,14 +687,14 @@ export const DetalleExpediente = () => {
                           {formatDateTime(evento.fechaHora)}
                         </Typography>
                       </Box>
-                      <Typography variant="body2" fontWeight={700} sx={{ mt: 1 }}>
+                      <Typography variant="body2" sx={{ mt: 1, fontWeight: 700 }}>
                         {evento.accion}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
                         {evento.descripcion || 'Sin descripción adicional'}
                       </Typography>
                       {(evento.actor || evento.rolActor) && (
-                        <Typography variant="caption" display="block" sx={{ mt: 0.75 }}>
+                        <Typography variant="caption" sx={{ mt: 0.75, display: 'block' }}>
                           {evento.actor || 'Sistema'} {evento.rolActor ? `· ${evento.rolActor}` : ''}
                         </Typography>
                       )}
@@ -694,7 +707,7 @@ export const DetalleExpediente = () => {
             </Paper>
 
             <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 2.5 }}>
-              <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1.5 }}>
+              <Typography variant="subtitle1" sx={{ mb: 1.5, fontWeight: 700 }}>
                 Dictamen y constancia emitida
               </Typography>
               <StackList
@@ -711,14 +724,14 @@ export const DetalleExpediente = () => {
                 ]}
               />
               <Divider sx={{ my: 2 }} />
-              <Typography variant="body2" fontWeight={700} sx={{ mb: 1 }}>
+              <Typography variant="body2" sx={{ mb: 1, fontWeight: 700 }}>
                 Historial documental
               </Typography>
               {historialGeneracion.length > 0 ? (
                 <Box sx={{ display: 'grid', gap: 1 }}>
                   {historialGeneracion.slice(0, 6).map((item) => (
                     <Paper key={item.id} variant="outlined" sx={{ p: 1.25, borderRadius: 2 }}>
-                      <Typography variant="body2" fontWeight={700}>
+                      <Typography sx={{ fontWeight: 700 }} variant="body2">
                         {item.tipoDocumento || item.tipoReporte || 'Documento institucional'}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
@@ -758,7 +771,7 @@ function StackList({ items }) {
           <Typography variant="caption" color="text.secondary">
             {item.label}
           </Typography>
-          <Typography variant="body2" fontWeight={600}>
+          <Typography sx={{ fontWeight: 600 }} variant="body2">
             {item.value || 'No disponible'}
           </Typography>
         </Paper>

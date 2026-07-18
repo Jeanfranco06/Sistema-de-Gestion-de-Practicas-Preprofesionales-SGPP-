@@ -13,7 +13,7 @@ export const SedeDetailsDrawer = ({ open, onClose, sede }) => {
         <Drawer anchor="right" open={open} onClose={onClose}>
             <Box sx={{ width: { xs: 300, sm: 400, md: 500 }, p: 3 }} role="presentation">
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                    <Typography variant="h5" fontWeight="bold" color="primary">
+                    <Typography sx={{ fontWeight: 'bold' }} variant="h5" color="primary">
                         Detalles de la Sede
                     </Typography>
                     <IconButton onClick={onClose}>
@@ -30,7 +30,7 @@ export const SedeDetailsDrawer = ({ open, onClose, sede }) => {
                                 <Typography variant="h6">{sede.razonSocialEmpresa}</Typography>
                             </Box>
                             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                <Typography variant="body2" color="textSecondary" sx={{ ml: 4 }}>
+                                <Typography variant="body2" color="text.secondary" sx={{ ml: 4 }}>
                                     RUC: {sede.empresaRuc || 'No especificado'}
                                 </Typography>
                             </Box>
@@ -41,9 +41,9 @@ export const SedeDetailsDrawer = ({ open, onClose, sede }) => {
                         <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
                             <LocationOnIcon color="action" sx={{ mr: 1, mt: 0.5 }} />
                             <Box>
-                                <Typography variant="subtitle1" fontWeight="bold">Sede: {sede.nombreSede}</Typography>
+                                <Typography sx={{ fontWeight: 'bold' }} variant="subtitle1">Sede: {sede.nombreSede}</Typography>
                                 <Typography variant="body2">{sede.direccion}</Typography>
-                                <Typography variant="body2" color="textSecondary">{sede.distrito}</Typography>
+                                <Typography variant="body2" color="text.secondary">{sede.distrito}</Typography>
                             </Box>
                         </Box>
                     </Box>
@@ -52,15 +52,15 @@ export const SedeDetailsDrawer = ({ open, onClose, sede }) => {
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                             <PeopleIcon color="action" sx={{ mr: 1 }} />
                             <Box>
-                                <Typography variant="body2" color="textSecondary">Capacidad Máxima</Typography>
-                                <Typography variant="body1" fontWeight="medium">{sede.capacidadMaxima || 'No especificada'}</Typography>
+                                <Typography variant="body2" color="text.secondary">Capacidad Máxima</Typography>
+                                <Typography sx={{ fontWeight: 'medium' }} variant="body1">{sede.capacidadMaxima || 'No especificada'}</Typography>
                             </Box>
                         </Box>
 
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                             <VerifiedUserIcon color="action" sx={{ mr: 1 }} />
                             <Box>
-                                <Typography variant="body2" color="textSecondary">Estado</Typography>
+                                <Typography variant="body2" color="text.secondary">Estado</Typography>
                                 <Chip 
                                     label={sede.activo ? "Activo" : "Inactivo"} 
                                     color={sede.activo ? "success" : "default"} 
@@ -71,7 +71,7 @@ export const SedeDetailsDrawer = ({ open, onClose, sede }) => {
                     </Box>
                     
                     <Box>
-                        <Typography variant="subtitle2" color="textSecondary" gutterBottom>
+                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                             Descripción de Actividades
                         </Typography>
                         <Paper variant="outlined" sx={{ p: 2, bgcolor: '#fafafa' }}>

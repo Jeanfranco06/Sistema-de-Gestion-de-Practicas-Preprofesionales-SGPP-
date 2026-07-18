@@ -1,7 +1,12 @@
 package edu.unt.ingenieria_industrial.sgpp.core.documental.controller;
 
 import edu.unt.ingenieria_industrial.sgpp.core.documental.service.FileStorageService;
-import edu.unt.ingenieria_industrial.sgpp.core.seguridad.repository.UsuarioRepository;
+import edu.unt.ingenieria_industrial.sgpp.core.expediente.model.ExpedienteDocumento;
+import edu.unt.ingenieria_industrial.sgpp.core.expediente.repository.ExpedienteDocumentoRepository;
+import edu.unt.ingenieria_industrial.sgpp.core.expediente.service.ExpedienteAccesoService;
+import edu.unt.ingenieria_industrial.sgpp.core.seguridad.service.CurrentUserService;
+import edu.unt.ingenieria_industrial.sgpp.shared.exception.BusinessException;
+import edu.unt.ingenieria_industrial.sgpp.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -23,10 +28,14 @@ import java.util.Map;
 public class DocumentoUploadController {
 
     private final FileStorageService fileStorageService;
-    private final UsuarioRepository usuarioRepository;
+    private final ExpedienteDocumentoRepository expedienteDocumentoRepository;
+    private final ExpedienteAccesoService expedienteAccesoService;
+    private final CurrentUserService currentUserService;
 
     @PostMapping("/upload")
+    @PreAuthorize("hasAnyRole('ESTUDIANTE', 'DOCENTE_ASESOR', 'TUTOR_EXTERNO', 'SECRETARIA', 'COORDINADOR', 'DIRECTOR', 'ADMIN_SISTEMA')")
     public ResponseEntity<Map<String, String>> uploadFile(@RequestParam("file") MultipartFile file) {
+        validarArchivoPdf(file);
         String fileName = fileStorageService.storeFile(file);
 
         String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath()
@@ -43,25 +52,54 @@ public class DocumentoUploadController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/download/{fileName:.+}")
-    @PreAuthorize("hasAnyRole('ESTUDIANTE', 'DOCENTE_ASESOR', 'TUTOR_EXTERNO', 'ADMINISTRADOR', 'ADMIN_SISTEMA', 'SECRETARIA', 'COMITE_PRACTICAS')")
-    public ResponseEntity<Resource> downloadFile(@PathVariable String fileName, Authentication authentication) {
-        // Validación básica de seguridad requerida: el usuario debe estar autenticado
+    @GetMapping("/expediente/{idDocumento}/download")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Resource> downloadExpedienteDocument(
+            @PathVariable Long idDocumento, Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        Resource resource = fileStorageService.loadFileAsResource(fileName);
+        Long currentUserId = currentUserService.getCurrentUserId();
+        if (currentUserId == null) {
+            throw new BusinessException("No se pudo identificar al usuario autenticado");
+        }
 
-        // Idealmente aquí verificaríamos si el usuario (authentication.getName())
-        // tiene permisos específicos sobre este archivo (ej. es el dueño, es su asesor, etc).
-        // Por la simplicidad de la prueba y la estructura actual, confiamos en el @PreAuthorize.
+        ExpedienteDocumento documento = expedienteDocumentoRepository.findById(idDocumento)
+                .orElseThrow(() -> new ResourceNotFoundException("Documento de expediente no encontrado"));
+        expedienteAccesoService.verificarLectura(
+                documento.getExpediente(),
+                currentUserId,
+                currentUserService.getCurrentRoles());
 
-        String contentType = "application/pdf"; // Forzamos PDF porque el frontend valida solo PDFs
+        if (documento.getRutaArchivo() == null || documento.getRutaArchivo().startsWith("registro:")) {
+            throw new BusinessException("El documento debe descargarse desde su registro institucional");
+        }
+
+        Resource resource = fileStorageService.loadFileAsResource(documento.getRutaArchivo());
 
         return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(contentType))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + documento.getNombreArchivo() + "\"")
                 .body(resource);
+    }
+
+    private void validarArchivoPdf(MultipartFile file) {
+        if (file == null || file.isEmpty() || file.getSize() > 10 * 1024 * 1024) {
+            throw new BusinessException("El archivo PDF debe tener un tamaño entre 1 byte y 10 MB");
+        }
+        String nombre = file.getOriginalFilename();
+        if (nombre == null || !nombre.toLowerCase().endsWith(".pdf")) {
+            throw new BusinessException("Solo se permiten archivos PDF");
+        }
+        try {
+            byte[] encabezado = file.getInputStream().readNBytes(4);
+            if (encabezado.length != 4 || encabezado[0] != '%' || encabezado[1] != 'P'
+                    || encabezado[2] != 'D' || encabezado[3] != 'F') {
+                throw new BusinessException("El contenido del archivo no corresponde a un PDF válido");
+            }
+        } catch (java.io.IOException e) {
+            throw new BusinessException("No se pudo validar el archivo PDF", e);
+        }
     }
 }

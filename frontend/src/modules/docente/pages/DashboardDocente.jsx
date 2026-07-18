@@ -137,10 +137,10 @@ export default function DashboardDocente() {
       <StatStrip items={stats} />
 
       <Grid container spacing={3}>
-        <Grid item xs={12} lg={8}>
+        <Grid size={{ xs: 12, lg: 8 }}>
           <ContentCard accent>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography variant="subtitle1" fontWeight={600}>Resumen de asesoría</Typography>
+              <Typography sx={{ fontWeight: 600 }} variant="subtitle1">Resumen de asesoría</Typography>
               <Chip label={`${avancePct}% finalizados`} size="small" color="primary" variant="outlined" />
             </Box>
             <LinearProgress variant="determinate" value={avancePct} sx={{ height: 10, borderRadius: 999, mb: 1 }} />
@@ -149,8 +149,8 @@ export default function DashboardDocente() {
             </Typography>
 
             <Grid container spacing={2.5} sx={{ mt: 1.5 }}>
-              <Grid item xs={12} md={5}>
-                <Typography variant="caption" color="text.secondary" display="block" textAlign="center" sx={{ mb: 1 }}>
+              <Grid size={{ xs: 12, md: 5 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mb: 1 }}>
                   Activos vs finalizados
                 </Typography>
                 <Box sx={{ height: 210, display: 'grid', placeItems: 'center' }}>
@@ -165,7 +165,7 @@ export default function DashboardDocente() {
                     }}
                   >
                     <Box sx={{ width: 104, height: 104, borderRadius: '50%', bgcolor: 'background.paper', display: 'grid', placeItems: 'center', textAlign: 'center' }}>
-                      <Typography variant="h5" fontWeight={700} color="success.main">{kpis.finalizados}</Typography>
+                      <Typography sx={{ fontWeight: 700 }} variant="h5" color="success.main">{kpis.finalizados}</Typography>
                       <Typography variant="caption" color="text.secondary">de {kpis.total}</Typography>
                     </Box>
                   </Box>
@@ -176,8 +176,8 @@ export default function DashboardDocente() {
                 </Stack>
               </Grid>
 
-              <Grid item xs={12} md={7}>
-                <Typography variant="caption" color="text.secondary" display="block" textAlign="center" sx={{ mb: 1 }}>
+              <Grid size={{ xs: 12, md: 7 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mb: 1 }}>
                   Distribución por estado
                 </Typography>
                 <Box sx={{ height: 210, display: 'flex', alignItems: 'end', justifyContent: 'center', gap: 1.5, px: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
@@ -194,7 +194,7 @@ export default function DashboardDocente() {
                             bgcolor: item.color,
                           }}
                         />
-                        <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1, fontSize: '0.65rem', lineHeight: 1.2 }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, fontSize: '0.65rem', lineHeight: 1.2, display: 'block' }}>
                           {item.name}
                         </Typography>
                       </Box>
@@ -223,7 +223,7 @@ export default function DashboardDocente() {
                         bgcolor: index === 0 ? '#3b82f6' : index === 1 ? '#8b5cf6' : '#10b981',
                       }}
                     />
-                    <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
                       {item.name}
                     </Typography>
                   </Box>
@@ -233,7 +233,7 @@ export default function DashboardDocente() {
           </ContentCard>
         </Grid>
 
-        <Grid item xs={12} lg={4}>
+        <Grid size={{ xs: 12, lg: 4 }}>
           <ContentCard accent>
             <Typography variant="subtitle2" color="primary.dark" sx={{ mb: 2 }}>Accesos rápidos</Typography>
             <Stack spacing={1}>

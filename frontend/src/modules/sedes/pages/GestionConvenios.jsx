@@ -37,7 +37,7 @@ const DashboardCard = ({ title, action, children, sx }) => (
     >
         {(title || action) && (
             <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 2, mb: 3 }}>
-                {title && <Typography variant="h6" fontWeight={700} color="text.primary">{title}</Typography>}
+                {title && <Typography sx={{ fontWeight: 700 }} variant="h6" color="text.primary">{title}</Typography>}
                 {action && <Box sx={{ alignSelf: { xs: 'flex-start', sm: 'center' } }}>{action}</Box>}
             </Box>
         )}
@@ -58,8 +58,8 @@ const StatCard = ({ label, value, icon, accent }) => {
             <Stack direction="row" spacing={1.5} alignItems="center">
                 <Box sx={{ color: colors.icon }}>{icon}</Box>
                 <Box>
-                    <Typography variant="h5" fontWeight={800} color={colors.text}>{value}</Typography>
-                    <Typography variant="caption" fontWeight={600} color={colors.text} sx={{ opacity: 0.8 }}>{label}</Typography>
+                    <Typography sx={{ fontWeight: 800 }} variant="h5" color={colors.text}>{value}</Typography>
+                    <Typography variant="caption" color={colors.text} sx={{ opacity: 0.8, fontWeight: 600 }}>{label}</Typography>
                 </Box>
             </Stack>
         </Paper>
@@ -301,7 +301,7 @@ export const GestionConvenios = () => {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh', flexDirection: 'column', gap: 3 }}>
                 <CircularProgress size={48} thickness={4} sx={{ color: '#1a365d' }} />
-                <Typography variant="body1" color="text.secondary" fontWeight={500}>Cargando convenios...</Typography>
+                <Typography sx={{ fontWeight: 500 }} variant="body1" color="text.secondary">Cargando convenios...</Typography>
             </Box>
         );
     }
@@ -316,7 +316,7 @@ export const GestionConvenios = () => {
                         </Box>
                         <Box sx={{ position: 'relative', zIndex: 1, width: '100%' }}>
                             <Typography variant="overline" sx={{ opacity: 0.8, letterSpacing: 1.5, fontWeight: 600, display: 'block', mb: 0.5 }}>Entidades Externas</Typography>
-                            <Typography variant="h3" fontWeight={800} sx={{ mt: 0, mb: 1.5, fontSize: { xs: '1.75rem', sm: '2rem', md: '2.5rem' }, wordBreak: 'break-word' }}>Gestión de Convenios</Typography>
+                            <Typography variant="h3"  sx={{ fontWeight: 800,  mt: 0, mb: 1.5, fontSize: { xs: '1.75rem', sm: '2rem', md: '2.5rem' }, wordBreak: 'break-word' }}>Gestión de Convenios</Typography>
                             <Typography variant="subtitle1" sx={{ opacity: 0.9 }}>Registra y monitorea los convenios activos con las empresas aliadas.</Typography>
                         </Box>
                         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', position: 'relative', zIndex: 1, alignSelf: { xs: 'flex-end', md: 'center' } }}>
@@ -409,7 +409,7 @@ export const GestionConvenios = () => {
                                                             {getInitials(conv.numeroConvenio)}
                                                         </Avatar>
                                                         <Box>
-                                                            <Typography variant="body2" fontWeight={700} color="text.primary">{conv.numeroConvenio}</Typography>
+                                                            <Typography sx={{ fontWeight: 700 }} variant="body2" color="text.primary">{conv.numeroConvenio}</Typography>
                                                             {conv.objetivo && (
                                                                 <Typography variant="caption" color="text.secondary" sx={{
                                                                     display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden', maxWidth: 250
@@ -419,11 +419,11 @@ export const GestionConvenios = () => {
                                                     </Box>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Typography variant="body2" fontWeight={600} color="primary">{conv.razonSocialEmpresa}</Typography>
+                                                    <Typography sx={{ fontWeight: 600 }} variant="body2" color="primary">{conv.razonSocialEmpresa}</Typography>
                                                 </TableCell>
                                                 <TableCell>
                                                     <Box>
-                                                        <Typography variant="body2" fontWeight={500}>{conv.fechaInicio} al {conv.fechaFin}</Typography>
+                                                        <Typography sx={{ fontWeight: 500 }} variant="body2">{conv.fechaInicio} al {conv.fechaFin}</Typography>
                                                         {isExpiring && (
                                                             <Chip label="Por vencer" color="warning" size="small" sx={{ mt: 0.5, fontWeight: 700, fontSize: '0.65rem', height: 20 }} />
                                                         )}
@@ -433,7 +433,7 @@ export const GestionConvenios = () => {
                                                     <Stack direction="row" spacing={1} alignItems="center">
                                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                                                             <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: conv.vigente ? '#10b981' : '#ef4444', boxShadow: `0 0 0 2px ${conv.vigente ? '#d1fae5' : '#fee2e2'}` }} />
-                                                            <Typography variant="caption" fontWeight={700} color={conv.vigente ? '#10b981' : '#ef4444'}>{conv.vigente ? 'Vigente' : 'Vencido'}</Typography>
+                                                            <Typography sx={{ fontWeight: 700 }} variant="caption" color={conv.vigente ? '#10b981' : '#ef4444'}>{conv.vigente ? 'Vigente' : 'Vencido'}</Typography>
                                                         </Box>
                                                     </Stack>
                                                 </TableCell>
@@ -461,7 +461,7 @@ export const GestionConvenios = () => {
                                             <TableCell colSpan={5} align="center" sx={{ py: 8 }}>
                                                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, color: '#94a3b8' }}>
                                                     <SearchIcon sx={{ fontSize: 48, opacity: 0.5 }} />
-                                                    <Typography variant="subtitle1" fontWeight={600}>No se encontraron convenios</Typography>
+                                                    <Typography sx={{ fontWeight: 600 }} variant="subtitle1">No se encontraron convenios</Typography>
                                                     <Typography variant="body2">Intenta ajustar los filtros o registra un nuevo convenio.</Typography>
                                                 </Box>
                                             </TableCell>
@@ -488,7 +488,7 @@ export const GestionConvenios = () => {
             <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth slotProps={{ paper: { sx: { borderRadius: 4, overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' } } }}>
                 <DialogTitle sx={{ bgcolor: '#1a365d', color: '#fff', py: 2.5, px: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                        <HandshakeIcon /> <Typography variant="h6" fontWeight={700}>{isEditing ? 'Editar Convenio' : 'Registrar Nuevo Convenio'}</Typography>
+                        <HandshakeIcon /> <Typography sx={{ fontWeight: 700 }} variant="h6">{isEditing ? 'Editar Convenio' : 'Registrar Nuevo Convenio'}</Typography>
                     </Box>
                 </DialogTitle>
                 <DialogContent sx={{ p: { xs: 2, md: 4 }, bgcolor: '#fff' }}>

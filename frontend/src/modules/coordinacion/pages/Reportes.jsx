@@ -212,7 +212,7 @@ export const ReportesCoordinacion = ({ variant = 'coordinacion' }) => {
       />
 
       <ContentCard accent>
-        <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 2 }}>Configuración de Reporte</Typography>
+        <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 'bold' }}>Configuración de Reporte</Typography>
         <Box
           sx={{
             display: 'grid',
@@ -338,7 +338,7 @@ export const ReportesCoordinacion = ({ variant = 'coordinacion' }) => {
           <ContentCard sx={{ mt: 3 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap', alignItems: 'center', mb: 2 }}>
               <Box>
-                <Typography variant="subtitle1" fontWeight="bold" color="primary">
+                <Typography sx={{ fontWeight: 'bold' }} variant="subtitle1" color="primary">
                   {resultado.titulo || REPORT_TYPES.find((item) => item.value === tipoReporte)?.label}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -403,7 +403,7 @@ export const ReportesCoordinacion = ({ variant = 'coordinacion' }) => {
         </>
       ) : (
         <Paper elevation={1} sx={{ p: 4, borderRadius: 3, textAlign: 'center', border: '1px solid #e0e0e0' }}>
-          <Typography variant="h6" fontWeight="bold" color="primary" sx={{ mb: 1 }}>
+          <Typography variant="h6" color="primary" sx={{ mb: 1, fontWeight: 'bold' }}>
             Aún no se ha generado un reporte
           </Typography>
           <Typography variant="body2" color="text.secondary">

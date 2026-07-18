@@ -2,6 +2,7 @@ package edu.unt.ingenieria_industrial.sgpp.core.hora.service.impl;
 
 import edu.unt.ingenieria_industrial.sgpp.core.expediente.model.Expediente;
 import edu.unt.ingenieria_industrial.sgpp.core.expediente.repository.ExpedienteRepository;
+import edu.unt.ingenieria_industrial.sgpp.core.expediente.service.ExpedienteAccesoService;
 import edu.unt.ingenieria_industrial.sgpp.core.hora.dto.*;
 import edu.unt.ingenieria_industrial.sgpp.core.hora.model.ControlHora;
 import edu.unt.ingenieria_industrial.sgpp.core.hora.model.RegistroHora;
@@ -24,6 +25,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -47,6 +49,7 @@ public class ControlHoraServiceImpl implements ControlHoraService {
     private final RegistroHoraRepository registroHoraRepository;
     private final ExpedienteRepository expedienteRepository;
     private final UsuarioRepository usuarioRepository;
+    private final ExpedienteAccesoService expedienteAccesoService;
 
     @Override
     public ApiResponse<ControlHoraResponse> iniciarControlHora(Long idExpediente, Long idUsuario) {
@@ -88,6 +91,14 @@ public class ControlHoraServiceImpl implements ControlHoraService {
         Expediente expediente = expedienteRepository.findById(idExpediente)
                 .orElseThrow(() -> new ResourceNotFoundException("Expediente no encontrado"));
 
+        if (expediente.getEstudiante() == null || expediente.getEstudiante().getUsuario() == null
+                || !idUsuario.equals(expediente.getEstudiante().getUsuario().getId())) {
+            throw new BusinessException("Solo el estudiante titular puede registrar horas en este expediente");
+        }
+        if (!"EN_EJECUCION".equals(expediente.getEstado())) {
+            throw new BusinessException("Solo se pueden registrar horas durante la ejecución de la práctica");
+        }
+
         ControlHora controlHora = controlHoraRepository.findByExpedienteIdAndActivoTrue(idExpediente)
                 .orElseThrow(() -> new BusinessException("No existe un control de horas activo para este expediente"));
 
@@ -109,6 +120,12 @@ public class ControlHoraServiceImpl implements ControlHoraService {
 
         if (controlHora.getFechaFinEstimada() != null && fechaRegistro.isAfter(controlHora.getFechaFinEstimada())) {
             throw new BusinessException("La fecha de registro no puede ser posterior a la fecha fin estimada");
+        }
+        if (fechaRegistro.isAfter(LocalDate.now())) {
+            throw new BusinessException("La fecha de registro no puede ser futura");
+        }
+        if (request.getHoras() == null || request.getHoras() > 24) {
+            throw new BusinessException("Las horas registradas deben estar entre 1 y 24");
         }
 
         RegistroHora registro = RegistroHora.builder()
@@ -140,9 +157,13 @@ public class ControlHoraServiceImpl implements ControlHoraService {
     }
 
     @Override
-    public ApiResponse<RegistroHoraResponse> validarHora(Long idRegistro, ValidarHoraRequest request, Long idUsuario) {
+    public ApiResponse<RegistroHoraResponse> validarHora(Long idRegistro, ValidarHoraRequest request, Long idUsuario,
+            Collection<String> roles) {
         RegistroHora registro = registroHoraRepository.findById(idRegistro)
                 .orElseThrow(() -> new ResourceNotFoundException("Registro de hora no encontrado"));
+
+        expedienteAccesoService.verificarEscritura(
+                registro.getControlHora().getExpediente(), idUsuario, roles);
 
         Usuario tutor = usuarioRepository.findById(idUsuario)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));

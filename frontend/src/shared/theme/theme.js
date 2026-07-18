@@ -82,19 +82,21 @@ const theme = createTheme({
           boxShadow: 'none',
           '&:hover': { boxShadow: 'none' },
         },
-        containedPrimary: {
-          color: palette.yellow.contrast,
-          '&:hover': { backgroundColor: palette.yellow.dark },
-        },
-        containedSecondary: {
-          color: palette.blue.contrast,
-          '&:hover': { backgroundColor: palette.blue.dark },
-        },
-        outlined: {
-          borderColor: palette.divider,
-          '&:hover': { backgroundColor: alpha(palette.yellow.main, 0.06) },
-        },
       },
+      variants: [
+        {
+          props: { variant: 'contained', color: 'primary' },
+          style: { color: palette.yellow.contrast, '&:hover': { backgroundColor: palette.yellow.dark } },
+        },
+        {
+          props: { variant: 'contained', color: 'secondary' },
+          style: { color: palette.blue.contrast, '&:hover': { backgroundColor: palette.blue.dark } },
+        },
+        {
+          props: { variant: 'outlined' },
+          style: { borderColor: palette.divider, '&:hover': { backgroundColor: alpha(palette.yellow.main, 0.06) } },
+        },
+      ],
     },
     MuiCard: {
       styleOverrides: {

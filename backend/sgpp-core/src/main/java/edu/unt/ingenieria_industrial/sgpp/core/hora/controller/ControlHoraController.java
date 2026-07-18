@@ -2,6 +2,7 @@ package edu.unt.ingenieria_industrial.sgpp.core.hora.controller;
 
 import edu.unt.ingenieria_industrial.sgpp.core.hora.dto.*;
 import edu.unt.ingenieria_industrial.sgpp.core.hora.service.ControlHoraService;
+import edu.unt.ingenieria_industrial.sgpp.core.seguridad.service.CurrentUserService;
 import edu.unt.ingenieria_industrial.sgpp.shared.common.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/horas")
@@ -23,6 +25,7 @@ import java.util.List;
 public class ControlHoraController {
 
     private final ControlHoraService controlHoraService;
+    private final CurrentUserService currentUserService;
 
     @PostMapping("/iniciar/{idExpediente}")
     @Operation(summary = "Iniciar control de horas", description = "Inicia el control de horas para un expediente de práctica")
@@ -35,11 +38,11 @@ public class ControlHoraController {
 
     @PostMapping("/registrar/{idExpediente}")
     @Operation(summary = "Registrar horas", description = "Registra horas de práctica para un expediente")
-    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COORDINADOR', 'SECRETARIA', 'ESTUDIANTE', 'TUTOR_EXTERNO')")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COORDINADOR', 'DIRECTOR', 'SECRETARIA', 'ESTUDIANTE', 'TUTOR_EXTERNO')")
     public ResponseEntity<ApiResponse<RegistroHoraResponse>> registrarHora(
             @Parameter(description = "ID del expediente") @PathVariable Long idExpediente,
-            @Valid @RequestBody RegistrarHoraRequest request,
-            @Parameter(description = "ID del usuario que registra las horas") @RequestParam Long idUsuario) {
+            @Valid @RequestBody RegistrarHoraRequest request) {
+        Long idUsuario = Objects.requireNonNull(currentUserService.getCurrentUserId(), "Usuario no autenticado");
         return ResponseEntity.ok(controlHoraService.registrarHora(idExpediente, request, idUsuario));
     }
 
@@ -48,14 +51,15 @@ public class ControlHoraController {
     @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COORDINADOR', 'TUTOR_EXTERNO')")
     public ResponseEntity<ApiResponse<RegistroHoraResponse>> validarHora(
             @Parameter(description = "ID del registro de hora") @PathVariable Long idRegistro,
-            @Valid @RequestBody ValidarHoraRequest request,
-            @Parameter(description = "ID del usuario (tutor) que valida") @RequestParam Long idUsuario) {
-        return ResponseEntity.ok(controlHoraService.validarHora(idRegistro, request, idUsuario));
+            @Valid @RequestBody ValidarHoraRequest request) {
+        Long idUsuario = Objects.requireNonNull(currentUserService.getCurrentUserId(), "Usuario no autenticado");
+        return ResponseEntity.ok(controlHoraService.validarHora(
+                idRegistro, request, idUsuario, currentUserService.getCurrentRoles()));
     }
 
     @GetMapping("/cumplimiento/{idExpediente}")
     @Operation(summary = "Verificar cumplimiento de horas", description = "Verifica el cumplimiento de horas de un expediente")
-    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COORDINADOR', 'SECRETARIA', 'ESTUDIANTE', 'TUTOR_EXTERNO')")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COORDINADOR', 'DIRECTOR', 'SECRETARIA', 'ESTUDIANTE', 'TUTOR_EXTERNO')")
     public ResponseEntity<ApiResponse<CumplimientoHorasResponse>> verificarCumplimiento(
             @Parameter(description = "ID del expediente") @PathVariable Long idExpediente) {
         return ResponseEntity.ok(controlHoraService.verificarCumplimiento(idExpediente));
@@ -63,7 +67,7 @@ public class ControlHoraController {
 
     @GetMapping("/control/{idExpediente}")
     @Operation(summary = "Obtener control de horas", description = "Obtiene el control de horas de un expediente")
-    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COORDINADOR', 'SECRETARIA', 'ESTUDIANTE', 'TUTOR_EXTERNO')")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COORDINADOR', 'DIRECTOR', 'SECRETARIA', 'ESTUDIANTE', 'TUTOR_EXTERNO')")
     public ResponseEntity<ApiResponse<ControlHoraResponse>> obtenerControlHora(
             @Parameter(description = "ID del expediente") @PathVariable Long idExpediente) {
         return ResponseEntity.ok(controlHoraService.obtenerControlHora(idExpediente));

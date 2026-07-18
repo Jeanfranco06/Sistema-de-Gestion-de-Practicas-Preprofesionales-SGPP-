@@ -217,7 +217,7 @@ export const CatalogoSedes = () => {
       <ContentCard sx={{ my: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
           <FilterList color="primary" />
-          <Typography variant="subtitle1" fontWeight={600}>Filtros de Búsqueda</Typography>
+          <Typography sx={{ fontWeight: 600 }} variant="subtitle1">Filtros de Búsqueda</Typography>
         </Box>
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -320,7 +320,7 @@ export const CatalogoSedes = () => {
 
       {/* Resultados */}
       <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
-        <Typography variant="subtitle1" fontWeight={600}>
+        <Typography sx={{ fontWeight: 600 }} variant="subtitle1">
           Resultados
         </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
@@ -363,7 +363,7 @@ export const CatalogoSedes = () => {
                   <Business />
                 </Avatar>
                 <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Typography variant="h6" component="h2" fontWeight="bold" noWrap>
+                  <Typography sx={{ fontWeight: 'bold' }} variant="h6" component="h2" noWrap>
                     {sede.razonSocialEmpresa}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" noWrap>
@@ -471,7 +471,7 @@ export const CatalogoSedes = () => {
         {filteredSedes.length === 0 && !loading && (
           <ContentCard sx={{ gridColumn: '1 / -1', textAlign: 'center', py: 6 }}>
             <Business sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-            <Typography variant="h6" gutterBottom fontWeight="bold">
+            <Typography sx={{ fontWeight: 'bold' }} variant="h6" gutterBottom>
               No se encontraron sedes
             </Typography>
             <Typography variant="body2" color="text.secondary" gutterBottom>
@@ -514,7 +514,7 @@ export const CatalogoSedes = () => {
                     <Business />
                   </Avatar>
                   <Box>
-                    <Typography variant="h6" fontWeight="bold">
+                    <Typography sx={{ fontWeight: 'bold' }} variant="h6">
                       Detalle de Sede
                     </Typography>
                     <Typography variant="body2" sx={{ opacity: 0.9 }}>
@@ -528,7 +528,7 @@ export const CatalogoSedes = () => {
               </Box>
               <Box sx={{ p: 3, flexGrow: 1, overflow: 'auto' }}>
                 <ContentCard accent sx={{ mb: 3 }}>
-                  <Typography variant="h5" gutterBottom fontWeight="bold">
+                  <Typography sx={{ fontWeight: 'bold' }} variant="h5" gutterBottom>
                     {selectedSede.razonSocialEmpresa}
                   </Typography>
                   <Typography variant="subtitle1" gutterBottom>
@@ -537,14 +537,14 @@ export const CatalogoSedes = () => {
                   {selectedSede.esElegible && (
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2 }}>
                       <CheckCircle />
-                      <Typography variant="body2" fontWeight="bold">
+                      <Typography sx={{ fontWeight: 'bold' }} variant="body2">
                         Sede elegible para selección
                       </Typography>
                     </Box>
                   )}
                 </ContentCard>
 
-                <Typography variant="subtitle1" gutterBottom fontWeight={600}>
+                <Typography sx={{ fontWeight: 600 }} variant="subtitle1" gutterBottom>
                   Datos de la Sede
                 </Typography>
                 <ContentCard sx={{ mb: 3 }}>

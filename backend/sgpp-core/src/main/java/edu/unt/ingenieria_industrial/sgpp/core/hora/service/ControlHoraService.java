@@ -12,7 +12,8 @@ public interface ControlHoraService {
 
     ApiResponse<RegistroHoraResponse> registrarHora(Long idExpediente, RegistrarHoraRequest request, Long idUsuario);
 
-    ApiResponse<RegistroHoraResponse> validarHora(Long idRegistro, ValidarHoraRequest request, Long idUsuario);
+    ApiResponse<RegistroHoraResponse> validarHora(Long idRegistro, ValidarHoraRequest request, Long idUsuario,
+            java.util.Collection<String> roles);
 
     ApiResponse<CumplimientoHorasResponse> verificarCumplimiento(Long idExpediente);
 

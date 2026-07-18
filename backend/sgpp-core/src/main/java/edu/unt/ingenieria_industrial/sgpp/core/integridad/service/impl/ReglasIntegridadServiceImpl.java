@@ -114,13 +114,13 @@ public class ReglasIntegridadServiceImpl implements ReglasIntegridadService {
         List<String> obligatorios;
         if (TIPO_INICIAL.equals(tipoCodigo)) {
             obligatorios = Arrays.asList("PLAN_PRACTICA", "INFORME_PARCIAL_1", "INFORME_PARCIAL_2",
-                    "INFORME_FINAL_INICIAL", "CONSTANCIA_CULMINACION", "DICTAMEN_FINAL");
+                    "INFORME_FINAL_INICIAL", "CONSTANCIA_EMPRESA", "DICTAMEN_FINAL");
         } else if ("FINAL".equals(tipoCodigo)) {
             obligatorios = Arrays.asList("CARTA_ACEPTACION", "PLAN_PRACTICA", "INFORME_FINAL",
-                    "CONSTANCIA_CULMINACION", "FICHA_EVALUACION", "DICTAMEN_FINAL");
+                    "CONSTANCIA_EMPRESA", "FICHA_EVALUACION", "DICTAMEN_FINAL");
         } else {
-            obligatorios = Arrays.asList("CARTA_ACEPTACION", "PLAN_PRACTICA", "INFORME_FINAL_PROFESIONAL",
-                    "CONSTANCIA_CULMINACION", "FICHA_EVALUACION", "DICTAMEN_FINAL");
+            obligatorios = Arrays.asList("CARTA_ACEPTACION", "PLAN_PRACTICA", "INFORME_FINAL",
+                    "CONSTANCIA_EMPRESA", "FICHA_EVALUACION", "DICTAMEN_FINAL");
         }
 
         for (String doc : obligatorios) {

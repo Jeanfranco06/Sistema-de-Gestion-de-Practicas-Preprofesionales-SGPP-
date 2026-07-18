@@ -42,7 +42,7 @@ const DashboardCard = ({ title, action, children, sx }) => (
     >
         {(title || action) && (
             <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 2, mb: 3 }}>
-                {title && <Typography variant="h6" fontWeight={700} color="text.primary">{title}</Typography>}
+                {title && <Typography sx={{ fontWeight: 700 }} variant="h6" color="text.primary">{title}</Typography>}
                 {action && <Box sx={{ alignSelf: { xs: 'flex-start', sm: 'center' } }}>{action}</Box>}
             </Box>
         )}
@@ -63,8 +63,8 @@ const StatCard = ({ label, value, icon, accent }) => {
             <Stack direction="row" spacing={1.5} alignItems="center">
                 <Box sx={{ color: colors.icon }}>{icon}</Box>
                 <Box>
-                    <Typography variant="h5" fontWeight={800} color={colors.text}>{value}</Typography>
-                    <Typography variant="caption" fontWeight={600} color={colors.text} sx={{ opacity: 0.8 }}>{label}</Typography>
+                    <Typography sx={{ fontWeight: 800 }} variant="h5" color={colors.text}>{value}</Typography>
+                    <Typography variant="caption" color={colors.text} sx={{ opacity: 0.8, fontWeight: 600 }}>{label}</Typography>
                 </Box>
             </Stack>
         </Paper>
@@ -124,19 +124,7 @@ export const GestionEmpresas = () => {
         }, 600);
     };
 
-    useEffect(() => {
-        loadEmpresas();
-        return () => {
-            Object.values(asyncTimers.current).forEach(clearTimeout);
-        };
-    }, []);
-
-    useEffect(() => {
-        const timer = setTimeout(() => { loadEmpresas(); }, 300);
-        return () => clearTimeout(timer);
-    }, [searchTerm, filterEstado]);
-
-    const loadEmpresas = async () => {
+    const loadEmpresas = useCallback(async () => {
         try {
             setLoading(true);
             const res = await empresaApi.getAll();
@@ -147,7 +135,20 @@ export const GestionEmpresas = () => {
             setLoading(false);
             setInitialLoad(false);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        loadEmpresas();
+        const timers = asyncTimers.current;
+        return () => {
+            Object.values(timers).forEach(clearTimeout);
+        };
+    }, [loadEmpresas]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => { loadEmpresas(); }, 300);
+        return () => clearTimeout(timer);
+    }, [searchTerm, filterEstado, loadEmpresas]);
 
     const handleOpenDialog = (empresa = null) => {
         if (empresa) {
@@ -404,7 +405,7 @@ export const GestionEmpresas = () => {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh', flexDirection: 'column', gap: 3 }}>
                 <CircularProgress size={48} thickness={4} sx={{ color: '#1a365d' }} />
-                <Typography variant="body1" color="text.secondary" fontWeight={500}>Cargando directorio de empresas...</Typography>
+                <Typography sx={{ fontWeight: 500 }} variant="body1" color="text.secondary">Cargando directorio de empresas...</Typography>
             </Box>
         );
     }
@@ -419,7 +420,7 @@ export const GestionEmpresas = () => {
                         </Box>
                         <Box sx={{ position: 'relative', zIndex: 1, width: '100%' }}>
                             <Typography variant="overline" sx={{ opacity: 0.8, letterSpacing: 1.5, fontWeight: 600, display: 'block', mb: 0.5 }}>Entidades Externas</Typography>
-                            <Typography variant="h3" fontWeight={800} sx={{ mt: 0, mb: 1.5, fontSize: { xs: '1.75rem', sm: '2rem', md: '2.5rem' }, wordBreak: 'break-word' }}>Gestión de Empresas</Typography>
+                            <Typography variant="h3"  sx={{ fontWeight: 800,  mt: 0, mb: 1.5, fontSize: { xs: '1.75rem', sm: '2rem', md: '2.5rem' }, wordBreak: 'break-word' }}>Gestión de Empresas</Typography>
                             <Typography variant="subtitle1" sx={{ opacity: 0.9 }}>Administra el catálogo de empresas aliadas y valida sus perfiles.</Typography>
                         </Box>
                         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', position: 'relative', zIndex: 1, alignSelf: { xs: 'flex-end', md: 'center' } }}>
@@ -507,13 +508,13 @@ export const GestionEmpresas = () => {
                                                             {getInitials(emp.razonSocial)}
                                                         </Avatar>
                                                         <Box>
-                                                            <Typography variant="body2" fontWeight={700} color="text.primary">{emp.razonSocial}</Typography>
+                                                            <Typography sx={{ fontWeight: 700 }} variant="body2" color="text.primary">{emp.razonSocial}</Typography>
                                                             <Typography variant="caption" color="text.secondary">{emp.nombreComercial || emp.sectorEconomico || '—'}</Typography>
                                                         </Box>
                                                     </Box>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Typography variant="body2" fontFamily="monospace" fontWeight={600} color="text.secondary">{emp.ruc}</Typography>
+                                                    <Typography sx={{ fontWeight: 600 }} variant="body2" fontFamily="monospace" color="text.secondary">{emp.ruc}</Typography>
                                                 </TableCell>
                                                 <TableCell>
                                                     <Chip label={emp.sectorEconomico || '—'} size="small" sx={{ fontWeight: 600, fontSize: '0.7rem', borderRadius: 1.5, bgcolor: '#f1f5f9', color: '#475569' }} />
@@ -526,7 +527,7 @@ export const GestionEmpresas = () => {
                                                     <Stack direction="row" spacing={1} alignItems="center">
                                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                                                             <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: sc.dot, boxShadow: `0 0 0 2px ${sc.shadow}` }} />
-                                                            <Typography variant="caption" fontWeight={700} color={sc.dot}>{sc.label}</Typography>
+                                                            <Typography sx={{ fontWeight: 700 }} variant="caption" color={sc.dot}>{sc.label}</Typography>
                                                         </Box>
                                                     </Stack>
                                                 </TableCell>
@@ -566,7 +567,7 @@ export const GestionEmpresas = () => {
                                             <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
                                                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, color: '#94a3b8' }}>
                                                     <SearchIcon sx={{ fontSize: 48, opacity: 0.5 }} />
-                                                    <Typography variant="subtitle1" fontWeight={600}>No se encontraron empresas</Typography>
+                                                    <Typography sx={{ fontWeight: 600 }} variant="subtitle1">No se encontraron empresas</Typography>
                                                     <Typography variant="body2">Intenta ajustar los filtros o agrega una nueva empresa.</Typography>
                                                 </Box>
                                             </TableCell>
@@ -593,7 +594,7 @@ export const GestionEmpresas = () => {
             <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth slotProps={{ paper: { sx: { borderRadius: 4, overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' } } }}>
                 <DialogTitle sx={{ bgcolor: '#1a365d', color: '#fff', py: 2.5, px: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                        <BadgeIcon /> <Typography variant="h6" fontWeight={700}>{isEditing ? 'Editar Empresa' : 'Registrar Nueva Empresa'}</Typography>
+                        <BadgeIcon /> <Typography sx={{ fontWeight: 700 }} variant="h6">{isEditing ? 'Editar Empresa' : 'Registrar Nueva Empresa'}</Typography>
                     </Box>
                 </DialogTitle>
                 <DialogContent sx={{ p: { xs: 2, md: 4 }, bgcolor: '#fff' }}>

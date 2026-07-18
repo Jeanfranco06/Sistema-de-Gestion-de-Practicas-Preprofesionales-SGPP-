@@ -53,7 +53,7 @@ const DashboardCard = ({ title, action, children, sx }) => (
     >
         {(title || action) && (
             <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 2, mb: 3 }}>
-                {title && <Typography variant="h6" fontWeight={700} color="text.primary">{title}</Typography>}
+                {title && <Typography sx={{ fontWeight: 700 }} variant="h6" color="text.primary">{title}</Typography>}
                 {action && <Box>{action}</Box>}
             </Box>
         )}
@@ -74,8 +74,8 @@ const StatCard = ({ label, value, icon, accent }) => {
             <Stack direction="row" spacing={1.5} alignItems="center">
                 <Box sx={{ color: colors.icon }}>{icon}</Box>
                 <Box>
-                    <Typography variant="h5" fontWeight={800} color={colors.text}>{value}</Typography>
-                    <Typography variant="caption" fontWeight={600} color={colors.text} sx={{ opacity: 0.8 }}>{label}</Typography>
+                    <Typography sx={{ fontWeight: 800 }} variant="h5" color={colors.text}>{value}</Typography>
+                    <Typography variant="caption" color={colors.text} sx={{ opacity: 0.8, fontWeight: 600 }}>{label}</Typography>
                 </Box>
             </Stack>
         </Paper>
@@ -272,7 +272,7 @@ export const RecepcionAdministrativa = () => {
                         </Box>
                         <Box sx={{ position: 'relative', zIndex: 1, width: '100%' }}>
                             <Typography variant="overline" sx={{ opacity: 0.8, letterSpacing: 1.5, fontWeight: 600, display: 'block', mb: 0.5 }}>Secretaría Académica</Typography>
-                            <Typography variant="h3" fontWeight={800} sx={{ mt: 0, mb: 1.5, fontSize: { xs: '1.75rem', sm: '2rem', md: '2.5rem' }, wordBreak: 'break-word' }}>Recepción Administrativa</Typography>
+                            <Typography variant="h3"  sx={{ fontWeight: 800,  mt: 0, mb: 1.5, fontSize: { xs: '1.75rem', sm: '2rem', md: '2.5rem' }, wordBreak: 'break-word' }}>Recepción Administrativa</Typography>
                             <Typography variant="subtitle1" sx={{ opacity: 0.9 }}>Gestión de documentos, emisión de cartas de presentación y constancias.</Typography>
                         </Box>
                         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', position: 'relative', zIndex: 1, alignSelf: { xs: 'flex-end', md: 'center' } }}>
@@ -325,14 +325,14 @@ export const RecepcionAdministrativa = () => {
                                         return (
                                             <TableRow key={exp.id} hover sx={{ '&:last-child td': { border: 0 } }}>
                                                 <TableCell>
-                                                    <Typography variant="body2" fontFamily="monospace" fontWeight={600} color="text.secondary">{exp.codigoExpediente}</Typography>
+                                                    <Typography sx={{ fontWeight: 600 }} variant="body2" fontFamily="monospace" color="text.secondary">{exp.codigoExpediente}</Typography>
                                                 </TableCell>
                                                 <TableCell>
                                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                                                         <Avatar sx={{ width: 36, height: 36, bgcolor: sc.bg, color: sc.dot, fontWeight: 700, fontSize: 13, border: '1px solid', borderColor: `${sc.dot}40` }}>
                                                             {getInitials(exp.nombreEstudiante, exp.apellidoEstudiante)}
                                                         </Avatar>
-                                                        <Typography variant="body2" fontWeight={700} color="text.primary">{exp.nombreEstudiante} {exp.apellidoEstudiante}</Typography>
+                                                        <Typography sx={{ fontWeight: 700 }} variant="body2" color="text.primary">{exp.nombreEstudiante} {exp.apellidoEstudiante}</Typography>
                                                     </Box>
                                                 </TableCell>
                                                 <TableCell>
@@ -345,7 +345,7 @@ export const RecepcionAdministrativa = () => {
                                                 <TableCell>
                                                     <Stack direction="row" spacing={1} alignItems="center">
                                                         <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: sc.dot }} />
-                                                        <Typography variant="caption" fontWeight={700} color={sc.dot}>{sc.label}</Typography>
+                                                        <Typography sx={{ fontWeight: 700 }} variant="caption" color={sc.dot}>{sc.label}</Typography>
                                                     </Stack>
                                                 </TableCell>
                                                 <TableCell>
@@ -359,7 +359,7 @@ export const RecepcionAdministrativa = () => {
                                                                 </Button>
                                                             </Tooltip>
                                                         )}
-                                                        {exp.estado === 'VALIDADO_SECRETARIA' && exp.codigoTipoPractica === 'INICIAL' && !exp.idAsesor && (
+                                                        {exp.estado === 'CARTA_ACEPTACION_PRESENTADA' && exp.codigoTipoPractica === 'INICIAL' && !exp.idAsesor && (
                                                             <Tooltip title="Asignar Docente Asesor" arrow>
                                                                 <Button size="small" variant="outlined" color="secondary"
                                                                     onClick={() => handleOpenAsesorDialog(exp)}
@@ -387,7 +387,7 @@ export const RecepcionAdministrativa = () => {
                                             <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
                                                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, color: '#94a3b8' }}>
                                                     <ContentPasteSearch sx={{ fontSize: 48, opacity: 0.5 }} />
-                                                    <Typography variant="subtitle1" fontWeight={600}>No hay trámites documentarios</Typography>
+                                                    <Typography sx={{ fontWeight: 600 }} variant="subtitle1">No hay trámites documentarios</Typography>
                                                     <Typography variant="body2">Aún no hay expedientes registrados en el sistema.</Typography>
                                                 </Box>
                                             </TableCell>
@@ -413,7 +413,7 @@ export const RecepcionAdministrativa = () => {
 
             <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth slotProps={{ paper: { sx: { borderRadius: 4, overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' } } }}>
                 <DialogTitle sx={{ bgcolor: '#1a365d', color: '#fff', display: 'flex', alignItems: 'center', gap: 1.5, py: 2.5, px: 4 }}>
-                    <WarningAmber /> <Typography variant="h6" fontWeight={700}>Registrar Incidencia</Typography>
+                    <WarningAmber /> <Typography sx={{ fontWeight: 700 }} variant="h6">Registrar Incidencia</Typography>
                 </DialogTitle>
                 <DialogContent sx={{ p: { xs: 2, md: 4 }, bgcolor: '#fff' }}>
                     <Box sx={{ mt: 1, mb: 3, p: 2, bgcolor: '#f8fafc', borderRadius: 2 }}>
@@ -440,7 +440,7 @@ export const RecepcionAdministrativa = () => {
 
             <Dialog open={openAsesorDialog} onClose={() => setOpenAsesorDialog(false)} maxWidth="sm" fullWidth slotProps={{ paper: { sx: { borderRadius: 4, overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' } } }}>
                 <DialogTitle sx={{ bgcolor: '#1a365d', color: '#fff', display: 'flex', alignItems: 'center', gap: 1.5, py: 2.5, px: 4 }}>
-                    <PersonAdd /> <Typography variant="h6" fontWeight={700}>Asignar Docente Asesor</Typography>
+                    <PersonAdd /> <Typography sx={{ fontWeight: 700 }} variant="h6">Asignar Docente Asesor</Typography>
                 </DialogTitle>
                 <DialogContent sx={{ p: { xs: 2, md: 4 }, bgcolor: '#fff' }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 1 }}>
@@ -491,7 +491,7 @@ export const RecepcionAdministrativa = () => {
                         <Description sx={{ fontSize: 20 }} />
                     </Box>
                     <Box>
-                        <Typography variant="subtitle1" fontWeight={700}>Validar Requisitos Administrativos</Typography>
+                        <Typography sx={{ fontWeight: 700 }} variant="subtitle1">Validar Requisitos Administrativos</Typography>
                         <Typography variant="caption" sx={{ opacity: 0.8 }}>Marque cada requisito antes de validar</Typography>
                     </Box>
                 </DialogTitle>
@@ -500,13 +500,13 @@ export const RecepcionAdministrativa = () => {
                         <Box>
                             <Box sx={{ mb: 2, p: 2, bgcolor: '#f8fafc', borderRadius: 2, border: '1px solid #e2e8f0' }}>
                                 <Typography variant="caption" color="text.secondary">Expediente</Typography>
-                                <Typography variant="body1" fontWeight={700}>{validarDialog.expediente.codigoExpediente}</Typography>
+                                <Typography sx={{ fontWeight: 700 }} variant="body1">{validarDialog.expediente.codigoExpediente}</Typography>
                                 <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
                                     {validarDialog.expediente.nombreEstudiante} {validarDialog.expediente.apellidoEstudiante}
                                 </Typography>
                             </Box>
 
-                            <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1.5, color: '#1a365d' }}>
+                            <Typography variant="subtitle2" sx={{ mb: 1.5, color: '#1a365d', fontWeight: 700 }}>
                                 Checklist de validación:
                             </Typography>
 

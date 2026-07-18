@@ -116,13 +116,7 @@ export default function LoginPage() {
     let errMsg = '';
     if (name === 'username') {
       if (!value.trim()) {
-        errMsg = 'El usuario es requerido';
-      } else if (
-        value.includes('@') &&
-        !value.endsWith('@unitru.edu.pe') &&
-        !value.endsWith('@unt.edu.pe')
-      ) {
-        errMsg = 'Solo se permiten correos institucionales (@unitru.edu.pe o @unt.edu.pe)';
+        errMsg = 'El usuario o correo es requerido';
       }
     }
     if (name === 'password') {
@@ -224,7 +218,7 @@ export default function LoginPage() {
                 <School sx={{ color: 'primary.contrastText', fontSize: 32 }} />
               </Box>
               <Box>
-                <Typography variant="h6" fontWeight="700" letterSpacing={1}>UNT</Typography>
+                <Typography sx={{ fontWeight: 700, letterSpacing: 1 }} variant="h6">UNT</Typography>
                 <Typography variant="caption" sx={{ opacity: 0.8 }}>Universidad Nacional de Trujillo</Typography>
               </Box>
             </MotionBox>
@@ -235,7 +229,7 @@ export default function LoginPage() {
               transition={{ duration: 0.8, delay: 0.2 }}
               sx={{ zIndex: 2, maxWidth: 500 }}
             >
-              <Typography variant="h3" fontWeight="800" sx={{ mb: 3, lineHeight: 1.2 }}>
+              <Typography variant="h3" sx={{ mb: 3, lineHeight: 1.2, fontWeight: 800 }}>
                 Sistema de Gestión de Prácticas Preprofesionales
               </Typography>
               <Typography variant="h6" sx={{ opacity: 0.9, fontWeight: 400, lineHeight: 1.5 }}>
@@ -296,7 +290,7 @@ export default function LoginPage() {
                     e.target.style.display = 'none';
                   }}
                 />
-                <Typography variant="h4" fontWeight="800" color="secondary.main" gutterBottom>
+                <Typography sx={{ fontWeight: 800 }} variant="h4" color="secondary.main" gutterBottom>
                   Iniciar Sesión
                 </Typography>
                 <Typography variant="body1" color="text.secondary">
@@ -416,7 +410,7 @@ export default function LoginPage() {
               <Box sx={{ mt: 5, textAlign: 'center' }}>
                 <Typography variant="body2" color="text.secondary">
                   ¿Problemas para ingresar?{' '}
-                  <Link href="#" underline="hover" color="secondary.main" fontWeight="600">
+                  <Link sx={{ fontWeight: 600 }} href="#" underline="hover" color="secondary.main">
                     Contacta a Soporte
                   </Link>
                 </Typography>

@@ -92,7 +92,7 @@ export const GestionExpedientes = () => {
       <StatStrip items={stats} />
 
       <ContentCard accent>
-        <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>Directorio de Expedientes</Typography>
+        <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>Directorio de Expedientes</Typography>
 
         <Box sx={{ p: 2, mb: 3, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap', bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
           <TextField
@@ -101,7 +101,7 @@ export const GestionExpedientes = () => {
             size="small"
             value={searchTerm}
             onChange={e => { setSearchTerm(e.target.value); setPage(0); }}
-            InputProps={{ startAdornment: <Search fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} /> }}
+            slotProps={{ input: { startAdornment: <Search fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} /> } }}
             sx={{ minWidth: 260 }}
           />
           <TextField
@@ -146,12 +146,12 @@ export const GestionExpedientes = () => {
                 <TableRow key={e.id} hover>
                   <TableCell sx={{ fontFamily: 'monospace', fontSize: 12 }}>{e.codigoExpediente}</TableCell>
                   <TableCell>
-                    <Typography variant="body2" fontWeight={500}>{e.nombreEstudiante} {e.apellidoEstudiante}</Typography>
+                    <Typography sx={{ fontWeight: 500 }} variant="body2">{e.nombreEstudiante} {e.apellidoEstudiante}</Typography>
                   </TableCell>
                   <TableCell><Chip label={e.nombreTipoPractica} size="small" color="primary" variant="outlined" /></TableCell>
                   <TableCell><Chip label={e.estado?.replace(/_/g, ' ')} size="small" color={e.estado === 'OBSERVADO' ? 'error' : e.estado === 'APROBADO' || e.estado === 'EVALUADO' || e.estado === 'CERRADO' ? 'success' : 'default'} /></TableCell>
                   <TableCell>
-                    <Typography variant="caption" display="block">{e.nombreAsesor || '—'}</Typography>
+                    <Typography sx={{ display: 'block' }} variant="caption">{e.nombreAsesor || '—'}</Typography>
                     <Typography variant="caption" color="text.secondary">{e.nombreEmpresa || ''}</Typography>
                   </TableCell>
                 </TableRow>

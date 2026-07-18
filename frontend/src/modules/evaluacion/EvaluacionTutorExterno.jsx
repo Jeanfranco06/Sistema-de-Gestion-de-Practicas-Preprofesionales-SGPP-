@@ -226,7 +226,7 @@ export const EvaluacionTutorExterno = () => {
             {expediente && (
                 <ContentCard>
                     <Grid container spacing={3}>
-                        <Grid item xs={12} md={8}>
+                        <Grid size={{ xs: 12, md: 8 }}>
                             <Typography variant="caption" color="text.secondary">1. DEL PRACTICANTE</Typography>
                             <Typography variant="h6" sx={{ mt: 0.5, mb: 1 }}>
                                 {expediente.nombreEstudiante} {expediente.apellidoEstudiante}
@@ -236,9 +236,9 @@ export const EvaluacionTutorExterno = () => {
                                 <Chip icon={<Business />} label={expediente.nombreEmpresa} size="small" variant="outlined" />
                             </Box>
                         </Grid>
-                        <Grid item xs={12} md={4}>
+                        <Grid size={{ xs: 12, md: 4 }}>
                             <Typography variant="caption" color="text.secondary">Puntaje Total</Typography>
-                            <Typography variant="h4" fontWeight={600} color={theme.palette[colorTotal].main}>
+                            <Typography sx={{ fontWeight: 600 }} variant="h4" color={theme.palette[colorTotal].main}>
                                 {totalGeneral} <Typography component="span" variant="body2" color="text.secondary">/ {totalMaximo}</Typography>
                             </Typography>
                             <LinearProgress
@@ -261,7 +261,7 @@ export const EvaluacionTutorExterno = () => {
                 {grupos.map((cat, catIndex) => (
                     <Box key={cat.categoria} sx={{ mb: 3 }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-                            <Typography variant="subtitle2" fontWeight={700} sx={{ color: theme.palette.secondary.dark }}>
+                            <Typography variant="subtitle2" sx={{ color: theme.palette.secondary.dark, fontWeight: 700 }}>
                                 {cat.categoria}
                             </Typography>
                             <Chip
@@ -294,7 +294,7 @@ export const EvaluacionTutorExterno = () => {
                                                 <TextField
                                                     type="number"
                                                     size="small"
-                                                    InputProps={{ inputProps: { min: 0, max: criterio.puntajeMaximo || 5, style: { textAlign: 'center' } } }}
+                                                    slotProps={{ htmlInput: { min: 0, max: criterio.puntajeMaximo || 5, style: { textAlign: 'center' } } }}
                                                     value={detalles[criterio.id]?.puntajeObtenido || ''}
                                                     onChange={(e) => handlePuntajeChange(criterio.id, e.target.value, criterio.puntajeMaximo)}
                                                     sx={{ width: 70 }}
@@ -323,7 +323,7 @@ export const EvaluacionTutorExterno = () => {
 
                 <Box sx={{ mt: 3, pt: 2, borderTop: '2px solid', borderColor: 'primary.light' }}>
                     <Grid container spacing={2} alignItems="center">
-                        <Grid item xs={12} md={4}>
+                        <Grid size={{ xs: 12, md: 4 }}>
                             <TextField
                                 label="Horas registradas"
                                 type="number"
@@ -333,7 +333,7 @@ export const EvaluacionTutorExterno = () => {
                                 onChange={(e) => setEvaluacion((prev) => ({ ...prev, horasRegistradas: parseInt(e.target.value, 10) || 0 }))}
                             />
                         </Grid>
-                        <Grid item xs={12} md={4}>
+                        <Grid size={{ xs: 12, md: 4 }}>
                             <Button
                                 variant="outlined"
                                 component="label"
@@ -346,17 +346,17 @@ export const EvaluacionTutorExterno = () => {
                                 <input type="file" hidden accept="application/pdf,.pdf" onChange={handleFileUpload} />
                             </Button>
                         </Grid>
-                        <Grid item xs={12} md={4}>
+                        <Grid size={{ xs: 12, md: 4 }}>
                             <Box sx={{ textAlign: 'center', py: 1 }}>
                                 <Typography variant="caption" color="text.secondary">Puntaje Total Obtenido</Typography>
-                                <Typography variant="h5" fontWeight={700} color={theme.palette[colorTotal].main}>
+                                <Typography sx={{ fontWeight: 700 }} variant="h5" color={theme.palette[colorTotal].main}>
                                     {totalGeneral} / {totalMaximo}
                                 </Typography>
                             </Box>
                         </Grid>
                     </Grid>
                     <Grid container spacing={2} sx={{ mt: 1 }}>
-                        <Grid item xs={12}>
+                        <Grid size={{ xs: 12 }}>
                             <TextField
                                 label="Observaciones generales del evaluador"
                                 fullWidth
@@ -401,13 +401,13 @@ export const EvaluacionTutorExterno = () => {
                                         <TableCell>{ev.horasRegistradas} hrs</TableCell>
                                         <TableCell>{ev.tipoEvaluador}</TableCell>
                                         <TableCell>
-                                            <Typography variant="body2" fontWeight={600}>
+                                            <Typography sx={{ fontWeight: 600 }} variant="body2">
                                                 {ev.puntajeTotal || ev.promedioFinal || '—'}/{totalMaximo}
                                             </Typography>
                                         </TableCell>
                                         <TableCell>
                                             {ev.detalles?.map((d) => (
-                                                <Typography key={d.idCriterio || d.id} variant="caption" display="block">
+                                                <Typography sx={{ display: 'block' }} key={d.idCriterio || d.id} variant="caption">
                                                     {d.nombreCriterio || d.criterio}: {d.puntajeObtenido}
                                                 </Typography>
                                             ))}

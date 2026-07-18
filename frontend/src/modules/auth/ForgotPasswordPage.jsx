@@ -45,7 +45,7 @@ export default function ForgotPasswordPage() {
         <Box sx={{ width: 64, height: 64, borderRadius: 2, bgcolor: 'primary.main', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 1.5, boxShadow: '0 4px 14px rgba(37, 99, 235, 0.25)' }}>
           <School sx={{ fontSize: 32, color: '#fff' }} />
         </Box>
-        <Typography variant="h5" fontWeight={600} color="primary.dark">SGPP – UNT</Typography>
+        <Typography sx={{ fontWeight: 600 }} variant="h5" color="primary.dark">SGPP – UNT</Typography>
         <Typography variant="body2" color="text.secondary">Sistema de Gestión de Prácticas Preprofesionales</Typography>
       </Box>
 

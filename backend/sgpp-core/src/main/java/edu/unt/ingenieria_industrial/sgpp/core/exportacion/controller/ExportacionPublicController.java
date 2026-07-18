@@ -5,6 +5,8 @@ import edu.unt.ingenieria_industrial.sgpp.core.exportacion.model.RegistroGenerac
 import edu.unt.ingenieria_industrial.sgpp.core.exportacion.repository.RegistroGeneracionDocumentalRepository;
 import edu.unt.ingenieria_industrial.sgpp.core.expediente.service.ExpedienteAccesoService;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.service.CurrentUserService;
+import edu.unt.ingenieria_industrial.sgpp.shared.exception.BusinessException;
+import edu.unt.ingenieria_industrial.sgpp.shared.exception.ResourceNotFoundException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -19,13 +21,12 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/exportacion")
+@RequestMapping("/exportacion")
 @RequiredArgsConstructor
 @Tag(name = "Exportación Documental", description = "Descarga de documentos generados con autorización por expediente")
 public class ExportacionPublicController {
@@ -39,62 +40,60 @@ public class ExportacionPublicController {
     @PreAuthorize("isAuthenticated()")
     @Transactional(readOnly = true)
     @Operation(summary = "Descargar documento generado por ID de registro")
-    public ResponseEntity<Resource> descargarPorId(@PathVariable Long id) throws IOException {
+    public ResponseEntity<Resource> descargarPorId(@PathVariable Long id) {
         RegistroGeneracionDocumental registro = registroRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Registro de documento no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Registro de documento no encontrado"));
 
         if (registro.getExpediente() == null) {
-            throw new RuntimeException("El documento no está asociado a un expediente");
+            throw new BusinessException("El documento no está asociado a un expediente");
+        }
+
+        Long currentUserId = currentUserService.getCurrentUserId();
+        if (currentUserId == null) {
+            throw new BusinessException("No se pudo identificar al usuario autenticado");
         }
         expedienteAccesoService.verificarLectura(
                 registro.getExpediente(),
-                currentUserService.getCurrentUserId(),
+                currentUserId,
                 currentUserService.getCurrentRoles());
 
         log.info("Intentando descargar registro ID: {}, nombre archivo: {}, ruta: {}",
                 id, registro.getNombreArchivo(), registro.getRutaArchivo());
 
-        Path archivoPath = Paths.get(registro.getRutaArchivo());
-
-        // Si la ruta es relativa, resolverla contra el directorio base de exportaciones
-        if (!archivoPath.isAbsolute()) {
-            Path directorioBase = exportacionProperties.resolverDirectorio();
-            archivoPath = directorioBase.resolve(registro.getNombreArchivo());
-            log.info("Ruta relativa detectada, usando directorio base: {}, ruta final: {}",
-                    directorioBase, archivoPath);
+        Path directorioBase = exportacionProperties.resolverDirectorio().toAbsolutePath().normalize();
+        if (registro.getRutaArchivo() == null || registro.getNombreArchivo() == null) {
+            throw new ResourceNotFoundException("El registro no contiene un archivo descargable");
+        }
+        Path rutaRegistrada = Paths.get(registro.getRutaArchivo());
+        // Los registros históricos guardaban rutas relativas al directorio de trabajo.
+        // La descarga usa siempre el nombre persistido dentro de la raíz segura.
+        Path archivoPath = rutaRegistrada.isAbsolute()
+                ? rutaRegistrada.toAbsolutePath().normalize()
+                : directorioBase.resolve(registro.getNombreArchivo()).normalize();
+        if (!archivoPath.startsWith(directorioBase)) {
+            throw new BusinessException("Ruta de documento institucional inválida");
         }
 
-        Resource resource = new UrlResource(archivoPath.toUri());
+        try {
+            Resource resource = new UrlResource(archivoPath.toUri());
 
-        if (!resource.exists() || !resource.isReadable()) {
-            log.error("Archivo no encontrado o no accesible: {}", archivoPath);
-            // Intentar buscar el archivo por nombre en el directorio de exportaciones
-            Path directorioBase = exportacionProperties.resolverDirectorio();
-            if (Files.exists(directorioBase)) {
-                Path archivoEncontrado = Files.walk(directorioBase)
-                        .filter(p -> p.getFileName().toString().equals(registro.getNombreArchivo()))
-                        .findFirst()
-                        .orElse(null);
-
-                if (archivoEncontrado != null) {
-                    log.info("Archivo encontrado por búsqueda: {}", archivoEncontrado);
-                    resource = new UrlResource(archivoEncontrado.toUri());
-                } else {
-                    throw new RuntimeException("Archivo no encontrado: " + registro.getNombreArchivo());
-                }
-            } else {
-                throw new RuntimeException("Directorio de exportaciones no existe: " + directorioBase);
+            if (!resource.exists() || !resource.isReadable()) {
+                log.error("Archivo no encontrado o no accesible: {}", archivoPath);
+                throw new ResourceNotFoundException("Archivo institucional no encontrado: " + registro.getNombreArchivo());
             }
+
+            String contentType = "PDF".equals(registro.getFormatoSalida()) ? "application/pdf" : "text/csv";
+
+            log.info("Archivo encontrado y listo para descargar: {}", archivoPath);
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"" + registro.getNombreArchivo() + "\"")
+                    .body(resource);
+        } catch (IOException e) {
+            log.error("Error al leer el archivo institucional {}: {}", archivoPath, e.getMessage());
+            throw new ResourceNotFoundException("No se pudo leer el archivo institucional: " + registro.getNombreArchivo());
         }
-
-        String contentType = registro.getFormatoSalida().equals("PDF") ? "application/pdf" : "text/csv";
-
-        log.info("Archivo encontrado y listo para descargar: {}", archivoPath);
-
-        return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(contentType))
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"" + registro.getNombreArchivo() + "\"")
-                .body(resource);
     }
 }

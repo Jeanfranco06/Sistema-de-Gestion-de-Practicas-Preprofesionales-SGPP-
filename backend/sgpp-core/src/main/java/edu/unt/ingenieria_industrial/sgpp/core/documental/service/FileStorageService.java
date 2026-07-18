@@ -61,6 +61,9 @@ public class FileStorageService {
     public Resource loadFileAsResource(String fileName) {
         try {
             Path filePath = this.fileStorageLocation.resolve(fileName).normalize();
+            if (!filePath.startsWith(this.fileStorageLocation)) {
+                throw new RuntimeException("Ruta de archivo inválida");
+            }
             Resource resource = new UrlResource(filePath.toUri());
             if (resource.exists()) {
                 return resource;

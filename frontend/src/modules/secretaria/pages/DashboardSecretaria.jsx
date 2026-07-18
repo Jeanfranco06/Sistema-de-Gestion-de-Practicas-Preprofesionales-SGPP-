@@ -39,7 +39,7 @@ const DashboardCard = ({ title, action, children, sx }) => (
         gap: 2,
         mb: 3
       }}>
-        {title && <Typography variant="h6" fontWeight={700} color="text.primary" sx={{ fontSize: { xs: '1.1rem', md: '1.25rem' } }}>{title}</Typography>}
+        {title && <Typography variant="h6"  color="text.primary" sx={{ fontWeight: 700,  fontSize: { xs: '1.1rem', md: '1.25rem' } }}>{title}</Typography>}
         {action && <Box sx={{ alignSelf: { xs: 'flex-start', sm: 'center' } }}>{action}</Box>}
       </Box>
     )}
@@ -119,7 +119,7 @@ export default function DashboardSecretaria() {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh', flexDirection: 'column', gap: 3 }}>
         <CircularProgress size={48} thickness={4} sx={{ color: '#1a365d' }} />
-        <Typography variant="body1" color="text.secondary" fontWeight={500}>Cargando panel administrativo...</Typography>
+        <Typography sx={{ fontWeight: 500 }} variant="body1" color="text.secondary">Cargando panel administrativo...</Typography>
       </Box>
     );
   }
@@ -148,7 +148,7 @@ export default function DashboardSecretaria() {
               <Typography variant="overline" sx={{ opacity: 0.8, letterSpacing: 1.5, fontWeight: 600, display: 'block', mb: 0.5 }}>
                 Panel Administrativo
               </Typography>
-              <Typography variant="h3" fontWeight={800} sx={{ mt: 0, mb: 1.5, fontSize: { xs: '1.75rem', sm: '2rem', md: '2.5rem' }, wordBreak: 'break-word' }}>
+              <Typography variant="h3"  sx={{ fontWeight: 800,  mt: 0, mb: 1.5, fontSize: { xs: '1.75rem', sm: '2rem', md: '2.5rem' }, wordBreak: 'break-word' }}>
                 Hola, {user?.nombres?.split(' ')[0] || 'Secretaría'}
               </Typography>
               <Typography variant="subtitle1" sx={{ opacity: 0.9, display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -189,7 +189,7 @@ export default function DashboardSecretaria() {
                 </Button>
               }
             >
-              <Typography variant="subtitle2" fontWeight={700}>Atención requerida</Typography>
+              <Typography sx={{ fontWeight: 700 }} variant="subtitle2">Atención requerida</Typography>
               <Typography variant="body2">Hay {pendientesAccion.length} trámite(s) pendientes de atención documental rápida.</Typography>
             </Alert>
           )}
@@ -212,12 +212,12 @@ export default function DashboardSecretaria() {
                 }}
               >
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography variant="caption" fontWeight={700} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>{kpi.label}</Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 700 }}>{kpi.label}</Typography>
                   <Avatar sx={{ bgcolor: kpi.bg, color: kpi.color, width: 40, height: 40 }}>
                     <kpi.icon sx={{ fontSize: 22 }} />
                   </Avatar>
                 </Box>
-                <Typography variant="h4" fontWeight={800} color="text.primary" sx={{ fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' } }}>{kpi.val}</Typography>
+                <Typography variant="h4"  color="text.primary" sx={{ fontWeight: 800,  fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' } }}>{kpi.val}</Typography>
               </Paper>
             ))}
           </Box>
@@ -244,8 +244,8 @@ export default function DashboardSecretaria() {
 
                 <Grid container spacing={4} sx={{ flexGrow: 1, alignItems: 'center' }}>
                   {/* Gráfico Circular de Trámites */}
-                  <Grid item xs={12} md={5} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <Typography variant="subtitle2" color="text.primary" fontWeight={700} sx={{ mb: 3 }}>
+                  <Grid size={{ xs: 12, md: 5 }} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <Typography variant="subtitle2" color="text.primary" sx={{ mb: 3, fontWeight: 700 }}>
                       Tasa de Finalización
                     </Typography>
                     <Box sx={{ position: 'relative', width: 180, height: 180, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
@@ -261,8 +261,8 @@ export default function DashboardSecretaria() {
                         display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
                         boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
                       }}>
-                        <Typography variant="h4" fontWeight={800} color="#1a365d">{kpis.finalizados}</Typography>
-                        <Typography variant="caption" fontWeight={600} color="text.secondary" sx={{ textTransform: 'uppercase' }}>Completados</Typography>
+                        <Typography sx={{ fontWeight: 800 }} variant="h4" color="#1a365d">{kpis.finalizados}</Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 600 }}>Completados</Typography>
                       </Box>
                     </Box>
                     <Stack direction="row" spacing={1} sx={{ mt: 3, flexWrap: 'wrap', justifyContent: 'center' }}>
@@ -272,8 +272,8 @@ export default function DashboardSecretaria() {
                   </Grid>
 
                   {/* Gráfico de Barras de Distribución */}
-                  <Grid item xs={12} md={7}>
-                    <Typography variant="subtitle2" color="text.primary" fontWeight={700} sx={{ mb: 3, textAlign: 'center' }}>
+                  <Grid size={{ xs: 12, md: 7 }}>
+                    <Typography variant="subtitle2" color="text.primary" sx={{ mb: 3, textAlign: 'center', fontWeight: 700 }}>
                       Distribución por Etapa
                     </Typography>
                     <Box sx={{ height: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 1, px: 2, borderBottom: '2px solid', borderColor: '#e2e8f0' }}>
@@ -281,7 +281,7 @@ export default function DashboardSecretaria() {
                         const heightPct = (item.value / maxEstado) * 100;
                         return (
                           <Box key={item.name} sx={{ width: '18%', display: 'flex', flexDirection: 'column', alignItems: 'center', group: 'true' }}>
-                            <Typography variant="caption" fontWeight={700} color="text.primary" sx={{ mb: 1, opacity: item.value > 0 ? 1 : 0.4 }}>
+                            <Typography sx={{ fontWeight: 700 }} variant="caption" color="text.primary" sx={{ mb: 1, opacity: item.value> 0 ? 1 : 0.4 }}>
                               {item.value}
                             </Typography>
                             <Box sx={{ width: '100%', height: 180, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
@@ -315,7 +315,7 @@ export default function DashboardSecretaria() {
                     const color = colors[index];
                     return (
                       <Box key={item.name} sx={{ width: '25%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                        <Typography variant="subtitle2" fontWeight={700} color="text.primary" sx={{ mb: 1, opacity: item.value > 0 ? 1 : 0.4 }}>
+                        <Typography sx={{ fontWeight: 700 }} variant="subtitle2" color="text.primary" sx={{ mb: 1, opacity: item.value> 0 ? 1 : 0.4 }}>
                           {item.value}
                         </Typography>
                         <Box sx={{ width: '100%', height: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
@@ -327,7 +327,7 @@ export default function DashboardSecretaria() {
                             }}
                           />
                         </Box>
-                        <Typography variant="caption" fontWeight={700} color="text.secondary" sx={{ mt: 1.5 }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1.5, fontWeight: 700 }}>
                           {item.name}
                         </Typography>
                       </Box>
@@ -367,8 +367,8 @@ export default function DashboardSecretaria() {
                           <btn.icon fontSize="small" />
                         </Avatar>
                         <Box sx={{ overflow: 'hidden' }}>
-                          <Typography variant="body2" fontWeight={700} noWrap>{btn.title}</Typography>
-                          <Typography variant="caption" color="text.secondary" display="block" noWrap>{btn.sub}</Typography>
+                          <Typography sx={{ fontWeight: 700 }} variant="body2" noWrap>{btn.title}</Typography>
+                          <Typography sx={{ display: 'block' }} variant="caption" color="text.secondary" noWrap>{btn.sub}</Typography>
                         </Box>
                       </Box>
                       <ArrowForwardIos sx={{ fontSize: 14, color: 'text.disabled', flexShrink: 0 }} />

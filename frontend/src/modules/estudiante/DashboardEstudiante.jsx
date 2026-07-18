@@ -13,6 +13,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { expedientesApi } from '../../api/expedientesApi';
 import { horasEstudianteApi } from '../../api/horasApi';
 import { useNavigate } from 'react-router-dom';
+import { tieneControlHoras } from '../../shared/utils/controlHoras';
 
 // Componente Card Premium responsivo
 const DashboardCard = ({ title, action, children, sx }) => (
@@ -40,7 +41,7 @@ const DashboardCard = ({ title, action, children, sx }) => (
         gap: 2,
         mb: 3
       }}>
-        {title && <Typography variant="h6" fontWeight={700} color="text.primary" sx={{ fontSize: { xs: '1.1rem', md: '1.25rem' } }}>{title}</Typography>}
+        {title && <Typography variant="h6"  color="text.primary" sx={{ fontWeight: 700,  fontSize: { xs: '1.1rem', md: '1.25rem' } }}>{title}</Typography>}
         {action && <Box sx={{ alignSelf: { xs: 'flex-start', sm: 'center' } }}>{action}</Box>}
       </Box>
     )}
@@ -75,13 +76,15 @@ export default function DashboardEstudiante() {
       const expedientes = res.data?.data || [];
       const exp = expedientes[0] || null;
       setExpediente(exp);
-      if (exp) {
+      if (exp && tieneControlHoras(exp.estado)) {
         const cumplimientoRes = await horasEstudianteApi.getCumplimiento(exp.id).catch(() => null);
         const data = cumplimientoRes?.data?.data || {};
         setHorasData({
           horasRequeridas: data.horasRequeridas || (exp.codigoTipoPractica === 'INICIAL' ? 64 : 360),
           horasValidadas: data.horasValidadas || 0,
         });
+      } else {
+        setHorasData({ horasRequeridas: 0, horasValidadas: 0 });
       }
     } catch (err) {
       console.error('Error al cargar datos:', err);
@@ -96,7 +99,7 @@ export default function DashboardEstudiante() {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh', flexDirection: 'column', gap: 3 }}>
         <CircularProgress size={48} thickness={4} sx={{ color: '#1a365d' }} />
-        <Typography variant="body1" color="text.secondary" fontWeight={500}>Sincronizando panel institucional...</Typography>
+        <Typography sx={{ fontWeight: 500 }} variant="body1" color="text.secondary">Sincronizando panel institucional...</Typography>
       </Box>
     );
   }
@@ -118,7 +121,7 @@ export default function DashboardEstudiante() {
               <Avatar sx={{ width: 80, height: 80, mx: 'auto', mb: 3, bgcolor: '#f1f5f9', color: '#64748b' }}>
                 <FolderOpen sx={{ fontSize: 40 }} />
               </Avatar>
-              <Typography variant="h4" fontWeight={800} color="#1a365d" gutterBottom sx={{ fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>
+              <Typography variant="h4"  color="#1a365d" gutterBottom sx={{ fontWeight: 800,  fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>
                 Bienvenido al SGPP
               </Typography>
               <Typography variant="body1" color="text.secondary" sx={{ mb: 5, lineHeight: 1.6, fontSize: { xs: '0.875rem', sm: '1rem' } }}>
@@ -197,7 +200,7 @@ export default function DashboardEstudiante() {
               <Typography variant="overline" sx={{ opacity: 0.8, letterSpacing: 1.5, fontWeight: 600, display: 'block', mb: 0.5 }}>
                 Panel de Control del Estudiante
               </Typography>
-              <Typography variant="h3" fontWeight={800} sx={{ mt: 0, mb: 1.5, fontSize: { xs: '1.75rem', sm: '2rem', md: '2.5rem' }, wordBreak: 'break-word' }}>
+              <Typography variant="h3"  sx={{ fontWeight: 800,  mt: 0, mb: 1.5, fontSize: { xs: '1.75rem', sm: '2rem', md: '2.5rem' }, wordBreak: 'break-word' }}>
                 Hola, {user?.nombres?.split(' ')[0]}
               </Typography>
               <Typography variant="subtitle1" sx={{ opacity: 0.9, display: 'flex', alignItems: { xs: 'flex-start', sm: 'center' }, flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 0.5, sm: 1.5 } }}>
@@ -247,7 +250,7 @@ export default function DashboardEstudiante() {
                 </Button>
               }
             >
-              <Typography variant="subtitle2" fontWeight={700}>Trámite detenido temporalmente</Typography>
+              <Typography sx={{ fontWeight: 700 }} variant="subtitle2">Trámite detenido temporalmente</Typography>
               <Typography variant="body2">Tienes {obsActivas.length} documento(s) con observaciones que requieren tu subsanación inmediata para continuar.</Typography>
             </Alert>
           )}
@@ -271,12 +274,12 @@ export default function DashboardEstudiante() {
                 }}
               >
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography variant="caption" fontWeight={700} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>{kpi.label}</Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 700 }}>{kpi.label}</Typography>
                   <Avatar sx={{ bgcolor: kpi.bg, color: kpi.color, width: 40, height: 40 }}>
                     <kpi.icon sx={{ fontSize: 22 }} />
                   </Avatar>
                 </Box>
-                <Typography variant="h4" fontWeight={800} color="text.primary" sx={{ fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' } }}>{kpi.val}</Typography>
+                <Typography variant="h4"  color="text.primary" sx={{ fontWeight: 800,  fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' } }}>{kpi.val}</Typography>
               </Paper>
             ))}
           </Box>
@@ -289,7 +292,7 @@ export default function DashboardEstudiante() {
               <Box sx={{ mt: 'auto', mb: 'auto' }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', mb: 2 }}>
                   <Box>
-                    <Typography variant="h3" fontWeight={800} color="#1a365d" sx={{ lineHeight: 1, fontSize: { xs: '2.5rem', sm: '3rem' } }}>
+                    <Typography variant="h3"  color="#1a365d" sx={{ fontWeight: 800,  lineHeight: 1, fontSize: { xs: '2.5rem', sm: '3rem' } }}>
                       {pct}%
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontWeight: 500 }}>
@@ -312,12 +315,12 @@ export default function DashboardEstudiante() {
 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3, pt: 2.5, borderTop: '1px solid', borderColor: 'divider' }}>
                   <Box>
-                    <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ textTransform: 'uppercase' }}>Ejecutadas</Typography>
-                    <Typography variant="h6" fontWeight={700} color="text.primary">{horasEjecutadas} h</Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 600 }}>Ejecutadas</Typography>
+                    <Typography sx={{ fontWeight: 700 }} variant="h6" color="text.primary">{horasEjecutadas} h</Typography>
                   </Box>
                   <Box sx={{ textAlign: 'right' }}>
-                    <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ textTransform: 'uppercase' }}>Pendientes</Typography>
-                    <Typography variant="h6" fontWeight={700} color="text.primary">{horasTotales - horasEjecutadas} h</Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 600 }}>Pendientes</Typography>
+                    <Typography sx={{ fontWeight: 700 }} variant="h6" color="text.primary">{horasTotales - horasEjecutadas} h</Typography>
                   </Box>
                 </Box>
               </Box>
@@ -357,7 +360,7 @@ export default function DashboardEstudiante() {
                         <Avatar sx={{ width: 30, height: 30, bgcolor: isReady ? 'success.100' : '#f1f5f9', color: isReady ? 'success.main' : 'text.disabled' }}>
                           {isReady ? <TaskAlt sx={{ fontSize: 16 }} /> : <Description sx={{ fontSize: 16 }} />}
                         </Avatar>
-                        <Typography variant="body2" fontWeight={isReady ? 600 : 500} color={isReady ? 'text.primary' : 'text.secondary'} noWrap>
+                        <Typography sx={{ fontWeight: isReady ? 600 : 500 }} variant="body2" color={isReady ? 'text.primary' : 'text.secondary'} noWrap>
                           {docLabels[docType]}
                         </Typography>
                       </Box>
@@ -404,8 +407,8 @@ export default function DashboardEstudiante() {
                         <btn.icon fontSize="small" />
                       </Avatar>
                       <Box sx={{ overflow: 'hidden' }}>
-                        <Typography variant="body2" fontWeight={700} noWrap>{btn.title}</Typography>
-                        <Typography variant="caption" color="text.secondary" display="block" noWrap>{btn.sub}</Typography>
+                        <Typography sx={{ fontWeight: 700 }} variant="body2" noWrap>{btn.title}</Typography>
+                        <Typography sx={{ display: 'block' }} variant="caption" color="text.secondary" noWrap>{btn.sub}</Typography>
                       </Box>
                     </Box>
                     <ArrowForwardIos sx={{ fontSize: 14, color: 'text.disabled', flexShrink: 0 }} />
@@ -419,7 +422,7 @@ export default function DashboardEstudiante() {
               {(!expediente.estadoHistorial || expediente.estadoHistorial.length === 0) ? (
                 <Box sx={{ p: 3, textAlign: 'center', bgcolor: '#f8fafc', borderRadius: 3, mt: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                   <InfoOutlined sx={{ color: 'text.disabled', fontSize: 40, mb: 2 }} />
-                  <Typography variant="body2" color="text.secondary" fontWeight={500}>
+                  <Typography sx={{ fontWeight: 500 }} variant="body2" color="text.secondary">
                     Aún no se han registrado cambios de estado.
                   </Typography>
                 </Box>
@@ -442,7 +445,7 @@ export default function DashboardEstudiante() {
                           </Box>
                         </Box>
                         <Box sx={{ flexGrow: 1, pt: 0.5 }}>
-                          <Typography variant="body2" fontWeight={i === 0 ? 700 : 600} color={i === 0 ? '#1a365d' : 'text.primary'}>
+                          <Typography sx={{ fontWeight: i === 0 ? 700 : 600 }} variant="body2" color={i === 0 ? '#1a365d' : 'text.primary'}>
                             {h.estadoNuevo?.replace(/_/g, ' ')}
                           </Typography>
                           <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -450,7 +453,7 @@ export default function DashboardEstudiante() {
                           </Typography>
                           {h.observacion && (
                             <Box sx={{ mt: 1.5, p: 1.5, bgcolor: '#f8fafc', borderRadius: 2, borderLeft: '3px solid #cbd5e1' }}>
-                              <Typography variant="caption" color="text.primary" fontWeight={500} sx={{ display: 'block', lineHeight: 1.5 }}>
+                              <Typography variant="caption" color="text.primary" sx={{ display: 'block', lineHeight: 1.5, fontWeight: 500 }}>
                                 {h.observacion}
                               </Typography>
                             </Box>

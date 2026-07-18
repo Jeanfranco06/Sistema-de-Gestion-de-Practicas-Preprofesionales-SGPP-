@@ -12,6 +12,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { practicaApi } from '../../../api/practicasApi';
 import { horasEstudianteApi } from '../../../api/horasApi';
+import { tieneControlHoras } from '../../../shared/utils/controlHoras';
 
 // Componente Card Premium responsivo (igual que en DashboardEstudiante)
 const DashboardCard = ({ title, action, children, sx }) => (
@@ -39,7 +40,7 @@ const DashboardCard = ({ title, action, children, sx }) => (
         gap: 2,
         mb: 3
       }}>
-        {title && <Typography variant="h6" fontWeight={700} color="text.primary" sx={{ fontSize: { xs: '1.1rem', md: '1.25rem' } }}>{title}</Typography>}
+        {title && <Typography variant="h6"  color="text.primary" sx={{ fontWeight: 700,  fontSize: { xs: '1.1rem', md: '1.25rem' } }}>{title}</Typography>}
         {action && <Box sx={{ alignSelf: { xs: 'flex-start', sm: 'center' } }}>{action}</Box>}
       </Box>
     )}
@@ -72,7 +73,7 @@ export const MiPractica = () => {
         const response = await practicaApi.getMiPractica();
         const data = response.data?.data || response.data;
         setPractica(data);
-        if (data?.idExpediente || data?.expedienteId) {
+        if ((data?.idExpediente || data?.expedienteId) && tieneControlHoras(data.estadoExpediente || data.estado)) {
           const cumplimientoRes = await horasEstudianteApi.getCumplimiento(data.idExpediente || data.expedienteId).catch(() => null);
           const cumplimiento = cumplimientoRes?.data?.data || {};
           setHorasData({
@@ -100,7 +101,7 @@ export const MiPractica = () => {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh', flexDirection: 'column', gap: 3 }}>
         <CircularProgress size={48} thickness={4} sx={{ color: '#1a365d' }} />
-        <Typography variant="body1" color="text.secondary" fontWeight={500}>Cargando información de tu práctica...</Typography>
+        <Typography sx={{ fontWeight: 500 }} variant="body1" color="text.secondary">Cargando información de tu práctica...</Typography>
       </Box>
     );
   }
@@ -130,7 +131,7 @@ export const MiPractica = () => {
               <Avatar sx={{ width: 80, height: 80, mx: 'auto', mb: 3, bgcolor: '#f1f5f9', color: '#64748b' }}>
                 <Assignment sx={{ fontSize: 40 }} />
               </Avatar>
-              <Typography variant="h4" fontWeight={800} color="#1a365d" gutterBottom sx={{ fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>
+              <Typography variant="h4"  color="#1a365d" gutterBottom sx={{ fontWeight: 800,  fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>
                 No tienes una práctica activa
               </Typography>
               <Typography variant="body1" color="text.secondary" sx={{ mb: 5, lineHeight: 1.6, fontSize: { xs: '0.875rem', sm: '1rem' } }}>
@@ -198,7 +199,7 @@ export const MiPractica = () => {
               <Typography variant="overline" sx={{ opacity: 0.8, letterSpacing: 1.5, fontWeight: 600, display: 'block', mb: 0.5 }}>
                 Control de Prácticas Preprofesionales
               </Typography>
-              <Typography variant="h3" fontWeight={800} sx={{ mt: 0, mb: 1.5, fontSize: { xs: '1.75rem', sm: '2rem', md: '2.5rem' }, wordBreak: 'break-word' }}>
+              <Typography variant="h3"  sx={{ fontWeight: 800,  mt: 0, mb: 1.5, fontSize: { xs: '1.75rem', sm: '2rem', md: '2.5rem' }, wordBreak: 'break-word' }}>
                 {practica.nombreTipoPractica || 'Mi Práctica'}
               </Typography>
               <Typography variant="subtitle1" sx={{ opacity: 0.9, display: 'flex', alignItems: { xs: 'flex-start', sm: 'center' }, flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 0.5, sm: 1.5 } }}>
@@ -247,12 +248,12 @@ export const MiPractica = () => {
                 }}
               >
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography variant="caption" fontWeight={700} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>{kpi.label}</Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 700 }}>{kpi.label}</Typography>
                   <Avatar sx={{ bgcolor: kpi.bg, color: kpi.color, width: 40, height: 40 }}>
                     <kpi.icon sx={{ fontSize: 22 }} />
                   </Avatar>
                 </Box>
-                <Typography variant="h4" fontWeight={800} color="text.primary" sx={{ fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' } }}>{kpi.val}</Typography>
+                <Typography variant="h4"  color="text.primary" sx={{ fontWeight: 800,  fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' } }}>{kpi.val}</Typography>
               </Paper>
             ))}
           </Box>
@@ -263,35 +264,35 @@ export const MiPractica = () => {
             {/* Detalles de la Práctica */}
             <DashboardCard title="Detalles de la Práctica" sx={{ gridColumn: { xs: '1 / -1', xl: '1 / 3' } }}>
               <Grid container spacing={3} sx={{ mt: 0.5 }}>
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Box sx={{ p: 2, borderRadius: 3, bgcolor: '#f8fafc', border: '1px solid', borderColor: 'divider', height: '100%' }}>
-                    <Typography variant="caption" fontWeight={700} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 0.5 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 0.5, fontWeight: 700 }}>
                       Empresa
                     </Typography>
-                    <Typography variant="h6" fontWeight={700} color="#1a365d">
+                    <Typography sx={{ fontWeight: 700 }} variant="h6" color="#1a365d">
                       {practica.razonSocialEmpresa || 'Empresa no asignada'}
                     </Typography>
                   </Box>
                 </Grid>
 
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Box sx={{ p: 2, borderRadius: 3, bgcolor: '#f8fafc', border: '1px solid', borderColor: 'divider', height: '100%' }}>
-                    <Typography variant="caption" fontWeight={700} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 0.5 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 0.5, fontWeight: 700 }}>
                       Sede
                     </Typography>
-                    <Typography variant="h6" fontWeight={700} color="#1a365d">
+                    <Typography sx={{ fontWeight: 700 }} variant="h6" color="#1a365d">
                       {practica.nombreSede || 'Sede no asignada'}
                     </Typography>
                   </Box>
                 </Grid>
 
                 {practica.fechaInicio && (
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <Box sx={{ p: 2, borderRadius: 3, bgcolor: '#f8fafc', border: '1px solid', borderColor: 'divider', height: '100%' }}>
-                      <Typography variant="caption" fontWeight={700} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 0.5 }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 0.5, fontWeight: 700 }}>
                         Fecha de Inicio
                       </Typography>
-                      <Typography variant="h6" fontWeight={700} color="#1a365d">
+                      <Typography sx={{ fontWeight: 700 }} variant="h6" color="#1a365d">
                         {new Date(practica.fechaInicio).toLocaleDateString()}
                       </Typography>
                     </Box>
@@ -299,12 +300,12 @@ export const MiPractica = () => {
                 )}
 
                 {practica.fechaFin && (
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <Box sx={{ p: 2, borderRadius: 3, bgcolor: '#f8fafc', border: '1px solid', borderColor: 'divider', height: '100%' }}>
-                      <Typography variant="caption" fontWeight={700} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 0.5 }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 0.5, fontWeight: 700 }}>
                         Fecha de Fin
                       </Typography>
-                      <Typography variant="h6" fontWeight={700} color="#1a365d">
+                      <Typography sx={{ fontWeight: 700 }} variant="h6" color="#1a365d">
                         {new Date(practica.fechaFin).toLocaleDateString()}
                       </Typography>
                     </Box>
@@ -318,7 +319,7 @@ export const MiPractica = () => {
               <Box sx={{ mt: 'auto', mb: 'auto' }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', mb: 2 }}>
                   <Box>
-                    <Typography variant="h3" fontWeight={800} color="#1a365d" sx={{ lineHeight: 1, fontSize: { xs: '2.5rem', sm: '3rem' } }}>
+                    <Typography variant="h3"  color="#1a365d" sx={{ fontWeight: 800,  lineHeight: 1, fontSize: { xs: '2.5rem', sm: '3rem' } }}>
                       {pct}%
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontWeight: 500 }}>
@@ -341,12 +342,12 @@ export const MiPractica = () => {
 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3, pt: 2.5, borderTop: '1px solid', borderColor: 'divider' }}>
                   <Box>
-                    <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ textTransform: 'uppercase' }}>Ejecutadas</Typography>
-                    <Typography variant="h6" fontWeight={700} color="text.primary">{horasEjecutadas} h</Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 600 }}>Ejecutadas</Typography>
+                    <Typography sx={{ fontWeight: 700 }} variant="h6" color="text.primary">{horasEjecutadas} h</Typography>
                   </Box>
                   <Box sx={{ textAlign: 'right' }}>
-                    <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ textTransform: 'uppercase' }}>Pendientes</Typography>
-                    <Typography variant="h6" fontWeight={700} color="text.primary">{horasTotales - horasEjecutadas} h</Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 600 }}>Pendientes</Typography>
+                    <Typography sx={{ fontWeight: 700 }} variant="h6" color="text.primary">{horasTotales - horasEjecutadas} h</Typography>
                   </Box>
                 </Box>
               </Box>
@@ -380,8 +381,8 @@ export const MiPractica = () => {
                         <btn.icon fontSize="small" />
                       </Avatar>
                       <Box sx={{ overflow: 'hidden' }}>
-                        <Typography variant="body2" fontWeight={700} noWrap>{btn.title}</Typography>
-                        <Typography variant="caption" color="text.secondary" display="block" noWrap>{btn.sub}</Typography>
+                        <Typography sx={{ fontWeight: 700 }} variant="body2" noWrap>{btn.title}</Typography>
+                        <Typography sx={{ display: 'block' }} variant="caption" color="text.secondary" noWrap>{btn.sub}</Typography>
                       </Box>
                     </Box>
                     <ArrowForwardIos sx={{ fontSize: 14, color: 'text.disabled', flexShrink: 0 }} />
@@ -395,16 +396,16 @@ export const MiPractica = () => {
               <DashboardCard title="Equipo de Tutores" sx={{ gridColumn: { xs: '1 / -1', md: '1 / 2', xl: '1 / 2' } }}>
                 <Grid container spacing={2} sx={{ mt: 0.5 }}>
                   {practica.nombreTutorAcademico && (
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <Box sx={{ p: 2.5, borderRadius: 3, bgcolor: '#f8fafc', border: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', gap: 2 }}>
                         <Avatar sx={{ bgcolor: '#1a365d', color: 'white' }}>
                           <Person />
                         </Avatar>
                         <Box>
-                          <Typography variant="caption" fontWeight={700} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, display: 'block' }}>
+                          <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', fontWeight: 700 }}>
                             Tutor Académico
                           </Typography>
-                          <Typography variant="body1" fontWeight={700} color="text.primary">
+                          <Typography sx={{ fontWeight: 700 }} variant="body1" color="text.primary">
                             {practica.nombreTutorAcademico}
                           </Typography>
                         </Box>
@@ -412,16 +413,16 @@ export const MiPractica = () => {
                     </Grid>
                   )}
                   {practica.nombreTutorEmpresa && (
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <Box sx={{ p: 2.5, borderRadius: 3, bgcolor: '#f8fafc', border: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', gap: 2 }}>
                         <Avatar sx={{ bgcolor: '#0d9488', color: 'white' }}>
                           <Business />
                         </Avatar>
                         <Box>
-                          <Typography variant="caption" fontWeight={700} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, display: 'block' }}>
+                          <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', fontWeight: 700 }}>
                             Tutor Empresarial
                           </Typography>
-                          <Typography variant="body1" fontWeight={700} color="text.primary">
+                          <Typography sx={{ fontWeight: 700 }} variant="body1" color="text.primary">
                             {practica.nombreTutorEmpresa}
                           </Typography>
                         </Box>

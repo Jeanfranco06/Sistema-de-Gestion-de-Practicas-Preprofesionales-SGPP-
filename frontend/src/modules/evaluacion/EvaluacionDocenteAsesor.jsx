@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     Box, Typography, TextField, Button, Grid, Chip, Table, TableBody, TableCell, 
     TableContainer, TableHead, TableRow,
@@ -42,7 +42,7 @@ export const EvaluacionDocenteAsesor = () => {
     const [loading, setLoading] = useState(false);
     const [expediente, setExpediente] = useState(null);
 
-    const loadCriterios = async (componente) => {
+    const loadCriterios = useCallback(async (componente) => {
         try {
             const res = await evaluacionesApi.obtenerCriteriosPorTipo(componente);
             const crit = res.data || [];
@@ -59,13 +59,13 @@ export const EvaluacionDocenteAsesor = () => {
         } catch (error) {
             console.error('Error fetching criterios:', error);
         }
-    };
+    }, []);
 
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         try {
             const expRes = await expedientesApi.getById(idExpediente).catch(() => ({ data: null }));
             const evRes = await evaluacionesApi.obtenerEvaluacionesPorPractica(idExpediente).catch(() => ({ data: [] }));
-            
+
             setExpediente(expRes.data?.data || expRes.data);
             setEvaluaciones(evRes.data || []);
             await loadCriterios('DOCENTE');
@@ -76,13 +76,13 @@ export const EvaluacionDocenteAsesor = () => {
                 text: 'Error al cargar los datos del expediente.'
             });
         }
-    };
+    }, [idExpediente, loadCriterios]);
 
     useEffect(() => {
         if (expedienteIdValido) {
             fetchData();
         }
-    }, [idExpediente, expedienteIdValido]);
+    }, [idExpediente, expedienteIdValido, fetchData]);
 
     const handleTabChange = (event, newValue) => {
         setComponenteActual(newValue);
@@ -150,14 +150,18 @@ export const EvaluacionDocenteAsesor = () => {
         }
     };
 
-    const handleDownloadDocument = async (rutaArchivo, nombreArchivo) => {
+    const handleDownloadDocument = async (documento) => {
         try {
             MySwal.fire({ title: 'Descargando...', didOpen: () => MySwal.showLoading() });
-            const res = await api.get(`/documentos/download/${rutaArchivo}`, { responseType: 'blob' });
+            const isRegistroDoc = documento.rutaArchivo?.startsWith('registro:');
+            const urlDescarga = isRegistroDoc
+                ? `/exportacion/descargar/${documento.rutaArchivo.replace('registro:', '')}`
+                : `/documentos/expediente/${documento.id}/download`;
+            const res = await api.get(urlDescarga, { responseType: 'blob' });
             const url = window.URL.createObjectURL(new Blob([res.data]));
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', nombreArchivo || rutaArchivo);
+            link.setAttribute('download', documento.nombreArchivo || 'documento.pdf');
             document.body.appendChild(link);
             link.click();
             link.parentNode.removeChild(link);
@@ -200,7 +204,7 @@ export const EvaluacionDocenteAsesor = () => {
             {expediente && (
                 <ContentCard>
                     <Grid container spacing={3}>
-                        <Grid item xs={12} md={8}>
+                        <Grid size={{ xs: 12, md: 8 }}>
                             <Typography variant="caption" color="text.secondary">Expediente del estudiante</Typography>
                             <Typography variant="h6" sx={{ mt: 0.5, mb: 1 }}>
                                 {expediente.nombreEstudiante} {expediente.apellidoEstudiante}
@@ -210,9 +214,9 @@ export const EvaluacionDocenteAsesor = () => {
                                 <Chip icon={<Business />} label={expediente.nombreEmpresa} size="small" variant="outlined" />
                             </Box>
                         </Grid>
-                        <Grid item xs={12} md={4}>
+                        <Grid size={{ xs: 12, md: 4 }}>
                             <Typography variant="caption" color="text.secondary">Promedio general</Typography>
-                            <Typography variant="h4" fontWeight={600} sx={{ color: progresoColor }}>
+                            <Typography variant="h4" sx={{ color: progresoColor, fontWeight: 600 }}>
                                 {promedioFinal}
                             </Typography>
                             <Box className="wow-progress-bg" sx={{ mt: 1 }}>
@@ -228,11 +232,11 @@ export const EvaluacionDocenteAsesor = () => {
                             </Typography>
                             <Grid container spacing={1}>
                                 {expediente.documentos.map((doc) => (
-                                    <Grid item xs={12} sm={6} md={4} key={doc.id}>
+                                    <Grid size={{ xs: 12, sm: 6, md: 4 }} key={doc.id}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.5 }}>
                                             <Description fontSize="small" color="action" />
                                             <Typography variant="body2" noWrap sx={{ flex: 1 }}>{doc.tipoDocumento}</Typography>
-                                            <IconButton size="small" onClick={() => handleDownloadDocument(doc.rutaArchivo, doc.nombreArchivo)}>
+                                            <IconButton size="small" onClick={() => handleDownloadDocument(doc)}>
                                                 <Download fontSize="small" />
                                             </IconButton>
                                         </Box>
@@ -253,10 +257,10 @@ export const EvaluacionDocenteAsesor = () => {
             <ContentCard>
                 <Grid container spacing={2}>
                     {criterios.map((criterio, index) => (
-                        <Grid item xs={12} md={6} key={criterio.id}>
+                        <Grid size={{ xs: 12, md: 6 }} key={criterio.id}>
                             <Box sx={{ p: 2, border: '1px solid', borderColor: 'primary.light', borderRadius: 1.5, height: '100%', bgcolor: 'info.light' }}>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                                    <Typography variant="body2" fontWeight={600}>{criterio.nombre}</Typography>
+                                    <Typography sx={{ fontWeight: 600 }} variant="body2">{criterio.nombre}</Typography>
                                     <Chip label={`Peso: ${criterio.puntajeMaximo}%`} size="small" variant="outlined" />
                                 </Box>
                                 <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block' }}>
@@ -267,7 +271,7 @@ export const EvaluacionDocenteAsesor = () => {
                                     type="number"
                                     fullWidth
                                     size="small"
-                                    InputProps={{ inputProps: { min: 0, max: 20 } }}
+                                    slotProps={{ htmlInput: { min: 0, max: 20 } }}
                                     value={evaluacion.detalles[index]?.puntajeObtenido || ''}
                                     onChange={(e) => handlePuntajeChange(index, e.target.value)}
                                     sx={{ mb: 1.5 }}
@@ -314,7 +318,7 @@ export const EvaluacionDocenteAsesor = () => {
                                         <TableCell>{ev.tipoEvaluador}</TableCell>
                                         <TableCell>
                                             {ev.detalles?.map((d) => (
-                                                <Typography key={d.idCriterio} variant="caption" display="block">
+                                                <Typography sx={{ display: 'block' }} key={d.idCriterio} variant="caption">
                                                     {d.nombreCriterio}: {d.puntajeObtenido}/20
                                                 </Typography>
                                             ))}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box, Typography, Paper, List, ListItem, ListItemButton, ListItemText, Divider,
   Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions,
@@ -38,7 +38,7 @@ export const RevisionDocumental = () => {
   const [historyDialog, setHistoryDialog] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const fetchExpediente = async () => {
+  const fetchExpediente = useCallback(async () => {
     try {
       setLoading(true);
       const res = await expedientesApi.getById(id);
@@ -57,13 +57,13 @@ export const RevisionDocumental = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, selectedDoc]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (id) {
         fetchExpediente();
     }
-  }, [id]);
+  }, [id, fetchExpediente]);
 
   const handleOpenReview = (doc) => {
     const opciones = OPCIONES_REVISION[doc.estado || 'PENDIENTE'] || [];
@@ -86,15 +86,19 @@ export const RevisionDocumental = () => {
     }
   };
 
-  const handleDownload = async (fileName, originalName) => {
-    if (!fileName) return;
+  const handleDownload = async (doc) => {
+    if (!doc?.id) return;
     try {
-        MySwal.fire({ title: 'Descargando...', didOpen: () => MySwal.showLoading() });
-        const res = await api.get(`/documentos/download/${fileName}`, { responseType: 'blob' });
-        const url = window.URL.createObjectURL(new Blob([res.data]));
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', originalName || fileName);
+      MySwal.fire({ title: 'Descargando...', didOpen: () => MySwal.showLoading() });
+      const isRegistroDoc = doc.rutaArchivo?.startsWith('registro:');
+      const urlDescarga = isRegistroDoc
+        ? `/exportacion/descargar/${doc.rutaArchivo.replace('registro:', '')}`
+        : `/documentos/expediente/${doc.id}/download`;
+      const res = await api.get(urlDescarga, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', doc.nombreArchivo || 'documento.pdf');
         document.body.appendChild(link);
         link.click();
         link.parentNode.removeChild(link);
@@ -119,7 +123,7 @@ export const RevisionDocumental = () => {
   return (
     <Box>
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h5" fontWeight="bold" color="primary" sx={{ mb: 0.75 }}>
+        <Typography variant="h5" color="primary" sx={{ mb: 0.75, fontWeight: 'bold' }}>
           Revisión Documental
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 720 }}>
@@ -134,7 +138,7 @@ export const RevisionDocumental = () => {
         <Box sx={{ width: { xs: '100%', md: '34%' }, flexShrink: 0 }}>
           <Paper sx={{ height: '100%', borderRadius: 3, overflow: 'hidden' }}>
             <Box sx={{ p: 2, bgcolor: 'primary.main', color: 'white', borderRadius: '4px 4px 0 0' }}>
-              <Typography variant="subtitle1" fontWeight="bold">Documentos del Expediente</Typography>
+              <Typography sx={{ fontWeight: 'bold' }} variant="subtitle1">Documentos del Expediente</Typography>
             </Box>
             <List disablePadding>
               {documentos.map((doc, index) => (
@@ -190,7 +194,7 @@ export const RevisionDocumental = () => {
                   <Typography variant="caption" color="text.secondary">Archivo Actual</Typography>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
                     <Typography variant="body1" sx={{ wordBreak: 'break-word' }}>{selectedDoc.nombreArchivo}</Typography>
-                    <IconButton size="small" color="primary" title="Descargar documento" onClick={() => handleDownload(selectedDoc.rutaArchivo, selectedDoc.nombreArchivo)}>
+                    <IconButton size="small" color="primary" title="Descargar documento" onClick={() => handleDownload(selectedDoc)}>
                       <Download />
                     </IconButton>
                   </Box>

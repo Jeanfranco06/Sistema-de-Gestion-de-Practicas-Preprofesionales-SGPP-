@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Box, Typography, Button, TextField, Stack, Grid, Chip, CircularProgress,
   Alert, Table, TableBody, TableCell, TableHead, TableRow, Paper, MenuItem, FormControl, InputLabel, Select,
@@ -8,14 +8,13 @@ import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import { expedientesApi } from '../../../api/expedientesApi';
 import { horasEstudianteApi } from '../../../api/horasApi';
-import { useAuth } from '../../../auth/AuthContext';
 import { ModulePageShell, ModulePageHeader } from '../../../shared/components/module/ModulePageShell';
 import ContentCard from '../../../shared/components/ContentCard';
+import { tieneControlHoras } from '../../../shared/utils/controlHoras';
 
 const MySwal = withReactContent(Swal);
 
 export const RegistroHoras = () => {
-  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [expediente, setExpediente] = useState(null);
   const [control, setControl] = useState(null);
@@ -31,24 +30,7 @@ export const RegistroHoras = () => {
     observaciones: '',
   });
 
-  const fetchExpediente = async () => {
-    try {
-      setLoading(true);
-      const res = await expedientesApi.getMisExpedientes();
-      const list = res.data?.data || [];
-      const exp = list[0] || null;
-      setExpediente(exp);
-      if (exp) {
-        await fetchHoras(exp.id);
-      }
-    } catch (err) {
-      console.error('Error fetching expediente:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchHoras = async (idExpediente) => {
+  const fetchHoras = useCallback(async (idExpediente) => {
     try {
       const [controlRes, registrosRes, cumplimientoRes] = await Promise.all([
         horasEstudianteApi.getControl(idExpediente).catch(() => null),
@@ -61,12 +43,33 @@ export const RegistroHoras = () => {
     } catch (err) {
       console.error('Error fetching horas:', err);
     }
-  };
+  }, []);
+
+  const fetchExpediente = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await expedientesApi.getMisExpedientes();
+      const list = res.data?.data || [];
+      const exp = list[0] || null;
+      setExpediente(exp);
+      if (exp && tieneControlHoras(exp.estado)) {
+        await fetchHoras(exp.id);
+      } else {
+        setControl(null);
+        setRegistros([]);
+        setCumplimiento(null);
+      }
+    } catch (err) {
+      console.error('Error fetching expediente:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchHoras]);
 
   useEffect(() => {
     const timeout = setTimeout(() => fetchExpediente(), 0);
     return () => clearTimeout(timeout);
-  }, [user]);
+  }, [fetchExpediente]);
 
   const calcularHoras = (inicio, fin) => {
     if (!inicio || !fin) return '';
@@ -100,7 +103,7 @@ export const RegistroHoras = () => {
         ...form,
         horas: Number(form.horas),
       };
-      await horasEstudianteApi.registrar(expediente.id, user.id, payload);
+      await horasEstudianteApi.registrar(expediente.id, payload);
       setForm({ fecha: '', horaInicio: '', horaFin: '', horas: '', descripcionActividad: '', tipoRegistro: 'PRESENCIAL', observaciones: '' });
       await fetchHoras(expediente.id);
       MySwal.fire({ icon: 'success', title: 'Horas registradas', timer: 1500, showConfirmButton: false });
@@ -144,13 +147,13 @@ export const RegistroHoras = () => {
       />
 
       <Grid container spacing={3}>
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <ContentCard>
-            <Typography variant="subtitle1" fontWeight={700} gutterBottom>Resumen</Typography>
+            <Typography sx={{ fontWeight: 700 }} variant="subtitle1" gutterBottom>Resumen</Typography>
             <Stack spacing={2}>
               <Box>
                 <Typography variant="caption" color="text.secondary">Horas validadas</Typography>
-                <Typography variant="h4" fontWeight={700} color="primary.main">
+                <Typography sx={{ fontWeight: 700 }} variant="h4" color="primary.main">
                   {horasValidadas} <Typography component="span" variant="body2" color="text.secondary">/ {horasRequeridas}</Typography>
                 </Typography>
               </Box>
@@ -160,7 +163,7 @@ export const RegistroHoras = () => {
                   <Box sx={{ flexGrow: 1, bgcolor: 'grey.200', borderRadius: 1, height: 8 }}>
                     <Box sx={{ width: `${progreso}%`, bgcolor: 'primary.main', height: '100%', borderRadius: 1 }} />
                   </Box>
-                  <Typography variant="body2" fontWeight={600}>{progreso}%</Typography>
+                  <Typography sx={{ fontWeight: 600 }} variant="body2">{progreso}%</Typography>
                 </Box>
               </Box>
               <Chip
@@ -178,9 +181,9 @@ export const RegistroHoras = () => {
           </ContentCard>
         </Grid>
 
-        <Grid item xs={12} md={8}>
+        <Grid size={{ xs: 12, md: 8 }}>
           <ContentCard>
-            <Typography variant="subtitle1" fontWeight={700} gutterBottom>Nuevo registro</Typography>
+            <Typography sx={{ fontWeight: 700 }} variant="subtitle1" gutterBottom>Nuevo registro</Typography>
             {!control && (
               <Alert severity="info" sx={{ mb: 2 }}>
                 Debe iniciar el control de horas antes de registrar actividades.
@@ -188,7 +191,7 @@ export const RegistroHoras = () => {
             )}
             <Box component="form" onSubmit={handleSubmit}>
               <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField
                     label="Fecha"
                     type="date"
@@ -200,7 +203,7 @@ export const RegistroHoras = () => {
                     required
                   />
                 </Grid>
-                <Grid item xs={12} sm={3}>
+                <Grid size={{ xs: 12, sm: 3 }}>
                   <TextField
                     label="Hora inicio"
                     type="time"
@@ -211,7 +214,7 @@ export const RegistroHoras = () => {
                     onChange={(e) => handleChangeTime('horaInicio', e.target.value)}
                   />
                 </Grid>
-                <Grid item xs={12} sm={3}>
+                <Grid size={{ xs: 12, sm: 3 }}>
                   <TextField
                     label="Hora fin"
                     type="time"
@@ -222,7 +225,7 @@ export const RegistroHoras = () => {
                     onChange={(e) => handleChangeTime('horaFin', e.target.value)}
                   />
                 </Grid>
-                <Grid item xs={12} sm={4}>
+                <Grid size={{ xs: 12, sm: 4 }}>
                   <TextField
                     label="Horas"
                     type="number"
@@ -231,10 +234,10 @@ export const RegistroHoras = () => {
                     value={form.horas}
                     onChange={(e) => setForm({ ...form, horas: e.target.value })}
                     required
-                    inputProps={{ min: 1, max: 24 }}
+                    slotProps={{ htmlInput: { min: 1, max: 24 } }}
                   />
                 </Grid>
-                <Grid item xs={12} sm={8}>
+                <Grid size={{ xs: 12, sm: 8 }}>
                   <FormControl fullWidth size="small" required>
                     <InputLabel>Tipo de registro</InputLabel>
                     <Select
@@ -249,7 +252,7 @@ export const RegistroHoras = () => {
                     </Select>
                   </FormControl>
                 </Grid>
-                <Grid item xs={12}>
+                <Grid size={{ xs: 12 }}>
                   <TextField
                     label="Descripción de la actividad"
                     fullWidth
@@ -261,7 +264,7 @@ export const RegistroHoras = () => {
                     required
                   />
                 </Grid>
-                <Grid item xs={12}>
+                <Grid size={{ xs: 12 }}>
                   <TextField
                     label="Observaciones"
                     fullWidth
@@ -282,9 +285,9 @@ export const RegistroHoras = () => {
           </ContentCard>
         </Grid>
 
-        <Grid item xs={12}>
+        <Grid size={{ xs: 12 }}>
           <ContentCard>
-            <Typography variant="subtitle1" fontWeight={700} gutterBottom>Historial de registros</Typography>
+            <Typography sx={{ fontWeight: 700 }} variant="subtitle1" gutterBottom>Historial de registros</Typography>
             {registros.length === 0 ? (
               <Alert severity="info">No hay registros de horas aún.</Alert>
             ) : (

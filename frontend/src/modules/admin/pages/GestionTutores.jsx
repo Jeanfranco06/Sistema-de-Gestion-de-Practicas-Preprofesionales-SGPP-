@@ -231,7 +231,7 @@ export const GestionTutores = () => {
                             <SupervisorAccount />
                         </Avatar>
                         <Box>
-                            <Typography variant="h5" fontWeight={700}>Gestión de Tutores Externos</Typography>
+                            <Typography sx={{ fontWeight: 700 }} variant="h5">Gestión de Tutores Externos</Typography>
                             <Typography variant="body2" sx={{ opacity: 0.85, mt: 0.5 }}>
                                 Registro y control de tutores designados por las entidades receptoras.
                             </Typography>
@@ -252,7 +252,7 @@ export const GestionTutores = () => {
                             <Box key={stat.label} sx={{ bgcolor: colors.bg, borderRadius: 2.5, p: 2.5, display: 'flex', alignItems: 'center', gap: 2, border: `1px solid ${colors.icon}20` }}>
                                 <Avatar sx={{ bgcolor: colors.icon, width: 40, height: 40 }}>{stat.icon}</Avatar>
                                 <Box>
-                                    <Typography variant="h5" fontWeight={700} sx={{ color: colors.text, lineHeight: 1.2 }}>{stat.value}</Typography>
+                                    <Typography variant="h5" sx={{ color: colors.text, lineHeight: 1.2, fontWeight: 700 }}>{stat.value}</Typography>
                                     <Typography variant="body2" sx={{ color: colors.text, opacity: 0.8 }}>{stat.label}</Typography>
                                 </Box>
                             </Box>
@@ -325,8 +325,8 @@ export const GestionTutores = () => {
                                                         <Box sx={{ position: 'absolute', bottom: -1, right: -1, width: 10, height: 10, borderRadius: '50%', bgcolor: activo ? '#22c55e' : '#ef4444', border: '2px solid white' }} />
                                                     </Box>
                                                     <Box>
-                                                        <Typography variant="body2" fontWeight={600}>{getNombreUsuario(tutor)}</Typography>
-                                                        <Typography variant="caption" color="textSecondary">@{tutor.username || '—'}</Typography>
+                                                        <Typography sx={{ fontWeight: 600 }} variant="body2">{getNombreUsuario(tutor)}</Typography>
+                                                        <Typography variant="caption" color="text.secondary">@{tutor.username || '—'}</Typography>
                                                     </Box>
                                                 </Box>
                                             </TableCell>
@@ -344,12 +344,12 @@ export const GestionTutores = () => {
                                             <TableCell>
                                                 <Box>
                                                     <Typography variant="body2">{tutor.cargo || '—'}</Typography>
-                                                    {tutor.area && <Typography variant="caption" color="textSecondary">{tutor.area}</Typography>}
+                                                    {tutor.area && <Typography variant="caption" color="text.secondary">{tutor.area}</Typography>}
                                                 </Box>
                                             </TableCell>
                                             <TableCell>
                                                 <Typography variant="body2">{getEmailUsuario(tutor)}</Typography>
-                                                {tutor.telefono && <Typography variant="caption" color="textSecondary">{tutor.telefono}</Typography>}
+                                                {tutor.telefono && <Typography variant="caption" color="text.secondary">{tutor.telefono}</Typography>}
                                             </TableCell>
                                             <TableCell>
                                                 <Chip label={estado} color={activo ? 'success' : 'error'} size="small" variant="outlined" />
@@ -380,8 +380,8 @@ export const GestionTutores = () => {
                                     <TableRow>
                                         <TableCell colSpan={7} align="center" sx={{ py: 5 }}>
                                             <SupervisorAccount sx={{ fontSize: 48, color: '#94a3b8', mb: 1 }} />
-                                            <Typography variant="h6" color="textSecondary" fontWeight={600}>No se encontraron tutores</Typography>
-                                            <Typography variant="body2" color="textSecondary">Ajusta los filtros o crea un nuevo tutor.</Typography>
+                                            <Typography sx={{ fontWeight: 600 }} variant="h6" color="text.secondary">No se encontraron tutores</Typography>
+                                            <Typography variant="body2" color="text.secondary">Ajusta los filtros o crea un nuevo tutor.</Typography>
                                         </TableCell>
                                     </TableRow>
                                 )}
@@ -493,26 +493,26 @@ export const GestionTutores = () => {
                         <Box sx={{ p: 3 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
                                 <IconButton onClick={() => setDrawerOpen(false)}><ArrowBack /></IconButton>
-                                <Typography variant="h5" fontWeight="bold">Detalle del Tutor</Typography>
+                                <Typography sx={{ fontWeight: 'bold' }} variant="h5">Detalle del Tutor</Typography>
                             </Box>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5, mb: 3, p: 2.5, bgcolor: '#f8fafc', borderRadius: 3 }}>
                                 <Avatar sx={{ width: 56, height: 56, bgcolor: getEstado(selectedTutor) === 'ACTIVO' ? '#3b82f6' : '#94a3b8', fontSize: 22 }}>
                                     {getInitials(selectedTutor.nombres, selectedTutor.apellidoPaterno)}
                                 </Avatar>
                                 <Box>
-                                    <Typography variant="h6" fontWeight="bold">{getNombreUsuario(selectedTutor)}</Typography>
-                                    <Typography variant="body2" color="textSecondary">{selectedTutor.username || ''}</Typography>
+                                    <Typography sx={{ fontWeight: 'bold' }} variant="h6">{getNombreUsuario(selectedTutor)}</Typography>
+                                    <Typography variant="body2" color="text.secondary">{selectedTutor.username || ''}</Typography>
                                     <Chip label={getEstado(selectedTutor)} size="small"
                                         color={getEstado(selectedTutor) === 'ACTIVO' ? 'success' : 'error'}
                                         sx={{ mt: 0.5 }} />
                                 </Box>
                             </Box>
                             <Divider sx={{ my: 2 }} />
-                            <Typography variant="subtitle1" fontWeight="bold" gutterBottom>Información de Contacto</Typography>
+                            <Typography sx={{ fontWeight: 'bold' }} variant="subtitle1" gutterBottom>Información de Contacto</Typography>
                             <Typography variant="body2" sx={{ mb: 0.5 }}><strong>Correo:</strong> {getEmailUsuario(selectedTutor)}</Typography>
                             <Typography variant="body2" sx={{ mb: 0.5 }}><strong>Teléfono:</strong> {selectedTutor.telefono || '—'}</Typography>
                             <Divider sx={{ my: 2 }} />
-                            <Typography variant="subtitle1" fontWeight="bold" gutterBottom>Empresa y Cargo</Typography>
+                            <Typography sx={{ fontWeight: 'bold' }} variant="subtitle1" gutterBottom>Empresa y Cargo</Typography>
                             <Box sx={{ bgcolor: '#f8fafc', borderRadius: 2, p: 2.5, mb: 2, border: '1px solid', borderColor: 'divider' }}>
                                 <Typography variant="body2" sx={{ mb: 0.5 }}><strong>Empresa:</strong> {selectedTutor.empresaNombre || selectedTutor.razonSocialEmpresa || '—'}</Typography>
                                 <Typography variant="body2" sx={{ mb: 0.5 }}><strong>Sede:</strong> {selectedTutor.nombreSede || '—'}</Typography>
@@ -520,11 +520,11 @@ export const GestionTutores = () => {
                                 <Typography variant="body2"><strong>Área:</strong> {selectedTutor.area || '—'}</Typography>
                             </Box>
                             <Divider sx={{ my: 2 }} />
-                            <Typography variant="subtitle1" fontWeight="bold" gutterBottom>Auditoría</Typography>
-                            <Typography variant="caption" display="block" color="textSecondary">
+                            <Typography sx={{ fontWeight: 'bold' }} variant="subtitle1" gutterBottom>Auditoría</Typography>
+                            <Typography sx={{ display: 'block' }} variant="caption" color="text.secondary">
                                 <strong>Registro creado:</strong> {selectedTutor.fechaCreacion ? new Date(selectedTutor.fechaCreacion).toLocaleString() : '—'}
                             </Typography>
-                            <Typography variant="caption" display="block" color="textSecondary">
+                            <Typography sx={{ display: 'block' }} variant="caption" color="text.secondary">
                                 <strong>Última actualización:</strong> {selectedTutor.fechaActualizacion ? new Date(selectedTutor.fechaActualizacion).toLocaleString() : '—'}
                             </Typography>
                             <Box sx={{ mt: 3, display: 'flex', gap: 2, flexDirection: 'column' }}>

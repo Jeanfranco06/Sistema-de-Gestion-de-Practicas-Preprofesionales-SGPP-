@@ -17,6 +17,7 @@ import {
   ResponsiveContainer, PieChart, Pie, Cell,
 } from 'recharts';
 import { useAuth } from '../../../auth/AuthContext';
+import { hasAnyRole } from '../../../shared/utils/roleRoutes';
 import { expedientesApi } from '../../../api/expedientesApi';
 import { coordinacionApi } from '../../../api/coordinacionApi';
 import Swal from 'sweetalert2';
@@ -53,6 +54,7 @@ const CHART_COLORS = ['#2563eb', '#0d9488', '#eab308', '#ef4444', '#6366f1', '#e
 
 export const DashboardCoordinacion = () => {
   const { user } = useAuth();
+  const puedeEmitirCarta = hasAnyRole(user?.roles, ['ADMIN_SISTEMA', 'COORDINADOR', 'DIRECTOR']);
   const navigate = useNavigate();
   const [expedientes, setExpedientes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -172,16 +174,16 @@ export const DashboardCoordinacion = () => {
         <Alert severity="info" sx={{ mb: 3 }}>No hay expedientes registrados en el sistema.</Alert>
       )}
 
-      <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
+      <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
         Indicadores Estadísticos
       </Typography>
       <StatStrip items={stats} />
 
       <Grid container spacing={3}>
-        <Grid item xs={12} lg={8}>
+        <Grid size={{ xs: 12, lg: 8 }}>
           <ContentCard accent>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography variant="subtitle1" fontWeight={600}>Resumen de Cerrados</Typography>
+              <Typography sx={{ fontWeight: 600 }} variant="subtitle1">Resumen de Cerrados</Typography>
               <Chip label={`${avancePct}% cerrados`} size="small" color="primary" variant="outlined" />
             </Box>
             <LinearProgress variant="determinate" value={avancePct} sx={{ height: 10, borderRadius: 999, mb: 2 }} />
@@ -190,8 +192,8 @@ export const DashboardCoordinacion = () => {
             </Typography>
 
             <Grid container spacing={2.5} sx={{ mt: 2 }}>
-              <Grid item xs={12} md={6}>
-                <Typography variant="caption" color="text.secondary" display="block" textAlign="center" sx={{ mb: 1 }}>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mb: 1 }}>
                   Expedientes por tipo de práctica
                 </Typography>
                 {tiposChart.length > 0 ? (
@@ -208,8 +210,8 @@ export const DashboardCoordinacion = () => {
                   <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>Sin datos</Typography>
                 )}
               </Grid>
-              <Grid item xs={12} md={6}>
-                <Typography variant="caption" color="text.secondary" display="block" textAlign="center" sx={{ mb: 1 }}>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mb: 1 }}>
                   Distribución por estado
                 </Typography>
                 {estadosChart.length > 0 ? (
@@ -234,7 +236,7 @@ export const DashboardCoordinacion = () => {
           </ContentCard>
         </Grid>
 
-        <Grid item xs={12} lg={4}>
+        <Grid size={{ xs: 12, lg: 4 }}>
           <ContentCard accent sx={{ mb: 3 }}>
             <Typography variant="subtitle2" color="primary.dark" sx={{ mb: 2 }}>Accesos rápidos</Typography>
             <Stack spacing={1}>
@@ -285,7 +287,7 @@ export const DashboardCoordinacion = () => {
               <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.8, borderBottom: i < alertas.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
                 <WarningAmber sx={{ fontSize: 18, color: a.severity === 'error' ? '#ef4444' : '#eab308' }} />
                 <Box sx={{ flex: 1 }}>
-                  <Typography variant="body2" fontWeight={500}>{a.exp}</Typography>
+                  <Typography sx={{ fontWeight: 500 }} variant="body2">{a.exp}</Typography>
                   <Typography variant="caption" color="text.secondary">{a.estudiante}</Typography>
                 </Box>
                 <Chip label={a.tipo} size="small" color={a.severity === 'error' ? 'error' : 'warning'} />
@@ -298,7 +300,7 @@ export const DashboardCoordinacion = () => {
       </Grid>
 
       <ContentCard accent>
-        <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>Listado de expedientes</Typography>
+        <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>Listado de expedientes</Typography>
 
         <Box sx={{ p: 2, mb: 3, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap', bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
           <TextField
@@ -348,23 +350,21 @@ export const DashboardCoordinacion = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {filtered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map(e => {
-                console.log('Renderizando expediente:', e.id, 'Estado:', e.estado);
-                return (
+              {filtered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map(e => (
                 <TableRow key={e.id} hover>
                   <TableCell sx={{ fontFamily: 'monospace', fontSize: 12 }}>{e.codigoExpediente}</TableCell>
                   <TableCell>
-                    <Typography variant="body2" fontWeight={500}>{e.nombreEstudiante} {e.apellidoEstudiante}</Typography>
+                    <Typography sx={{ fontWeight: 500 }} variant="body2">{e.nombreEstudiante} {e.apellidoEstudiante}</Typography>
                   </TableCell>
                   <TableCell><Chip label={e.nombreTipoPractica} size="small" color="primary" variant="outlined" /></TableCell>
                   <TableCell><StatusChip status={e.estado} label={estadoLabel(e.estado)} /></TableCell>
                   <TableCell>
-                    <Typography variant="caption" display="block">{e.nombreAsesor || '—'}</Typography>
+                    <Typography sx={{ display: 'block' }} variant="caption">{e.nombreAsesor || '—'}</Typography>
                     <Typography variant="caption" color="text.secondary">{e.nombreEmpresa || ''}</Typography>
                   </TableCell>
                   <TableCell align="center">
                     <Stack direction="row" spacing={0.5} justifyContent="center">
-                      {e.estado === 'VALIDADO_SECRETARIA' && (
+                       {puedeEmitirCarta && e.estado === 'VALIDADO_SECRETARIA' && (
                         <Tooltip title="Emitir y firmar Carta de Presentación">
                           <Button size="small" variant="contained" color="success"
                             onClick={() => handleEmitirCarta(e.id)}
@@ -381,8 +381,7 @@ export const DashboardCoordinacion = () => {
                     </Stack>
                   </TableCell>
                 </TableRow>
-                );
-              })}
+               ))}
               {filtered.length === 0 && (
                 <TableRow><TableCell colSpan={6} align="center" sx={{ py: 4, color: 'text.secondary' }}>No se encontraron expedientes</TableCell></TableRow>
               )}

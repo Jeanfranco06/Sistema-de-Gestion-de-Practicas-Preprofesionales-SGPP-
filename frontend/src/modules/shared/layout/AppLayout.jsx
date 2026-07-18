@@ -315,14 +315,14 @@ export default function AppLayout() {
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, overflow: 'hidden' }}>
           <Box sx={{ width: 36, height: 36, bgcolor: 'primary.main', borderRadius: 1.5, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: '2px solid', borderColor: 'secondary.main' }}>
-            <Typography variant="subtitle2" fontWeight={800} color="primary.contrastText">SG</Typography>
+            <Typography sx={{ fontWeight: 800 }} variant="subtitle2" color="primary.contrastText">SG</Typography>
           </Box>
           {!collapsed && (
             <Box>
-              <Typography variant="subtitle2" fontWeight={700} color="text.primary" noWrap sx={{ lineHeight: 1.2 }}>
+              <Typography variant="subtitle2" color="text.primary" noWrap sx={{ lineHeight: 1.2, fontWeight: 700 }}>
                 SGPP UNT
               </Typography>
-              <Typography variant="caption" color="text.secondary" fontWeight={500} noWrap>
+              <Typography sx={{ fontWeight: 500 }} variant="caption" color="text.secondary" noWrap>
                 Ing. Industrial
               </Typography>
             </Box>
@@ -370,7 +370,7 @@ export default function AppLayout() {
           </Avatar>
           {!collapsed && (
             <Box sx={{ overflow: 'hidden', flexGrow: 1 }}>
-              <Typography variant="body2" fontWeight={600} color="text.primary" noWrap>
+              <Typography sx={{ fontWeight: 600 }} variant="body2" color="text.primary" noWrap>
                 {user?.nombres?.split(' ')[0]} {user?.apellidoPaterno}
               </Typography>
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.2, textTransform: 'capitalize' }} noWrap>
@@ -391,17 +391,17 @@ export default function AppLayout() {
         slotProps={{ paper: { sx: { borderRadius: 2, mb: 1, ml: 1, minWidth: 200, boxShadow: '0 4px 20px rgba(0,0,0,0.08)', border: '1px solid', borderColor: 'divider' } } }}
       >
         <Box sx={{ px: 2, py: 1.5, outline: 'none' }}>
-          <Typography variant="body2" fontWeight={700} color="text.primary">
+          <Typography sx={{ fontWeight: 700 }} variant="body2" color="text.primary">
             {user?.nombres} {user?.apellidoPaterno}
           </Typography>
           <Typography variant="caption" color="text.secondary">{user?.email}</Typography>
         </Box>
         <Divider />
         <MenuItem onClick={() => { setAnchorEl(null); navigate(getPerfilRoute(user?.roles)); }} sx={{ py: 1.5 }}>
-          <AccountCircle sx={{ mr: 1.5, fontSize: 20, color: 'text.secondary' }} /> <Typography variant="body2" fontWeight={500}>Mi perfil</Typography>
+          <AccountCircle sx={{ mr: 1.5, fontSize: 20, color: 'text.secondary' }} /> <Typography sx={{ fontWeight: 500 }} variant="body2">Mi perfil</Typography>
         </MenuItem>
         <MenuItem onClick={handleLogout} sx={{ py: 1.5, color: 'error.main' }}>
-          <Logout sx={{ mr: 1.5, fontSize: 20 }} /> <Typography variant="body2" fontWeight={500}>Cerrar sesión</Typography>
+          <Logout sx={{ mr: 1.5, fontSize: 20 }} /> <Typography sx={{ fontWeight: 500 }} variant="body2">Cerrar sesión</Typography>
         </MenuItem>
       </Menu>
 
@@ -438,7 +438,7 @@ export default function AppLayout() {
             <MenuIcon />
           </IconButton>
 
-          <Typography variant="subtitle1" fontWeight={700} color="secondary.main" noWrap sx={{ flexGrow: 1 }}>
+          <Typography variant="subtitle1" color="secondary.main" noWrap sx={{ flexGrow: 1, fontWeight: 700 }}>
             {navGroups.flatMap(g => g.items).find((n) => n.path === location.pathname)?.label || 'Sistema de Gestión'}
           </Typography>
 

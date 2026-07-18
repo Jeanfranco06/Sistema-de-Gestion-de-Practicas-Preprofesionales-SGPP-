@@ -121,7 +121,7 @@ export const ListaPracticantes = () => {
       {filteredPracticantes.length === 0 ? (
         <ContentCard sx={{ textAlign: 'center', py: 6 }}>
           <Groups sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-          <Typography variant="h6" gutterBottom fontWeight="bold">
+          <Typography sx={{ fontWeight: 'bold' }} variant="h6" gutterBottom>
             {search || filtroEstado !== 'TODOS' || filtroTipo !== 'TODOS'
               ? 'No se encontraron practicantes'
               : 'No hay practicantes asignados'}
@@ -139,7 +139,7 @@ export const ListaPracticantes = () => {
         </ContentCard>
       ) : (
         <ContentCard accent>
-          <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>Filtros de búsqueda</Typography>
+          <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>Filtros de búsqueda</Typography>
 
           <Box sx={{ p: 2, mb: 3, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap', bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
             <TextField
@@ -214,7 +214,7 @@ export const ListaPracticantes = () => {
                 {filteredPracticantes.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((p) => (
                   <TableRow key={p.id} hover>
                     <TableCell>
-                      <Typography variant="body2" fontWeight={500}>
+                      <Typography sx={{ fontWeight: 500 }} variant="body2">
                         {p.nombreEstudiante} {p.apellidoEstudiante}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">

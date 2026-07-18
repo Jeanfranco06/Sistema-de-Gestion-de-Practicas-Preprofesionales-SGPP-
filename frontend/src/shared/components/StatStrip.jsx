@@ -59,11 +59,7 @@ export default function StatStrip({ items = [], sx }) {
               >
                 {item.label}
               </Typography>
-              <Typography
-                variant="subtitle1"
-                fontWeight={600}
-                sx={{ mt: 0.25, textTransform: 'capitalize', color: accent.main }}
-              >
+              <Typography variant="subtitle1" sx={{ mt: 0.25, textTransform: 'capitalize', color: accent.main, fontWeight: 600 }}>
                 {item.value}
               </Typography>
             </Box>

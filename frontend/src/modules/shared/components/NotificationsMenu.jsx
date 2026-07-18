@@ -192,7 +192,7 @@ export const NotificationsMenu = () => {
         slotProps={{ paper: { sx: { width: 380, maxHeight: 550, borderRadius: 2, mt: 1 } } }}
       >
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 2, py: 1.5 }}>
-          <Typography variant="subtitle1" fontWeight="bold">Notificaciones</Typography>
+          <Typography sx={{ fontWeight: 'bold' }} variant="subtitle1">Notificaciones</Typography>
           {unreadCount > 0 && (
             <Button size="small" onClick={handleMarkAllAsRead}>
               Marcar todo leído
@@ -225,7 +225,7 @@ export const NotificationsMenu = () => {
                       <ListItemText
                         primary={
                           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <Typography variant="body2" fontWeight={!notif.leida ? 'bold' : 'normal'}>
+                            <Typography sx={{ fontWeight: !notif.leida ? 'bold' : 'normal' }} variant="body2">
                               {notif.titulo}
                             </Typography>
                             <Tooltip title="Eliminar">

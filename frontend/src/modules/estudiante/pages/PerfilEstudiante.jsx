@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -58,16 +58,12 @@ export const PerfilEstudiante = () => {
     profesional: { creditos: 180, semestre: 9 }
   };
 
-  useEffect(() => {
-    cargarPerfilEstudiante();
-  }, []);
-
-  const cargarPerfilEstudiante = async () => {
+  const cargarPerfilEstudiante = useCallback(async () => {
     try {
       setLoading(true);
       const response = await api.get('/estudiante/perfil-academico');
       const estudianteData = response.data.data;
-      
+
       if (estudianteData) {
         setFormData({
           semestreActual: estudianteData.semestreActual || 6,
@@ -98,7 +94,11 @@ export const PerfilEstudiante = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    cargarPerfilEstudiante();
+  }, [cargarPerfilEstudiante]);
 
   const handleChange = (e) => {
     setFormData({
@@ -200,10 +200,10 @@ export const PerfilEstudiante = () => {
           Volver al Dashboard
         </Button>
         <Box>
-          <Typography variant="h4" fontWeight={700} color="#0f172a">
+          <Typography sx={{ fontWeight: 700 }} variant="h4" color="#0f172a">
             Perfil Académico
           </Typography>
-          <Typography variant="body2" color="#64748b" mt={0.5}>
+          <Typography sx={{ mt: 0.5 }} variant="body2" color="#64748b">
             Mantén actualizada tu información para acceder a las prácticas
           </Typography>
         </Box>
@@ -223,7 +223,7 @@ export const PerfilEstudiante = () => {
 
       <Grid container spacing={3}>
         {/* Columna Izquierda - Información Personal */}
-        <Grid item xs={12} lg={4}>
+        <Grid size={{ xs: 12, lg: 4 }}>
           <Card sx={{ 
             borderRadius: 3,
             height: '100%',
@@ -253,7 +253,7 @@ export const PerfilEstudiante = () => {
                 >
                   {user?.nombres?.charAt(0) || 'E'}
                 </Avatar>
-                <Typography variant="h5" fontWeight={700} color="#0f172a" gutterBottom>
+                <Typography sx={{ fontWeight: 700 }} variant="h5" color="#0f172a" gutterBottom>
                   {user?.nombres} {user?.apellidoPaterno}
                 </Typography>
                 <Typography variant="body2" color="#64748b" gutterBottom>
@@ -295,8 +295,8 @@ export const PerfilEstudiante = () => {
                     <School sx={{ color: '#2563eb', fontSize: 18 }} />
                   </Box>
                   <Box>
-                    <Typography variant="caption" color="#64748b" fontWeight={500}>Semestre Actual</Typography>
-                    <Typography variant="h6" fontWeight={700} color="#0f172a">{formData.semestreActual}°</Typography>
+                    <Typography sx={{ fontWeight: 500 }} variant="caption" color="#64748b">Semestre Actual</Typography>
+                    <Typography sx={{ fontWeight: 700 }} variant="h6" color="#0f172a">{formData.semestreActual}°</Typography>
                   </Box>
                 </Box>
                 
@@ -320,8 +320,8 @@ export const PerfilEstudiante = () => {
                     <Person sx={{ color: '#059669', fontSize: 18 }} />
                   </Box>
                   <Box>
-                    <Typography variant="caption" color="#64748b" fontWeight={500}>Créditos Aprobados</Typography>
-                    <Typography variant="h6" fontWeight={700} color="#0f172a">{formData.creditosAprobados}</Typography>
+                    <Typography sx={{ fontWeight: 500 }} variant="caption" color="#64748b">Créditos Aprobados</Typography>
+                    <Typography sx={{ fontWeight: 700 }} variant="h6" color="#0f172a">{formData.creditosAprobados}</Typography>
                   </Box>
                 </Box>
                 
@@ -345,8 +345,8 @@ export const PerfilEstudiante = () => {
                     <Grade sx={{ color: '#d97706', fontSize: 18 }} />
                   </Box>
                   <Box>
-                    <Typography variant="caption" color="#64748b" fontWeight={500}>Promedio Ponderado</Typography>
-                    <Typography variant="h6" fontWeight={700} color="#0f172a">{formData.promedioPonderado || '-'}</Typography>
+                    <Typography sx={{ fontWeight: 500 }} variant="caption" color="#64748b">Promedio Ponderado</Typography>
+                    <Typography sx={{ fontWeight: 700 }} variant="h6" color="#0f172a">{formData.promedioPonderado || '-'}</Typography>
                   </Box>
                 </Box>
               </Box>
@@ -355,7 +355,7 @@ export const PerfilEstudiante = () => {
         </Grid>
 
         {/* Columna Derecha - Formulario */}
-        <Grid item xs={12} lg={8}>
+        <Grid size={{ xs: 12, lg: 8 }}>
           <Card sx={{ 
             borderRadius: 3,
             height: '100%',
@@ -375,7 +375,7 @@ export const PerfilEstudiante = () => {
                   <Edit sx={{ color: '#2563eb', fontSize: 22 }} />
                 </Box>
                 <Box>
-                  <Typography variant="h5" fontWeight={700} color="#0f172a">
+                  <Typography sx={{ fontWeight: 700 }} variant="h5" color="#0f172a">
                     Actualizar Información Académica
                   </Typography>
                   <Typography variant="body2" color="#64748b">
@@ -386,7 +386,7 @@ export const PerfilEstudiante = () => {
 
               <form onSubmit={handleSubmit}>
                 <Grid container spacing={2.5}>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
                       label="Semestre Actual"
@@ -402,7 +402,7 @@ export const PerfilEstudiante = () => {
                       }}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
                       label="Créditos Aprobados"
@@ -418,7 +418,7 @@ export const PerfilEstudiante = () => {
                       }}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
                       label="Promedio Ponderado"
@@ -435,7 +435,7 @@ export const PerfilEstudiante = () => {
                       }}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
                       label="Fecha de Ingreso"
@@ -451,7 +451,7 @@ export const PerfilEstudiante = () => {
                       }}
                     />
                   </Grid>
-                  <Grid item xs={12}>
+                  <Grid size={{ xs: 12 }}>
                     <FormControl fullWidth required>
                       <InputLabel>Estado Académico</InputLabel>
                       <Select
@@ -512,7 +512,7 @@ export const PerfilEstudiante = () => {
       </Grid>
 
       {/* Sección de Requisitos */}
-      <Box mt={4}>
+      <Box sx={{ mt: 4 }}>
         <Card sx={{ 
           borderRadius: 3,
           boxShadow: '0 2px 8px rgba(15, 23, 42, 0.08)',
@@ -531,7 +531,7 @@ export const PerfilEstudiante = () => {
                 <CheckCircle sx={{ color: '#059669', fontSize: 22 }} />
               </Box>
               <Box>
-                <Typography variant="h5" fontWeight={700} color="#0f172a">
+                <Typography sx={{ fontWeight: 700 }} variant="h5" color="#0f172a">
                   Verificación de Requisitos
                 </Typography>
                 <Typography variant="body2" color="#64748b">
@@ -549,7 +549,7 @@ export const PerfilEstudiante = () => {
                 const cumple = cumpleRequisito(tipo.key);
                 
                 return (
-                  <Grid item xs={12} sm={6} md={4} key={tipo.key}>
+                  <Grid size={{ xs: 12, sm: 6, md: 4 }} key={tipo.key}>
                     <Card 
                       sx={{ 
                         borderRadius: 2, 
@@ -574,7 +574,7 @@ export const PerfilEstudiante = () => {
                           }}>
                             {cumple ? <CheckCircle sx={{ color: 'white', fontSize: 18 }} /> : <Warning sx={{ color: 'white', fontSize: 18 }} />}
                           </Box>
-                          <Typography variant="subtitle1" fontWeight={700} color="#0f172a">
+                          <Typography sx={{ fontWeight: 700 }} variant="subtitle1" color="#0f172a">
                             {tipo.nombre}
                           </Typography>
                         </Box>
@@ -587,7 +587,7 @@ export const PerfilEstudiante = () => {
                               borderRadius: '50%', 
                               bgcolor: cumple ? '#10b981' : '#ef4444' 
                             }} />
-                            <Typography variant="body2" color="#475569" fontWeight={500}>
+                            <Typography sx={{ fontWeight: 500 }} variant="body2" color="#475569">
                               {tipo.creditosStr}
                             </Typography>
                           </Box>
@@ -598,7 +598,7 @@ export const PerfilEstudiante = () => {
                               borderRadius: '50%', 
                               bgcolor: cumple ? '#10b981' : '#ef4444' 
                             }} />
-                            <Typography variant="body2" color="#475569" fontWeight={500}>
+                            <Typography sx={{ fontWeight: 500 }} variant="body2" color="#475569">
                               {tipo.semestreStr}
                             </Typography>
                           </Box>
@@ -609,7 +609,7 @@ export const PerfilEstudiante = () => {
                               borderRadius: '50%', 
                               bgcolor: cumple ? '#10b981' : '#ef4444' 
                             }} />
-                            <Typography variant="body2" color="#475569" fontWeight={500}>
+                            <Typography sx={{ fontWeight: 500 }} variant="body2" color="#475569">
                               Estado ACTIVO
                             </Typography>
                           </Box>

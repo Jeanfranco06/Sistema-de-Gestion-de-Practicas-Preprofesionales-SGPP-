@@ -22,7 +22,7 @@ import java.util.Set;
 @RequestMapping("/expedientes")
 @RequiredArgsConstructor
 @Tag(name = "Expediente de Práctica", description = "Gestión del ciclo de vida del expediente de práctica pre-profesional")
-@PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR', 'DOCENTE_ASESOR', 'ESTUDIANTE')")
+@PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR', 'DOCENTE_ASESOR', 'ESTUDIANTE')")
 public class ExpedienteController {
 
     private final ExpedienteService expedienteService;
@@ -321,14 +321,15 @@ public class ExpedienteController {
     }
 
     @GetMapping
-    @Operation(summary = "Listar todos los expedientes activos")
+    @Operation(summary = "Listar expedientes accesibles para el usuario autenticado")
     public ResponseEntity<ApiResponse<List<ExpedienteResponse>>> findAll() {
         Long idUsuario = Objects.requireNonNull(currentUserService.getCurrentUserId(), "Usuario no autenticado");
         List<String> roles = currentUserService.getCurrentRoles();
-        List<ExpedienteResponse> list = roles.contains("COMITE_PRACTICAS")
-                && roles.stream().noneMatch(r -> Set.of("ADMIN_SISTEMA", "SECRETARIA", "COORDINADOR", "DIRECTOR").contains(r))
-                ? expedienteService.findMisExpedientes(idUsuario, roles)
-                : expedienteService.findAll();
+        boolean tieneLecturaGlobal = roles.stream().anyMatch(
+                rol -> Set.of("ADMIN_SISTEMA", "ADMINISTRADOR", "SECRETARIA", "COORDINADOR", "DIRECTOR").contains(rol));
+        List<ExpedienteResponse> list = tieneLecturaGlobal
+                ? expedienteService.findAll()
+                : expedienteService.findMisExpedientes(idUsuario, roles);
         return ResponseEntity.ok(ApiResponse.<List<ExpedienteResponse>>builder()
                 .success(true).data(list).timestamp(LocalDateTime.now()).build());
     }
@@ -359,6 +360,7 @@ public class ExpedienteController {
 
     @GetMapping("/estado/{estado}")
     @Operation(summary = "Listar expedientes por estado")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COORDINADOR', 'DIRECTOR')")
     public ResponseEntity<ApiResponse<List<ExpedienteResponse>>> findByEstado(@PathVariable String estado) {
         List<ExpedienteResponse> list = expedienteService.findByEstado(estado);
         return ResponseEntity.ok(ApiResponse.<List<ExpedienteResponse>>builder()
@@ -376,7 +378,7 @@ public class ExpedienteController {
 
     @GetMapping("/tutor-usuario/{usuarioId}")
     @Operation(summary = "Listar expedientes asignados a un tutor externo por su usuario")
-    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'TUTOR_EXTERNO', 'COORDINADOR', 'COMITE_PRACTICAS', 'DIRECTOR')")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'ADMINISTRADOR', 'TUTOR_EXTERNO', 'COORDINADOR', 'COMITE_PRACTICAS', 'DIRECTOR')")
     public ResponseEntity<ApiResponse<List<ExpedienteResponse>>> findByTutorUsuarioId(@PathVariable Long usuarioId) {
         Long idUsuario = currentUserService.getCurrentUserId();
         if (currentUserService.hasAnyRole("TUTOR_EXTERNO") && idUsuario != null && !idUsuario.equals(usuarioId)) {

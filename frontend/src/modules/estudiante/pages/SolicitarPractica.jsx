@@ -172,7 +172,7 @@ export const SolicitarPractica = () => {
                         <Assignment />
                     </Avatar>
                     <Box>
-                        <Typography variant="h5" fontWeight={700}>Solicitar Práctica Preprofesional</Typography>
+                        <Typography sx={{ fontWeight: 700 }} variant="h5">Solicitar Práctica Preprofesional</Typography>
                         <Typography variant="body2" sx={{ opacity: 0.85, mt: 0.5 }}>
                             Completa los pasos para solicitar tu práctica en una empresa o institución.
                         </Typography>
@@ -197,7 +197,7 @@ export const SolicitarPractica = () => {
                 {/* Step 1: Tipo de Práctica */}
                 {activeStep === 0 && (
                     <Box>
-                        <Typography variant="h6" fontWeight={600} gutterBottom>
+                        <Typography sx={{ fontWeight: 600 }} variant="h6" gutterBottom>
                             Selecciona el tipo de práctica que deseas solicitar
                         </Typography>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
@@ -224,7 +224,7 @@ export const SolicitarPractica = () => {
                                             <Box sx={{ color: colors.icon, mb: 2 }}>
                                                 {tipoIcons[tipo.codigo] || <School sx={{ fontSize: 48 }} />}
                                             </Box>
-                                            <Typography variant="h5" fontWeight={700} gutterBottom>
+                                            <Typography sx={{ fontWeight: 700 }} variant="h5" gutterBottom>
                                                 {tipo.nombre}
                                             </Typography>
                                             <Typography variant="body2" color="text.secondary" sx={{ mb: 2, minHeight: 40 }}>
@@ -252,7 +252,7 @@ export const SolicitarPractica = () => {
                 {/* Step 2: Empresa y Sede */}
                 {activeStep === 1 && (
                     <Box>
-                        <Typography variant="h6" fontWeight={600} gutterBottom>
+                        <Typography sx={{ fontWeight: 600 }} variant="h6" gutterBottom>
                             Selecciona la empresa y sede para tu práctica
                         </Typography>
                         <Box sx={{ mb: 3 }}>
@@ -264,7 +264,7 @@ export const SolicitarPractica = () => {
                         {sedes.length === 0 ? (
                             <Box sx={{ textAlign: 'center', py: 6 }}>
                                 <Business sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-                                <Typography variant="h6" gutterBottom fontWeight="bold">
+                                <Typography sx={{ fontWeight: 'bold' }} variant="h6" gutterBottom>
                                     No hay sedes registradas
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary">
@@ -282,7 +282,7 @@ export const SolicitarPractica = () => {
                                                 <Avatar sx={{ bgcolor: 'primary.main', width: 36, height: 36 }}>
                                                     <Business sx={{ fontSize: 20 }} />
                                                 </Avatar>
-                                                <Typography variant="subtitle1" fontWeight={600}>
+                                                <Typography sx={{ fontWeight: 600 }} variant="subtitle1">
                                                     {empresa.razonSocialEmpresa}
                                                 </Typography>
                                                 {!tieneElegible && (
@@ -311,13 +311,13 @@ export const SolicitarPractica = () => {
                                                                 <CardContent sx={{ py: 2.5, px: 2.5 }}>
                                                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                                                         <Box sx={{ flex: 1 }}>
-                                                                            <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                                                                            <Typography sx={{ fontWeight: 600 }} variant="subtitle2" gutterBottom>
                                                                                 {sede.nombreSede}
                                                                             </Typography>
                                                                             <Typography variant="body2" color="text.secondary" gutterBottom>
                                                                                 {sede.direccion}
                                                                             </Typography>
-                                                                            <Typography variant="caption" color="text.secondary" display="block">
+                                                                            <Typography sx={{ display: 'block' }} variant="caption" color="text.secondary">
                                                                                 {sede.departamento}, {sede.provincia}, {sede.distrito}
                                                                             </Typography>
                                                                         </Box>
@@ -335,7 +335,7 @@ export const SolicitarPractica = () => {
                                                                     </Stack>
                                                                     {!elegible && sede.motivoNoElegible && (
                                                                         <Alert severity="warning" sx={{ mt: 1.5, py: 0.5 }}>
-                                                                            <Typography variant="caption" fontWeight={500}>
+                                                                            <Typography sx={{ fontWeight: 500 }} variant="caption">
                                                                                 {sede.motivoNoElegible}
                                                                             </Typography>
                                                                         </Alert>
@@ -357,7 +357,7 @@ export const SolicitarPractica = () => {
                 {/* Step 3: Confirmación */}
                 {activeStep === 2 && (
                     <Box>
-                        <Typography variant="h6" fontWeight={600} gutterBottom>
+                        <Typography sx={{ fontWeight: 600 }} variant="h6" gutterBottom>
                             Confirma tu solicitud de práctica
                         </Typography>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
@@ -366,7 +366,7 @@ export const SolicitarPractica = () => {
 
                         {selectedTipo && (
                             <Box sx={{ bgcolor: '#f8fafc', borderRadius: 2, p: 3, mb: 2, border: '1px solid', borderColor: 'divider' }}>
-                                <Typography variant="subtitle2" fontWeight={600} color="text.secondary" gutterBottom>
+                                <Typography sx={{ fontWeight: 600 }} variant="subtitle2" color="text.secondary" gutterBottom>
                                     Tipo de Práctica
                                 </Typography>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -374,7 +374,7 @@ export const SolicitarPractica = () => {
                                         {tipoIcons[selectedTipo.codigo] || <School />}
                                     </Avatar>
                                     <Box>
-                                        <Typography variant="h6" fontWeight={600}>
+                                        <Typography sx={{ fontWeight: 600 }} variant="h6">
                                             {selectedTipo.nombre}
                                         </Typography>
                                         <Typography variant="body2" color="text.secondary">
@@ -387,7 +387,7 @@ export const SolicitarPractica = () => {
 
                         {selectedSede && (
                             <Box sx={{ bgcolor: '#f8fafc', borderRadius: 2, p: 3, mb: 2, border: '1px solid', borderColor: 'divider' }}>
-                                <Typography variant="subtitle2" fontWeight={600} color="text.secondary" gutterBottom>
+                                <Typography sx={{ fontWeight: 600 }} variant="subtitle2" color="text.secondary" gutterBottom>
                                     Empresa y Sede
                                 </Typography>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -395,7 +395,7 @@ export const SolicitarPractica = () => {
                                         <Business />
                                     </Avatar>
                                     <Box>
-                                        <Typography variant="h6" fontWeight={600}>
+                                        <Typography sx={{ fontWeight: 600 }} variant="h6">
                                             {selectedSede.razonSocialEmpresa}
                                         </Typography>
                                         <Typography variant="body2" color="text.secondary">

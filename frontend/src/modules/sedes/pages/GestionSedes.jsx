@@ -45,7 +45,7 @@ const DashboardCard = ({ title, action, children, sx }) => (
     >
         {(title || action) && (
             <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 2, mb: 3 }}>
-                {title && <Typography variant="h6" fontWeight={700} color="text.primary">{title}</Typography>}
+                {title && <Typography sx={{ fontWeight: 700 }} variant="h6" color="text.primary">{title}</Typography>}
                 {action && <Box sx={{ alignSelf: { xs: 'flex-start', sm: 'center' } }}>{action}</Box>}
             </Box>
         )}
@@ -66,8 +66,8 @@ const StatCard = ({ label, value, icon, accent }) => {
             <Stack direction="row" spacing={1.5} alignItems="center">
                 <Box sx={{ color: colors.icon }}>{icon}</Box>
                 <Box>
-                    <Typography variant="h5" fontWeight={800} color={colors.text}>{value}</Typography>
-                    <Typography variant="caption" fontWeight={600} color={colors.text} sx={{ opacity: 0.8 }}>{label}</Typography>
+                    <Typography sx={{ fontWeight: 800 }} variant="h5" color={colors.text}>{value}</Typography>
+                    <Typography variant="caption" color={colors.text} sx={{ opacity: 0.8, fontWeight: 600 }}>{label}</Typography>
                 </Box>
             </Stack>
         </Paper>
@@ -159,20 +159,7 @@ export const GestionSedes = () => {
         }, 600);
     };
 
-    useEffect(() => {
-        loadSedes();
-        loadEmpresas();
-        return () => {
-            Object.values(asyncTimers.current).forEach(clearTimeout);
-        };
-    }, []);
-
-    useEffect(() => {
-        const timer = setTimeout(() => { loadSedes(); }, 300);
-        return () => clearTimeout(timer);
-    }, [searchTerm, filtroEstadoSede, filtroValidacion, filtroConvenio, filtroTutor, filtroElegible]);
-
-    const loadSedes = async () => {
+    const loadSedes = useCallback(async () => {
         try {
             setLoading(true);
             const res = await sedeApi.getCatalogo();
@@ -184,16 +171,30 @@ export const GestionSedes = () => {
             setLoading(false);
             setInitialLoad(false);
         }
-    };
+    }, []);
 
-    const loadEmpresas = async () => {
+    const loadEmpresas = useCallback(async () => {
         try {
             const res = await empresaApi.getAll();
             setEmpresas(res.data.filter(emp => emp.activo));
         } catch (error) {
             console.error("Error loading empresas:", error);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        loadSedes();
+        loadEmpresas();
+        const timers = asyncTimers.current;
+        return () => {
+            Object.values(timers).forEach(clearTimeout);
+        };
+    }, [loadSedes, loadEmpresas]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => { loadSedes(); }, 300);
+        return () => clearTimeout(timer);
+    }, [searchTerm, filtroEstadoSede, filtroValidacion, filtroConvenio, filtroTutor, filtroElegible, loadSedes]);
 
     const loadSedeById = async (id) => {
         try {
@@ -593,7 +594,7 @@ export const GestionSedes = () => {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh', flexDirection: 'column', gap: 3 }}>
                 <CircularProgress size={48} thickness={4} sx={{ color: '#1a365d' }} />
-                <Typography variant="body1" color="text.secondary" fontWeight={500}>Cargando catálogo de sedes...</Typography>
+                <Typography sx={{ fontWeight: 500 }} variant="body1" color="text.secondary">Cargando catálogo de sedes...</Typography>
             </Box>
         );
     }
@@ -608,7 +609,7 @@ export const GestionSedes = () => {
                         </Box>
                         <Box sx={{ position: 'relative', zIndex: 1, width: '100%' }}>
                             <Typography variant="overline" sx={{ opacity: 0.8, letterSpacing: 1.5, fontWeight: 600, display: 'block', mb: 0.5 }}>Módulo de Sedes</Typography>
-                            <Typography variant="h3" fontWeight={800} sx={{ mt: 0, mb: 1.5, fontSize: { xs: '1.75rem', sm: '2rem', md: '2.5rem' }, wordBreak: 'break-word' }}>Gestión de Sedes</Typography>
+                            <Typography variant="h3"  sx={{ fontWeight: 800,  mt: 0, mb: 1.5, fontSize: { xs: '1.75rem', sm: '2rem', md: '2.5rem' }, wordBreak: 'break-word' }}>Gestión de Sedes</Typography>
                             <Typography variant="subtitle1" sx={{ opacity: 0.9 }}>Administra las sedes operativas vinculadas a las empresas aliadas.</Typography>
                         </Box>
                         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', position: 'relative', zIndex: 1, alignSelf: { xs: 'flex-end', md: 'center' } }}>
@@ -720,13 +721,13 @@ export const GestionSedes = () => {
                                                             {getInitials(sede.nombreSede)}
                                                         </Avatar>
                                                         <Box>
-                                                            <Typography variant="body2" fontWeight={700} color="text.primary">{sede.nombreSede}</Typography>
+                                                            <Typography sx={{ fontWeight: 700 }} variant="body2" color="text.primary">{sede.nombreSede}</Typography>
                                                             <Typography variant="caption" color="text.secondary">{sede.direccion || '—'}</Typography>
                                                         </Box>
                                                     </Box>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Typography variant="body2" fontWeight={600} color="primary">{sede.razonSocialEmpresa || '—'}</Typography>
+                                                    <Typography sx={{ fontWeight: 600 }} variant="body2" color="primary">{sede.razonSocialEmpresa || '—'}</Typography>
                                                 </TableCell>
                                                 <TableCell>
                                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -738,7 +739,7 @@ export const GestionSedes = () => {
                                                     <Stack direction="row" spacing={1} alignItems="center">
                                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                                                             <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: sc.dot, boxShadow: `0 0 0 2px ${sc.shadow}` }} />
-                                                            <Typography variant="caption" fontWeight={700} color={sc.dot}>{sc.label}</Typography>
+                                                            <Typography sx={{ fontWeight: 700 }} variant="caption" color={sc.dot}>{sc.label}</Typography>
                                                         </Box>
                                                     </Stack>
                                                 </TableCell>
@@ -815,7 +816,7 @@ export const GestionSedes = () => {
                                             <TableCell colSpan={9} align="center" sx={{ py: 8 }}>
                                                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, color: '#94a3b8' }}>
                                                     <SearchIcon sx={{ fontSize: 48, opacity: 0.5 }} />
-                                                    <Typography variant="subtitle1" fontWeight={600}>No se encontraron sedes</Typography>
+                                                    <Typography sx={{ fontWeight: 600 }} variant="subtitle1">No se encontraron sedes</Typography>
                                                     <Typography variant="body2">Intenta ajustar los filtros o agrega una nueva sede.</Typography>
                                                 </Box>
                                             </TableCell>
@@ -843,7 +844,7 @@ export const GestionSedes = () => {
             <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth slotProps={{ paper: { sx: { borderRadius: 4, overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' } } }}>
                 <DialogTitle sx={{ bgcolor: '#1a365d', color: '#fff', py: 2.5, px: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                        <LocationCityIcon /> <Typography variant="h6" fontWeight={700}>{isEditing ? 'Editar Sede' : 'Registrar Nueva Sede'}</Typography>
+                        <LocationCityIcon /> <Typography sx={{ fontWeight: 700 }} variant="h6">{isEditing ? 'Editar Sede' : 'Registrar Nueva Sede'}</Typography>
                     </Box>
                 </DialogTitle>
                 <DialogContent sx={{ p: { xs: 2, md: 4 }, bgcolor: '#fff' }}>
@@ -1025,11 +1026,11 @@ export const GestionSedes = () => {
             >
                 <Box sx={{ bgcolor: '#1a365d', color: '#fff', p: 3, display: 'flex', alignItems: 'center', gap: 1.5 }}>
                     <LocationCityIcon />
-                    <Typography variant="h6" fontWeight={700}>Detalle de Sede</Typography>
+                    <Typography sx={{ fontWeight: 700 }} variant="h6">Detalle de Sede</Typography>
                 </Box>
                 {selectedSede && (
                     <Box sx={{ p: { xs: 2, md: 3 }, overflow: 'auto' }}>
-                        <Typography variant="h5" fontWeight={700} color="primary" sx={{ mb: 0.5 }}>
+                        <Typography variant="h5" color="primary" sx={{ mb: 0.5, fontWeight: 700 }}>
                             {selectedSede.nombreSede}
                         </Typography>
                         <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 2 }}>
@@ -1097,10 +1098,10 @@ export const GestionSedes = () => {
                             <Stack spacing={1} sx={{ mb: 2 }}>
                                 {selectedSede.tutoresActivos.map((tutor) => (
                                     <Paper key={tutor.id} sx={{ p: 2, borderRadius: 2, bgcolor: '#f8fafc', border: '1px solid #e2e8f0' }}>
-                                        <Typography variant="body2" fontWeight={700}>{tutor.nombres} {tutor.apellidoPaterno} {tutor.apellidoMaterno}</Typography>
-                                        <Typography variant="caption" color="text.secondary" display="block">Cargo: {tutor.cargo}</Typography>
-                                        <Typography variant="caption" color="text.secondary" display="block">Correo: {tutor.correo}</Typography>
-                                        <Typography variant="caption" color="text.secondary" display="block">Teléfono: {tutor.telefono || 'No especificado'}</Typography>
+                                        <Typography sx={{ fontWeight: 700 }} variant="body2">{tutor.nombres} {tutor.apellidoPaterno} {tutor.apellidoMaterno}</Typography>
+                                        <Typography sx={{ display: 'block' }} variant="caption" color="text.secondary">Cargo: {tutor.cargo}</Typography>
+                                        <Typography sx={{ display: 'block' }} variant="caption" color="text.secondary">Correo: {tutor.correo}</Typography>
+                                        <Typography sx={{ display: 'block' }} variant="caption" color="text.secondary">Teléfono: {tutor.telefono || 'No especificado'}</Typography>
                                     </Paper>
                                 ))}
                             </Stack>
@@ -1124,7 +1125,7 @@ export const GestionSedes = () => {
             <Dialog open={validacionDialogOpen} onClose={() => setValidacionDialogOpen(false)} maxWidth="md" fullWidth slotProps={{ paper: { sx: { borderRadius: 4, overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' } } }}>
                 <DialogTitle sx={{ bgcolor: validacionActual?.resultadoValidacion === 'APROBADA' ? '#065f46' : validacionActual?.resultadoValidacion === 'RECHAZADA' ? '#991b1b' : '#92400e', color: '#fff', py: 2.5, px: 4, display: 'flex', alignItems: 'center', gap: 1.5 }}>
                     <AssignmentIcon />
-                    <Typography variant="h6" fontWeight={700}>Validación de Sede: {validacionSede?.nombreSede}</Typography>
+                    <Typography sx={{ fontWeight: 700 }} variant="h6">Validación de Sede: {validacionSede?.nombreSede}</Typography>
                 </DialogTitle>
                 <DialogContent dividers sx={{ p: { xs: 2, md: 4 }, bgcolor: '#fff' }}>
                     {loadingValidacion ? (
@@ -1154,7 +1155,7 @@ export const GestionSedes = () => {
                                 </Box>
                             )}
 
-                            <Typography variant="h6" fontWeight={700} sx={{ borderBottom: '2px solid #1a365d', pb: 1, color: '#1a365d' }}>Criterios de Validación</Typography>
+                            <Typography variant="h6" sx={{ borderBottom: '2px solid #1a365d', pb: 1, color: '#1a365d', fontWeight: 700 }}>Criterios de Validación</Typography>
 
                             {[
                                 { key: 'criterioInfraestructuraCumple', obsKey: 'criterioInfraestructuraObservaciones', label: 'Infraestructura adecuada', desc: 'La sede cuenta con espacios físicos adecuados para el desarrollo de prácticas.' },
@@ -1171,7 +1172,7 @@ export const GestionSedes = () => {
                                             color={validacionForm[criterio.key] ? 'success' : 'default'}
                                         />
                                         <Box>
-                                            <Typography variant="subtitle2" fontWeight={700}>{criterio.label}</Typography>
+                                            <Typography sx={{ fontWeight: 700 }} variant="subtitle2">{criterio.label}</Typography>
                                             <Typography variant="caption" color="text.secondary">{criterio.desc}</Typography>
                                         </Box>
                                     </Box>
@@ -1184,7 +1185,7 @@ export const GestionSedes = () => {
                                 </Paper>
                             ))}
 
-                            <Typography variant="h6" fontWeight={700} sx={{ borderBottom: '2px solid #1a365d', pb: 1, color: '#1a365d' }}>Resultado</Typography>
+                            <Typography variant="h6" sx={{ borderBottom: '2px solid #1a365d', pb: 1, color: '#1a365d', fontWeight: 700 }}>Resultado</Typography>
 
                             <FormControl fullWidth>
                                 <InputLabel>Resultado de Validación</InputLabel>

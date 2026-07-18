@@ -18,7 +18,7 @@ export function ModulePageHeader({ icon, title, subtitle, action }) {
           </Box>
         )}
         <Box>
-          <Typography variant="h4" fontWeight="bold" color="primary">
+          <Typography sx={{ fontWeight: 'bold' }} variant="h4" color="primary">
             {title}
           </Typography>
           {subtitle && (

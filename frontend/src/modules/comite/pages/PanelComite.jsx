@@ -213,10 +213,10 @@ export const PanelComite = () => {
       <StatStrip items={stats} />
 
       <Grid container spacing={3}>
-        <Grid item xs={12} lg={8}>
+        <Grid size={{ xs: 12, lg: 8 }}>
           <ContentCard accent>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography variant="subtitle1" fontWeight={600}>Resumen de Expedientes</Typography>
+              <Typography sx={{ fontWeight: 600 }} variant="subtitle1">Resumen de Expedientes</Typography>
               <Chip label={`${avancePct}% cerrados`} size="small" color="primary" variant="outlined" />
             </Box>
             <LinearProgress variant="determinate" value={avancePct} sx={{ height: 10, borderRadius: 999, mb: 1 }} />
@@ -225,8 +225,8 @@ export const PanelComite = () => {
             </Typography>
 
             <Grid container spacing={2.5} sx={{ mt: 1.5 }}>
-              <Grid item xs={12} md={5}>
-                <Typography variant="caption" color="text.secondary" display="block" textAlign="center" sx={{ mb: 1 }}>
+              <Grid size={{ xs: 12, md: 5 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mb: 1 }}>
                   Expedientes por Estado
                 </Typography>
                 <Box sx={{ height: 210, display: 'grid', placeItems: 'center' }}>
@@ -241,7 +241,7 @@ export const PanelComite = () => {
                     }}
                   >
                     <Box sx={{ width: 104, height: 104, borderRadius: '50%', bgcolor: 'background.paper', display: 'grid', placeItems: 'center', textAlign: 'center' }}>
-                      <Typography variant="h5" fontWeight={700} color="success.main">{kpis.cerrados}</Typography>
+                      <Typography sx={{ fontWeight: 700 }} variant="h5" color="success.main">{kpis.cerrados}</Typography>
                       <Typography variant="caption" color="text.secondary">de {kpis.total}</Typography>
                     </Box>
                   </Box>
@@ -252,8 +252,8 @@ export const PanelComite = () => {
                 </Stack>
               </Grid>
 
-              <Grid item xs={12} md={7}>
-                <Typography variant="caption" color="text.secondary" display="block" textAlign="center" sx={{ mb: 1 }}>
+              <Grid size={{ xs: 12, md: 7 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mb: 1 }}>
                   Distribución de Estados
                 </Typography>
                 <Box sx={{ height: 210, display: 'flex', alignItems: 'end', justifyContent: 'center', gap: 1.5, px: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
@@ -270,7 +270,7 @@ export const PanelComite = () => {
                             bgcolor: item.color,
                           }}
                         />
-                        <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1, fontSize: '0.65rem', lineHeight: 1.2 }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, fontSize: '0.65rem', lineHeight: 1.2, display: 'block' }}>
                           {item.name}
                         </Typography>
                       </Box>
@@ -282,7 +282,7 @@ export const PanelComite = () => {
           </ContentCard>
         </Grid>
 
-        <Grid item xs={12} lg={4}>
+        <Grid size={{ xs: 12, lg: 4 }}>
           <ContentCard accent sx={{ mb: 3 }}>
             <Typography variant="subtitle2" color="primary.dark" sx={{ mb: 2 }}>Accesos rápidos</Typography>
             <Stack spacing={1}>
@@ -342,7 +342,7 @@ export const PanelComite = () => {
                         bgcolor: index === 0 ? '#3b82f6' : index === 1 ? '#8b5cf6' : '#10b981',
                       }}
                     />
-                    <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
                       {item.name}
                     </Typography>
                   </Box>
@@ -354,7 +354,7 @@ export const PanelComite = () => {
       </Grid>
 
       <ContentCard accent>
-        <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>Lista de Expedientes</Typography>
+        <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>Lista de Expedientes</Typography>
 
         <Box sx={{ p: 2, mb: 3, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap', bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
           <TextField
@@ -408,12 +408,12 @@ export const PanelComite = () => {
                 <TableRow key={e.id} hover>
                   <TableCell sx={{ fontFamily: 'monospace', fontSize: 12 }}>{e.codigoExpediente}</TableCell>
                   <TableCell>
-                    <Typography variant="body2" fontWeight={500}>{e.nombreEstudiante} {e.apellidoEstudiante}</Typography>
+                    <Typography sx={{ fontWeight: 500 }} variant="body2">{e.nombreEstudiante} {e.apellidoEstudiante}</Typography>
                   </TableCell>
                   <TableCell><Chip label={e.nombreTipoPractica} size="small" color="primary" variant="outlined" /></TableCell>
                   <TableCell><StatusChip status={e.estado} label={estadoLabel(e.estado)} /></TableCell>
                   <TableCell>
-                    <Typography variant="caption" display="block">{e.nombreAsesor || '—'}</Typography>
+                    <Typography sx={{ display: 'block' }} variant="caption">{e.nombreAsesor || '—'}</Typography>
                     <Typography variant="caption" color="text.secondary">{e.nombreEmpresa || ''}</Typography>
                   </TableCell>
                   <TableCell align="center">

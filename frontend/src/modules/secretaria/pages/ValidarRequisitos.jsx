@@ -58,7 +58,7 @@ const DashboardCard = ({ title, action, children, sx }) => (
     >
         {(title || action) && (
             <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 2, mb: 3 }}>
-                {title && <Typography variant="h6" fontWeight={700} color="text.primary">{title}</Typography>}
+                {title && <Typography sx={{ fontWeight: 700 }} variant="h6" color="text.primary">{title}</Typography>}
                 {action && <Box sx={{ alignSelf: { xs: 'flex-start', sm: 'center' } }}>{action}</Box>}
             </Box>
         )}
@@ -79,8 +79,8 @@ const StatCard = ({ label, value, icon, accent }) => {
             <Stack direction="row" spacing={1.5} alignItems="center">
                 <Box sx={{ color: colors.icon }}>{icon}</Box>
                 <Box>
-                    <Typography variant="h5" fontWeight={800} color={colors.text}>{value}</Typography>
-                    <Typography variant="caption" fontWeight={600} color={colors.text} sx={{ opacity: 0.8 }}>{label}</Typography>
+                    <Typography sx={{ fontWeight: 800 }} variant="h5" color={colors.text}>{value}</Typography>
+                    <Typography variant="caption" color={colors.text} sx={{ opacity: 0.8, fontWeight: 600 }}>{label}</Typography>
                 </Box>
             </Stack>
         </Paper>
@@ -294,7 +294,7 @@ export const ValidarRequisitos = () => {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh', flexDirection: 'column', gap: 3 }}>
                 <CircularProgress size={48} thickness={4} sx={{ color: '#1a365d' }} />
-                <Typography variant="body1" color="text.secondary" fontWeight={500}>Cargando estudiantes...</Typography>
+                <Typography sx={{ fontWeight: 500 }} variant="body1" color="text.secondary">Cargando estudiantes...</Typography>
             </Box>
         );
     }
@@ -309,7 +309,7 @@ export const ValidarRequisitos = () => {
                         </Box>
                         <Box sx={{ position: 'relative', zIndex: 1, width: '100%' }}>
                             <Typography variant="overline" sx={{ opacity: 0.8, letterSpacing: 1.5, fontWeight: 600, display: 'block', mb: 0.5 }}>Secretaría Académica</Typography>
-                            <Typography variant="h3" fontWeight={800} sx={{ mt: 0, mb: 1.5, fontSize: { xs: '1.75rem', sm: '2rem', md: '2.5rem' }, wordBreak: 'break-word' }}>Validación de Requisitos</Typography>
+                            <Typography variant="h3"  sx={{ fontWeight: 800,  mt: 0, mb: 1.5, fontSize: { xs: '1.75rem', sm: '2rem', md: '2.5rem' }, wordBreak: 'break-word' }}>Validación de Requisitos</Typography>
                             <Typography variant="subtitle1" sx={{ opacity: 0.9 }}>Verificación de requisitos académicos y normativos para inicio de prácticas preprofesionales.</Typography>
                         </Box>
                         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', position: 'relative', zIndex: 1, alignSelf: { xs: 'flex-end', md: 'center' } }}>
@@ -384,7 +384,7 @@ export const ValidarRequisitos = () => {
                                         return (
                                             <TableRow key={est.id} hover sx={{ '&:last-child td': { border: 0 } }}>
                                                 <TableCell>
-                                                    <Typography variant="body2" fontFamily="monospace" fontWeight={600} color="text.secondary">{est.codigoEstudiantil}</Typography>
+                                                    <Typography sx={{ fontWeight: 600 }} variant="body2" fontFamily="monospace" color="text.secondary">{est.codigoEstudiantil}</Typography>
                                                 </TableCell>
                                                 <TableCell>
                                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -392,13 +392,13 @@ export const ValidarRequisitos = () => {
                                                             {getInitials(est.nombres, est.apellidoPaterno)}
                                                         </Avatar>
                                                         <Box>
-                                                            <Typography variant="body2" fontWeight={700} color="text.primary">{nombre}</Typography>
+                                                            <Typography sx={{ fontWeight: 700 }} variant="body2" color="text.primary">{nombre}</Typography>
                                                         </Box>
                                                     </Box>
                                                 </TableCell>
                                                 <TableCell><Chip label={`${est.semestreActual || '—'}°`} size="small" variant="outlined" /></TableCell>
                                                 <TableCell>
-                                                    <Typography variant="body2" fontWeight={600}>{est.creditosAprobados ?? '—'}</Typography>
+                                                    <Typography sx={{ fontWeight: 600 }} variant="body2">{est.creditosAprobados ?? '—'}</Typography>
                                                 </TableCell>
                                                 <TableCell>
                                                     <Typography variant="body2">{est.promedioPonderado ?? '—'}</Typography>
@@ -407,7 +407,7 @@ export const ValidarRequisitos = () => {
                                                     <Stack direction="row" spacing={1} alignItems="center">
                                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                                                             <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: sc.dot }} />
-                                                            <Typography variant="caption" fontWeight={700} color={sc.dot}>{est.estadoAcademico || '—'}</Typography>
+                                                            <Typography sx={{ fontWeight: 700 }} variant="caption" color={sc.dot}>{est.estadoAcademico || '—'}</Typography>
                                                         </Box>
                                                     </Stack>
                                                 </TableCell>
@@ -438,7 +438,7 @@ export const ValidarRequisitos = () => {
                                             <TableCell colSpan={7} align="center" sx={{ py: 8 }}>
                                                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, color: '#94a3b8' }}>
                                                     <SearchIcon sx={{ fontSize: 48, opacity: 0.5 }} />
-                                                    <Typography variant="subtitle1" fontWeight={600}>No se encontraron estudiantes</Typography>
+                                                    <Typography sx={{ fontWeight: 600 }} variant="subtitle1">No se encontraron estudiantes</Typography>
                                                     <Typography variant="body2">Intenta ajustar los filtros o verifica la conexión.</Typography>
                                                 </Box>
                                             </TableCell>
@@ -465,7 +465,7 @@ export const ValidarRequisitos = () => {
                     color: '#fff', display: 'flex', alignItems: 'center', gap: 1.5, py: 2.5, px: 4
                 }}>
                     <GavelIcon />
-                    <Typography variant="h6" fontWeight={700}>
+                    <Typography sx={{ fontWeight: 700 }} variant="h6">
                         Validación Académica: {selectedEstudiante?.codigoEstudiantil || ''}
                     </Typography>
                 </DialogTitle>
@@ -501,7 +501,7 @@ export const ValidarRequisitos = () => {
                         {resultadoValidacion && (
                             <>
                                 <Alert severity={resultadoValidacion.apto ? 'success' : 'warning'} sx={{ borderRadius: 2 }}>
-                                    <Typography variant="subtitle1" fontWeight="bold">
+                                    <Typography sx={{ fontWeight: 'bold' }} variant="subtitle1">
                                         {resultadoValidacion.apto ? '✓ ESTUDIANTE HABILITADO' : '✗ ESTUDIANTE NO HABILITADO'}
                                     </Typography>
                                     <Typography variant="body2">{resultadoValidacion.observacionesGenerales}</Typography>
@@ -522,7 +522,7 @@ export const ValidarRequisitos = () => {
 
                                 {resultadoValidacion.requisitosFaltantes?.length > 0 && (
                                     <Alert severity="error" icon={<ErrorIcon />} sx={{ borderRadius: 2 }}>
-                                        <Typography variant="subtitle2" fontWeight="bold">Requisitos faltantes:</Typography>
+                                        <Typography sx={{ fontWeight: 'bold' }} variant="subtitle2">Requisitos faltantes:</Typography>
                                         <ul style={{ margin: 4, paddingLeft: 20 }}>
                                             {resultadoValidacion.requisitosFaltantes.map((req, i) => (
                                                 <li key={i}><Typography variant="body2">{req}</Typography></li>
@@ -547,10 +547,10 @@ export const ValidarRequisitos = () => {
                                                     <Box sx={{ flex: 1 }}>
                                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                             <Box>
-                                                                <Typography variant="subtitle2" fontWeight="bold">
+                                                                <Typography sx={{ fontWeight: 'bold' }} variant="subtitle2">
                                                                     {detalle.nombreRegla}
                                                                 </Typography>
-                                                                <Typography variant="caption" color="textSecondary">
+                                                                <Typography variant="caption" color="text.secondary">
                                                                     {detalle.codigoRegla} {detalle.obligatorio ? '(Obligatorio)' : '(No obligatorio)'}
                                                                 </Typography>
                                                             </Box>
@@ -579,7 +579,7 @@ export const ValidarRequisitos = () => {
                                     );
                                 })}
 
-                                <Typography variant="caption" color="textSecondary" sx={{ textAlign: 'right' }}>
+                                <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'right' }}>
                                     Validado el {resultadoValidacion.fechaValidacion ? new Date(resultadoValidacion.fechaValidacion).toLocaleString() : '—'}
                                 </Typography>
                             </>
@@ -605,7 +605,7 @@ export const ValidarRequisitos = () => {
 
             <Dialog open={openHistorialDialog} onClose={() => setOpenHistorialDialog(false)} maxWidth="md" fullWidth slotProps={{ paper: { sx: { borderRadius: 4, overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' } } }}>
                 <DialogTitle sx={{ bgcolor: '#1a365d', color: '#fff', display: 'flex', alignItems: 'center', gap: 1.5, py: 2.5, px: 4 }}>
-                    <HistoryIcon /> <Typography variant="h6" fontWeight={700}>Historial de Validaciones: {selectedEstudiante?.codigoEstudiantil}</Typography>
+                    <HistoryIcon /> <Typography sx={{ fontWeight: 700 }} variant="h6">Historial de Validaciones: {selectedEstudiante?.codigoEstudiantil}</Typography>
                 </DialogTitle>
                 <DialogContent sx={{ p: { xs: 2, md: 4 }, bgcolor: '#fff' }}>
                     {historialLoading ? (
@@ -625,13 +625,13 @@ export const ValidarRequisitos = () => {
                                                 {h.apto
                                                     ? <CheckCircleIcon sx={{ color: '#10b981' }} fontSize="small" />
                                                     : <CancelIcon sx={{ color: '#ef4444' }} fontSize="small" />}
-                                                <Typography variant="subtitle2" fontWeight="bold">
+                                                <Typography sx={{ fontWeight: 'bold' }} variant="subtitle2">
                                                     {h.apto ? 'APTO' : 'NO APTO'} — {h.tipoPractica}
                                                 </Typography>
                                             </Box>
                                             <Box sx={{ display: 'flex', gap: 0.5 }}>
                                                 <Chip label={`${h.reglasCumplidas}/${h.totalReglas} reglas`} size="small" color={h.apto ? 'success' : 'error'} variant="outlined" />
-                                                <Typography variant="caption" color="textSecondary">
+                                                <Typography variant="caption" color="text.secondary">
                                                     {h.fechaValidacion ? new Date(h.fechaValidacion).toLocaleDateString() : '—'}
                                                 </Typography>
                                             </Box>
@@ -642,7 +642,7 @@ export const ValidarRequisitos = () => {
                                             ))}
                                         </Box>
                                         {h.observacionesGenerales && (
-                                            <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
+                                            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                                                 {h.observacionesGenerales}
                                             </Typography>
                                         )}
@@ -666,7 +666,7 @@ export const ValidarRequisitos = () => {
 
             <Dialog open={openEditDialog} onClose={() => setOpenEditDialog(false)} maxWidth="sm" fullWidth slotProps={{ paper: { sx: { borderRadius: 4, overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' } } }}>
                 <DialogTitle sx={{ bgcolor: '#1a365d', color: '#fff', display: 'flex', alignItems: 'center', gap: 1.5, py: 2.5, px: 4 }}>
-                    <EditIcon /> <Typography variant="h6" fontWeight={700}>Editar Datos Académicos</Typography>
+                    <EditIcon /> <Typography sx={{ fontWeight: 700 }} variant="h6">Editar Datos Académicos</Typography>
                 </DialogTitle>
                 <DialogContent sx={{ p: { xs: 2, md: 4 }, bgcolor: '#fff' }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, mt: 1 }}>

@@ -75,6 +75,7 @@ export const InformesPeriodicos = () => {
             estado: estadoHito,
             archivo: doc ? doc.nombreArchivo : null,
             fileName: doc ? doc.rutaArchivo : null,
+            idDocumento: doc ? doc.id : null,
             bloqueado: false,
           };
         });
@@ -168,10 +169,10 @@ export const InformesPeriodicos = () => {
   };
 
   const handleDownload = async (hito) => {
-    if (!hito.fileName) return;
+    if (!hito.idDocumento) return;
     try {
       MySwal.fire({ title: 'Descargando...', allowOutsideClick: false, didOpen: () => MySwal.showLoading() });
-      const res = await api.get(`/documentos/download/${hito.fileName}`, { responseType: 'blob' });
+      const res = await api.get(`/documentos/expediente/${hito.idDocumento}/download`, { responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -242,12 +243,12 @@ export const InformesPeriodicos = () => {
           { label: 'Enviados', value: enviados, color: 'success.main' },
           { label: 'Bloqueados', value: hitos.length - disponibles, color: 'text.secondary' },
         ].map((item) => (
-          <Grid item xs={12} sm={4} key={item.label}>
+          <Grid size={{ xs: 12, sm: 4 }} key={item.label}>
             <ContentCard sx={{ mb: 0, p: 2.25 }}>
               <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase' }}>
                 {item.label}
               </Typography>
-              <Typography variant="h5" fontWeight={700} sx={{ color: item.color, mt: 0.5 }}>
+              <Typography variant="h5" sx={{ color: item.color, mt: 0.5, fontWeight: 700 }}>
                 {item.value}
               </Typography>
             </ContentCard>
@@ -256,7 +257,7 @@ export const InformesPeriodicos = () => {
       </Grid>
 
       <ContentCard accent>
-        <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 1.5 }}>Progreso del semestre</Typography>
+        <Typography variant="subtitle1" sx={{ mb: 1.5, fontWeight: 'bold' }}>Progreso del semestre</Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Box sx={{ width: '100%', mr: 1 }}>
             <LinearProgress variant="determinate" value={progreso} sx={{ height: 10, borderRadius: 5 }} />
@@ -292,7 +293,7 @@ export const InformesPeriodicos = () => {
                 {getEstadoChip(hito.estado)}
               </Box>
 
-              <Typography variant="subtitle2" mb={1}>{hito.nombre}</Typography>
+              <Typography sx={{ mb: 1 }} variant="subtitle2">{hito.nombre}</Typography>
 
               <Box sx={{ mb: 3 }}>
                 <Typography variant="body2" color="text.secondary">

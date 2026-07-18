@@ -1,91 +1,90 @@
-# Plan de Pruebas E2E (End-to-End) - SGPP UNT
+# Plan de Pruebas E2E - SGPP UNT
 
-Este documento sirve como guía paso a paso para verificar el flujo completo del Sistema de Gestión de Prácticas Preprofesionales (SGPP) de la Escuela de Ingeniería Industrial (UNT). Puede utilizarse como un checklist interactivo durante las fases de QA y validación.
+Guía de validación funcional para el ciclo completo de prácticas preprofesionales. Cada ítem debe ejecutarse con usuarios distintos y registrar el resultado en la matriz final.
 
 ## 1. Requisitos Previos
 
-- [x] Entorno desplegado correctamente (Frontend en React/Vite, Backend en Spring Boot, PostgreSQL en ejecución).
-- [x] Base de datos limpia o reseteada a su estado base (ej. usando la migración `V38__reset_datos_demo_for_testing.sql` que mantiene solo a los administradores del sistema).
-- [x] Conocer las URLs de acceso:
-  - Frontend (App Web): `http://localhost:5173`
-  - Backend API (Swagger/Swagger UI): `http://localhost:8080`
+- [ ] Frontend disponible en `http://localhost:5173`.
+- [ ] Backend disponible en `http://localhost:8082/api/v1`.
+- [ ] Swagger disponible en `http://localhost:8082/api/v1/swagger-ui/index.html`.
+- [ ] PostgreSQL disponible en `localhost:5434`.
+- [ ] La base contiene usuarios, empresa, sede, convenio y tipos de práctica activos.
+- [ ] No reutilizar un expediente cerrado para otra prueba; crear uno por escenario.
 
-## 2. Creación de Usuarios (Paso Inicial Obligatorio)
+## 2. Usuarios de Prueba
 
-*Instrucción: Usar la cuenta de Administrador de Sistema (`ADMIN_SISTEMA`) en el módulo de "Administración > Usuarios".*
+Crear o verificar cuentas activas para los siguientes roles:
 
-- [x] **Estudiante**: 
-  - Registrar nombres, apellidos, correo, documento de identidad y código institucional. 
-  - Asignar el rol `ESTUDIANTE` y marcar tipo "INTERNO".
-  - *Verificación*: Ingresar con las credenciales y comprobar que el Sidebar muestra los grupos de "Gestión Académica" e "Institucional".
-- [x] **Docente Asesor**: 
-  - Registrar datos y asignar el rol `DOCENTE_ASESOR`.
-  - *Verificación*: Ingresar y comprobar que el Sidebar muestra la pestaña "Mis Practicantes".
-- [x] **Tutor Externo**: 
-  - Registrar perfil de tutor indicando Empresa y Cargo. Asignar rol `TUTOR_EXTERNO` y tipo "EXTERNO".
-  - *Verificación*: Ingresar y comprobar acceso a la sección de "Evaluaciones".
-- [x] **Secretaría Académica**: 
-  - Asignar rol `SECRETARIA`.
-  - *Verificación*: Ingresar y comprobar acceso a "Dashboard Administrativo" y "Recepción Admin".
-- [x] **Comité de Prácticas**: 
-  - Asignar rol `COMITE_PRACTICAS`.
-  - *Verificación*: Comprobar acceso al "Panel Comité" y reportes consolidados.
-- [x] **Coordinador/Director de Escuela**: 
-  - Asignar rol `COORDINADOR` (o `DIRECTOR`).
-  - *Verificación*: Comprobar acceso a "Panel Ejecutivo" e indicadores estadísticos.
+- [ ] `ESTUDIANTE`: estudiante titular del expediente.
+- [ ] `SECRETARIA`: validación administrativa, asignación de asesor inicial e inicio de ejecución cuando corresponda.
+- [ ] `DOCENTE_ASESOR`: revisión documental y evaluación de práctica inicial asignada.
+- [ ] `TUTOR_EXTERNO`: evaluación empresarial de práctica final o profesional.
+- [ ] `COMITE_PRACTICAS`: revisión, aprobación de plan/informe y dictamen de práctica final o profesional asignada.
+- [ ] `COORDINADOR` o `DIRECTOR`: emisión de Carta de Presentación y Constancia de Prácticas.
+- [ ] `ADMIN_SISTEMA`: administración institucional y consulta global.
+
+Credenciales locales iniciales, si se cargaron las migraciones de seed: usuario `estudiante1`, contraseña `password123`. Usar el nombre de usuario para la prueba de autenticación actual.
 
 ## 3. Configuración Base
 
-*Instrucción: Usar la cuenta de Secretaría o Administrador.*
-
-- [x] **Empresa y Sede**: Desde el módulo de Entidades Externas, registrar una empresa válida (con RUC y Razón Social) y agregarle al menos una sede (dirección física).
-- [x] **Convenio**: Registrar un convenio vigente asociado a la empresa anterior, estableciendo fechas válidas.
-- [x] *Verificación*: Validar en la interfaz que el convenio aparece como activo y probar el indicador de alerta (fecha próxima a vencer).
+- [ ] Registrar y validar una empresa con RUC único.
+- [ ] Registrar una sede activa asociada a la empresa.
+- [ ] Registrar un convenio vigente asociado a la empresa, cuando aplique.
+- [ ] Verificar que la sede aparezca como elegible para el estudiante.
 
 ## 4. Flujo Completo de una Práctica (Paso a Paso)
 
-**Inicio del Trámite**
-- [ ] **Estudiante**: Solicita práctica inicial (elige entre Inicial, Intermedia o Final/Profesional) seleccionando la sede y empresa recién registrada.
-- [ ] **Secretaría**: Revisa la solicitud, valida los requisitos administrativos en sistema y marca el expediente como *listo para emisión*.
-- [ ] **Director de Escuela**: Revisa el expediente validado y emite/firma la "Carta de Presentación" oficial.
-- [ ] **Estudiante**: Una vez recibida la carta, sube al sistema la "Carta de Aceptación" firmada por la empresa receptora.
+### 4.1 Inicio Común
 
-**Plan de Prácticas**
-- [ ] **Estudiante**: Sube el documento o completa el formulario del "Plan de Prácticas".
-- [ ] **Docente Asesor**: Revisa el Plan de Prácticas y registra de manera intencional una *observación de prueba*.
-- [ ] **Estudiante**: Entra al sistema, lee la observación y "levanta" la observación enviando la versión corregida.
-- [ ] **Docente Asesor**: Verifica la corrección y aprueba el Plan de Prácticas final.
+- [x] **Estudiante**: Desde `Solicitar Práctica`, solicita una práctica `INICIAL`, `FINAL` o `PROFESIONAL`; selecciona empresa y sede elegibles. No existe el tipo "Intermedia".
+- [x] **Secretaría**: Desde Recepción Administrativa valida requisitos y deja el expediente en `VALIDADO_SECRETARIA`.
+- [x] **Director/Coordinador**: Desde el detalle del expediente emite la Carta de Presentación. El estado debe ser `CARTA_PRESENTACION_EMITIDA`.
+- [x] **Estudiante**: Desde `Documentos y Plan de Prácticas`, descarga la Carta de Presentación y carga la Carta de Aceptación PDF firmada por la empresa. El estado debe pasar a `CARTA_ACEPTACION_PRESENTADA`.
 
-**Ejecución y Seguimiento**
-- [ ] **Estudiante**: Realiza el registro periódico de horas en la plataforma.
-- [ ] **Estudiante**: Presenta el Informe Parcial 1 (o Hito 1 según su cronograma).
-- [ ] **Estudiante**: Presenta el Informe Parcial 2 (si aplica al tipo de práctica).
-- [ ] **Estudiante**: Presenta el Informe Final o Memoria de Prácticas.
-- [ ] **Docente Asesor**: Revisa los informes y registra las notas correspondientes por unidad/criterio.
+### 4.2 Asignación Previa al Plan
 
-**Evaluaciones**
-- [ ] **Tutor Externo**: Ingresa con su cuenta y registra la rúbrica/evaluación de desempeño del practicante en la empresa.
+- [ ] **Práctica Inicial - Secretaría/Coordinación**: Asigna un `DOCENTE_ASESOR`. El estado debe ser `ASESOR_ASIGNADO`.
+- [ ] **Práctica Final o Profesional - Comité/Coordinación**: Asigna los integrantes activos del comité. El estado debe ser `COMITE_ASIGNADO`.
+- [ ] **Verificación estudiante**: Antes de la asignación, el Plan muestra “Disponible en la etapa correspondiente”. Después de la asignación aparece el botón `Subir`.
 
-**Cierre Administrativo**
-- [ ] **Comité de Prácticas**: Revisa el expediente consolidado (informes, notas, plan) y emite un "Dictamen Final Aprobatorio".
-- [ ] **Secretaría**: Realiza la última validación de requisitos de egreso o término de trámite.
-- [ ] **Sistema**: El expediente cambia automáticamente a estado `CERRADO` o `FINALIZADO`.
-- [ ] **Secretaría**: Prepara el expediente y lo marca como listo para constancia.
-- [ ] **Director de Escuela**: Emite y firma la "Constancia de Prácticas" oficial para el estudiante.
+### 4.3 Plan de Prácticas
+
+- [ ] **Estudiante**: En `Documentos y Plan de Prácticas`, sección `Documentos obligatorios`, carga el PDF `Plan de Prácticas (Anexo 1)`, máximo 5 MB. El sistema usa PDF como formato oficial actual; no hay formulario estructurado habilitado en la interfaz.
+- [ ] **Sistema**: Registra el documento y deja el expediente en `PLAN_PRESENTADO`.
+- [ ] **Docente Asesor (Inicial) o Comité (Final/Profesional)**: Inicia revisión y registra una observación de prueba con comentario obligatorio.
+- [ ] **Estudiante**: Lee la observación, elimina la versión no aprobada y carga la versión corregida del Plan.
+- [ ] **Docente Asesor (Inicial) o Comité (Final/Profesional)**: Aprueba el Plan. El estado debe ser `PLAN_APROBADO`.
+
+### 4.4 Ejecución y Seguimiento
+
+- [ ] **Secretaría o Coordinación**: Inicia ejecución indicando fecha de inicio y duración. El estado debe ser `EN_EJECUCION` y el control de horas debe crearse automáticamente.
+- [ ] **Estudiante**: Desde `Registro de Horas`, registra actividades propias, con fecha no futura y máximo 24 horas por registro.
+- [ ] **Tutor Externo o rol autorizado**: Valida los registros de horas requeridos para el acumulado.
+- [ ] **Práctica Inicial - Estudiante**: Desde `Informes`, presenta Informe Parcial 1, Informe Parcial 2 e Informe Final Inicial según el cronograma.
+- [ ] **Práctica Final o Profesional - Estudiante**: Desde `Informes`, presenta el Informe Final y carga Constancia de Empresa y Ficha de Evaluación cuando corresponda.
+- [ ] **Responsable revisor**: Revisa y aprueba los informes presentados según la asignación del expediente.
+
+### 4.5 Evaluación, Dictamen y Constancia
+
+- [ ] **Práctica Inicial - Docente Asesor**: Registra la evaluación/calificación del estudiante asignado.
+- [ ] **Práctica Final o Profesional - Tutor Externo**: Registra la evaluación empresarial (Anexo 2) solo para un expediente habilitado y asignado.
+- [ ] **Comité/Coordinación**: Verifica informe, evaluaciones y horas; emite el Dictamen Final cuando el estado lo permita.
+- [ ] **Director/Coordinador**: Emite la Constancia de Prácticas. El sistema valida horas, calificación, documentos de empresa y dictamen; cierra el expediente y después genera `CONSTANCIA_CULMINACION`.
+- [ ] **Estudiante**: Descarga la Constancia de Prácticas desde `Documentos y Plan de Prácticas` y verifica que recibe un PDF.
 
 ## 5. Verificación de Reglas Normativas
 
 Durante la ejecución del flujo anterior, se deben validar las siguientes reglas de negocio duras:
 
-- [ ] **Plazos de Envío**: El sistema advierte y valida que el plan se suba en un máximo de *15 días* tras ser aceptado en la empresa.
+- [ ] **Plan habilitado por asignación**: El estudiante no puede cargar el Plan antes de `ASESOR_ASIGNADO` o `COMITE_ASIGNADO`.
 - [ ] **Plazos de Subsanación**: El estudiante dispone de hasta *7 días* para levantar observaciones del plan, y *10 días* para observaciones en informes.
 - [ ] **Horas Mínimas Obligatorias**: El sistema impide la emisión de la constancia si el acumulado de horas registradas es menor al mínimo normativo (ej. 64h en Iniciales / 360h en Profesionales).
-- [ ] **Cálculo de Promedio**: El promedio final mostrado al Comité coincide con la fórmula de pesos estipulada en la rúbrica de la escuela (Nota Docente vs Nota Empresa).
+- [ ] **Descarga documental**: Un estudiante puede descargar solo documentos vinculados a su expediente y recibe `403`/`404` al intentar acceder a documentos ajenos.
 - [ ] **Bloqueos Automáticos**: Al forzar/simular que se vence un plazo en la base de datos, el estudiante ve el bloqueo pertinente en la UI y no puede enviar documentos a destiempo sin autorización.
 
 ## 6. Verificación de Accesos por Rol (Seguridad)
 
-- [ ] **Estudiante**: No ve botones de administración, no puede acceder a las URL de `/admin` y no puede consultar IDs de expedientes que pertenezcan a otros alumnos.
+- [ ] **Estudiante**: No ve botones de administración, no puede acceder a las URL de `/admin`, no puede consultar IDs de expedientes ajenos y solo puede registrar horas de su propio expediente en ejecución.
 - [ ] **Docente Asesor**: En "Mis Practicantes" *únicamente* aparecen los alumnos asignados a su carga.
 - [ ] **Tutor Externo**: Solo visualiza perfiles de alumnos que están evaluando en su sede específica.
 - [ ] **Protección Endpoints**: Intenta consumir mediante Postman o manipulando el token un endpoint restringido (ej. crear usuarios sin ser ADMIN) y recibe un status `403 Forbidden`.
@@ -104,24 +103,23 @@ Durante la ejecución del flujo anterior, se deben validar las siguientes reglas
 | 4   | Creación roles administrativos | Admin Sistema | | |
 | 5   | Alta de Empresa y Sede | Secretaría | | |
 | 6   | Alta y vinculación de Convenio | Secretaría | | |
-| 7   | Solicitud de Trámite Inicial | Estudiante | | |
+| 7   | Solicitud de trámite por tipo de práctica | Estudiante | | |
 | 8   | Validación administrativa y marcado "listo para carta" | Secretaría | | |
 | 8b  | Emisión y firma de Carta de Presentación | Director de Escuela | | |
 | 9   | Subida Carta de Aceptación | Estudiante | | |
-| 10  | Presentación del Plan de Prácticas | Estudiante | | |
-| 11  | Observación generada al Plan | Docente Asesor | | |
-| 12  | Levantamiento de Observación | Estudiante | | |
-| 13  | Aprobación del Plan | Docente Asesor | | |
-| 14  | Registro de Horas validadas | Estudiante | | |
-| 15  | Presentación de Informe Parcial | Estudiante | | |
-| 16  | Presentación de Informe Final | Estudiante | | |
-| 17  | Calificación Docente | Docente Asesor | | |
-| 18  | Calificación Tutor Externo | Tutor Externo | | |
-| 19  | Dictamen de Comité | Comité | | |
-| 20  | Validación Final / Cierre Expediente | Secretaría | | |
-| 21  | Emisión Constancia de Prácticas | Dirección de Escuela | | |
-| 22  | Test de Restricciones (Horas, Notas)| Sistema | | |
-| 23  | Test de Plazos y Bloqueos | Sistema | | |
-| 24  | Test de Aislamiento de Roles (Auth)| QA / Todos | | |
+| 10  | Asignación de asesor o comité | Secretaría / Coordinación / Comité | | |
+| 11  | Presentación del Plan de Prácticas PDF | Estudiante | | |
+| 12  | Observación generada al Plan | Asesor / Comité | | |
+| 13  | Levantamiento de observación | Estudiante | | |
+| 14  | Aprobación del Plan | Asesor / Comité | | |
+| 15  | Inicio de ejecución y creación de control de horas | Secretaría / Coordinación | | |
+| 16  | Registro y validación de horas | Estudiante / Tutor | | |
+| 17  | Presentación de informes aplicables | Estudiante | | |
+| 18  | Evaluación docente o empresarial | Asesor / Tutor Externo | | |
+| 19  | Dictamen final | Comité / Coordinación | | |
+| 20  | Emisión de constancia y cierre | Dirección / Coordinación | | |
+| 21  | Descarga autorizada de carta y constancia | Estudiante | | |
+| 22  | Test de restricciones de horas, documentos y roles | QA / Todos | | |
+| 23  | Test de plazos y bloqueos | Sistema | | |
 
 *Fin del documento.*
