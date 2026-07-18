@@ -29,12 +29,15 @@ import java.util.stream.Collectors;
 public class ReglasIntegridadServiceImpl implements ReglasIntegridadService {
 
     private static final String TIPO_INICIAL = "INICIAL";
-    private static final BigDecimal NOTA_MINIMA_APROBACION = new BigDecimal("13.5");
+    private static final BigDecimal NOTA_MINIMA_APROBACION = new BigDecimal("13.00");
 
     private static final Set<String> ESTADOS_PERMITIDOS_CALIFICACION = Set.of(
-            "INFORME_PARCIAL_PRESENTADO", "INFORME_FINAL_PRESENTADO", "EN_EJECUCION", "EVALUADO");
+            "INFORME_PARCIAL_1_PRESENTADO", "INFORME_PARCIAL_2_PRESENTADO",
+            "INFORME_FINAL_PRESENTADO", "INFORME_APROBADO", "EN_EJECUCION",
+            "EVALUACION_PENDIENTE", "EVALUACION_EMPRESA_PENDIENTE",
+            "EVALUACION_COMPLETA", "DICTAMEN_EMITIDO", "EVALUADO");
 
-    private static final Set<String> ESTADOS_PERMITIDOS_SUBSANACION = Set.of("OBSERVADO");
+    private static final Set<String> ESTADOS_PERMITIDOS_SUBSANACION = Set.of("OBSERVADO", "PLAN_OBSERVADO", "SUBSANADO");
 
     private final EmpresaRepository empresaRepository;
     private final SedePracticaRepository sedePracticaRepository;
@@ -108,11 +111,17 @@ public class ReglasIntegridadServiceImpl implements ReglasIntegridadService {
                 .collect(Collectors.toSet());
 
         String tipoCodigo = expediente.getTipoPractica().getCodigo();
-        List<String> obligatorios = TIPO_INICIAL.equals(tipoCodigo)
-                ? Arrays.asList("PLAN_PRACTICA", "INFORME_PARCIAL", "INFORME_FINAL",
-                "CONSTANCIA_CULMINACION", "VISTO_BUENO_ASESOR", "DICTAMEN_FINAL")
-                : Arrays.asList("CARTA_ACEPTACION", "PLAN_PRACTICA", "INFORME_FINAL",
-                "CONSTANCIA_CULMINACION", "FICHA_EVALUACION_EMPRESA", "DICTAMEN_FINAL");
+        List<String> obligatorios;
+        if (TIPO_INICIAL.equals(tipoCodigo)) {
+            obligatorios = Arrays.asList("PLAN_PRACTICA", "INFORME_PARCIAL_1", "INFORME_PARCIAL_2",
+                    "INFORME_FINAL_INICIAL", "CONSTANCIA_CULMINACION", "DICTAMEN_FINAL");
+        } else if ("FINAL".equals(tipoCodigo)) {
+            obligatorios = Arrays.asList("CARTA_ACEPTACION", "PLAN_PRACTICA", "INFORME_FINAL",
+                    "CONSTANCIA_CULMINACION", "FICHA_EVALUACION", "DICTAMEN_FINAL");
+        } else {
+            obligatorios = Arrays.asList("CARTA_ACEPTACION", "PLAN_PRACTICA", "INFORME_FINAL_PROFESIONAL",
+                    "CONSTANCIA_CULMINACION", "FICHA_EVALUACION", "DICTAMEN_FINAL");
+        }
 
         for (String doc : obligatorios) {
             if (!documentosSubidos.contains(doc)) {

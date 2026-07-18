@@ -21,20 +21,21 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import SaveIcon from '@mui/icons-material/Save';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
-import { secretariaApi } from '../../../api/usuariosApi';
+import { secretariaApi } from '../../../api/secretariaApi';
 import { academicoApi } from '../../../api/validacionesApi';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 
 const MySwal = withReactContent(Swal);
 
-const TIPO_PRACTICA_OPTS = ['INICIAL', 'FINAL'];
+const TIPO_PRACTICA_OPTS = ['INICIAL', 'FINAL', 'PROFESIONAL'];
 
-const ESTADOS_ACADEMICOS = ['MATRICULADO', 'ACTIVO', 'SUSPENDIDO', 'EGRESADO', 'GRADUADO'];
+const ESTADOS_ACADEMICOS = ['MATRICULADO', 'ACTIVO', 'REGULAR', 'SUSPENDIDO', 'EGRESADO', 'GRADUADO'];
 
 const ESTADO_ACADEMICO_DOT = {
     MATRICULADO: { dot: '#3b82f6', bg: '#eff6ff' },
     ACTIVO: { dot: '#10b981', bg: '#ecfdf5' },
+    REGULAR: { dot: '#F5C518', bg: '#fffbeb' },
     SUSPENDIDO: { dot: '#f59e0b', bg: '#fffbeb' },
     EGRESADO: { dot: '#64748b', bg: '#f1f5f9' },
     GRADUADO: { dot: '#8b5cf6', bg: '#f5f3ff' }
@@ -476,7 +477,10 @@ export const ValidarRequisitos = () => {
                                 <Select value={tipoPracticaValidar} label="Tipo de Práctica"
                                     onChange={e => { setTipoPracticaValidar(e.target.value); setResultadoValidacion(null); }}
                                     disabled={validando} sx={{ borderRadius: 1.2 }}>
-                                    {TIPO_PRACTICA_OPTS.map(tp => <MenuItem key={tp} value={tp}>{tp === 'INICIAL' ? 'Práctica Inicial' : 'Práctica Final'}</MenuItem>)}
+                                    {TIPO_PRACTICA_OPTS.map(tp => {
+                                        const label = tp === 'INICIAL' ? 'Práctica Inicial' : tp === 'FINAL' ? 'Práctica Final' : 'Práctica Profesional';
+                                        return <MenuItem key={tp} value={tp}>{label}</MenuItem>;
+                                    })}
                                 </Select>
                             </FormControl>
                             <Button variant="contained" color={resultadoValidacion ? 'warning' : 'primary'}

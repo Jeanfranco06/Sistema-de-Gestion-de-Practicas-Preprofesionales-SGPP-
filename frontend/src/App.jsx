@@ -28,6 +28,7 @@ import { GestionTutores } from './modules/admin/pages/GestionTutores';
 import { ValidarRequisitos } from './modules/secretaria/pages/ValidarRequisitos';
 import { GestionDocumental } from './modules/estudiante/pages/GestionDocumental';
 import { InformesPeriodicos } from './modules/estudiante/pages/InformesPeriodicos';
+import { RegistroHoras } from './modules/estudiante/pages/RegistroHoras';
 import { PerfilEstudiante } from './modules/estudiante/pages/PerfilEstudiante';
 import { MiPractica } from './modules/estudiante/pages/MiPractica';
 import { RevisionDocumental } from './modules/shared/pages/RevisionDocumental';
@@ -98,7 +99,11 @@ export default function App() {
                   <PerfilEstudiante />
                 </ProtectedRoute>
               } />
-              <Route path="/estudiante/horas" element={<PaginaEnConstruccion titulo="Registro de Horas" />} />
+              <Route path="/estudiante/horas" element={
+                <ProtectedRoute allowedRoles={['ESTUDIANTE']}>
+                  <RegistroHoras />
+                </ProtectedRoute>
+              } />
               <Route path="/estudiante/evaluacion" element={<PaginaEnConstruccion titulo="Evaluación" />} />
               <Route
                 path="/estudiante/sedes"

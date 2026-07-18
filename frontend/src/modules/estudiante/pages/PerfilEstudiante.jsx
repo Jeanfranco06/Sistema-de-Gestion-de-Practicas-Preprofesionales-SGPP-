@@ -118,6 +118,18 @@ export const PerfilEstudiante = () => {
     setError('');
     setSuccess('');
 
+    const promedio = parseFloat(formData.promedioPonderado);
+    if (Number.isNaN(promedio) || promedio < 0 || promedio > 20) {
+      setError('El promedio ponderado debe estar entre 0 y 20.');
+      setSaving(false);
+      return;
+    }
+    if (formData.semestreActual < 1 || formData.semestreActual > 20) {
+      setError('El semestre actual debe estar entre 1 y 20.');
+      setSaving(false);
+      return;
+    }
+
     try {
       await usuariosApi.actualizarPerfilAcademico(formData);
       
@@ -141,17 +153,23 @@ export const PerfilEstudiante = () => {
   const getEstadoColor = (estado) => {
     switch (estado) {
       case 'ACTIVO': return 'success';
-      case 'INACTIVO': return 'error';
+      case 'REGULAR': return 'warning';
+      case 'MATRICULADO': return 'info';
       case 'SUSPENDIDO': return 'warning';
+      case 'EGRESADO': return 'default';
+      case 'GRADUADO': return 'default';
       default: return 'default';
     }
   };
 
   const cumpleRequisito = (tipo) => {
     const req = requisitosInfo[tipo];
-    return formData.creditosAprobados >= req.creditos && 
+    const estadosValidos = ['ACTIVO', 'REGULAR', 'MATRICULADO'];
+    const promedio = parseFloat(formData.promedioPonderado) || 0;
+    return formData.creditosAprobados >= req.credits && 
            formData.semestreActual >= req.semestre &&
-           formData.estadoAcademico === 'ACTIVO';
+           estadosValidos.includes(formData.estadoAcademico) &&
+           promedio > 0 && promedio <= 20;
   };
 
   if (loading) {
@@ -449,9 +467,11 @@ export const PerfilEstudiante = () => {
                         sx={{ borderRadius: 2 }}
                       >
                         <MenuItem value="ACTIVO">ACTIVO</MenuItem>
-                        <MenuItem value="INACTIVO">INACTIVO</MenuItem>
+                        <MenuItem value="REGULAR">REGULAR</MenuItem>
+                        <MenuItem value="MATRICULADO">MATRICULADO</MenuItem>
                         <MenuItem value="SUSPENDIDO">SUSPENDIDO</MenuItem>
                         <MenuItem value="EGRESADO">EGRESADO</MenuItem>
+                        <MenuItem value="GRADUADO">GRADUADO</MenuItem>
                       </Select>
                     </FormControl>
                   </Grid>

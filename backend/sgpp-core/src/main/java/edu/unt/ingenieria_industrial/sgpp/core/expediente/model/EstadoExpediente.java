@@ -69,6 +69,7 @@ public enum EstadoExpediente {
     
     // Estados de control
     EN_REVISION("EN_REVISION", "Expediente en revisión general"),
+    RECHAZADO("RECHAZADO", "Plan o expediente rechazado"),
     SUSPENDIDO("SUSPENDIDO", "Práctica suspendida temporalmente"),
     CANCELADO("CANCELADO", "Práctica cancelada");
     
@@ -137,21 +138,23 @@ public enum EstadoExpediente {
             case INFORME_APROBADO:
                 return estadoAnterior == INFORME_EN_REVISION || estadoAnterior == SUBSANADO;
             case EVALUACION_PENDIENTE:
-                return estadoAnterior == INFORME_FINAL_PRESENTADO;
+                return estadoAnterior == INFORME_FINAL_PRESENTADO || estadoAnterior == INFORME_APROBADO;
             case EVALUACION_EMPRESA_PENDIENTE:
-                return estadoAnterior == INFORME_APROBADO;
+                return estadoAnterior == INFORME_APROBADO || estadoAnterior == EVALUACION_PENDIENTE;
             case EVALUACION_COMPLETA:
                 return estadoAnterior == EVALUACION_EMPRESA_PENDIENTE || estadoAnterior == EVALUACION_PENDIENTE;
             case DICTAMEN_EMITIDO:
                 return estadoAnterior == EVALUACION_COMPLETA;
             case EVALUADO:
-                return estadoAnterior == EVALUACION_COMPLETA || estadoAnterior == DICTAMEN_EMITIDO;
+                return estadoAnterior == EVALUACION_COMPLETA || estadoAnterior == DICTAMEN_EMITIDO || estadoAnterior == EVALUACION_EMPRESA_PENDIENTE;
             case CERRADO:
                 return estadoAnterior == EVALUADO || estadoAnterior == DICTAMEN_EMITIDO;
             case OBSERVADO:
                 return estadoAnterior == EN_REVISION || estadoAnterior == PLAN_EN_REVISION || estadoAnterior == PLAN_EN_REVISION_COMITE;
             case SUBSANADO:
-                return estadoAnterior == OBSERVADO;
+                return estadoAnterior == OBSERVADO || estadoAnterior == PLAN_OBSERVADO;
+            case RECHAZADO:
+                return estadoAnterior == PLAN_EN_REVISION || estadoAnterior == PLAN_EN_REVISION_COMITE || estadoAnterior == PLAN_PRESENTADO || estadoAnterior == INFORME_EN_REVISION;
             case SUSPENDIDO:
             case CANCELADO:
                 return true; // Se puede suspender/cancelar desde cualquier estado

@@ -11,43 +11,41 @@ import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  ModulePageShell, ModulePageHeader,
+    ModulePageShell, ModulePageHeader,
 } from '../../shared/components/module/ModulePageShell';
 import ContentCard from '../../shared/components/ContentCard';
+import { useTheme } from '@mui/material/styles';
 
 const MySwal = withReactContent(Swal);
 
-const CRITERIOS_POR_DEFECTO = [
-    { categoria: 'A. ASPECTOS ACTITUDINALES', puntajeMaximo: 20, criterios: [
-        { codigo: 'ASISTENCIA', nombre: 'Asistencia y puntualidad', puntajeMaximo: 5 },
-        { codigo: 'RESPONSABILIDAD', nombre: 'Responsabilidad para el cumplimiento de sus obligaciones', puntajeMaximo: 5 },
-        { codigo: 'ESFUERZO', nombre: 'Esfuerzo y empeño en la ejecución de sus tareas', puntajeMaximo: 5 },
-        { codigo: 'RESPETO_COLABORACION', nombre: 'Respeto y colaboración con sus superiores jerárquicos', puntajeMaximo: 5 },
-    ]},
-    { categoria: 'B. ASPECTOS COGNITIVOS', puntajeMaximo: 10, criterios: [
-        { codigo: 'CULTURA_GENERAL', nombre: 'Demostración de cultura y conocimientos generales propios de un estudiante o egresado universitario', puntajeMaximo: 4 },
-        { codigo: 'CONOCIMIENTOS_TECNICOS', nombre: 'Demostración de conocimientos técnicos propios de la carrera de Ingeniería Industrial', puntajeMaximo: 4 },
-    ]},
-    { categoria: 'C. ASPECTOS DE PROYECCIÓN Y DESARROLLO PROFESIONAL', puntajeMaximo: 20, criterios: [
-        { codigo: 'CREATIVIDAD', nombre: 'Creatividad e ingenio en la solución de problemas', puntajeMaximo: 4 },
-        { codigo: 'INTERACCION_PERSONAS', nombre: 'Interacción con personas, superiores y subordinados', puntajeMaximo: 4 },
-        { codigo: 'COMUNICACION', nombre: 'Fluidez en la comunicación verbal y escrita', puntajeMaximo: 4 },
-        { codigo: 'APRENDIZAJE', nombre: 'Grado de aprendizaje y asimilación de experiencias nuevas', puntajeMaximo: 4 },
-    ]},
-];
+const agruparCriterios = (criterios) => {
+    const grupos = {};
+    criterios.forEach((c) => {
+        const categoria = c.componente || c.categoria || 'GENERAL';
+        if (!grupos[categoria]) {
+            grupos[categoria] = { categoria, puntajeMaximo: 0, criterios: [] };
+        }
+        grupos[categoria].criterios.push(c);
+        grupos[categoria].puntajeMaximo += c.puntajeMaximo || 5;
+    });
+    return Object.values(grupos);
+};
 
 export const EvaluacionTutorExterno = () => {
     const { user } = useAuth();
     const { id: idExpedienteParams } = useParams();
     const navigate = useNavigate();
-    const idExpediente = idExpedienteParams ? parseInt(idExpedienteParams) : 1;
+    const theme = useTheme();
+    const idExpediente = idExpedienteParams ? parseInt(idExpedienteParams, 10) : 1;
 
     const [evaluaciones, setEvaluaciones] = useState([]);
     const [detalles, setDetalles] = useState({});
+    const [criterios, setCriterios] = useState([]);
+    const [grupos, setGrupos] = useState([]);
     const [evaluacion, setEvaluacion] = useState({
         idExpediente: idExpediente,
         tipoEvaluador: 'EMPRESA',
-        evaluadorId: user?.id || 1,
+        evaluadorId: user?.id || null,
         componente: 'EMPRESA',
         detalles: [],
         comentarios: '',
@@ -56,20 +54,26 @@ export const EvaluacionTutorExterno = () => {
     });
     const [loading, setLoading] = useState(false);
     const [expediente, setExpediente] = useState(null);
+    const [file, setFile] = useState(null);
 
     const fetchData = async () => {
         try {
-            const expRes = await expedientesApi.getById(idExpediente).catch(() => ({ data: null }));
-            const evRes = await evaluacionesApi.obtenerEvaluacionesPorPractica(idExpediente).catch(() => ({ data: [] }));
+            const [expRes, evRes, critRes] = await Promise.all([
+                expedientesApi.getById(idExpediente).catch(() => ({ data: null })),
+                evaluacionesApi.obtenerEvaluacionesPorPractica(idExpediente).catch(() => ({ data: [] })),
+                evaluacionesApi.obtenerCriteriosPorTipo('EMPRESA').catch(() => ({ data: [] }))
+            ]);
 
             setExpediente(expRes.data?.data || expRes.data);
-            setEvaluaciones(evRes.data || []);
+            setEvaluaciones(evRes.data?.data || evRes.data || []);
+
+            const criteriosBackend = critRes.data?.data || critRes.data || [];
+            setCriterios(criteriosBackend);
+            setGrupos(agruparCriterios(criteriosBackend));
 
             const initialDetalles = {};
-            CRITERIOS_POR_DEFECTO.forEach(cat => {
-                cat.criterios.forEach(c => {
-                    initialDetalles[c.codigo] = { puntajeObtenido: 0, comentarios: '' };
-                });
+            criteriosBackend.forEach((c) => {
+                initialDetalles[c.id] = { puntajeObtenido: 0, comentarios: '' };
             });
             setDetalles(initialDetalles);
         } catch {
@@ -78,38 +82,45 @@ export const EvaluacionTutorExterno = () => {
     };
 
     useEffect(() => {
-        fetchData();
+        const timer = setTimeout(() => fetchData(), 0);
+        return () => clearTimeout(timer);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [idExpediente]);
 
-    const handlePuntajeChange = (codigo, value) => {
-        const numValue = parseInt(value) || 0;
-        const criterio = CRITERIOS_POR_DEFECTO.flatMap(c => c.criterios).find(cr => cr.codigo === codigo);
-        const max = criterio?.puntajeMaximo || 5;
-        setDetalles(prev => ({
+    const handlePuntajeChange = (idCriterio, value, puntajeMaximo) => {
+        const numValue = parseInt(value, 10) || 0;
+        const max = puntajeMaximo || 5;
+        setDetalles((prev) => ({
             ...prev,
-            [codigo]: { ...prev[codigo], puntajeObtenido: Math.min(Math.max(numValue, 0), max) }
+            [idCriterio]: {
+                ...prev[idCriterio],
+                puntajeObtenido: Math.min(Math.max(numValue, 0), max)
+            }
         }));
     };
 
-    const handleComentarioChange = (codigo, value) => {
-        setDetalles(prev => ({
+    const handleComentarioChange = (idCriterio, value) => {
+        setDetalles((prev) => ({
             ...prev,
-            [codigo]: { ...prev[codigo], comentarios: value }
+            [idCriterio]: { ...prev[idCriterio], comentarios: value }
         }));
     };
 
     const calcularTotalCategoria = (categoria) => {
-        return categoria.criterios.reduce((sum, c) => sum + (detalles[c.codigo]?.puntajeObtenido || 0), 0);
+        return categoria.criterios.reduce((sum, c) => sum + (detalles[c.id]?.puntajeObtenido || 0), 0);
     };
 
     const calcularTotalGeneral = () => {
-        return CRITERIOS_POR_DEFECTO.reduce((sum, cat) => sum + calcularTotalCategoria(cat), 0);
+        return grupos.reduce((sum, cat) => sum + calcularTotalCategoria(cat), 0);
     };
 
+    const totalMaximo = grupos.reduce((sum, g) => sum + g.puntajeMaximo, 0) || 50;
+
     const handleFileUpload = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setEvaluacion(prev => ({ ...prev, rutaConstancia: file.name }));
+        const selected = e.target.files?.[0];
+        if (selected) {
+            setFile(selected);
+            setEvaluacion((prev) => ({ ...prev, rutaConstancia: selected.name }));
         }
     };
 
@@ -129,7 +140,8 @@ export const EvaluacionTutorExterno = () => {
             showCancelButton: true,
             confirmButtonText: 'Sí, registrar',
             cancelButtonText: 'Cancelar',
-            customClass: { confirmButton: 'wow-btn' }
+            confirmButtonColor: theme.palette.primary.main,
+            cancelButtonColor: theme.palette.secondary.main
         });
 
         if (!confirmResult.isConfirmed) return;
@@ -138,21 +150,27 @@ export const EvaluacionTutorExterno = () => {
         try {
             MySwal.fire({ title: 'Guardando...', didOpen: () => MySwal.showLoading() });
 
+            let rutaConstancia = evaluacion.rutaConstancia;
+            if (file) {
+                const uploadRes = await expedientesApi.uploadFile(file);
+                rutaConstancia = uploadRes.data?.data || uploadRes.data || file.name;
+            }
+
             const payload = {
                 ...evaluacion,
-                detalles: CRITERIOS_POR_DEFECTO.flatMap(cat =>
-                    cat.criterios.map(c => ({
-                        idCriterio: c.codigo,
-                        puntajeObtenido: detalles[c.codigo]?.puntajeObtenido || 0,
-                        comentarios: detalles[c.codigo]?.comentarios || ''
-                    }))
-                )
+                rutaConstancia,
+                detalles: criterios.map((c) => ({
+                    idCriterio: c.id,
+                    puntajeObtenido: detalles[c.id]?.puntajeObtenido || 0,
+                    comentarios: detalles[c.id]?.comentarios || ''
+                }))
             };
 
             await evaluacionesApi.crearEvaluacion(payload);
 
             const evRes = await evaluacionesApi.obtenerEvaluacionesPorPractica(idExpediente);
-            setEvaluaciones(evRes.data || []);
+            setEvaluaciones(evRes.data?.data || evRes.data || []);
+            setFile(null);
 
             MySwal.fire({
                 icon: 'success',
@@ -161,15 +179,16 @@ export const EvaluacionTutorExterno = () => {
                 timer: 2000,
                 showConfirmButton: false
             });
-        } catch {
-            MySwal.fire('Error', 'No se pudo guardar la evaluación.', 'error');
+        } catch (err) {
+            MySwal.fire('Error', err?.response?.data?.mensaje || 'No se pudo guardar la evaluación.', 'error');
         } finally {
             setLoading(false);
         }
     };
 
     const totalGeneral = calcularTotalGeneral();
-    const totalMaximo = 50;
+    const porcentaje = totalMaximo > 0 ? (totalGeneral / totalMaximo) * 100 : 0;
+    const colorTotal = totalGeneral >= totalMaximo * 0.7 ? 'success' : totalGeneral >= totalMaximo * 0.4 ? 'warning' : 'error';
 
     return (
         <ModulePageShell>
@@ -199,14 +218,14 @@ export const EvaluacionTutorExterno = () => {
                         </Grid>
                         <Grid item xs={12} md={4}>
                             <Typography variant="caption" color="text.secondary">Puntaje Total</Typography>
-                            <Typography variant="h4" fontWeight={600} sx={{ color: totalGeneral >= 40 ? 'var(--wow-success)' : totalGeneral >= 25 ? 'var(--wow-warning)' : 'var(--wow-danger)' }}>
+                            <Typography variant="h4" fontWeight={600} color={theme.palette[colorTotal].main}>
                                 {totalGeneral} <Typography component="span" variant="body2" color="text.secondary">/ {totalMaximo}</Typography>
                             </Typography>
                             <LinearProgress
                                 variant="determinate"
-                                value={(totalGeneral / totalMaximo) * 100}
+                                value={porcentaje}
                                 sx={{ mt: 1, height: 8, borderRadius: 4 }}
-                                color={totalGeneral >= 40 ? 'success' : totalGeneral >= 25 ? 'warning' : 'error'}
+                                color={colorTotal}
                             />
                         </Grid>
                     </Grid>
@@ -219,10 +238,10 @@ export const EvaluacionTutorExterno = () => {
                     (En la columna de puntaje, para cada criterio, sírvase marcar un número de 1 a 5 según corresponda al practicante que está evaluando. El número 1 corresponde al peor desempeño y el número 5 corresponde al mejor desempeño)
                 </Typography>
 
-                {CRITERIOS_POR_DEFECTO.map((cat, catIndex) => (
+                {grupos.map((cat, catIndex) => (
                     <Box key={cat.categoria} sx={{ mb: 3 }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-                            <Typography variant="subtitle2" fontWeight={700} sx={{ color: '#1a365d' }}>
+                            <Typography variant="subtitle2" fontWeight={700} sx={{ color: theme.palette.secondary.dark }}>
                                 {cat.categoria}
                             </Typography>
                             <Chip
@@ -236,25 +255,28 @@ export const EvaluacionTutorExterno = () => {
                         <TableContainer sx={{ mb: 1 }}>
                             <Table size="small">
                                 <TableHead>
-                                    <TableRow sx={{ bgcolor: '#f8fafc' }}>
+                                    <TableRow sx={{ bgcolor: theme.palette.secondary.light + '20' }}>
                                         <TableCell sx={{ fontWeight: 600, width: '50%' }}>Criterio de Evaluación</TableCell>
-                                        <TableCell sx={{ fontWeight: 600, width: '25%' }} align="center">Puntaje (1-5)</TableCell>
+                                        <TableCell sx={{ fontWeight: 600, width: '25%' }} align="center">Puntaje (1-{Math.max(...cat.criterios.map((c) => c.puntajeMaximo || 5), 5)})</TableCell>
                                         <TableCell sx={{ fontWeight: 600, width: '25%' }} align="center">Observaciones</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
                                     {cat.criterios.map((criterio) => (
-                                        <TableRow key={criterio.codigo} hover>
+                                        <TableRow key={criterio.id} hover>
                                             <TableCell>
                                                 <Typography variant="body2">{criterio.nombre}</Typography>
+                                                {criterio.descripcion && (
+                                                    <Typography variant="caption" color="text.secondary">{criterio.descripcion}</Typography>
+                                                )}
                                             </TableCell>
                                             <TableCell align="center">
                                                 <TextField
                                                     type="number"
                                                     size="small"
-                                                    InputProps={{ inputProps: { min: 1, max: 5, style: { textAlign: 'center' } } }}
-                                                    value={detalles[criterio.codigo]?.puntajeObtenido || ''}
-                                                    onChange={(e) => handlePuntajeChange(criterio.codigo, e.target.value)}
+                                                    InputProps={{ inputProps: { min: 0, max: criterio.puntajeMaximo || 5, style: { textAlign: 'center' } } }}
+                                                    value={detalles[criterio.id]?.puntajeObtenido || ''}
+                                                    onChange={(e) => handlePuntajeChange(criterio.id, e.target.value, criterio.puntajeMaximo)}
                                                     sx={{ width: 70 }}
                                                 />
                                             </TableCell>
@@ -264,8 +286,8 @@ export const EvaluacionTutorExterno = () => {
                                                     fullWidth
                                                     multiline
                                                     rows={1}
-                                                    value={detalles[criterio.codigo]?.comentarios || ''}
-                                                    onChange={(e) => handleComentarioChange(criterio.codigo, e.target.value)}
+                                                    value={detalles[criterio.id]?.comentarios || ''}
+                                                    onChange={(e) => handleComentarioChange(criterio.id, e.target.value)}
                                                     placeholder="Opcional"
                                                 />
                                             </TableCell>
@@ -275,7 +297,7 @@ export const EvaluacionTutorExterno = () => {
                             </Table>
                         </TableContainer>
 
-                        {catIndex < CRITERIOS_POR_DEFECTO.length - 1 && <Divider sx={{ my: 2 }} />}
+                        {catIndex < grupos.length - 1 && <Divider sx={{ my: 2 }} />}
                     </Box>
                 ))}
 
@@ -288,11 +310,18 @@ export const EvaluacionTutorExterno = () => {
                                 fullWidth
                                 size="small"
                                 value={evaluacion.horasRegistradas || ''}
-                                onChange={(e) => setEvaluacion((prev) => ({ ...prev, horasRegistradas: parseInt(e.target.value) || 0 }))}
+                                onChange={(e) => setEvaluacion((prev) => ({ ...prev, horasRegistradas: parseInt(e.target.value, 10) || 0 }))}
                             />
                         </Grid>
                         <Grid item xs={12} md={4}>
-                            <Button variant="outlined" component="label" startIcon={<CloudUpload />} fullWidth sx={{ height: '100%' }}>
+                            <Button
+                                variant="outlined"
+                                component="label"
+                                startIcon={<CloudUpload />}
+                                fullWidth
+                                sx={{ height: '100%' }}
+                                color={file ? 'success' : 'primary'}
+                            >
                                 {evaluacion.rutaConstancia || 'Subir constancia de horas'}
                                 <input type="file" hidden accept=".pdf,.doc,.docx" onChange={handleFileUpload} />
                             </Button>
@@ -300,7 +329,7 @@ export const EvaluacionTutorExterno = () => {
                         <Grid item xs={12} md={4}>
                             <Box sx={{ textAlign: 'center', py: 1 }}>
                                 <Typography variant="caption" color="text.secondary">Puntaje Total Obtenido</Typography>
-                                <Typography variant="h5" fontWeight={700} sx={{ color: totalGeneral >= 40 ? '#16a34a' : totalGeneral >= 25 ? '#d97706' : '#dc2626' }}>
+                                <Typography variant="h5" fontWeight={700} color={theme.palette[colorTotal].main}>
                                     {totalGeneral} / {totalMaximo}
                                 </Typography>
                             </Box>
@@ -346,20 +375,20 @@ export const EvaluacionTutorExterno = () => {
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {evaluaciones.map((ev) => ev.componente === 'EMPRESA' && (
+                                {evaluaciones.filter((ev) => ev.componente === 'EMPRESA').map((ev) => (
                                     <TableRow key={ev.id} hover>
                                         <TableCell>{ev.fechaEvaluacion}</TableCell>
                                         <TableCell>{ev.horasRegistradas} hrs</TableCell>
                                         <TableCell>{ev.tipoEvaluador}</TableCell>
                                         <TableCell>
                                             <Typography variant="body2" fontWeight={600}>
-                                                {ev.puntajeTotal || ev.promedioFinal || '—'}/50
+                                                {ev.puntajeTotal || ev.promedioFinal || '—'}/{totalMaximo}
                                             </Typography>
                                         </TableCell>
                                         <TableCell>
                                             {ev.detalles?.map((d) => (
-                                                <Typography key={d.idCriterio} variant="caption" display="block">
-                                                    {d.nombreCriterio}: {d.puntajeObtenido}/5
+                                                <Typography key={d.idCriterio || d.id} variant="caption" display="block">
+                                                    {d.nombreCriterio || d.criterio}: {d.puntajeObtenido}
                                                 </Typography>
                                             ))}
                                         </TableCell>

@@ -9,12 +9,12 @@ import {
 import { Description } from '@mui/icons-material';
 import {
   PeopleAlt, Assignment, PlaylistAddCheck, WarningAmber,
-  RateReview, Business, CheckCircle, Refresh,
+  RateReview, Business, Refresh,
   ChevronRight, Apartment, Visibility,
 } from '@mui/icons-material';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as ReTooltip,
-  ResponsiveContainer, PieChart, Pie, Cell, Legend,
+  ResponsiveContainer, PieChart, Pie, Cell,
 } from 'recharts';
 import { useAuth } from '../../../auth/AuthContext';
 import { expedientesApi } from '../../../api/expedientesApi';
@@ -141,7 +141,6 @@ export const DashboardCoordinacion = () => {
   const estadoLabel = (estado) => estado?.replace(/_/g, ' ').toLowerCase() || 'Pendiente';
   const avancePct = kpis.total > 0 ? Math.round((kpis.cerrados / kpis.total) * 100) : 0;
   const recientes = useMemo(() => [...expedientes].slice(0, 5), [expedientes]);
-  const maxEstado = Math.max(...estadosChart.map((i) => i.value), 1);
 
   if (loading) {
     return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}><CircularProgress size={32} /></Box>;
@@ -365,15 +364,15 @@ export const DashboardCoordinacion = () => {
                   </TableCell>
                   <TableCell align="center">
                     <Stack direction="row" spacing={0.5} justifyContent="center">
-                      {/* Debug: console.log('Estado:', e.estado, 'Tipo:', typeof e.estado) */}
-                      {/* Temporal: mostrar botón siempre para debug */}
-                      <Tooltip title="Emitir y firmar Carta de Presentación">
-                        <Button size="small" variant="contained" color="success"
-                          onClick={() => handleEmitirCarta(e.id)}
-                          sx={{ fontWeight: 600, fontSize: '0.7rem', whiteSpace: 'nowrap', px: 1 }}>
-                          Emitir Carta
-                        </Button>
-                      </Tooltip>
+                      {e.estado === 'VALIDADO_SECRETARIA' && (
+                        <Tooltip title="Emitir y firmar Carta de Presentación">
+                          <Button size="small" variant="contained" color="success"
+                            onClick={() => handleEmitirCarta(e.id)}
+                            sx={{ fontWeight: 600, fontSize: '0.7rem', whiteSpace: 'nowrap', px: 1 }}>
+                            Emitir Carta
+                          </Button>
+                        </Tooltip>
+                      )}
                       <Tooltip title="Ver detalle">
                         <Button size="small" variant="outlined" onClick={() => navigate(`/coordinacion/expedientes/${e.id}`)}>
                           <Visibility fontSize="small" />

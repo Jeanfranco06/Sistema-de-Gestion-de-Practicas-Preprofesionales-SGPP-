@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useLocation, Link as RouterLink } from 'react-router-dom';
+import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import {
-  Box, Card, TextField, Button, Typography,
+  Box, TextField, Button, Typography,
   InputAdornment, IconButton, Alert, CircularProgress, Link,
   ThemeProvider, createTheme, CssBaseline, Paper
 } from '@mui/material';
@@ -10,22 +10,7 @@ import {
 } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../auth/AuthContext';
-import { getHomeRoute, hasAnyRole } from '../../shared/utils/roleRoutes';
-
-function canAccessRoute(pathname, roles = []) {
-  if (!pathname || pathname === '/login' || pathname === '/no-autorizado') return false;
-  const hasRole = (role) => hasAnyRole(roles, [role]);
-  if (pathname.startsWith('/estudiante/')) return hasRole('ESTUDIANTE');
-  if (pathname.startsWith('/docente/')) return hasRole('DOCENTE_ASESOR');
-  if (pathname.startsWith('/tutor/')) return hasRole('TUTOR_EXTERNO');
-  if (pathname.startsWith('/admin/usuarios')) return hasAnyRole(roles, ['ADMIN_SISTEMA', 'ADMINISTRADOR']);
-  if (pathname.startsWith('/coordinacion/')) return ['COORDINADOR', 'DIRECTOR', 'ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COMITE_PRACTICAS'].some(hasRole);
-  if (pathname.startsWith('/comite/')) return ['COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR'].some(hasRole);
-  if (pathname.startsWith('/secretaria/')) return ['SECRETARIA', 'ADMINISTRADOR', 'ADMIN_SISTEMA'].some(hasRole);
-  if (pathname.startsWith('/admin/')) return ['ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR'].some(hasRole);
-  if (pathname === '/perfil') return true;
-  return false;
-}
+import { getHomeRoute } from '../../shared/utils/roleRoutes';
 
 // Tema formal e institucional
 const formalTheme = createTheme({
@@ -35,12 +20,16 @@ const formalTheme = createTheme({
   palette: {
     mode: 'light',
     primary: {
-      main: '#1a365d', // Azul oscuro institucional
-      dark: '#0f172a',
-      light: '#3b82f6',
+      main: '#F5C518', // Amarillo institucional UNT
+      dark: '#C79A00',
+      light: '#FCE87A',
+      contrastText: '#1E293B',
     },
     secondary: {
-      main: '#dc2626',
+      main: '#1A3A6E', // Azul institucional
+      dark: '#0E2142',
+      light: '#4A6FA5',
+      contrastText: '#FFFFFF',
     },
     background: {
       default: '#f8fafc',
@@ -51,7 +40,14 @@ const formalTheme = createTheme({
       secondary: '#64748b',
     },
     error: {
-      main: '#ef4444',
+      main: '#C62828',
+      light: '#EF5350',
+      dark: '#8E0000',
+    },
+    success: {
+      main: '#2E7D32',
+      light: '#66BB6A',
+      dark: '#1B5E20',
     }
   },
   components: {
@@ -103,7 +99,6 @@ const MotionPaper = motion(Paper);
 export default function LoginPage() {
   const { login, user } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const [form, setForm] = useState({ username: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
@@ -197,10 +192,10 @@ export default function LoginPage() {
               display: { xs: 'none', md: 'flex' },
               flex: { md: 5, lg: 6 },
               flexDirection: 'column',
-              bgcolor: 'primary.main',
+              bgcolor: 'secondary.main',
               position: 'relative',
               overflow: 'hidden',
-              color: 'white',
+              color: 'secondary.contrastText',
               p: 6,
               justifyContent: 'space-between',
             }}
@@ -225,8 +220,8 @@ export default function LoginPage() {
               transition={{ duration: 0.8 }}
               sx={{ zIndex: 2, display: 'flex', alignItems: 'center', gap: 2 }}
             >
-              <Box sx={{ bgcolor: 'white', p: 1.5, borderRadius: 2, display: 'flex' }}>
-                <School sx={{ color: 'primary.main', fontSize: 32 }} />
+              <Box sx={{ bgcolor: 'primary.main', p: 1.5, borderRadius: 2, display: 'flex' }}>
+                <School sx={{ color: 'primary.contrastText', fontSize: 32 }} />
               </Box>
               <Box>
                 <Typography variant="h6" fontWeight="700" letterSpacing={1}>UNT</Typography>
@@ -301,7 +296,7 @@ export default function LoginPage() {
                     e.target.style.display = 'none';
                   }}
                 />
-                <Typography variant="h4" fontWeight="800" color="primary.main" gutterBottom>
+                <Typography variant="h4" fontWeight="800" color="secondary.main" gutterBottom>
                   Iniciar Sesión
                 </Typography>
                 <Typography variant="body1" color="text.secondary">
@@ -394,7 +389,7 @@ export default function LoginPage() {
                     to="/forgot-password"
                     variant="body2"
                     underline="hover"
-                    sx={{ color: 'primary.main', fontWeight: 600 }}
+                    sx={{ color: 'secondary.main', fontWeight: 600 }}
                   >
                     ¿Olvidaste tu contraseña?
                   </Link>
@@ -421,7 +416,7 @@ export default function LoginPage() {
               <Box sx={{ mt: 5, textAlign: 'center' }}>
                 <Typography variant="body2" color="text.secondary">
                   ¿Problemas para ingresar?{' '}
-                  <Link href="#" underline="hover" color="primary.main" fontWeight="600">
+                  <Link href="#" underline="hover" color="secondary.main" fontWeight="600">
                     Contacta a Soporte
                   </Link>
                 </Typography>

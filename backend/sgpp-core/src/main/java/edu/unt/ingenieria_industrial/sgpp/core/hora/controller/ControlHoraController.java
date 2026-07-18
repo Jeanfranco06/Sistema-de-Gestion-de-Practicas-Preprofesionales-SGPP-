@@ -26,7 +26,7 @@ public class ControlHoraController {
 
     @PostMapping("/iniciar/{idExpediente}")
     @Operation(summary = "Iniciar control de horas", description = "Inicia el control de horas para un expediente de práctica")
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'COORDINADOR', 'SECRETARIA')")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COORDINADOR', 'SECRETARIA')")
     public ResponseEntity<ApiResponse<ControlHoraResponse>> iniciarControlHora(
             @Parameter(description = "ID del expediente") @PathVariable Long idExpediente,
             @Parameter(description = "ID del usuario que inicia el control") @RequestParam Long idUsuario) {
@@ -35,7 +35,7 @@ public class ControlHoraController {
 
     @PostMapping("/registrar/{idExpediente}")
     @Operation(summary = "Registrar horas", description = "Registra horas de práctica para un expediente")
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'COORDINADOR', 'SECRETARIA', 'ESTUDIANTE', 'TUTOR_EXTERNO')")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COORDINADOR', 'SECRETARIA', 'ESTUDIANTE', 'TUTOR_EXTERNO')")
     public ResponseEntity<ApiResponse<RegistroHoraResponse>> registrarHora(
             @Parameter(description = "ID del expediente") @PathVariable Long idExpediente,
             @Valid @RequestBody RegistrarHoraRequest request,
@@ -45,7 +45,7 @@ public class ControlHoraController {
 
     @PutMapping("/validar/{idRegistro}")
     @Operation(summary = "Validar registro de horas", description = "Valida un registro de horas por parte del tutor")
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'COORDINADOR', 'TUTOR_EXTERNO')")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COORDINADOR', 'TUTOR_EXTERNO')")
     public ResponseEntity<ApiResponse<RegistroHoraResponse>> validarHora(
             @Parameter(description = "ID del registro de hora") @PathVariable Long idRegistro,
             @Valid @RequestBody ValidarHoraRequest request,
@@ -55,7 +55,7 @@ public class ControlHoraController {
 
     @GetMapping("/cumplimiento/{idExpediente}")
     @Operation(summary = "Verificar cumplimiento de horas", description = "Verifica el cumplimiento de horas de un expediente")
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'COORDINADOR', 'SECRETARIA', 'ESTUDIANTE', 'TUTOR_EXTERNO')")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COORDINADOR', 'SECRETARIA', 'ESTUDIANTE', 'TUTOR_EXTERNO')")
     public ResponseEntity<ApiResponse<CumplimientoHorasResponse>> verificarCumplimiento(
             @Parameter(description = "ID del expediente") @PathVariable Long idExpediente) {
         return ResponseEntity.ok(controlHoraService.verificarCumplimiento(idExpediente));
@@ -63,7 +63,7 @@ public class ControlHoraController {
 
     @GetMapping("/control/{idExpediente}")
     @Operation(summary = "Obtener control de horas", description = "Obtiene el control de horas de un expediente")
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'COORDINADOR', 'SECRETARIA', 'ESTUDIANTE', 'TUTOR_EXTERNO')")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COORDINADOR', 'SECRETARIA', 'ESTUDIANTE', 'TUTOR_EXTERNO')")
     public ResponseEntity<ApiResponse<ControlHoraResponse>> obtenerControlHora(
             @Parameter(description = "ID del expediente") @PathVariable Long idExpediente) {
         return ResponseEntity.ok(controlHoraService.obtenerControlHora(idExpediente));
@@ -71,7 +71,7 @@ public class ControlHoraController {
 
     @GetMapping("/registros/{idExpediente}")
     @Operation(summary = "Listar registros de horas", description = "Lista todos los registros de horas de un expediente")
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'COORDINADOR', 'SECRETARIA', 'ESTUDIANTE', 'TUTOR_EXTERNO')")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COORDINADOR', 'SECRETARIA', 'ESTUDIANTE', 'TUTOR_EXTERNO')")
     public ResponseEntity<ApiResponse<List<RegistroHoraResponse>>> listarRegistros(
             @Parameter(description = "ID del expediente") @PathVariable Long idExpediente) {
         return ResponseEntity.ok(controlHoraService.listarRegistros(idExpediente));
@@ -79,7 +79,7 @@ public class ControlHoraController {
 
     @GetMapping("/registros/{idExpediente}/periodo")
     @Operation(summary = "Listar registros por periodo", description = "Lista los registros de horas de un expediente en un periodo específico")
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'COORDINADOR', 'SECRETARIA', 'ESTUDIANTE', 'TUTOR_EXTERNO')")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COORDINADOR', 'SECRETARIA', 'ESTUDIANTE', 'TUTOR_EXTERNO')")
     public ResponseEntity<ApiResponse<List<RegistroHoraResponse>>> listarRegistrosPorPeriodo(
             @Parameter(description = "ID del expediente") @PathVariable Long idExpediente,
             @Parameter(description = "Fecha inicio del periodo") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
@@ -89,7 +89,7 @@ public class ControlHoraController {
 
     @PostMapping("/actualizar/{idExpediente}")
     @Operation(summary = "Actualizar horas acumuladas", description = "Actualiza las horas acumuladas de un expediente")
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'COORDINADOR', 'SECRETARIA')")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COORDINADOR', 'SECRETARIA')")
     public ResponseEntity<ApiResponse<Void>> actualizarHorasAcumuladas(
             @Parameter(description = "ID del expediente") @PathVariable Long idExpediente,
             @Parameter(description = "ID del usuario que actualiza") @RequestParam Long idUsuario) {
@@ -98,7 +98,7 @@ public class ControlHoraController {
 
     @GetMapping("/puede-cerrar/{idExpediente}")
     @Operation(summary = "Verificar si se puede cerrar expediente", description = "Verifica si un expediente puede cerrarse basado en el cumplimiento de horas")
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'COORDINADOR', 'SECRETARIA')")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COORDINADOR', 'SECRETARIA')")
     public ResponseEntity<ApiResponse<Boolean>> puedeCerrarExpediente(
             @Parameter(description = "ID del expediente") @PathVariable Long idExpediente) {
         return ResponseEntity.ok(controlHoraService.puedeCerrarExpediente(idExpediente));

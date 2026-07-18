@@ -11,6 +11,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { practicaApi } from '../../../api/practicasApi';
+import { horasEstudianteApi } from '../../../api/horasApi';
 
 // Componente Card Premium responsivo (igual que en DashboardEstudiante)
 const DashboardCard = ({ title, action, children, sx }) => (
@@ -63,6 +64,7 @@ export const MiPractica = () => {
   const [loading, setLoading] = useState(true);
   const [practica, setPractica] = useState(null);
   const [error, setError] = useState(null);
+  const [horasData, setHorasData] = useState({ horasRequeridas: 0, horasValidadas: 0 });
 
   useEffect(() => {
     const fetchPractica = async () => {
@@ -71,6 +73,19 @@ export const MiPractica = () => {
         const response = await practicaApi.getMiPractica();
         const data = response.data?.data || response.data;
         setPractica(data);
+        if (data?.idExpediente || data?.expedienteId) {
+          const cumplimientoRes = await horasEstudianteApi.getCumplimiento(data.idExpediente || data.expedienteId).catch(() => null);
+          const cumplimiento = cumplimientoRes?.data?.data || {};
+          setHorasData({
+            horasRequeridas: cumplimiento.horasRequeridas || data.horasRequeridas || 0,
+            horasValidadas: cumplimiento.horasValidadas || 0,
+          });
+        } else if (data) {
+          setHorasData({
+            horasRequeridas: data.horasRequeridas || 0,
+            horasValidadas: 0,
+          });
+        }
       } catch (err) {
         console.error("Error fetching mi práctica:", err);
         setError("No se pudo cargar la información de tu práctica.");
@@ -144,9 +159,9 @@ export const MiPractica = () => {
     );
   }
 
-  const horasTotales = practica.horasRequeridas || 0;
-  const horasEjecutadas = (practica.estado === 'FINALIZADA') ? horasTotales : (practica.estado === 'EN_CURSO' ? Math.floor(horasTotales * 0.3) : 0);
-  const pct = horasTotales > 0 ? Math.round((horasEjecutadas / horasTotales) * 100) : 0;
+  const horasTotales = horasData.horasRequeridas || practica.horasRequeridas || 0;
+  const horasEjecutadas = horasData.horasValidadas || 0;
+  const pct = horasTotales > 0 ? Math.min(100, Math.round((horasEjecutadas / horasTotales) * 100)) : 0;
   const practicaStatus = getStatusProps(practica.estado);
 
   return (

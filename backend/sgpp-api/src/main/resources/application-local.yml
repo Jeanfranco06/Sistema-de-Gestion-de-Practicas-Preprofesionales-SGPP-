@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5433/sgpp_db
+    url: jdbc:postgresql://localhost:5434/sgpp_db
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver
@@ -22,7 +22,7 @@ spring:
     out-of-order: true
 
 server:
-  port: ${SERVER_PORT:8081}
+  port: ${SERVER_PORT:8082}
 
 jwt:
   secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}

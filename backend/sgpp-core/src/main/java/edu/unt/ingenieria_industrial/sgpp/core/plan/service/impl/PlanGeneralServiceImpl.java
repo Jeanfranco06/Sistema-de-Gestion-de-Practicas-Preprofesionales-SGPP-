@@ -2,6 +2,7 @@ package edu.unt.ingenieria_industrial.sgpp.core.plan.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.unt.ingenieria_industrial.sgpp.core.expediente.model.EstadoExpediente;
 import edu.unt.ingenieria_industrial.sgpp.core.expediente.model.Expediente;
 import edu.unt.ingenieria_industrial.sgpp.core.expediente.model.ExpedienteEstado;
 import edu.unt.ingenieria_industrial.sgpp.core.expediente.repository.ExpedienteEstadoRepository;
@@ -35,9 +36,9 @@ public class PlanGeneralServiceImpl implements PlanGeneralService {
     private static final String ESTADO_BORRADOR = "BORRADOR";
     private static final String ESTADO_PRESENTADO = "PRESENTADO";
     private static final String ESTADO_EN_REVISION = "EN_REVISION";
-    private static final String ESTADO_OBSERVADO = "OBSERVADO";
-    private static final String ESTADO_APROBADO = "APROBADO";
-    private static final String ESTADO_RECHAZADO = "RECHAZADO";
+    private static final String ESTADO_OBSERVADO = EstadoExpediente.PLAN_OBSERVADO.getCodigo();
+    private static final String ESTADO_APROBADO = EstadoExpediente.PLAN_APROBADO.getCodigo();
+    private static final String ESTADO_RECHAZADO = EstadoExpediente.RECHAZADO.getCodigo();
 
     private static final String SECCION_CARATULA = "CARATULA";
     private static final String SECCION_DATOS_EMPRESA = "DATOS_EMPRESA";
@@ -69,12 +70,12 @@ public class PlanGeneralServiceImpl implements PlanGeneralService {
         boolean puedeRegistrar = false;
         if (TIPO_INICIAL.equals(tipoCodigo)) {
             puedeRegistrar = "ASESOR_ASIGNADO".equals(estadoExp) || "EMPRESA_SEDE_ASIGNADA".equals(estadoExp)
-                    || "PLAN_PRESENTADO".equals(estadoExp) || "OBSERVADO".equals(estadoExp)
+                    || EstadoExpediente.PLAN_PRESENTADO.getCodigo().equals(estadoExp) || EstadoExpediente.PLAN_OBSERVADO.getCodigo().equals(estadoExp)
                     || "SUBSANADO".equals(estadoExp);
         } else {
             puedeRegistrar = "COMITE_ASIGNADO".equals(estadoExp) || "EMPRESA_SEDE_ASIGNADA".equals(estadoExp)
                     || "CARTA_ACEPTACION_PRESENTADA".equals(estadoExp)
-                    || "PLAN_PRESENTADO".equals(estadoExp) || "OBSERVADO".equals(estadoExp)
+                    || EstadoExpediente.PLAN_PRESENTADO.getCodigo().equals(estadoExp) || EstadoExpediente.PLAN_OBSERVADO.getCodigo().equals(estadoExp)
                     || "SUBSANADO".equals(estadoExp);
         }
         if (!puedeRegistrar) {
@@ -85,7 +86,7 @@ public class PlanGeneralServiceImpl implements PlanGeneralService {
                 .findTopByExpedienteIdAndActivoTrueOrderByVersionDesc(expediente.getId());
         if (activoOpt.isPresent()) {
             PlanGeneral activo = activoOpt.get();
-            if (!"OBSERVADO".equals(activo.getEstado()) && !"RECHAZADO".equals(activo.getEstado())) {
+            if (!EstadoExpediente.PLAN_OBSERVADO.getCodigo().equals(activo.getEstado()) && !EstadoExpediente.RECHAZADO.getCodigo().equals(activo.getEstado())) {
                 throw new BusinessException("Ya existe un plan activo para este expediente. " +
                         "Debe estar observado o rechazado para crear una nueva versión.");
             }
@@ -145,7 +146,8 @@ public class PlanGeneralServiceImpl implements PlanGeneralService {
         plan.setFechaPresentacion(LocalDateTime.now());
         plan = planRepository.save(plan);
 
-        String nuevoEstadoExp = TIPO_INICIAL.equals(tipoCodigo) ? "PLAN_PRESENTADO" : "PLAN_PRESENTADO";
+        String estadoAnteriorExp = expediente.getEstado();
+        String nuevoEstadoExp = EstadoExpediente.PLAN_PRESENTADO.getCodigo();
         expediente.setEstado(nuevoEstadoExp);
         expediente.setFechaPresentacionPlan(LocalDateTime.now());
         expedienteRepository.save(expediente);
@@ -155,7 +157,7 @@ public class PlanGeneralServiceImpl implements PlanGeneralService {
 
         ExpedienteEstado expEstado = ExpedienteEstado.builder()
                 .expediente(expediente)
-                .estadoAnterior("ASESOR_ASIGNADO")
+                .estadoAnterior(estadoAnteriorExp)
                 .estadoNuevo(nuevoEstadoExp)
                 .usuario(usuarioRepository.getReferenceById(idUsuario))
                 .observacion("Plan General v" + plan.getVersion() + " presentado")
@@ -189,7 +191,7 @@ public class PlanGeneralServiceImpl implements PlanGeneralService {
 
         Expediente expediente = plan.getExpediente();
         String estadoAnteriorExp = expediente.getEstado();
-        expediente.setEstado("OBSERVADO");
+        expediente.setEstado(EstadoExpediente.PLAN_OBSERVADO.getCodigo());
         expedienteRepository.save(expediente);
 
         plazoService.iniciarPlazo(expediente.getId(), "SUBSANACION_PLAN",
@@ -202,7 +204,7 @@ public class PlanGeneralServiceImpl implements PlanGeneralService {
         ExpedienteEstado expEstado = ExpedienteEstado.builder()
                 .expediente(expediente)
                 .estadoAnterior(estadoAnteriorExp)
-                .estadoNuevo("OBSERVADO")
+                .estadoNuevo(EstadoExpediente.PLAN_OBSERVADO.getCodigo())
                 .usuario(usuarioRepository.getReferenceById(idUsuario))
                 .observacion("Plan General observado: " + truncar(request.getDescripcion(), 200))
                 .tipoCambio("OBSERVACION_PLAN")
@@ -259,7 +261,7 @@ public class PlanGeneralServiceImpl implements PlanGeneralService {
         plan.setFechaPresentacion(LocalDateTime.now());
         plan = planRepository.save(plan);
 
-        expediente.setEstado("PLAN_PRESENTADO");
+        expediente.setEstado(EstadoExpediente.PLAN_PRESENTADO.getCodigo());
         expedienteRepository.save(expediente);
 
         plazoService.registrarCumplimiento(expediente.getId(), "SUBSANACION_PLAN", LocalDate.now());
@@ -269,8 +271,8 @@ public class PlanGeneralServiceImpl implements PlanGeneralService {
 
         ExpedienteEstado expEstado = ExpedienteEstado.builder()
                 .expediente(expediente)
-                .estadoAnterior("OBSERVADO")
-                .estadoNuevo("PLAN_PRESENTADO")
+                .estadoAnterior(EstadoExpediente.PLAN_OBSERVADO.getCodigo())
+                .estadoNuevo(EstadoExpediente.PLAN_PRESENTADO.getCodigo())
                 .usuario(usuarioRepository.getReferenceById(idUsuario))
                 .observacion("Plan General v" + plan.getVersion() + " subsanado y presentado")
                 .tipoCambio("SUBSANACION_PLAN")
@@ -299,8 +301,9 @@ public class PlanGeneralServiceImpl implements PlanGeneralService {
         plan = planRepository.save(plan);
 
         Expediente expediente = plan.getExpediente();
+        String estadoAnteriorExp = expediente.getEstado();
         expediente.setPlanTrabajoAprobado(true);
-        expediente.setEstado("APROBADO");
+        expediente.setEstado(EstadoExpediente.PLAN_APROBADO.getCodigo());
         expedienteRepository.save(expediente);
 
         registrarCambioEstado(plan, estadoAnterior, ESTADO_APROBADO, idUsuario,
@@ -308,8 +311,8 @@ public class PlanGeneralServiceImpl implements PlanGeneralService {
 
         ExpedienteEstado expEstado = ExpedienteEstado.builder()
                 .expediente(expediente)
-                .estadoAnterior("PLAN_PRESENTADO")
-                .estadoNuevo("APROBADO")
+                .estadoAnterior(estadoAnteriorExp)
+                .estadoNuevo(EstadoExpediente.PLAN_APROBADO.getCodigo())
                 .usuario(usuarioRepository.getReferenceById(idUsuario))
                 .observacion("Plan General v" + plan.getVersion() + " aprobado")
                 .tipoCambio("APROBACION_PLAN")
@@ -334,7 +337,8 @@ public class PlanGeneralServiceImpl implements PlanGeneralService {
         plan = planRepository.save(plan);
 
         Expediente expediente = plan.getExpediente();
-        expediente.setEstado("RECHAZADO");
+        String estadoAnteriorExp = expediente.getEstado();
+        expediente.setEstado(EstadoExpediente.RECHAZADO.getCodigo());
         expedienteRepository.save(expediente);
 
         registrarCambioEstado(plan, estadoAnterior, ESTADO_RECHAZADO, idUsuario,
@@ -342,8 +346,8 @@ public class PlanGeneralServiceImpl implements PlanGeneralService {
 
         ExpedienteEstado expEstado = ExpedienteEstado.builder()
                 .expediente(expediente)
-                .estadoAnterior("PLAN_PRESENTADO")
-                .estadoNuevo("RECHAZADO")
+                .estadoAnterior(estadoAnteriorExp)
+                .estadoNuevo(EstadoExpediente.RECHAZADO.getCodigo())
                 .usuario(usuarioRepository.getReferenceById(idUsuario))
                 .observacion("Plan General v" + plan.getVersion() + " rechazado: " + truncar(observacion, 200))
                 .tipoCambio("RECHAZO_PLAN")

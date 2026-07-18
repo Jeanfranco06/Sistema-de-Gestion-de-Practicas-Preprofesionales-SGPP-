@@ -1,14 +1,39 @@
-/** Paleta compartida — minimalista con acentos de color suaves */
+import { alpha } from '@mui/material/styles';
+import { palette } from './theme';
+
+/** Paleta institucional UNT — amarillo y azul como primarios, verde/rojo como semánticos */
 export const accents = {
-  blue: { main: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' },
-  teal: { main: '#0d9488', bg: '#f0fdfa', border: '#99f6e4' },
-  violet: { main: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
-  amber: { main: '#d97706', bg: '#fffbeb', border: '#fde68a' },
-  emerald: { main: '#059669', bg: '#ecfdf5', border: '#a7f3d0' },
-  rose: { main: '#e11d48', bg: '#fff1f2', border: '#fecdd3' },
-  slate: { main: '#475569', bg: '#f8fafc', border: '#e2e8f0' },
+  yellow: { main: palette.yellow.main, bg: alpha(palette.yellow.main, 0.12), border: alpha(palette.yellow.main, 0.35), text: palette.yellow.contrast },
+  blue: { main: palette.blue.main, bg: alpha(palette.blue.main, 0.08), border: alpha(palette.blue.main, 0.25), text: palette.blue.contrast },
+  green: { main: palette.green.main, bg: alpha(palette.green.main, 0.1), border: alpha(palette.green.main, 0.3), text: palette.green.contrast },
+  red: { main: palette.red.main, bg: alpha(palette.red.main, 0.1), border: alpha(palette.red.main, 0.3), text: palette.red.contrast },
+  amber: { main: palette.amber.main, bg: alpha(palette.amber.main, 0.1), border: alpha(palette.amber.main, 0.3), text: palette.amber.contrast },
+  slate: { main: palette.slate.main, bg: palette.background, border: palette.divider, text: palette.slate.contrast },
+  gray: { main: palette.gray.main, bg: alpha(palette.gray.main, 0.08), border: alpha(palette.gray.main, 0.2), text: palette.gray.contrast },
 };
 
-export const chartColors = ['#2563eb', '#0d9488', '#7c3aed', '#d97706', '#059669', '#e11d48', '#6366f1'];
+export const chartColors = [
+  palette.yellow.main,
+  palette.blue.main,
+  palette.green.main,
+  palette.amber.main,
+  palette.red.main,
+  palette.gray.main,
+];
 
-export const statAccentKeys = ['blue', 'teal', 'violet', 'emerald', 'amber', 'rose'];
+export const statAccentKeys = ['yellow', 'blue', 'green', 'amber', 'red', 'slate'];
+
+/** Obtiene el color semántico correspondiente a un estado de expediente/documento */
+export const getStatusAccent = (status) => {
+  if (!status) return accents.gray;
+  const s = String(status).toUpperCase();
+  if (['APROBADO', 'APROBADA', 'CERRADO', 'FINALIZADO', 'CUMPLIDO', 'ACEPTADO', 'COMPLETADO', 'EVALUADO', 'ACTIVO', 'VIGENTE'].includes(s)) return accents.green;
+  if (['RECHAZADO', 'RECHAZADA', 'CANCELADO', 'ANULADO', 'ERROR', 'VENCIDO', 'DESAPROBADO'].includes(s)) return accents.red;
+  if (['OBSERVADO', 'OBSERVADA', 'PENDIENTE', 'EN_REVISION', 'PROCESO', 'BORRADOR', 'PLAN_OBSERVADO', 'SUBSANADO'].includes(s)) return accents.amber;
+  if (['EN_EJECUCION', 'SOLICITADO', 'PLAN_PRESENTADO', 'INFORME_PRESENTADO', 'DICTAMEN_EMITIDO', 'CARTA_PRESENTACION_EMITIDA', 'CARTA_ACEPTACION_PRESENTADA'].includes(s)) return accents.blue;
+  return accents.gray;
+};
+
+export const getStatusColor = (status) => getStatusAccent(status).main;
+
+export default accents;

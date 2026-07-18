@@ -59,9 +59,9 @@ public class Expediente extends BaseEntity {
     @Builder.Default
     private String condicionSolicitante = "ESTUDIANTE";
 
-    @Column(name = "estado", nullable = false, length = 30)
+    @Column(name = "estado", nullable = false, length = 50)
     @Builder.Default
-    private String estado = "BORRADOR";
+    private String estado = "SOLICITADO";
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_empresa")

@@ -7,6 +7,7 @@ import edu.unt.ingenieria_industrial.sgpp.core.evaluacion.service.EvaluacionServ
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
@@ -16,12 +17,14 @@ import java.util.List;
 @RestController
 @RequestMapping("/evaluaciones")
 @RequiredArgsConstructor
+@PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'DOCENTE_ASESOR', 'TUTOR_EXTERNO', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR')")
 public class EvaluacionController {
 
     private final EvaluacionService evaluacionService;
     private final UsuarioRepository usuarioRepository;
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'DOCENTE_ASESOR', 'TUTOR_EXTERNO', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR')")
     public ResponseEntity<EvaluacionResponseDTO> crearEvaluacion(
             @Valid @RequestBody EvaluacionRequestDTO request,
             Authentication authentication) {
@@ -33,16 +36,19 @@ public class EvaluacionController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'DOCENTE_ASESOR', 'TUTOR_EXTERNO', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR', 'SECRETARIA', 'ESTUDIANTE')")
     public ResponseEntity<EvaluacionResponseDTO> obtenerEvaluacionPorId(@PathVariable Long id) {
         return ResponseEntity.ok(evaluacionService.obtenerEvaluacionPorId(id));
     }
 
     @GetMapping("/expediente/{idExpediente}")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'DOCENTE_ASESOR', 'TUTOR_EXTERNO', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR', 'SECRETARIA', 'ESTUDIANTE')")
     public ResponseEntity<List<EvaluacionResponseDTO>> obtenerEvaluacionesPorPractica(@PathVariable Long idExpediente) {
         return ResponseEntity.ok(evaluacionService.obtenerEvaluacionesPorPractica(idExpediente));
     }
 
     @GetMapping("/criterios/{componente}")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'DOCENTE_ASESOR', 'TUTOR_EXTERNO', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR', 'SECRETARIA')")
     public ResponseEntity<List<CriterioEvaluacionDTO>> obtenerCriteriosPorTipoEvaluador(@PathVariable String componente) {
         return ResponseEntity.ok(evaluacionService.obtenerCriteriosPorTipoEvaluador(componente));
     }

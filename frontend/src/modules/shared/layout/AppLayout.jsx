@@ -12,7 +12,7 @@ import {
   People, SupervisorAccount, FactCheck, FolderOpen
 } from '@mui/icons-material';
 import { useAuth } from '../../../auth/AuthContext';
-import PageContainer from '../../../shared/components/PageContainer';
+
 import { NotificationsMenu } from '../components/NotificationsMenu';
 
 const DRAWER_WIDTH_EXPANDED = 260;
@@ -182,6 +182,17 @@ function getInitials(nombres = '', apellido = '') {
   return `${nombres.charAt(0)}${apellido.charAt(0)}`.toUpperCase();
 }
 
+function getPerfilRoute(roles = []) {
+  const roleNames = roles.map(r => typeof r === 'string' ? r : r.authority || r.nombre || '').map(r => r.replace(/^ROLE_/, ''));
+  if (roleNames.includes('ESTUDIANTE')) return '/estudiante/perfil';
+  if (roleNames.includes('DOCENTE_ASESOR')) return '/docente/dashboard';
+  if (roleNames.includes('TUTOR_EXTERNO')) return '/tutor/dashboard';
+  if (roleNames.includes('COORDINADOR') || roleNames.includes('DIRECTOR')) return '/coordinacion/dashboard';
+  if (roleNames.includes('COMITE_PRACTICAS')) return '/comite/panel';
+  if (roleNames.includes('SECRETARIA')) return '/admin/dashboard';
+  return '/admin/dashboard';
+}
+
 export default function AppLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -222,11 +233,11 @@ export default function AppLayout() {
           justifyContent: collapsed ? 'center' : 'flex-start',
           borderRadius: 1.5,
           position: 'relative',
-          bgcolor: active ? 'rgba(25, 118, 210, 0.08)' : 'transparent',
-          color: active ? 'primary.main' : 'text.secondary',
+          bgcolor: active ? 'rgba(245, 197, 24, 0.16)' : 'transparent',
+          color: active ? 'secondary.main' : 'text.secondary',
           transition: 'background-color 0.2s, color 0.2s',
           '&:hover': {
-            bgcolor: active ? 'rgba(25, 118, 210, 0.12)' : 'rgba(0,0,0,0.04)',
+            bgcolor: active ? 'rgba(245, 197, 24, 0.24)' : 'rgba(0,0,0,0.04)',
           },
           ...(active && !collapsed && {
             '&::before': {
@@ -249,7 +260,7 @@ export default function AppLayout() {
             minWidth: 0,
             mr: collapsed ? 0 : 2,
             justifyContent: 'center',
-            color: active ? 'primary.main' : 'inherit',
+            color: active ? 'secondary.main' : 'inherit',
             '& svg': { fontSize: 22 }
           }}
         >
@@ -268,14 +279,14 @@ export default function AppLayout() {
         )}
         {item.badge && !collapsed && (
           <Box sx={{
-            bgcolor: 'error.main', color: 'white', fontSize: '0.7rem',
+            bgcolor: 'error.main', color: 'error.contrastText', fontSize: '0.7rem',
             fontWeight: 700, px: 1, py: 0.25, borderRadius: 10, lineHeight: 1
           }}>
             {item.badge}
           </Box>
         )}
         {item.badge && collapsed && (
-          <Box sx={{ position: 'absolute', top: 8, right: 12, width: 8, height: 8, bgcolor: 'error.main', borderRadius: '50%', border: '2px solid white' }} />
+          <Box sx={{ position: 'absolute', top: 8, right: 12, width: 8, height: 8, bgcolor: 'error.main', borderRadius: '50%', border: '2px solid', borderColor: 'background.paper' }} />
         )}
       </ListItemButton>
     );
@@ -303,8 +314,8 @@ export default function AppLayout() {
         borderBottom: '1px solid', borderColor: 'divider'
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, overflow: 'hidden' }}>
-          <Box sx={{ width: 32, height: 32, bgcolor: '#1a365d', borderRadius: 1.5, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <Typography variant="subtitle2" fontWeight={800} color="white">SG</Typography>
+          <Box sx={{ width: 36, height: 36, bgcolor: 'primary.main', borderRadius: 1.5, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: '2px solid', borderColor: 'secondary.main' }}>
+            <Typography variant="subtitle2" fontWeight={800} color="primary.contrastText">SG</Typography>
           </Box>
           {!collapsed && (
             <Box>
@@ -354,7 +365,7 @@ export default function AppLayout() {
             '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' }
           }}
         >
-          <Avatar sx={{ bgcolor: 'primary.main', width: 36, height: 36, fontSize: '0.85rem', flexShrink: 0 }}>
+          <Avatar sx={{ bgcolor: 'secondary.main', color: 'secondary.contrastText', width: 36, height: 36, fontSize: '0.85rem', flexShrink: 0 }}>
             {getInitials(user?.nombres, user?.apellidoPaterno)}
           </Avatar>
           {!collapsed && (
@@ -386,7 +397,7 @@ export default function AppLayout() {
           <Typography variant="caption" color="text.secondary">{user?.email}</Typography>
         </Box>
         <Divider />
-        <MenuItem onClick={() => { setAnchorEl(null); navigate('/estudiante/perfil'); }} sx={{ py: 1.5 }}>
+        <MenuItem onClick={() => { setAnchorEl(null); navigate(getPerfilRoute(user?.roles)); }} sx={{ py: 1.5 }}>
           <AccountCircle sx={{ mr: 1.5, fontSize: 20, color: 'text.secondary' }} /> <Typography variant="body2" fontWeight={500}>Mi perfil</Typography>
         </MenuItem>
         <MenuItem onClick={handleLogout} sx={{ py: 1.5, color: 'error.main' }}>
@@ -407,8 +418,8 @@ export default function AppLayout() {
           zIndex: theme.zIndex.drawer + 1,
           bgcolor: 'rgba(255, 255, 255, 0.85)',
           backdropFilter: 'blur(8px)',
-          borderBottom: '1px solid',
-          borderColor: 'divider',
+          borderBottom: '2px solid',
+          borderColor: 'primary.main',
           width: { md: `calc(100% - ${drawerWidth}px)` },
           ml: { md: `${drawerWidth}px` },
           transition: theme.transitions.create(['width', 'margin'], {
@@ -421,13 +432,13 @@ export default function AppLayout() {
           <IconButton
             onClick={handleDrawerToggle}
             edge="start"
-            sx={{ color: 'text.primary', mr: 2 }}
+            sx={{ color: 'secondary.main', mr: 2 }}
             aria-label="toggle menu"
           >
             <MenuIcon />
           </IconButton>
 
-          <Typography variant="subtitle1" fontWeight={600} color="text.primary" noWrap sx={{ flexGrow: 1 }}>
+          <Typography variant="subtitle1" fontWeight={700} color="secondary.main" noWrap sx={{ flexGrow: 1 }}>
             {navGroups.flatMap(g => g.items).find((n) => n.path === location.pathname)?.label || 'Sistema de Gestión'}
           </Typography>
 

@@ -1,21 +1,60 @@
 import { Chip } from '@mui/material';
+import { getStatusAccent } from '../theme/designTokens';
 
-const STATUS_STYLES = {
-  EN_EJECUCION: { label: 'En ejecución', sx: { bgcolor: '#eff6ff', color: '#2563eb', borderColor: '#bfdbfe' } },
-  EVALUADO: { label: 'Evaluado', sx: { bgcolor: '#ecfdf5', color: '#059669', borderColor: '#a7f3d0' } },
-  CERRADO: { label: 'Cerrado', sx: { bgcolor: '#f8fafc', color: '#475569', borderColor: '#e2e8f0' } },
-  OBSERVADO: { label: 'Observado', sx: { bgcolor: '#fffbeb', color: '#d97706', borderColor: '#fde68a' } },
-  APROBADO: { label: 'Aprobado', sx: { bgcolor: '#ecfdf5', color: '#059669', borderColor: '#a7f3d0' } },
-  PENDIENTE: { label: 'Pendiente', sx: { bgcolor: '#fff1f2', color: '#e11d48', borderColor: '#fecdd3' } },
+const STATUS_LABELS = {
+  SOLICITADO: 'Solicitado',
+  EMPRESA_SEDE_ASIGNADA: 'Empresa y sede asignadas',
+  VALIDADO_SECRETARIA: 'Validado por secretaría',
+  CARTA_PRESENTACION_EMITIDA: 'Carta de presentación emitida',
+  CARTA_ACEPTACION_PRESENTADA: 'Carta de aceptación presentada',
+  ASESOR_ASIGNADO: 'Asesor asignado',
+  COMITE_ASIGNADO: 'Comité asignado',
+  PLAN_PRESENTADO: 'Plan presentado',
+  PLAN_EN_REVISION: 'Plan en revisión',
+  PLAN_EN_REVISION_COMITE: 'Plan en revisión comité',
+  PLAN_OBSERVADO: 'Plan observado',
+  PLAN_APROBADO: 'Plan aprobado',
+  EN_EJECUCION: 'En ejecución',
+  INFORME_PARCIAL_1_PRESENTADO: 'Informe parcial 1',
+  INFORME_PARCIAL_2_PRESENTADO: 'Informe parcial 2',
+  INFORME_FINAL_PRESENTADO: 'Informe final presentado',
+  INFORME_EN_REVISION: 'Informe en revisión',
+  INFORME_APROBADO: 'Informe aprobado',
+  EVALUACION_PENDIENTE: 'Evaluación pendiente',
+  EVALUACION_EMPRESA_PENDIENTE: 'Evaluación empresa pendiente',
+  EVALUACION_COMPLETA: 'Evaluación completa',
+  DICTAMEN_EMITIDO: 'Dictamen emitido',
+  EVALUADO: 'Evaluado',
+  CERRADO: 'Cerrado',
+  OBSERVADO: 'Observado',
+  SUBSANADO: 'Subsanado',
+  EN_REVISION: 'En revisión',
+  RECHAZADO: 'Rechazado',
+  SUSPENDIDO: 'Suspendido',
+  CANCELADO: 'Cancelado',
+  PENDIENTE: 'Pendiente',
+  APROBADO: 'Aprobado',
+  COMPLETADO: 'Completado',
+  VIGENTE: 'Vigente',
+  ACTIVO: 'Activo',
 };
 
 export default function StatusChip({ status, label }) {
-  const config = STATUS_STYLES[status];
-  const displayLabel = label || config?.label || status?.replace(/_/g, ' ') || '—';
+  const accent = getStatusAccent(status);
+  const displayLabel = label || STATUS_LABELS[status] || status?.replace(/_/g, ' ') || '—';
 
-  if (config) {
-    return <Chip size="small" label={displayLabel} variant="outlined" sx={config.sx} />;
-  }
-
-  return <Chip size="small" label={displayLabel} variant="outlined" />;
+  return (
+    <Chip
+      size="small"
+      label={displayLabel}
+      variant="outlined"
+      sx={{
+        bgcolor: accent.bg,
+        color: accent.main,
+        borderColor: accent.border,
+        fontWeight: 600,
+        textTransform: 'capitalize',
+      }}
+    />
+  );
 }

@@ -11,6 +11,7 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../../auth/AuthContext';
 import { expedientesApi } from '../../api/expedientesApi';
+import { horasEstudianteApi } from '../../api/horasApi';
 import { useNavigate } from 'react-router-dom';
 import { ModulePageShell } from '../../shared/components/module/ModulePageShell';
 
@@ -67,13 +68,23 @@ export default function DashboardEstudiante() {
 
   const [loading, setLoading] = useState(true);
   const [expediente, setExpediente] = useState(null);
+  const [horasData, setHorasData] = useState({ horasRequeridas: 0, horasValidadas: 0 });
 
   const fetchData = async () => {
     try {
       setLoading(true);
       const res = await expedientesApi.getMisExpedientes();
       const expedientes = res.data?.data || [];
-      if (expedientes.length > 0) setExpediente(expedientes[0]);
+      const exp = expedientes[0] || null;
+      setExpediente(exp);
+      if (exp) {
+        const cumplimientoRes = await horasEstudianteApi.getCumplimiento(exp.id).catch(() => null);
+        const data = cumplimientoRes?.data?.data || {};
+        setHorasData({
+          horasRequeridas: data.horasRequeridas || (exp.codigoTipoPractica === 'INICIAL' ? 64 : 360),
+          horasValidadas: data.horasValidadas || 0,
+        });
+      }
     } catch (err) {
       console.error('Error al cargar datos:', err);
     } finally {
@@ -136,9 +147,9 @@ export default function DashboardEstudiante() {
     );
   }
 
-  const horasTotales = expediente.codigoTipoPractica === 'INICIAL' ? 64 : 360;
-  const horasEjecutadas = expediente.estado === 'CERRADO' || expediente.estado === 'EVALUADO' ? horasTotales : (expediente.estado === 'EN_EJECUCION' ? Math.floor(horasTotales * 0.5) : 0);
-  const pct = Math.round((horasEjecutadas / horasTotales) * 100);
+  const horasTotales = horasData.horasRequeridas || (expediente.codigoTipoPractica === 'INICIAL' ? 64 : 360);
+  const horasEjecutadas = horasData.horasValidadas || 0;
+  const pct = Math.min(100, Math.round((horasEjecutadas / horasTotales) * 100));
 
   const obsActivas = expediente.observacionesList?.filter((o) => !o.subsanado) || [];
   

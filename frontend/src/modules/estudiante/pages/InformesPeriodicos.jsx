@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Box, Typography, Button, Chip, Dialog, DialogTitle, DialogContent,
-  DialogActions, Alert, LinearProgress, Divider, Grid, Stack,
+  DialogActions, Alert, LinearProgress, Divider, Grid, Stack, CircularProgress,
 } from '@mui/material';
 import {
   CloudUpload, Download, AccessTime, CheckCircle, Lock, Article, EventNote,
@@ -10,6 +10,7 @@ import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import { expedientesApi } from '../../../api/expedientesApi';
 import api from '../../../api/axios';
+import { useAuth } from '../../../auth/AuthContext';
 import {
   ModulePageShell, ModulePageHeader,
 } from '../../../shared/components/module/ModulePageShell';
@@ -17,16 +18,86 @@ import ContentCard from '../../../shared/components/ContentCard';
 
 const MySwal = withReactContent(Swal);
 
-const HITOS = [
-  { id: 1, nombre: 'Informe Parcial Semana 5', semana: 5, descripcion: 'Informe de avance correspondiente a la semana 5', estado: 'APROBADO', fechaLimite: '2025-10-15', bloqueado: false, archivo: 'informe_semana5.pdf', fileName: 'mock-file.pdf', tipo: 'INFORME_PARCIAL_1' },
-  { id: 2, nombre: 'Informe Parcial Semana 10', semana: 10, descripcion: 'Informe de avance correspondiente a la semana 10', estado: 'PENDIENTE', fechaLimite: '2025-11-20', bloqueado: false, archivo: null, fileName: null, tipo: 'INFORME_PARCIAL_2' },
-  { id: 3, nombre: 'Informe Final Semana 15', semana: 15, descripcion: 'Informe final de prácticas', estado: 'BLOQUEADO', fechaLimite: '2025-12-25', bloqueado: true, archivo: null, fileName: null, tipo: 'INFORME_FINAL_INICIAL' },
+const HITOS_INICIAL = [
+  { id: 1, nombre: 'Informe Parcial Semana 5', semana: 5, descripcion: 'Informe de avance correspondiente a la semana 5', tipo: 'INFORME_PARCIAL_1' },
+  { id: 2, nombre: 'Informe Parcial Semana 10', semana: 10, descripcion: 'Informe de avance correspondiente a la semana 10', tipo: 'INFORME_PARCIAL_2' },
+  { id: 3, nombre: 'Informe Final Semana 15', semana: 15, descripcion: 'Informe final de prácticas', tipo: 'INFORME_FINAL_INICIAL' },
 ];
 
+const HITOS_FINAL = [
+  { id: 1, nombre: 'Informe Final', semana: 15, descripcion: 'Informe final de prácticas', tipo: 'INFORME_FINAL' },
+];
+
+const ESTADOS_EXPEDIENTE_HITO = {
+  INFORME_PARCIAL_1: 'INFORME_PARCIAL_1_PRESENTADO',
+  INFORME_PARCIAL_2: 'INFORME_PARCIAL_2_PRESENTADO',
+  INFORME_FINAL_INICIAL: 'INFORME_FINAL_PRESENTADO',
+  INFORME_FINAL: 'INFORME_FINAL_PRESENTADO',
+};
+
 export const InformesPeriodicos = () => {
-  const [hitos, setHitos] = useState(HITOS);
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [expediente, setExpediente] = useState(null);
+  const [hitos, setHitos] = useState([]);
   const [uploadDialog, setUploadDialog] = useState({ open: false, hito: null });
   const [selectedFile, setSelectedFile] = useState(null);
+
+  const fetchExpediente = async () => {
+    try {
+      setLoading(true);
+      const res = await expedientesApi.getMisExpedientes();
+      const list = res.data?.data || [];
+      const exp = list[0] || null;
+      setExpediente(exp);
+      if (exp) {
+        const baseHitos = exp.codigoTipoPractica === 'INICIAL' ? HITOS_INICIAL : HITOS_FINAL;
+        const docs = exp.documentos || [];
+        const estadoExp = exp.estado;
+        const hitosConEstado = baseHitos.map((h) => {
+          const doc = docs.find((d) => d.tipoDocumento === h.tipo);
+          let estadoHito = 'PENDIENTE';
+          if (doc) {
+            estadoHito = doc.estado === 'APROBADO' ? 'APROBADO' : 'EN_REVISION';
+          }
+          // Si el expediente ya avanzó más allá del hito, marcar como completado
+          const estadosPosteriores = [
+            'EVALUACION_PENDIENTE', 'EVALUACION_EMPRESA_PENDIENTE', 'EVALUACION_COMPLETA',
+            'DICTAMEN_EMITIDO', 'EVALUADO', 'CERRADO'
+          ];
+          if (estadoExp === ESTADOS_EXPEDIENTE_HITO[h.tipo]) {
+            estadoHito = doc ? estadoHito : 'EN_REVISION';
+          } else if (doc && (doc.estado === 'APROBADO' || estadosPosteriores.includes(estadoExp))) {
+            estadoHito = 'APROBADO';
+          }
+          return {
+            ...h,
+            estado: estadoHito,
+            archivo: doc ? doc.nombreArchivo : null,
+            fileName: doc ? doc.rutaArchivo : null,
+            bloqueado: false,
+          };
+        });
+        // Bloquear informe parcial 2 si no se cargó el parcial 1
+        const idxParcial1 = hitosConEstado.findIndex((h) => h.tipo === 'INFORME_PARCIAL_1');
+        const idxParcial2 = hitosConEstado.findIndex((h) => h.tipo === 'INFORME_PARCIAL_2');
+        if (idxParcial2 >= 0 && idxParcial1 >= 0 && !hitosConEstado[idxParcial1].archivo) {
+          hitosConEstado[idxParcial2].bloqueado = true;
+          hitosConEstado[idxParcial2].estado = 'BLOQUEADO';
+        }
+        setHitos(hitosConEstado);
+      }
+    } catch (err) {
+      console.error('Error fetching expediente:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const timeout = setTimeout(() => fetchExpediente(), 0);
+    return () => clearTimeout(timeout);
+  }, [user]);
 
   const handleOpenUpload = (hito) => {
     setUploadDialog({ open: true, hito });
@@ -41,54 +112,42 @@ export const InformesPeriodicos = () => {
     const file = event.target.files[0];
     if (file) {
       if (file.name.split('.').pop().toLowerCase() !== 'pdf') {
-        MySwal.fire({
-          icon: 'error',
-          title: 'Formato Incorrecto',
-          text: 'Solo se permiten archivos en formato PDF.',
-          confirmButtonColor: '#d33',
-        });
+        MySwal.fire({ icon: 'error', title: 'Formato Incorrecto', text: 'Solo se permiten archivos en formato PDF.', confirmButtonColor: '#d33' });
         return;
       }
-
       if (file.size > 5 * 1024 * 1024) {
-        MySwal.fire({
-          icon: 'warning',
-          title: 'Archivo Demasiado Pesado',
-          text: 'El informe excede el tamano maximo de 5MB. Por favor comprimalo.',
-          confirmButtonColor: '#f8bb86',
-        });
+        MySwal.fire({ icon: 'warning', title: 'Archivo Demasiado Pesado', text: 'El informe excede el tamaño maximo de 5MB. Por favor comprimalo.', confirmButtonColor: '#f8bb86' });
         return;
       }
-
       setSelectedFile(file);
     }
   };
 
   const handleUpload = async () => {
-    if (!selectedFile) return;
+    if (!selectedFile || !expediente || !uploadDialog.hito) return;
 
     try {
       MySwal.fire({
         title: 'Enviando Informe...',
         html: 'Guardando el documento y notificando a su docente asesor.',
         allowOutsideClick: false,
-        didOpen: () => {
-          MySwal.showLoading();
-        },
+        didOpen: () => MySwal.showLoading(),
       });
 
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const uploadRes = await expedientesApi.uploadFile(selectedFile);
+      const { fileName } = uploadRes.data;
 
-      const response = await expedientesApi.uploadFile(selectedFile);
-      const { fileName } = response.data;
+      await api.post(`/expedientes/${expediente.id}/documentos`, null, {
+        params: { tipoDocumento: uploadDialog.hito.tipo, nombreDoc: selectedFile.name, fileName }
+      });
 
-      setHitos(hitos.map((h) => {
-        if (h.id === uploadDialog.hito.id) {
-          return { ...h, estado: 'EN_REVISION', archivo: selectedFile.name, fileName };
-        }
-        return h;
-      }));
+      if (uploadDialog.hito.tipo === 'INFORME_PARCIAL_1' || uploadDialog.hito.tipo === 'INFORME_PARCIAL_2') {
+        await expedientesApi.presentarInformeParcial(expediente.id);
+      } else {
+        await expedientesApi.presentarInformeFinal(expediente.id);
+      }
 
+      await fetchExpediente();
       handleCloseUpload();
 
       MySwal.fire({
@@ -99,22 +158,24 @@ export const InformesPeriodicos = () => {
         showConfirmButton: false,
       });
     } catch (error) {
+      console.error(error);
       MySwal.fire({
         icon: 'error',
         title: 'Error de Conexion',
-        text: 'Hubo un problema al subir el informe. Intente de nuevo.',
+        text: error?.response?.data?.message || 'Hubo un problema al subir el informe. Intente de nuevo.',
       });
     }
   };
 
   const handleDownload = async (hito) => {
+    if (!hito.fileName) return;
     try {
       MySwal.fire({ title: 'Descargando...', allowOutsideClick: false, didOpen: () => MySwal.showLoading() });
       const res = await api.get(`/documentos/download/${hito.fileName}`, { responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', hito.archivo);
+      link.setAttribute('download', hito.archivo || hito.fileName);
       document.body.appendChild(link);
       link.click();
       link.parentNode.removeChild(link);
@@ -135,16 +196,43 @@ export const InformesPeriodicos = () => {
     }
   };
 
-  const progreso = 65;
+  const progreso = useMemo(() => {
+    if (hitos.length === 0) return 0;
+    const completados = hitos.filter((h) => h.estado === 'APROBADO' || h.estado === 'EN_REVISION').length;
+    return Math.round((completados / hitos.length) * 100);
+  }, [hitos]);
+
   const enviados = hitos.filter((h) => h.archivo).length;
   const disponibles = hitos.filter((h) => !h.bloqueado).length;
+
+  if (loading) {
+    return (
+      <ModulePageShell>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
+          <CircularProgress size={32} />
+        </Box>
+      </ModulePageShell>
+    );
+  }
+
+  if (!expediente) {
+    return (
+      <ModulePageShell>
+        <ContentCard>
+          <Article sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
+          <Typography variant="h6" gutterBottom>Sin expediente activo</Typography>
+          <Typography variant="body2" color="text.secondary">No tienes ninguna práctica registrada para gestionar informes.</Typography>
+        </ContentCard>
+      </ModulePageShell>
+    );
+  }
 
   return (
     <ModulePageShell>
       <ModulePageHeader
         icon={<Article />}
         title="Informes periodicos"
-        subtitle="Carga tus informes en las ventanas de tiempo establecidas para practicas iniciales."
+        subtitle={`Carga tus informes en las ventanas de tiempo establecidas para prácticas ${expediente.codigoTipoPractica?.toLowerCase() || ''}.`}
         action={<Chip label={`${enviados} de ${hitos.length} enviados`} size="small" color="primary" variant="outlined" />}
       />
 
@@ -177,7 +265,7 @@ export const InformesPeriodicos = () => {
             <Typography variant="body2" color="text.secondary">{`${progreso}%`}</Typography>
           </Box>
         </Box>
-        <Typography variant="caption" color="text.secondary">Semana actual: 10 de 16</Typography>
+        <Typography variant="caption" color="text.secondary">Expediente: {expediente.codigoExpediente}</Typography>
       </ContentCard>
 
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 2.5 }}>
@@ -208,11 +296,11 @@ export const InformesPeriodicos = () => {
 
               <Box sx={{ mb: 3 }}>
                 <Typography variant="body2" color="text.secondary">
-                  Fecha limite: {new Date(hito.fechaLimite).toLocaleDateString()}
+                  {hito.descripcion}
                 </Typography>
                 {isProximo && (
                   <Alert severity="warning" sx={{ mt: 1, py: 0, px: 1 }}>
-                    Vence en 5 dias
+                    Pendiente de envío
                   </Alert>
                 )}
               </Box>
@@ -275,3 +363,5 @@ export const InformesPeriodicos = () => {
     </ModulePageShell>
   );
 };
+
+export default InformesPeriodicos;

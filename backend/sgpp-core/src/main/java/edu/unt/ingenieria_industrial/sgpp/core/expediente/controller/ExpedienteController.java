@@ -21,7 +21,7 @@ import java.util.Objects;
 @RequestMapping("/expedientes")
 @RequiredArgsConstructor
 @Tag(name = "Expediente de Práctica", description = "Gestión del ciclo de vida del expediente de práctica pre-profesional")
-@PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR', 'DOCENTE_ASESOR')")
+@PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR', 'DOCENTE_ASESOR', 'ESTUDIANTE')")
 public class ExpedienteController {
 
     private final ExpedienteService expedienteService;
@@ -145,6 +145,18 @@ public class ExpedienteController {
         ExpedienteResponse response = expedienteService.agregarDocumento(id, tipoDocumento, nombreDoc, fileName, idUsuario != null ? idUsuario : 1L);
         return ResponseEntity.ok(ApiResponse.<ExpedienteResponse>builder()
                 .success(true).message("Documento agregado").data(response).timestamp(LocalDateTime.now()).build());
+    }
+
+    @DeleteMapping("/{id}/documentos/{idDocumento}")
+    @Operation(summary = "Eliminar documento del expediente")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'ESTUDIANTE', 'SECRETARIA')")
+    public ResponseEntity<ApiResponse<ExpedienteResponse>> eliminarDocumento(
+            @PathVariable Long id,
+            @PathVariable Long idDocumento,
+            @RequestAttribute(value = "idUsuario", required = false) Long idUsuario) {
+        ExpedienteResponse response = expedienteService.eliminarDocumento(id, idDocumento, idUsuario != null ? idUsuario : 1L);
+        return ResponseEntity.ok(ApiResponse.<ExpedienteResponse>builder()
+                .success(true).message("Documento eliminado").data(response).timestamp(LocalDateTime.now()).build());
     }
 
     @PutMapping("/{id}/documentos/{idDocumento}/evaluar")

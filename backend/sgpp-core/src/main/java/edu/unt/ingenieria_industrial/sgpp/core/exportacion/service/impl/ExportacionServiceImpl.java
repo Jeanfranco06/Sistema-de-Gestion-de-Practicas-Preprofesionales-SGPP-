@@ -36,6 +36,7 @@ import edu.unt.ingenieria_industrial.sgpp.shared.enums.TipoReporte;
 import edu.unt.ingenieria_industrial.sgpp.shared.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
@@ -105,7 +106,7 @@ public class ExportacionServiceImpl implements ExportacionService {
     }
 
     @Override
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public ArchivoExportadoDTO generarDocumentoInterno(GenerarDocumentoInternoRequest request) {
         if (request.getTipoDocumento() == TipoDocumentoInstitucional.REPORTE_EXPORTADO) {
             throw new BusinessException("Use el endpoint de exportación de reportes para este tipo documental");

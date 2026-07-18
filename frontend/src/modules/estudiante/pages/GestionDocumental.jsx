@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box, Typography, Tabs, Tab, Button, IconButton, Chip, Dialog,
   DialogTitle, DialogContent, DialogActions, Alert, TextField, CircularProgress,
@@ -78,7 +78,8 @@ export const GestionDocumental = () => {
   };
 
   useEffect(() => {
-    fetchExpediente();
+    const timeout = setTimeout(() => fetchExpediente(), 0);
+    return () => clearTimeout(timeout);
   }, [user]);
 
   if (loading) {
@@ -109,7 +110,7 @@ export const GestionDocumental = () => {
       tipoId: d.tipoDocumento,
       nombreOriginal: d.nombreArchivo || d.tipoDocumento,
       fechaSubida: d.fechaSubida,
-      estado: 'APROBADO',
+      estado: d.estado || 'PENDIENTE',
       tamanio: 'N/A',
       fileName: d.rutaArchivo || d.nombreArchivo
     }))
@@ -195,6 +196,11 @@ export const GestionDocumental = () => {
         await expedientesApi.presentarCartaAceptacion(expediente.id);
       }
 
+      // Si es Plan de Prácticas, presentar el plan de trabajo
+      if (tipoDoc === 'PLAN_PRACTICA') {
+        await expedientesApi.presentarPlan(expediente.id, { fechaPresentacion: new Date().toISOString() });
+      }
+
       // Refrescar expediente
       await fetchExpediente();
 
@@ -223,7 +229,7 @@ export const GestionDocumental = () => {
 
       if (isRegistroDoc) {
         const registroId = (doc.rutaArchivo || doc.fileName).replace('registro:', '');
-        const res = await api.get(`/api/v1/exportacion/descargar/${registroId}`, { responseType: 'blob' });
+        const res = await api.get(`/admin/exportacion/descargar/${registroId}`, { responseType: 'blob' });
         const url = window.URL.createObjectURL(new Blob([res.data]));
         const link = document.createElement('a');
         link.href = url;
@@ -250,8 +256,8 @@ export const GestionDocumental = () => {
     }
   };
 
-  const handleDelete = (id, isAnexo = false) => {
-    MySwal.fire({
+  const handleDelete = async (id, isAnexo = false) => {
+    const result = await MySwal.fire({
       title: '¿Eliminar documento?',
       text: "Esta acción es irreversible.",
       icon: 'warning',
@@ -259,13 +265,21 @@ export const GestionDocumental = () => {
       confirmButtonText: 'Sí, eliminar',
       cancelButtonText: 'Cancelar',
       customClass: { confirmButton: 'wow-btn' }
-    }).then((result) => {
-      if (result.isConfirmed) {
-        if (isAnexo) setAnexos(anexos.filter(a => a.id !== id));
-        else setDocumentosLocales(documentosLocales.filter(d => d.id !== id));
-        MySwal.fire({ title: 'Eliminado', icon: 'success', timer: 1500, showConfirmButton: false });
-      }
     });
+    if (!result.isConfirmed) return;
+
+    try {
+      if (isAnexo) {
+        setAnexos(anexos.filter(a => a.id !== id));
+      } else {
+        await expedientesApi.eliminarDocumento(expediente.id, id);
+        await fetchExpediente();
+      }
+      MySwal.fire({ title: 'Eliminado', icon: 'success', timer: 1500, showConfirmButton: false });
+    } catch (error) {
+      console.error('Delete error:', error);
+      MySwal.fire('Error', 'No se pudo eliminar el documento.', 'error');
+    }
   };
 
   const getEstadoChip = (estado) => {
@@ -371,7 +385,7 @@ export const GestionDocumental = () => {
                       {docCargado ? (
                         <>
                           <IconButton size="small" onClick={() => handleDownload(docCargado)}><Download fontSize="small" /></IconButton>
-                          {docCargado.estado !== 'APROBADO' && !esDesdeBD && (
+                          {docCargado.estado !== 'APROBADO' && (
                             <IconButton size="small" onClick={() => handleDelete(docCargado.id)}><Delete fontSize="small" /></IconButton>
                           )}
                         </>

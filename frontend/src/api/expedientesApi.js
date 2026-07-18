@@ -19,6 +19,7 @@ export const expedientesApi = {
     presentarInformeParcial: (id) => api.put(`/expedientes/${id}/informe-parcial`),
     presentarInformeFinal: (id) => api.put(`/expedientes/${id}/informe-final`),
     evaluar: (id, payload) => api.put(`/expedientes/${id}/evaluar`, payload),
+    eliminarDocumento: (id, idDocumento) => api.delete(`/expedientes/${id}/documentos/${idDocumento}`),
     uploadFile: (file) => {
         const formData = new FormData();
         formData.append('file', file);
