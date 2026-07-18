@@ -4,9 +4,9 @@ Este documento sirve como guía paso a paso para verificar el flujo completo del
 
 ## 1. Requisitos Previos
 
-- [ ] Entorno desplegado correctamente (Frontend en React/Vite, Backend en Spring Boot, PostgreSQL en ejecución).
-- [ ] Base de datos limpia o reseteada a su estado base (ej. usando la migración `V38__reset_datos_demo_for_testing.sql` que mantiene solo a los administradores del sistema).
-- [ ] Conocer las URLs de acceso:
+- [x] Entorno desplegado correctamente (Frontend en React/Vite, Backend en Spring Boot, PostgreSQL en ejecución).
+- [x] Base de datos limpia o reseteada a su estado base (ej. usando la migración `V38__reset_datos_demo_for_testing.sql` que mantiene solo a los administradores del sistema).
+- [x] Conocer las URLs de acceso:
   - Frontend (App Web): `http://localhost:5173`
   - Backend API (Swagger/Swagger UI): `http://localhost:8080`
 
@@ -14,23 +14,23 @@ Este documento sirve como guía paso a paso para verificar el flujo completo del
 
 *Instrucción: Usar la cuenta de Administrador de Sistema (`ADMIN_SISTEMA`) en el módulo de "Administración > Usuarios".*
 
-- [ ] **Estudiante**: 
+- [x] **Estudiante**: 
   - Registrar nombres, apellidos, correo, documento de identidad y código institucional. 
   - Asignar el rol `ESTUDIANTE` y marcar tipo "INTERNO".
   - *Verificación*: Ingresar con las credenciales y comprobar que el Sidebar muestra los grupos de "Gestión Académica" e "Institucional".
-- [ ] **Docente Asesor**: 
+- [x] **Docente Asesor**: 
   - Registrar datos y asignar el rol `DOCENTE_ASESOR`.
   - *Verificación*: Ingresar y comprobar que el Sidebar muestra la pestaña "Mis Practicantes".
-- [ ] **Tutor Externo**: 
+- [x] **Tutor Externo**: 
   - Registrar perfil de tutor indicando Empresa y Cargo. Asignar rol `TUTOR_EXTERNO` y tipo "EXTERNO".
   - *Verificación*: Ingresar y comprobar acceso a la sección de "Evaluaciones".
-- [ ] **Secretaría Académica**: 
+- [x] **Secretaría Académica**: 
   - Asignar rol `SECRETARIA`.
   - *Verificación*: Ingresar y comprobar acceso a "Dashboard Administrativo" y "Recepción Admin".
-- [ ] **Comité de Prácticas**: 
+- [x] **Comité de Prácticas**: 
   - Asignar rol `COMITE_PRACTICAS`.
   - *Verificación*: Comprobar acceso al "Panel Comité" y reportes consolidados.
-- [ ] **Coordinador/Director de Escuela**: 
+- [x] **Coordinador/Director de Escuela**: 
   - Asignar rol `COORDINADOR` (o `DIRECTOR`).
   - *Verificación*: Comprobar acceso a "Panel Ejecutivo" e indicadores estadísticos.
 
@@ -38,9 +38,9 @@ Este documento sirve como guía paso a paso para verificar el flujo completo del
 
 *Instrucción: Usar la cuenta de Secretaría o Administrador.*
 
-- [ ] **Empresa y Sede**: Desde el módulo de Entidades Externas, registrar una empresa válida (con RUC y Razón Social) y agregarle al menos una sede (dirección física).
-- [ ] **Convenio**: Registrar un convenio vigente asociado a la empresa anterior, estableciendo fechas válidas.
-- [ ] *Verificación*: Validar en la interfaz que el convenio aparece como activo y probar el indicador de alerta (fecha próxima a vencer).
+- [x] **Empresa y Sede**: Desde el módulo de Entidades Externas, registrar una empresa válida (con RUC y Razón Social) y agregarle al menos una sede (dirección física).
+- [x] **Convenio**: Registrar un convenio vigente asociado a la empresa anterior, estableciendo fechas válidas.
+- [x] *Verificación*: Validar en la interfaz que el convenio aparece como activo y probar el indicador de alerta (fecha próxima a vencer).
 
 ## 4. Flujo Completo de una Práctica (Paso a Paso)
 
