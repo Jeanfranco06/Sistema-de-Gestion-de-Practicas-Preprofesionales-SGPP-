@@ -1,20 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
-  Box, Typography, Paper, Table, TableBody, TableCell,
+  Box, Typography, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, TablePagination,
-  Chip, TextField, MenuItem, Button, Alert, CircularProgress,
-  IconButton, Tooltip, Stack, Divider, Grid
+  Chip, TextField, MenuItem, Alert, CircularProgress,
+  IconButton
 } from '@mui/material';
 import {
-  Assignment, Visibility, Refresh, Search, FolderOpen,
+  Assignment, Refresh, Search, FolderOpen,
 } from '@mui/icons-material';
 import { expedientesApi } from '../../../api/expedientesApi';
-import { coordinacionApi } from '../../../api/coordinacionApi';
-import Swal from 'sweetalert2';
-import withReactContent from 'sweetalert2-react-content';
-
-const MySwal = withReactContent(Swal);
 import {
   ModulePageShell, ModulePageHeader,
 } from '../../../shared/components/module/ModulePageShell';
@@ -23,13 +17,13 @@ import StatStrip from '../../../shared/components/StatStrip';
 
 const ESTADOS = [
   'SOLICITADO', 'EMPRESA_SEDE_ASIGNADA', 'ASESOR_ASIGNADO', 'COMITE_ASIGNADO',
-  'CARTA_ACEPTACION_PRESENTADA', 'PLAN_PRESENTADO', 'EN_REVISION', 'OBSERVADO',
-  'SUBSANADO', 'APROBADO', 'EN_EJECUCION', 'INFORME_PARCIAL_PRESENTADO',
-  'INFORME_FINAL_PRESENTADO', 'EVALUADO', 'CERRADO',
+  'VALIDADO_SECRETARIA', 'CARTA_PRESENTACION_EMITIDA', 'CARTA_ACEPTACION_PRESENTADA',
+  'PLAN_PRESENTADO', 'PLAN_APROBADO', 'EN_REVISION', 'OBSERVADO', 'SUBSANADO',
+  'EN_EJECUCION', 'INFORME_PARCIAL_PRESENTADO', 'INFORME_FINAL_PRESENTADO',
+  'INFORME_APROBADO', 'EVALUACION_COMPLETA', 'EVALUADO', 'DICTAMEN_EMITIDO', 'CERRADO',
 ];
 
 export const GestionExpedientes = () => {
-  const navigate = useNavigate();
   const [expedientes, setExpedientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -45,26 +39,6 @@ export const GestionExpedientes = () => {
       .then(({ data }) => setExpedientes(data?.data ?? data ?? []))
       .catch(() => setError('No se pudieron cargar los expedientes.'))
       .finally(() => setLoading(false));
-  };
-
-  const handleEmitirCarta = async (id) => {
-    try {
-      const res = await MySwal.fire({
-        title: 'Emitir Carta de Presentación',
-        text: '¿Estás seguro de emitir y firmar la Carta de Presentación para este expediente?',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: 'Sí, emitir',
-        cancelButtonText: 'Cancelar',
-      });
-      if (res.isConfirmed) {
-        await coordinacionApi.emitirCartaPresentacion(id);
-        MySwal.fire('Éxito', 'Carta de Presentación emitida y firmada electrónicamente.', 'success');
-        loadExpedientes();
-      }
-    } catch (error) {
-      MySwal.fire('Error', 'No se pudo emitir la Carta de Presentación.', 'error');
-    }
   };
 
   useEffect(() => {
@@ -165,7 +139,6 @@ export const GestionExpedientes = () => {
                 <TableCell sx={{ fontWeight: 600 }}>Tipo</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>Estado</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>Asesor / Empresa</TableCell>
-                <TableCell align="center" sx={{ fontWeight: 600 }}>Acción</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -181,28 +154,10 @@ export const GestionExpedientes = () => {
                     <Typography variant="caption" display="block">{e.nombreAsesor || '—'}</Typography>
                     <Typography variant="caption" color="text.secondary">{e.nombreEmpresa || ''}</Typography>
                   </TableCell>
-                  <TableCell align="center">
-                    <Stack direction="row" spacing={0.5} justifyContent="center">
-                      {(e.estado?.includes('VALIDADO') && e.estado?.includes('SECRETARIA')) && (
-                        <Tooltip title="Emitir y firmar Carta de Presentación">
-                          <Button size="small" variant="contained" color="success"
-                            onClick={() => handleEmitirCarta(e.id)}
-                            sx={{ fontWeight: 600, fontSize: '0.7rem', whiteSpace: 'nowrap', px: 1 }}>
-                            Emitir Carta
-                          </Button>
-                        </Tooltip>
-                      )}
-                      <Tooltip title="Ver detalle">
-                        <Button size="small" variant="outlined" onClick={() => navigate(`/coordinacion/expedientes/${e.id}`)}>
-                          <Visibility fontSize="small" />
-                        </Button>
-                      </Tooltip>
-                    </Stack>
-                  </TableCell>
                 </TableRow>
               ))}
               {filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={6} align="center" sx={{ py: 4, color: 'text.secondary' }}>No se encontraron expedientes</TableCell></TableRow>
+                <TableRow><TableCell colSpan={5} align="center" sx={{ py: 4, color: 'text.secondary' }}>No se encontraron expedientes</TableCell></TableRow>
               ) : null}
             </TableBody>
           </Table>

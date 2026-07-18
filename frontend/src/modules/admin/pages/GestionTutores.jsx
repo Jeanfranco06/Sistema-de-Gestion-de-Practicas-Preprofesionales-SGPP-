@@ -2,10 +2,10 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
     Typography, Box, Button, Table, TableBody, TableCell, TableHead, TableRow,
     Chip, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, InputAdornment, Tooltip,
-    TablePagination, MenuItem, FormControl, InputLabel, Select, Drawer, Divider, Alert, CircularProgress, TableSortLabel,
+    TablePagination, MenuItem, FormControl, InputLabel, Select, Drawer, Divider, CircularProgress, TableSortLabel,
     Avatar, Stack, Fade,
 } from '@mui/material';
-import { SupervisorAccount, Edit, Delete, Search, Add, FilterList, Visibility, CheckCircle, Cancel, Domain, Work, Person, ArrowBack, Save, Business } from '@mui/icons-material';
+import { SupervisorAccount, Edit, Delete, Search, Add, FilterList, Visibility, CheckCircle, Cancel, Domain, ArrowBack, Save } from '@mui/icons-material';
 import { tutoresApi, usuariosApi } from '../../../api/usuariosApi';
 import { empresaApi, sedeApi } from '../../../api/sedesApi';
 import Swal from 'sweetalert2';
@@ -79,7 +79,7 @@ export const GestionTutores = () => {
             const res = await tutoresApi.getById(id);
             setSelectedTutor(res.data?.data || res.data);
             setDrawerOpen(true);
-        } catch (error) {
+        } catch {
             MySwal.fire('Error', 'No se pudo cargar el detalle del tutor.', 'error');
         } finally {
             setDetalleLoading(false);
@@ -146,7 +146,7 @@ export const GestionTutores = () => {
                 await tutoresApi.disable(tutor.id);
                 MySwal.fire({ icon: 'success', title: `Tutor ${tutor.activo ? 'deshabilitado' : 'habilitado'}`, timer: 1500, showConfirmButton: false });
                 loadData();
-            } catch (error) {
+            } catch {
                 MySwal.fire('Error', 'No se pudo cambiar el estado.', 'error');
             }
         }

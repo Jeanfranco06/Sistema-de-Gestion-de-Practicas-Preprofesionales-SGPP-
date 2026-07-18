@@ -125,7 +125,7 @@ export const RecepcionAdministrativa = () => {
     };
 
     useEffect(() => {
-        loadExpedientes(); // eslint-disable-line react-hooks/set-state-in-effect
+        loadExpedientes();
     }, []);
 
     const handleChangePage = (event, newPage) => setPage(newPage);
@@ -193,24 +193,6 @@ export const RecepcionAdministrativa = () => {
         }
     };
 
-    const handleEmitirConstancia = async (id) => {
-        try {
-            const res = await MySwal.fire({
-                title: 'Emitir Constancia de Culminación',
-                text: "¿Estás seguro de emitir la constancia?",
-                icon: 'question',
-                showCancelButton: true
-            });
-            if (res.isConfirmed) {
-                await secretariaApi.emitirConstancia(id);
-                MySwal.fire('Éxito', 'Constancia emitida correctamente.', 'success');
-                loadExpedientes();
-            }
-        } catch {
-            MySwal.fire('Error', 'No se pudo emitir la constancia.', 'error');
-        }
-    };
-
     const handleOpenIncidencia = (exp) => {
         setSelectedExp(exp);
         setIncidenciaText('');
@@ -268,7 +250,7 @@ export const RecepcionAdministrativa = () => {
         return {
             total: expedientes.length,
             paraCarta: expedientes.filter(e => e.estado === 'VALIDADO_SECRETARIA').length,
-            paraConstancia: expedientes.filter(e => e.estado === 'EVALUADO').length,
+            evaluados: expedientes.filter(e => e.estado === 'EVALUADO').length,
             observados: expedientes.filter(e => e.estado === 'OBSERVADO').length,
         };
     }, [expedientes]);
@@ -276,7 +258,7 @@ export const RecepcionAdministrativa = () => {
     const stats = [
         { label: 'Total Trámites', value: kpis.total, icon: <ContentPasteSearch fontSize="small" />, accent: 'blue' },
         { label: 'Listas para Carta', value: kpis.paraCarta, icon: <Description fontSize="small" />, accent: 'violet' },
-        { label: 'Constancias por Emitir', value: kpis.paraConstancia, icon: <WorkspacePremium fontSize="small" />, accent: 'emerald' },
+        { label: 'Expedientes Evaluados', value: kpis.evaluados, icon: <WorkspacePremium fontSize="small" />, accent: 'emerald' },
         { label: 'Observados / Alertas', value: kpis.observados, icon: <WarningAmber fontSize="small" />, accent: 'orange' },
     ];
 
@@ -377,24 +359,13 @@ export const RecepcionAdministrativa = () => {
                                                                 </Button>
                                                             </Tooltip>
                                                         )}
-                                                        {exp.estado === 'EMPRESA_SEDE_ASIGNADA' && exp.codigoTipoPractica === 'INICIAL' && !exp.idAsesor && (
+                                                        {exp.estado === 'VALIDADO_SECRETARIA' && exp.codigoTipoPractica === 'INICIAL' && !exp.idAsesor && (
                                                             <Tooltip title="Asignar Docente Asesor" arrow>
                                                                 <Button size="small" variant="outlined" color="secondary"
                                                                     onClick={() => handleOpenAsesorDialog(exp)}
                                                                     sx={{ borderRadius: 1.5, fontWeight: 600, fontSize: '0.7rem', whiteSpace: 'nowrap', minWidth: 'auto', px: 1 }}>
                                                                     + Asesor
                                                                 </Button>
-                                                            </Tooltip>
-                                                        )}
-                                                        {exp.estado === 'EVALUADO' && (
-                                                            <Tooltip title="Emitir Constancia de Culminación" arrow>
-                                                                <span>
-                                                                    <Button size="small" variant="outlined" color="success"
-                                                                        onClick={() => handleEmitirConstancia(exp.id)}
-                                                                        sx={{ borderRadius: 1.5, fontWeight: 600, fontSize: '0.7rem', whiteSpace: 'nowrap', minWidth: 'auto', px: 1 }}>
-                                                                        Constancia
-                                                                    </Button>
-                                                                </span>
                                                             </Tooltip>
                                                         )}
                                                         <Tooltip title="Registrar Incidencia / Observación" arrow>

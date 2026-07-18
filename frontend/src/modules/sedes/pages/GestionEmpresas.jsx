@@ -8,10 +8,8 @@ import {
     BusinessCenter as BusinessIcon, Edit as EditIcon, Delete as DeleteIcon,
     CheckCircle as CheckCircleIcon, Search as SearchIcon, Add as AddIcon,
     FilterList as FilterListIcon, Block as BlockIcon, Refresh as RefreshIcon,
-    Badge as BadgeIcon, Business as BusinessIconAlt, Language as WebIcon,
-    Phone as PhoneIcon, Email as EmailIcon, Handshake as HandshakeIcon
+    Badge as BadgeIcon, Business as BusinessIconAlt, Handshake as HandshakeIcon
 } from '@mui/icons-material';
-import ErrorIcon from '@mui/icons-material/Error';
 import { empresaApi } from '../../../api/sedesApi';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
@@ -120,7 +118,7 @@ export const GestionEmpresas = () => {
                     }
                     return next;
                 });
-            } catch (e) {
+            } catch {
                 // Silently ignore
             }
         }, 600);
@@ -313,7 +311,7 @@ export const GestionEmpresas = () => {
                 await empresaApi.disable(id);
                 loadEmpresas();
                 MySwal.fire('¡Deshabilitada!', 'La empresa ha sido deshabilitada correctamente.', 'success');
-            } catch (error) {
+            } catch {
                 MySwal.fire('Error', 'No se pudo deshabilitar la empresa.', 'error');
             }
         }
@@ -335,7 +333,7 @@ export const GestionEmpresas = () => {
                 await empresaApi.validate(id);
                 loadEmpresas();
                 MySwal.fire('¡Validada!', 'La empresa ha sido validada exitosamente.', 'success');
-            } catch (error) {
+            } catch {
                 MySwal.fire('Error', 'No se pudo validar la empresa.', 'error');
             }
         }

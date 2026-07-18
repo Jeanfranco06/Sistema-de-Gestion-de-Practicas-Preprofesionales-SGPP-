@@ -27,8 +27,7 @@ const DOCUMENTOS_OBLIGATORIOS_INICIAL = [
   { id: 'PLAN_PRACTICA', nombre: 'Plan de Prácticas (Anexo 1)', formato: 'PDF', maxMB: 5 },
   { id: 'INFORME_PARCIAL_1', nombre: 'Informe Parcial Semana 5', formato: 'PDF', maxMB: 5 },
   { id: 'INFORME_PARCIAL_2', nombre: 'Informe Parcial Semana 10', formato: 'PDF', maxMB: 5 },
-  { id: 'INFORME_FINAL', nombre: 'Informe Final Semana 15', formato: 'PDF', maxMB: 10 },
-  { id: 'FICHA_EVALUACION', nombre: 'Ficha de Evaluación (Anexo 2)', formato: 'PDF', maxMB: 5 },
+  { id: 'INFORME_FINAL_INICIAL', nombre: 'Informe Final Semana 15', formato: 'PDF', maxMB: 10 },
   { id: 'CONSTANCIA_EMPRESA', nombre: 'Constancia de Prácticas (Empresa)', formato: 'PDF', maxMB: 5 }
 ];
 
@@ -56,7 +55,6 @@ export const GestionDocumental = () => {
   const [expediente, setExpediente] = useState(null);
 
   const [tabValue, setTabValue] = useState(0);
-  const [documentosLocales, setDocumentosLocales] = useState([]);
   const [anexos, setAnexos] = useState([]);
   const [uploadDialog, setUploadDialog] = useState({ open: false, docType: null, isAnexo: false });
   const [selectedFile, setSelectedFile] = useState(null);
@@ -117,6 +115,13 @@ export const GestionDocumental = () => {
   ];
 
   const anexosList = documentosConsolidados.filter(d => d.tipoId === 'ANEXO');
+  const puedeSubirDocumento = (tipoDocumento) => {
+    if (tipoDocumento === 'CARTA_PRESENTACION') return false;
+    if (['INFORME_PARCIAL_1', 'INFORME_PARCIAL_2', 'INFORME_FINAL', 'INFORME_FINAL_INICIAL'].includes(tipoDocumento)) return false;
+    if (tipoDocumento === 'CARTA_ACEPTACION') return expediente.estado === 'CARTA_PRESENTACION_EMITIDA';
+    if (tipoDocumento === 'PLAN_PRACTICA') return ['ASESOR_ASIGNADO', 'COMITE_ASIGNADO'].includes(expediente.estado);
+    return true;
+  };
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
@@ -341,8 +346,6 @@ export const GestionDocumental = () => {
             <Stack spacing={1.5}>
               {docObligatorios.map((docType) => {
                 const docCargado = documentosConsolidados.find(d => d.tipoId === docType.id);
-                const esDesdeBD = docCargado && !documentosLocales.some(d => d.id === docCargado.id);
-
                 return (
                   <Box
                     key={docType.id}
@@ -389,10 +392,18 @@ export const GestionDocumental = () => {
                             <IconButton size="small" onClick={() => handleDelete(docCargado.id)}><Delete fontSize="small" /></IconButton>
                           )}
                         </>
-                      ) : (
+                      ) : puedeSubirDocumento(docType.id) ? (
                         <Button size="small" startIcon={<CloudUpload />} onClick={() => handleOpenUpload(docType)}>
                           Subir
                         </Button>
+                      ) : (
+                        <Typography variant="caption" color="text.secondary">
+                          {docType.id === 'CARTA_PRESENTACION'
+                            ? 'Generado por Dirección'
+                            : ['INFORME_PARCIAL_1', 'INFORME_PARCIAL_2', 'INFORME_FINAL', 'INFORME_FINAL_INICIAL'].includes(docType.id)
+                              ? 'Gestionar desde Informes'
+                              : 'Disponible en la etapa correspondiente'}
+                        </Typography>
                       )}
                     </Box>
                   </Box>

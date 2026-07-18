@@ -16,6 +16,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/expedientes")
@@ -81,7 +82,9 @@ public class ExpedienteController {
     public ResponseEntity<ApiResponse<ExpedienteResponse>> presentarCartaAceptacion(
             @PathVariable Long id,
             @RequestAttribute(value = "idUsuario", required = false) Long idUsuario) {
-        ExpedienteResponse response = expedienteService.presentarCartaAceptacion(id, idUsuario != null ? idUsuario : 1L);
+        Long usuarioActual = Objects.requireNonNull(currentUserService.getCurrentUserId(), "Usuario no autenticado");
+        expedienteService.findByIdForUser(id, usuarioActual, currentUserService.getCurrentRoles());
+        ExpedienteResponse response = expedienteService.presentarCartaAceptacion(id, usuarioActual);
         return ResponseEntity.ok(ApiResponse.<ExpedienteResponse>builder()
                 .success(true).message("Carta de Aceptación registrada").data(response).timestamp(LocalDateTime.now()).build());
     }
@@ -117,7 +120,9 @@ public class ExpedienteController {
             @PathVariable Long id,
             @Valid @RequestBody PresentarPlanRequest request,
             @RequestAttribute(value = "idUsuario", required = false) Long idUsuario) {
-        ExpedienteResponse response = expedienteService.presentarPlan(id, request, idUsuario != null ? idUsuario : 1L);
+        Long usuarioActual = Objects.requireNonNull(currentUserService.getCurrentUserId(), "Usuario no autenticado");
+        expedienteService.findByIdForUser(id, usuarioActual, currentUserService.getCurrentRoles());
+        ExpedienteResponse response = expedienteService.presentarPlan(id, request, usuarioActual);
         return ResponseEntity.ok(ApiResponse.<ExpedienteResponse>builder()
                 .success(true).message("Plan de trabajo presentado").data(response).timestamp(LocalDateTime.now()).build());
     }
@@ -128,7 +133,9 @@ public class ExpedienteController {
     public ResponseEntity<ApiResponse<ExpedienteResponse>> aprobarPlan(
             @PathVariable Long id,
             @RequestAttribute(value = "idUsuario", required = false) Long idUsuario) {
-        ExpedienteResponse response = expedienteService.aprobarPlan(id, idUsuario != null ? idUsuario : 1L);
+        Long usuarioActual = Objects.requireNonNull(currentUserService.getCurrentUserId(), "Usuario no autenticado");
+        expedienteService.findByIdForUser(id, usuarioActual, currentUserService.getCurrentRoles());
+        ExpedienteResponse response = expedienteService.aprobarPlan(id, usuarioActual);
         return ResponseEntity.ok(ApiResponse.<ExpedienteResponse>builder()
                 .success(true).message("Plan de trabajo aprobado").data(response).timestamp(LocalDateTime.now()).build());
     }
@@ -142,7 +149,9 @@ public class ExpedienteController {
             @RequestParam String nombreDoc,
             @RequestParam String fileName,
             @RequestAttribute(value = "idUsuario", required = false) Long idUsuario) {
-        ExpedienteResponse response = expedienteService.agregarDocumento(id, tipoDocumento, nombreDoc, fileName, idUsuario != null ? idUsuario : 1L);
+        Long usuarioActual = Objects.requireNonNull(currentUserService.getCurrentUserId(), "Usuario no autenticado");
+        expedienteService.findByIdForUser(id, usuarioActual, currentUserService.getCurrentRoles());
+        ExpedienteResponse response = expedienteService.agregarDocumento(id, tipoDocumento, nombreDoc, fileName, usuarioActual);
         return ResponseEntity.ok(ApiResponse.<ExpedienteResponse>builder()
                 .success(true).message("Documento agregado").data(response).timestamp(LocalDateTime.now()).build());
     }
@@ -154,7 +163,9 @@ public class ExpedienteController {
             @PathVariable Long id,
             @PathVariable Long idDocumento,
             @RequestAttribute(value = "idUsuario", required = false) Long idUsuario) {
-        ExpedienteResponse response = expedienteService.eliminarDocumento(id, idDocumento, idUsuario != null ? idUsuario : 1L);
+        Long usuarioActual = Objects.requireNonNull(currentUserService.getCurrentUserId(), "Usuario no autenticado");
+        expedienteService.findByIdForUser(id, usuarioActual, currentUserService.getCurrentRoles());
+        ExpedienteResponse response = expedienteService.eliminarDocumento(id, idDocumento, usuarioActual);
         return ResponseEntity.ok(ApiResponse.<ExpedienteResponse>builder()
                 .success(true).message("Documento eliminado").data(response).timestamp(LocalDateTime.now()).build());
     }
@@ -217,7 +228,9 @@ public class ExpedienteController {
     public ResponseEntity<ApiResponse<ExpedienteResponse>> presentarInformeParcial(
             @PathVariable Long id,
             @RequestAttribute(value = "idUsuario", required = false) Long idUsuario) {
-        ExpedienteResponse response = expedienteService.presentarInformeParcial(id, idUsuario != null ? idUsuario : 1L);
+        Long usuarioActual = Objects.requireNonNull(currentUserService.getCurrentUserId(), "Usuario no autenticado");
+        expedienteService.findByIdForUser(id, usuarioActual, currentUserService.getCurrentRoles());
+        ExpedienteResponse response = expedienteService.presentarInformeParcial(id, usuarioActual);
         return ResponseEntity.ok(ApiResponse.<ExpedienteResponse>builder()
                 .success(true).message("Informe parcial registrado").data(response).timestamp(LocalDateTime.now()).build());
     }
@@ -228,7 +241,9 @@ public class ExpedienteController {
     public ResponseEntity<ApiResponse<ExpedienteResponse>> presentarInformeFinal(
             @PathVariable Long id,
             @RequestAttribute(value = "idUsuario", required = false) Long idUsuario) {
-        ExpedienteResponse response = expedienteService.presentarInformeFinal(id, idUsuario != null ? idUsuario : 1L);
+        Long usuarioActual = Objects.requireNonNull(currentUserService.getCurrentUserId(), "Usuario no autenticado");
+        expedienteService.findByIdForUser(id, usuarioActual, currentUserService.getCurrentRoles());
+        ExpedienteResponse response = expedienteService.presentarInformeFinal(id, usuarioActual);
         return ResponseEntity.ok(ApiResponse.<ExpedienteResponse>builder()
                 .success(true).message("Informe final registrado").data(response).timestamp(LocalDateTime.now()).build());
     }
@@ -239,7 +254,9 @@ public class ExpedienteController {
     public ResponseEntity<ApiResponse<ExpedienteResponse>> aprobarInformeFinal(
             @PathVariable Long id,
             @RequestAttribute(value = "idUsuario", required = false) Long idUsuario) {
-        ExpedienteResponse response = expedienteService.aprobarInformeFinal(id, idUsuario != null ? idUsuario : 1L);
+        Long usuarioActual = Objects.requireNonNull(currentUserService.getCurrentUserId(), "Usuario no autenticado");
+        expedienteService.findByIdForUser(id, usuarioActual, currentUserService.getCurrentRoles());
+        ExpedienteResponse response = expedienteService.aprobarInformeFinal(id, usuarioActual);
         return ResponseEntity.ok(ApiResponse.<ExpedienteResponse>builder()
                 .success(true).message("Informe final aprobado").data(response).timestamp(LocalDateTime.now()).build());
     }
@@ -306,7 +323,12 @@ public class ExpedienteController {
     @GetMapping
     @Operation(summary = "Listar todos los expedientes activos")
     public ResponseEntity<ApiResponse<List<ExpedienteResponse>>> findAll() {
-        List<ExpedienteResponse> list = expedienteService.findAll();
+        Long idUsuario = Objects.requireNonNull(currentUserService.getCurrentUserId(), "Usuario no autenticado");
+        List<String> roles = currentUserService.getCurrentRoles();
+        List<ExpedienteResponse> list = roles.contains("COMITE_PRACTICAS")
+                && roles.stream().noneMatch(r -> Set.of("ADMIN_SISTEMA", "SECRETARIA", "COORDINADOR", "DIRECTOR").contains(r))
+                ? expedienteService.findMisExpedientes(idUsuario, roles)
+                : expedienteService.findAll();
         return ResponseEntity.ok(ApiResponse.<List<ExpedienteResponse>>builder()
                 .success(true).data(list).timestamp(LocalDateTime.now()).build());
     }
@@ -380,7 +402,9 @@ public class ExpedienteController {
             @PathVariable Long id,
             @RequestParam String dictamen,
             @RequestAttribute(value = "idUsuario", required = false) Long idUsuario) {
-        expedienteService.emitirDictamen(id, dictamen, idUsuario != null ? idUsuario : 1L);
+        Long usuarioActual = Objects.requireNonNull(currentUserService.getCurrentUserId(), "Usuario no autenticado");
+        expedienteService.findByIdForUser(id, usuarioActual, currentUserService.getCurrentRoles());
+        expedienteService.emitirDictamen(id, dictamen, usuarioActual);
         return ResponseEntity.ok(ApiResponse.<Void>builder()
                 .success(true).message("Dictamen final emitido").timestamp(LocalDateTime.now()).build());
     }

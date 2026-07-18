@@ -16,9 +16,6 @@ import edu.unt.ingenieria_industrial.sgpp.core.expediente.model.Expediente;
 import edu.unt.ingenieria_industrial.sgpp.core.expediente.model.ExpedienteEstado;
 import edu.unt.ingenieria_industrial.sgpp.core.expediente.repository.ExpedienteRepository;
 import edu.unt.ingenieria_industrial.sgpp.core.expediente.repository.ExpedienteEstadoRepository;
-import edu.unt.ingenieria_industrial.sgpp.core.exportacion.dto.GenerarDocumentoInternoRequest;
-import edu.unt.ingenieria_industrial.sgpp.core.exportacion.service.ExportacionService;
-import edu.unt.ingenieria_industrial.sgpp.shared.enums.TipoDocumentoInstitucional;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.model.Usuario;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.repository.UsuarioRepository;
 import java.util.List;
@@ -32,7 +29,6 @@ public class SecretariaServiceImpl implements SecretariaService {
     private final ExpedienteRepository expedienteRepository;
     private final ExpedienteEstadoRepository estadoRepository;
     private final UsuarioRepository usuarioRepository;
-    private final ExportacionService exportacionService;
     private final ParametroSistemaService parametroSistemaService;
 
     @Override
@@ -80,24 +76,6 @@ public class SecretariaServiceImpl implements SecretariaService {
         estudiante.setEstadoAcademico(dto.getEstadoAcademico());
 
         return toDto(estudianteRepository.save(estudiante));
-    }
-
-    @Override
-    @Transactional
-    public void emitirCartaPresentacion(Long expedienteId, Long idUsuario) {
-        exportacionService.generarDocumentoInterno(GenerarDocumentoInternoRequest.builder()
-                .tipoDocumento(TipoDocumentoInstitucional.CARTA_PRESENTACION)
-                .idExpediente(expedienteId)
-                .build());
-    }
-
-    @Override
-    @Transactional
-    public void emitirConstancia(Long expedienteId, Long idUsuario) {
-        exportacionService.generarDocumentoInterno(GenerarDocumentoInternoRequest.builder()
-                .tipoDocumento(TipoDocumentoInstitucional.CONSTANCIA_CULMINACION)
-                .idExpediente(expedienteId)
-                .build());
     }
 
     @Override

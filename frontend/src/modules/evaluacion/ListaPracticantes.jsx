@@ -2,11 +2,11 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box, Typography, Button, TextField, MenuItem,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  IconButton, Stack, Chip, CircularProgress, Tooltip,
+  IconButton, Chip, CircularProgress, Tooltip,
   TablePagination,
 } from '@mui/material';
 import {
-  Search, Description, ChevronRight, Groups, Clear, FilterList,
+  Search, Description, ChevronRight, Groups, Clear,
   Visibility, RateReview, Business,
 } from '@mui/icons-material';
 import { useAuth } from '../../auth/AuthContext';

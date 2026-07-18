@@ -68,16 +68,6 @@ export const RegistroHoras = () => {
     return () => clearTimeout(timeout);
   }, [user]);
 
-  const handleIniciarControl = async () => {
-    try {
-      await horasEstudianteApi.iniciarControl(expediente.id, user.id);
-      await fetchHoras(expediente.id);
-      MySwal.fire({ icon: 'success', title: 'Control iniciado', timer: 1500, showConfirmButton: false });
-    } catch (error) {
-      MySwal.fire({ icon: 'error', title: 'Error', text: error?.response?.data?.message || 'No se pudo iniciar el control de horas' });
-    }
-  };
-
   const calcularHoras = (inicio, fin) => {
     if (!inicio || !fin) return '';
     const [h1, m1] = inicio.split(':').map(Number);
@@ -181,7 +171,7 @@ export const RegistroHoras = () => {
               />
               {!control && (
                 <Alert severity="info" sx={{ mt: 1 }}>
-                  El control de horas será iniciado por Secretaría o Coordinación una vez aprobado tu plan.
+                  El control de horas se crea automáticamente al iniciar la ejecución de tu práctica.
                 </Alert>
               )}
             </Stack>

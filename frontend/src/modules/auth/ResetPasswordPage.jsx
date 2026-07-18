@@ -4,7 +4,7 @@ import {
   Box, Card, CardContent, TextField, Button, Typography,
   InputAdornment, IconButton, Alert, CircularProgress, Link,
 } from '@mui/material';
-import { School, LockOutlined, Visibility, VisibilityOff, ArrowBack } from '@mui/icons-material';
+import { School, LockOutlined, Visibility, VisibilityOff } from '@mui/icons-material';
 import { resetPassword, validateResetToken } from '../../api/authService';
 
 export default function ResetPasswordPage() {

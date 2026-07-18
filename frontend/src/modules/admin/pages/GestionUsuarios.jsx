@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
     Typography, Box, Button, Table, TableBody, TableCell, TableHead, TableRow,
     Chip, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, InputAdornment, Tooltip,
     TablePagination, MenuItem, Checkbox, ListItemText, OutlinedInput, Select, FormControl, InputLabel,
     Drawer, CircularProgress, LinearProgress, TableSortLabel, Avatar, Stack, Paper, Fade,
-    Stepper, Step, StepLabel, Grid, CardActionArea, Card, CardContent, Divider
+    Stepper, Step, StepLabel, Grid, CardActionArea, Card
 } from '@mui/material';
 import {
     Person as PersonIcon, Edit as EditIcon, LockOpen as LockOpenIcon,
@@ -701,7 +701,7 @@ export const GestionUsuarios = () => {
                                             <TableCell>
                                                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                                                     {(usuario.roles || []).slice(0, 2).map(rol => (
-                                                        <Chip key={rol} label={rol.replace(/_/g, ' ')} size="small" sx={{ fontSize: '0.65rem', fontWeight: 700, borderRadius: 1.5, bgcolor: `${roleColorMap[rol]}15` || '#f1f5f9', color: roleColorMap[rol] || '#475569', border: '1px solid', borderColor: `${roleColorMap[rol]}30` || '#e2e8f0' }} />
+                                                        <Chip key={rol} label={rol.replace(/_/g, ' ')} size="small" sx={{ fontSize: '0.65rem', fontWeight: 700, borderRadius: 1.5, bgcolor: roleColorMap[rol] ? `${roleColorMap[rol]}15` : '#f1f5f9', color: roleColorMap[rol] || '#475569', border: '1px solid', borderColor: roleColorMap[rol] ? `${roleColorMap[rol]}30` : '#e2e8f0' }} />
                                                     ))}
                                                     {(usuario.roles || []).length > 2 && <Chip label={`+${usuario.roles.length - 2}`} size="small" sx={{ fontSize: '0.65rem', fontWeight: 700, borderRadius: 1.5, bgcolor: '#f8fafc', color: '#64748b' }} />}
                                                     {(!usuario.roles || usuario.roles.length === 0) && <Typography variant="caption" color="text.disabled" fontStyle="italic">Sin roles</Typography>}
@@ -1069,7 +1069,7 @@ export const GestionUsuarios = () => {
                                         const label = String(raw).replace(/_/g, ' ');
                                         const key = (r && (r.id || r.nombre)) || raw;
                                         const colorKey = (typeof r === 'string' ? r : (r.nombre || r.authority || raw));
-                                        return (<Chip key={key} label={label} sx={{ fontWeight: 700, borderRadius: 1.5, bgcolor: `${roleColorMap[colorKey]}15` || '#f1f5f9', color: roleColorMap[colorKey] || '#475569', border: '1px solid', borderColor: `${roleColorMap[colorKey]}30` || '#e2e8f0' }} />);
+                                        return (<Chip key={key} label={label} sx={{ fontWeight: 700, borderRadius: 1.5, bgcolor: roleColorMap[colorKey] ? `${roleColorMap[colorKey]}15` : '#f1f5f9', color: roleColorMap[colorKey] || '#475569', border: '1px solid', borderColor: roleColorMap[colorKey] ? `${roleColorMap[colorKey]}30` : '#e2e8f0' }} />);
                                     })}
                                     {(!selectedUsuario.roles || selectedUsuario.roles.length === 0) && <Typography variant="body2" color="text.secondary" fontStyle="italic">Sin roles asignados en el sistema.</Typography>}
                                 </Box>

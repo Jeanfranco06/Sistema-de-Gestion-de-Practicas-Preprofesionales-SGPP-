@@ -36,7 +36,8 @@ export const EvaluacionTutorExterno = () => {
     const { id: idExpedienteParams } = useParams();
     const navigate = useNavigate();
     const theme = useTheme();
-    const idExpediente = idExpedienteParams ? parseInt(idExpedienteParams, 10) : 1;
+    const idExpediente = Number(idExpedienteParams);
+    const expedienteIdValido = Number.isSafeInteger(idExpediente) && idExpediente > 0;
 
     const [evaluaciones, setEvaluaciones] = useState([]);
     const [detalles, setDetalles] = useState({});
@@ -45,7 +46,7 @@ export const EvaluacionTutorExterno = () => {
     const [evaluacion, setEvaluacion] = useState({
         idExpediente: idExpediente,
         tipoEvaluador: 'EMPRESA',
-        evaluadorId: user?.id || null,
+        evaluadorId: null,
         componente: 'EMPRESA',
         detalles: [],
         comentarios: '',
@@ -128,8 +129,12 @@ export const EvaluacionTutorExterno = () => {
         e.preventDefault();
 
         const total = calcularTotalGeneral();
-        if (total === 0) {
-            MySwal.fire('Advertencia', 'Debe ingresar al menos un puntaje.', 'warning');
+        if (!user?.id || !expedienteIdValido) {
+            MySwal.fire('Sesión o expediente no válido', 'Vuelve a la lista de practicantes e inténtalo nuevamente.', 'error');
+            return;
+        }
+        if (criterios.some((criterio) => !detalles[criterio.id]?.puntajeObtenido)) {
+            MySwal.fire('Evaluación incompleta', 'Debe registrar un puntaje para cada criterio.', 'warning');
             return;
         }
 
@@ -158,6 +163,8 @@ export const EvaluacionTutorExterno = () => {
 
             const payload = {
                 ...evaluacion,
+                idExpediente,
+                evaluadorId: user.id,
                 rutaConstancia,
                 detalles: criterios.map((c) => ({
                     idCriterio: c.id,
@@ -189,6 +196,19 @@ export const EvaluacionTutorExterno = () => {
     const totalGeneral = calcularTotalGeneral();
     const porcentaje = totalMaximo > 0 ? (totalGeneral / totalMaximo) * 100 : 0;
     const colorTotal = totalGeneral >= totalMaximo * 0.7 ? 'success' : totalGeneral >= totalMaximo * 0.4 ? 'warning' : 'error';
+
+    if (!expedienteIdValido) {
+        return (
+            <ModulePageShell>
+                <ContentCard>
+                    <Typography color="error">No se indicó un expediente válido para evaluar.</Typography>
+                    <Button sx={{ mt: 2 }} variant="outlined" onClick={() => navigate('/tutor/practicantes')}>
+                        Volver a practicantes
+                    </Button>
+                </ContentCard>
+            </ModulePageShell>
+        );
+    }
 
     return (
         <ModulePageShell>
@@ -323,7 +343,7 @@ export const EvaluacionTutorExterno = () => {
                                 color={file ? 'success' : 'primary'}
                             >
                                 {evaluacion.rutaConstancia || 'Subir constancia de horas'}
-                                <input type="file" hidden accept=".pdf,.doc,.docx" onChange={handleFileUpload} />
+                                <input type="file" hidden accept="application/pdf,.pdf" onChange={handleFileUpload} />
                             </Button>
                         </Grid>
                         <Grid item xs={12} md={4}>

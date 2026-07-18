@@ -21,7 +21,7 @@ import java.time.LocalDateTime;
 @RequestMapping("/admin/reportes")
 @RequiredArgsConstructor
 @Tag(name = "Reportes Institucionales", description = "Módulo de reporting para Dirección, coordinación y comité de prácticas")
-@PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR')")
+@PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR')")
 public class ReporteController {
 
     private final ReporteService reporteService;

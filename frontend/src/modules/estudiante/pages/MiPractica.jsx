@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Box, Grid, Typography, Chip, List, ListItem, ListItemText, ListItemIcon,
+  Box, Grid, Typography, Chip,
   Button, Alert, CircularProgress, IconButton, Stack, LinearProgress,
-  Paper, useTheme, Tooltip, Avatar, Fade
+  Paper, Tooltip, Avatar, Fade
 } from '@mui/material';
 import {
-  Description, Business, Visibility, TrendingUp, Refresh, InfoOutlined,
-  Assignment, AccessTime, FolderOpen, School, TaskAlt, PendingActions,
+  Business, TrendingUp, Refresh,
+  Assignment, AccessTime, FolderOpen, School, TaskAlt,
   ArrowForwardIos, PlayArrow, Person, ArrowBack, LocationOn
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -60,7 +60,6 @@ const getStatusProps = (status) => {
 
 export const MiPractica = () => {
   const navigate = useNavigate();
-  const theme = useTheme();
   const [loading, setLoading] = useState(true);
   const [practica, setPractica] = useState(null);
   const [error, setError] = useState(null);

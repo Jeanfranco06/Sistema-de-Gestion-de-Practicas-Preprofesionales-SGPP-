@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 @RequestMapping("/admin/dashboard")
 @RequiredArgsConstructor
 @Tag(name = "Dashboard KPIs", description = "Indicadores agregados para Dirección, coordinación y comité de prácticas")
-@PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR')")
+@PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR')")
 public class DashboardKpiController {
 
     private final DashboardKpiService dashboardKpiService;

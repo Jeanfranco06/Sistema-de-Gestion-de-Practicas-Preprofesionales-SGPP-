@@ -153,7 +153,7 @@ export const GestionSedes = () => {
                     }
                     return next;
                 });
-            } catch (e) {
+            } catch {
                 // Silently ignore
             }
         }, 600);
@@ -1095,7 +1095,7 @@ export const GestionSedes = () => {
                         <Typography variant="subtitle2" color="primary" sx={{ fontWeight: 700, mb: 1 }}>Tutores Activos ({selectedSede.cantidadTutoresActivos || 0})</Typography>
                         {selectedSede.tutoresActivos && selectedSede.tutoresActivos.length > 0 ? (
                             <Stack spacing={1} sx={{ mb: 2 }}>
-                                {selectedSede.tutoresActivos.map((tutor, index) => (
+                                {selectedSede.tutoresActivos.map((tutor) => (
                                     <Paper key={tutor.id} sx={{ p: 2, borderRadius: 2, bgcolor: '#f8fafc', border: '1px solid #e2e8f0' }}>
                                         <Typography variant="body2" fontWeight={700}>{tutor.nombres} {tutor.apellidoPaterno} {tutor.apellidoMaterno}</Typography>
                                         <Typography variant="caption" color="text.secondary" display="block">Cargo: {tutor.cargo}</Typography>

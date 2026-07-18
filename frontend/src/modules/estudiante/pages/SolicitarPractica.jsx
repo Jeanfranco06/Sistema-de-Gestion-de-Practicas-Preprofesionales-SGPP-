@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import {
     Box, Typography, Card, CardContent, Button, Stepper, Step, StepLabel,
-    CircularProgress, Alert, Chip, Avatar, Stack, FormControl, InputLabel,
-    Select, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions,
+    CircularProgress, Alert, Chip, Avatar, Stack, Dialog, DialogTitle, DialogContent, DialogActions,
     Fade, Tooltip,
 } from '@mui/material';
 import {
     School, Business, CheckCircle, ArrowBack, ArrowForward,
-    Assignment, MilitaryTech, Star, EmojiEvents, Warning, Cancel,
+    Assignment, Star, EmojiEvents, Cancel,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { tipoPracticaApi, practicaApi } from '../../../api/practicasApi';

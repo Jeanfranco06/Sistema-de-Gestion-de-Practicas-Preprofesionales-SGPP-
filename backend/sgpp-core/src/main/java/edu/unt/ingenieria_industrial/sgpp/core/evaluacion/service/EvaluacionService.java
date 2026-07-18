@@ -4,10 +4,11 @@ import edu.unt.ingenieria_industrial.sgpp.core.evaluacion.dto.EvaluacionRequestD
 import edu.unt.ingenieria_industrial.sgpp.core.evaluacion.dto.EvaluacionResponseDTO;
 import edu.unt.ingenieria_industrial.sgpp.core.evaluacion.dto.CriterioEvaluacionDTO;
 
+import java.util.Collection;
 import java.util.List;
 
 public interface EvaluacionService {
-    EvaluacionResponseDTO crearEvaluacion(EvaluacionRequestDTO request, Long idUsuario);
+    EvaluacionResponseDTO crearEvaluacion(EvaluacionRequestDTO request, Long idUsuario, Collection<String> roles);
     EvaluacionResponseDTO obtenerEvaluacionPorId(Long id);
     List<EvaluacionResponseDTO> obtenerEvaluacionesPorPractica(Long idPractica);
     List<CriterioEvaluacionDTO> obtenerCriteriosPorTipoEvaluador(String tipoEvaluador);

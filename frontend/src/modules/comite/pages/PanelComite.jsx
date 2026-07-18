@@ -24,13 +24,14 @@ import StatStrip from '../../../shared/components/StatStrip';
 import StatusChip from '../../../shared/components/StatusChip';
 
 const MySwal = withReactContent(Swal);
+const esFinalOProfesional = (expediente) => ['FINAL', 'PROFESIONAL'].includes(expediente.codigoTipoPractica);
 
 const ESTADOS_COMITE = [
   'SOLICITADO', 'EMPRESA_SEDE_ASIGNADA', 'COMITE_ASIGNADO',
   'CARTA_ACEPTACION_PRESENTADA', 'PLAN_PRESENTADO', 'EN_REVISION',
-  'OBSERVADO', 'SUBSANADO', 'APROBADO', 'EN_EJECUCION',
+  'OBSERVADO', 'SUBSANADO', 'PLAN_APROBADO', 'EN_EJECUCION',
   'INFORME_PARCIAL_PRESENTADO', 'INFORME_FINAL_PRESENTADO',
-  'EVALUADO', 'CERRADO',
+  'INFORME_APROBADO', 'EVALUACION_COMPLETA', 'EVALUADO', 'DICTAMEN_EMITIDO', 'CERRADO',
 ];
 
 export const PanelComite = () => {
@@ -51,7 +52,7 @@ export const PanelComite = () => {
 
   const fetchData = () => {
     setLoading(true);
-    expedientesApi.getAll()
+    expedientesApi.getMisExpedientes()
       .then(({ data }) => setExpedientes(data?.data ?? data ?? []))
       .catch(() => setError('No se pudieron cargar los expedientes.'))
       .finally(() => setLoading(false));
@@ -72,9 +73,9 @@ export const PanelComite = () => {
 
   const kpis = useMemo(() => ({
     total: expedientes.length,
-    pendientes: expedientes.filter(e => ['PLAN_PRESENTADO', 'EN_REVISION'].includes(e.estado)).length,
+    pendientes: expedientes.filter(e => esFinalOProfesional(e) && ['PLAN_PRESENTADO', 'EN_REVISION'].includes(e.estado)).length,
     enEjecucion: expedientes.filter(e => e.estado === 'EN_EJECUCION').length,
-    infFinalPresentado: expedientes.filter(e => e.estado === 'INFORME_FINAL_PRESENTADO').length,
+    infFinalPresentado: expedientes.filter(e => esFinalOProfesional(e) && e.estado === 'INFORME_FINAL_PRESENTADO').length,
     observados: expedientes.filter(e => e.estado === 'OBSERVADO').length,
     cerrados: expedientes.filter(e => e.estado === 'CERRADO').length,
   }), [expedientes]);
@@ -106,7 +107,7 @@ export const PanelComite = () => {
 
   const pendientesAccion = useMemo(
     () => expedientes.filter((e) =>
-      e.estado === 'PLAN_PRESENTADO' || e.estado === 'INFORME_FINAL_PRESENTADO'
+      esFinalOProfesional(e) && (e.estado === 'PLAN_PRESENTADO' || e.estado === 'INFORME_FINAL_PRESENTADO')
     ),
     [expedientes],
   );
@@ -125,7 +126,7 @@ export const PanelComite = () => {
     try {
       await c.api();
       MySwal.fire('Operación exitosa', '', 'success');
-      setExpedientes(prev => prev.map(e => e.id === id ? { ...e, estado: action === 'aprobarPlan' ? 'APROBADO' : 'EVALUADO' } : e));
+      fetchData();
     } catch {
       MySwal.fire('Error', 'No se pudo completar la operación.', 'error');
     }
@@ -139,8 +140,30 @@ export const PanelComite = () => {
       setDictamenExp(null);
       setDictamenText('');
       MySwal.fire('Dictamen emitido', 'El dictamen final fue registrado exitosamente.', 'success');
+      fetchData();
     } catch {
       MySwal.fire('Error', 'No se pudo emitir el dictamen.', 'error');
+    }
+  };
+
+  const handleObservarPlan = async (id) => {
+    const result = await MySwal.fire({
+      title: 'Observar plan de prácticas',
+      input: 'textarea',
+      inputLabel: 'Observaciones para el estudiante',
+      inputPlaceholder: 'Detalle los aspectos que debe subsanar...',
+      inputValidator: (value) => !value?.trim() && 'La observación es obligatoria.',
+      showCancelButton: true,
+      confirmButtonText: 'Registrar observación',
+      cancelButtonText: 'Cancelar',
+    });
+    if (!result.isConfirmed) return;
+    try {
+      await expedientesApi.agregarObservacion(id, result.value.trim());
+      MySwal.fire('Plan observado', 'Se notificó la observación al estudiante.', 'success');
+      fetchData();
+    } catch (error) {
+      MySwal.fire('Error', error.response?.data?.message || 'No se pudo registrar la observación.', 'error');
     }
   };
 
@@ -400,7 +423,7 @@ export const PanelComite = () => {
                           <Visibility fontSize="small" />
                         </Button>
                       </Tooltip>
-                      {e.estado === 'PLAN_PRESENTADO' && (
+                      {esFinalOProfesional(e) && e.estado === 'PLAN_PRESENTADO' && (
                         <Tooltip title="Aprobar plan">
                           <Button size="small" variant="contained" color="success"
                             onClick={() => handleAction('aprobarPlan', e.id)}>
@@ -408,7 +431,15 @@ export const PanelComite = () => {
                           </Button>
                         </Tooltip>
                       )}
-                      {e.estado === 'INFORME_FINAL_PRESENTADO' && (
+                      {esFinalOProfesional(e) && e.estado === 'PLAN_PRESENTADO' && (
+                        <Tooltip title="Observar plan">
+                          <Button size="small" variant="outlined" color="warning"
+                            onClick={() => handleObservarPlan(e.id)}>
+                            <WarningAmber fontSize="small" />
+                          </Button>
+                        </Tooltip>
+                      )}
+                      {esFinalOProfesional(e) && e.estado === 'INFORME_FINAL_PRESENTADO' && (
                         <Tooltip title="Aprobar informe final">
                           <Button size="small" variant="contained" color="info"
                             onClick={() => handleAction('aprobarInforme', e.id)}>
@@ -416,7 +447,7 @@ export const PanelComite = () => {
                           </Button>
                         </Tooltip>
                       )}
-                      {(e.estado === 'APROBADO' || e.estado === 'EVALUADO') && (
+                      {esFinalOProfesional(e) && ['INFORME_APROBADO', 'EVALUACION_COMPLETA', 'EVALUADO'].includes(e.estado) && (
                         <Tooltip title="Emitir dictamen">
                           <Button size="small" variant="contained" color="secondary"
                             onClick={() => { setDictamenExp(e); setDictamenText(''); setOpenDictamen(true); }}>

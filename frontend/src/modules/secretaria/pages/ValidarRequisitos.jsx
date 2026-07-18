@@ -135,7 +135,7 @@ export const ValidarRequisitos = () => {
     };
 
     useEffect(() => {
-        loadEstudiantes(); // eslint-disable-line react-hooks/set-state-in-effect
+        loadEstudiantes();
     }, []);
 
     const handleOpenValidar = async (estudiante) => {

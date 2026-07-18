@@ -15,15 +15,20 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Stack,
   Tabs,
   Typography,
 } from '@mui/material';
-import { ArrowBack, AssignmentTurnedIn, History, HourglassBottom } from '@mui/icons-material';
+import { ArrowBack, CheckCircle, Description, Gavel, WorkspacePremium } from '@mui/icons-material';
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
 import PageContainer from '../../../shared/components/PageContainer';
 import { useParams, useNavigate } from 'react-router-dom';
 import { expedientesApi } from '../../../api/expedientesApi';
 import { empresaApi, sedeApi } from '../../../api/sedesApi';
-import { horasApi, reportesCoordinacionApi, trazabilidadApi } from '../../../api/coordinacionApi';
+import { coordinacionApi, horasApi, reportesCoordinacionApi, trazabilidadApi } from '../../../api/coordinacionApi';
+
+const MySwal = withReactContent(Swal);
 
 function TabPanel({ children, value, index }) {
   return (
@@ -90,6 +95,7 @@ export const DetalleExpediente = () => {
   const [trazabilidad, setTrazabilidad] = useState(null);
   const [historialGeneracion, setHistorialGeneracion] = useState([]);
   const [warnings, setWarnings] = useState([]);
+  const [accionEnCurso, setAccionEnCurso] = useState('');
 
   const cargarDetalle = useCallback(async () => {
     if (!id) return;
@@ -149,6 +155,74 @@ export const DetalleExpediente = () => {
   useEffect(() => {
     cargarDetalle();
   }, [cargarDetalle]);
+
+  const ejecutarAccion = async (tipo) => {
+    const acciones = {
+      carta: {
+        title: 'Emitir Carta de Presentación',
+        text: 'La carta se generará y quedará registrada en el expediente.',
+        confirmButtonText: 'Emitir carta',
+        success: 'La Carta de Presentación fue emitida correctamente.',
+        ejecutar: () => coordinacionApi.emitirCartaPresentacion(id),
+      },
+      aprobarPlan: {
+        title: 'Aprobar Plan de Prácticas',
+        text: 'El plan quedará aprobado y el expediente avanzará a la siguiente etapa.',
+        confirmButtonText: 'Aprobar plan',
+        success: 'El Plan de Prácticas fue aprobado correctamente.',
+        ejecutar: () => expedientesApi.aprobarPlan(id),
+      },
+      aprobarInforme: {
+        title: 'Aprobar Informe Final',
+        text: 'El informe final quedará aprobado por la instancia responsable.',
+        confirmButtonText: 'Aprobar informe',
+        success: 'El Informe Final fue aprobado correctamente.',
+        ejecutar: () => expedientesApi.aprobarInformeFinal(id),
+      },
+      dictamen: {
+        title: 'Emitir Dictamen Final',
+        text: 'Registra la decisión colegiada que acompañará al documento institucional.',
+        confirmButtonText: 'Emitir dictamen',
+        success: 'El Dictamen Final fue emitido correctamente.',
+        input: 'textarea',
+        inputLabel: 'Dictamen u observaciones finales',
+        inputValidator: (value) => !value?.trim() && 'El dictamen es obligatorio.',
+        ejecutar: (dictamen) => expedientesApi.emitirDictamen(id, dictamen.trim()),
+      },
+      constancia: {
+        title: 'Emitir Constancia de Prácticas',
+        text: 'El expediente se cerrará, si corresponde, antes de generar la constancia.',
+        confirmButtonText: 'Emitir constancia',
+        success: 'La constancia fue emitida correctamente.',
+        ejecutar: () => coordinacionApi.emitirConstancia(id),
+      },
+    };
+    const accion = acciones[tipo];
+    const confirmacion = await MySwal.fire({
+      title: accion.title,
+      text: accion.text,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: accion.confirmButtonText,
+      cancelButtonText: 'Cancelar',
+      input: accion.input,
+      inputLabel: accion.inputLabel,
+      inputValidator: accion.inputValidator,
+    });
+    if (!confirmacion.isConfirmed) return;
+
+    try {
+      setAccionEnCurso(tipo);
+      await accion.ejecutar(confirmacion.value);
+      await cargarDetalle();
+      MySwal.fire('Operación completada', accion.success, 'success');
+    } catch (err) {
+      MySwal.fire('No se pudo completar la operación',
+        err.response?.data?.message || 'Verifica que el expediente cumpla los requisitos del flujo.', 'error');
+    } finally {
+      setAccionEnCurso('');
+    }
+  };
 
   const ultimaConstancia = useMemo(
     () =>
@@ -218,8 +292,63 @@ export const DetalleExpediente = () => {
               {expediente.codigoExpediente} · {expediente.nombreTipoPractica} · Periodo {expediente.periodoAcademico || 'No definido'}
             </Typography>
           </Box>
-          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
             <Chip label={expediente.estado} color={getEstadoColor(expediente.estado)} />
+            {expediente.estado === 'VALIDADO_SECRETARIA' && (
+              <Button
+                variant="contained"
+                startIcon={<Description />}
+                disabled={accionEnCurso === 'carta'}
+                onClick={() => ejecutarAccion('carta')}
+              >
+                {accionEnCurso === 'carta' ? 'Emitiendo...' : 'Emitir carta'}
+              </Button>
+            )}
+            {expediente.estado === 'PLAN_PRESENTADO' && (
+              <Button
+                variant="contained"
+                color="success"
+                startIcon={<CheckCircle />}
+                disabled={accionEnCurso === 'aprobarPlan'}
+                onClick={() => ejecutarAccion('aprobarPlan')}
+              >
+                {accionEnCurso === 'aprobarPlan' ? 'Aprobando...' : 'Aprobar plan'}
+              </Button>
+            )}
+            {expediente.estado === 'INFORME_FINAL_PRESENTADO' && (
+              <Button
+                variant="contained"
+                color="info"
+                startIcon={<CheckCircle />}
+                disabled={accionEnCurso === 'aprobarInforme'}
+                onClick={() => ejecutarAccion('aprobarInforme')}
+              >
+                {accionEnCurso === 'aprobarInforme' ? 'Aprobando...' : 'Aprobar informe'}
+              </Button>
+            )}
+            {['INFORME_APROBADO', 'EVALUACION_COMPLETA', 'EVALUADO'].includes(expediente.estado) && (
+              <Button
+                variant="contained"
+                color="secondary"
+                startIcon={<Gavel />}
+                disabled={accionEnCurso === 'dictamen'}
+                onClick={() => ejecutarAccion('dictamen')}
+              >
+                {accionEnCurso === 'dictamen' ? 'Emitiendo...' : 'Emitir dictamen'}
+              </Button>
+            )}
+            {['EVALUADO', 'DICTAMEN_EMITIDO'].includes(expediente.estado)
+              || (expediente.estado === 'CERRADO' && !ultimaConstancia) ? (
+                <Button
+                  variant="contained"
+                  color="success"
+                  startIcon={<WorkspacePremium />}
+                  disabled={accionEnCurso === 'constancia'}
+                  onClick={() => ejecutarAccion('constancia')}
+                >
+                  {accionEnCurso === 'constancia' ? 'Emitiendo...' : 'Emitir constancia'}
+                </Button>
+              ) : null}
             <Button variant="outlined" startIcon={<ArrowBack />} onClick={() => navigate(-1)}>
               Volver
             </Button>

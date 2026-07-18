@@ -15,9 +15,7 @@ import {
   Select,
   MenuItem,
   FormControl,
-  InputLabel,
-  useMediaQuery,
-  useTheme
+  InputLabel
 } from '@mui/material';
 import {
   Person,
@@ -41,9 +39,6 @@ const MySwal = withReactContent(Swal);
 export const PerfilEstudiante = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');

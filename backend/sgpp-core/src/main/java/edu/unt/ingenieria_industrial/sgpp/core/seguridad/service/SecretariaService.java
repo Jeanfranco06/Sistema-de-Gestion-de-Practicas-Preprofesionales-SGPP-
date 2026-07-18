@@ -9,8 +9,6 @@ public interface SecretariaService {
     List<EstudianteDTO> findAllEstudiantes();
     ValidacionRequisitosDTO validarRequisitos(Long estudianteId);
     EstudianteDTO updateDatosAcademicos(Long estudianteId, EstudianteDTO dto);
-    void emitirCartaPresentacion(Long expedienteId, Long idUsuario);
-    void emitirConstancia(Long expedienteId, Long idUsuario);
     void registrarIncidencia(Long expedienteId, String incidencia, Long idUsuario);
 }
 

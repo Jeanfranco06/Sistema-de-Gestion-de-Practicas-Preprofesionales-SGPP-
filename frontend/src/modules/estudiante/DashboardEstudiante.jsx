@@ -1,19 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Box, Grid, Typography, Chip, List, ListItem, ListItemText, ListItemIcon,
+  Box, Typography, Chip,
   Button, Alert, CircularProgress, IconButton, Stack, LinearProgress,
-  Paper, useTheme, Tooltip, Avatar, Fade
+  Paper, Tooltip, Avatar, Fade
 } from '@mui/material';
 import {
-  Description, Business, Visibility, TrendingUp, Refresh, InfoOutlined,
-  Assignment, AccessTime, FolderOpen, School, TaskAlt, PendingActions,
+  Description, Business, TrendingUp, Refresh, InfoOutlined,
+  Assignment, AccessTime, FolderOpen, School, TaskAlt,
   ArrowForwardIos, PlayArrow, Person
 } from '@mui/icons-material';
 import { useAuth } from '../../auth/AuthContext';
 import { expedientesApi } from '../../api/expedientesApi';
 import { horasEstudianteApi } from '../../api/horasApi';
 import { useNavigate } from 'react-router-dom';
-import { ModulePageShell } from '../../shared/components/module/ModulePageShell';
 
 // Componente Card Premium responsivo
 const DashboardCard = ({ title, action, children, sx }) => (
@@ -64,7 +63,6 @@ const getStatusProps = (status) => {
 export default function DashboardEstudiante() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const theme = useTheme();
 
   const [loading, setLoading] = useState(true);
   const [expediente, setExpediente] = useState(null);
@@ -175,33 +173,6 @@ export default function DashboardEstudiante() {
 
   const expStatus = getStatusProps(expediente.estado);
   
-  // Información específica según tipo de práctica
-  const tipoInfo = {
-    INICIAL: {
-      nombre: 'Práctica Inicial',
-      horas: '64 horas',
-      creditos: '2 créditos',
-      requisitos: 'VIII ciclo, matrícula activa',
-      informes: '3 informes parciales (semanas 5, 10, 15)'
-    },
-    FINAL: {
-      nombre: 'Práctica Final',
-      horas: '360 horas (3 meses mínimo)',
-      creditos: 'Sin créditos',
-      requisitos: 'IX/X ciclo, aprobación de iniciales',
-      informes: '1 informe final'
-    },
-    PROFESIONAL: {
-      nombre: 'Práctica Profesional',
-      horas: '360 horas (egresados)',
-      creditos: 'Sin créditos',
-      requisitos: 'Egresado (máx. 1 año)',
-      informes: '1 informe final'
-    }
-  };
-  
-  const info = tipoInfo[expediente.codigoTipoPractica] || tipoInfo.INICIAL;
-
   return (
     <Box sx={{ px: { xs: 1.5, sm: 2, md: 2.5 }, py: { xs: 2, md: 4 }, width: '100%' }}>
       <Fade in timeout={600}>

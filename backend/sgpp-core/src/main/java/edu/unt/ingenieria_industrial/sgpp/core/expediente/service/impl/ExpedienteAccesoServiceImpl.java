@@ -16,7 +16,7 @@ import java.util.Set;
 public class ExpedienteAccesoServiceImpl implements ExpedienteAccesoService {
 
     private static final Set<String> ROLES_LECTURA_GLOBAL = Set.of(
-            "ADMIN_SISTEMA", "SECRETARIA", "COORDINADOR", "DIRECTOR", "COMITE_PRACTICAS"
+            "ADMIN_SISTEMA", "SECRETARIA", "COORDINADOR", "DIRECTOR"
     );
 
     private final TutorExternoRepository tutorExternoRepository;

@@ -3,6 +3,7 @@ package edu.unt.ingenieria_industrial.sgpp.core.seguridad.controller;
 import edu.unt.ingenieria_industrial.sgpp.shared.common.ApiResponse;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.dto.EstudianteDTO;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.dto.ValidacionRequisitosDTO;
+import edu.unt.ingenieria_industrial.sgpp.core.seguridad.service.CurrentUserService;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.service.SecretariaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -11,6 +12,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -24,6 +26,7 @@ import java.util.List;
 public class SecretariaController {
 
     private final SecretariaService secretariaService;
+    private final CurrentUserService currentUserService;
 
     @GetMapping("/estudiantes")
     @Operation(summary = "Listar todos los estudiantes para validación")
@@ -68,31 +71,20 @@ public class SecretariaController {
         );
     }
 
-    @PostMapping("/expediente/{expedienteId}/emitir-carta-presentacion")
-    @Operation(summary = "Emitir carta de presentación")
-    public ResponseEntity<ApiResponse<Void>> emitirCartaPresentacion(
-            @Parameter(description = "ID del expediente") @PathVariable Long expedienteId,
-            @Parameter(description = "ID del usuario que emite (extraído del token)") @RequestAttribute(value = "idUsuario", required = false) Long idUsuario) {
-        secretariaService.emitirCartaPresentacion(expedienteId, idUsuario != null ? idUsuario : 1L);
-        return ResponseEntity.ok(ApiResponse.<Void>builder().success(true).message("Carta de presentación emitida").timestamp(LocalDateTime.now()).build());
-    }
-
-    @PostMapping("/expediente/{expedienteId}/emitir-constancia")
-    @Operation(summary = "Emitir constancia de culminación")
-    public ResponseEntity<ApiResponse<Void>> emitirConstancia(
-            @Parameter(description = "ID del expediente") @PathVariable Long expedienteId,
-            @Parameter(description = "ID del usuario que emite (extraído del token)") @RequestAttribute(value = "idUsuario", required = false) Long idUsuario) {
-        secretariaService.emitirConstancia(expedienteId, idUsuario != null ? idUsuario : 1L);
-        return ResponseEntity.ok(ApiResponse.<Void>builder().success(true).message("Constancia de culminación emitida").timestamp(LocalDateTime.now()).build());
-    }
-
     @PostMapping("/expediente/{expedienteId}/registrar-incidencia")
     @Operation(summary = "Registrar incidencia en el expediente")
     public ResponseEntity<ApiResponse<Void>> registrarIncidencia(
             @Parameter(description = "ID del expediente") @PathVariable Long expedienteId,
-            @Parameter(description = "Descripción de la incidencia") @RequestParam String incidencia,
-            @Parameter(description = "ID del usuario (extraído del token)") @RequestAttribute(value = "idUsuario", required = false) Long idUsuario) {
-        secretariaService.registrarIncidencia(expedienteId, incidencia, idUsuario != null ? idUsuario : 1L);
+            @Parameter(description = "Descripción de la incidencia") @RequestParam String incidencia) {
+        secretariaService.registrarIncidencia(expedienteId, incidencia, getCurrentUserId());
         return ResponseEntity.ok(ApiResponse.<Void>builder().success(true).message("Incidencia registrada").timestamp(LocalDateTime.now()).build());
+    }
+
+    private Long getCurrentUserId() {
+        Long idUsuario = currentUserService.getCurrentUserId();
+        if (idUsuario == null) {
+            throw new AccessDeniedException("No se pudo identificar al usuario autenticado");
+        }
+        return idUsuario;
     }
 }

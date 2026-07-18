@@ -3,6 +3,8 @@ package edu.unt.ingenieria_industrial.sgpp.core.exportacion.controller;
 import edu.unt.ingenieria_industrial.sgpp.core.exportacion.config.ExportacionProperties;
 import edu.unt.ingenieria_industrial.sgpp.core.exportacion.model.RegistroGeneracionDocumental;
 import edu.unt.ingenieria_industrial.sgpp.core.exportacion.repository.RegistroGeneracionDocumentalRepository;
+import edu.unt.ingenieria_industrial.sgpp.core.expediente.service.ExpedienteAccesoService;
+import edu.unt.ingenieria_industrial.sgpp.core.seguridad.service.CurrentUserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +14,8 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -23,17 +27,29 @@ import java.nio.file.Paths;
 @RestController
 @RequestMapping("/api/v1/exportacion")
 @RequiredArgsConstructor
-@Tag(name = "Exportación Pública", description = "Descarga de documentos generados con acceso público")
+@Tag(name = "Exportación Documental", description = "Descarga de documentos generados con autorización por expediente")
 public class ExportacionPublicController {
 
     private final RegistroGeneracionDocumentalRepository registroRepository;
     private final ExportacionProperties exportacionProperties;
+    private final ExpedienteAccesoService expedienteAccesoService;
+    private final CurrentUserService currentUserService;
 
     @GetMapping("/descargar/{id}")
-    @Operation(summary = "Descargar documento generado por ID de registro (acceso público)")
+    @PreAuthorize("isAuthenticated()")
+    @Transactional(readOnly = true)
+    @Operation(summary = "Descargar documento generado por ID de registro")
     public ResponseEntity<Resource> descargarPorId(@PathVariable Long id) throws IOException {
         RegistroGeneracionDocumental registro = registroRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Registro de documento no encontrado"));
+
+        if (registro.getExpediente() == null) {
+            throw new RuntimeException("El documento no está asociado a un expediente");
+        }
+        expedienteAccesoService.verificarLectura(
+                registro.getExpediente(),
+                currentUserService.getCurrentUserId(),
+                currentUserService.getCurrentRoles());
 
         log.info("Intentando descargar registro ID: {}, nombre archivo: {}, ruta: {}",
                 id, registro.getNombreArchivo(), registro.getRutaArchivo());

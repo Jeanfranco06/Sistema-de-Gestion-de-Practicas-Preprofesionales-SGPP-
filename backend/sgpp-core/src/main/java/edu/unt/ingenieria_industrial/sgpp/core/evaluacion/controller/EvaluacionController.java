@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/evaluaciones")
@@ -32,7 +33,11 @@ public class EvaluacionController {
         Long userId = usuarioRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"))
                 .getId();
-        return ResponseEntity.ok(evaluacionService.crearEvaluacion(request, userId));
+        request.setEvaluadorId(userId);
+        List<String> roles = authentication.getAuthorities().stream()
+                .map(authority -> authority.getAuthority().replace("ROLE_", ""))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(evaluacionService.crearEvaluacion(request, userId, roles));
     }
 
     @GetMapping("/{id}")

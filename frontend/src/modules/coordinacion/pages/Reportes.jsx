@@ -19,7 +19,7 @@ import {
 import { Download, FilterAlt, Visibility, Assessment } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import {
-  ModulePageShell, ModulePageHeader, ModuleToolbar, ModuleTableContainer, moduleHeadCellSx,
+  ModulePageShell, ModulePageHeader,
 } from '../../../shared/components/module/ModulePageShell';
 import ContentCard from '../../../shared/components/ContentCard';
 import { empresaApi, sedeApi } from '../../../api/sedesApi';
@@ -44,11 +44,19 @@ const TIPOS_PRACTICA = [
 
 const ESTADOS = [
   { value: '', label: 'Todos los estados' },
-  { value: 'PENDIENTE', label: 'Pendiente' },
+  { value: 'SOLICITADO', label: 'Solicitud registrada' },
+  { value: 'VALIDADO_SECRETARIA', label: 'Validado por Secretaría' },
+  { value: 'CARTA_PRESENTACION_EMITIDA', label: 'Carta de Presentación emitida' },
+  { value: 'CARTA_ACEPTACION_PRESENTADA', label: 'Carta de Aceptación presentada' },
+  { value: 'PLAN_PRESENTADO', label: 'Plan presentado' },
+  { value: 'PLAN_APROBADO', label: 'Plan aprobado' },
   { value: 'EN_REVISION', label: 'En revisión' },
-  { value: 'EN_PROCESO', label: 'En proceso' },
   { value: 'OBSERVADO', label: 'Observado' },
+  { value: 'EN_EJECUCION', label: 'En ejecución' },
+  { value: 'INFORME_FINAL_PRESENTADO', label: 'Informe final presentado' },
+  { value: 'INFORME_APROBADO', label: 'Informe aprobado' },
   { value: 'EVALUADO', label: 'Evaluado' },
+  { value: 'DICTAMEN_EMITIDO', label: 'Dictamen emitido' },
   { value: 'CERRADO', label: 'Cerrado' },
 ];
 
@@ -375,9 +383,9 @@ export const ReportesCoordinacion = ({ variant = 'coordinacion' }) => {
                           <Button
                             size="small"
                             startIcon={<Visibility fontSize="small" />}
-                            onClick={() => navigate(`/coordinacion/expedientes/${row.idExpediente}`)}
+                            onClick={() => navigate(isAdminView ? '/admin/expedientes' : `/coordinacion/expedientes/${row.idExpediente}`)}
                           >
-                            Ver detalle
+                            {isAdminView ? 'Ver expedientes' : 'Ver detalle'}
                           </Button>
                         ) : (
                           <Typography variant="caption" color="text.secondary">Sin detalle</Typography>

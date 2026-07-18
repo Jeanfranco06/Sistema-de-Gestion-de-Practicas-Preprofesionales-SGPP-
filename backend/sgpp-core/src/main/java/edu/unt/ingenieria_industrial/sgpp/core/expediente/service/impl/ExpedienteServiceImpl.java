@@ -436,7 +436,10 @@ public class ExpedienteServiceImpl implements ExpedienteService {
             throw new BusinessException("El documento no pertenece a este expediente");
         }
 
-        doc.setEstado(estado);
+        String estadoDestino = estado == null ? "" : estado.trim().toUpperCase(Locale.ROOT);
+        validarTransicionDocumento(doc.getEstado(), estadoDestino, observaciones);
+
+        doc.setEstado(estadoDestino);
         doc.setObservaciones(observaciones);
         doc.setUsuario(usuarioRepository.getReferenceById(idUsuario));
         
@@ -444,15 +447,32 @@ public class ExpedienteServiceImpl implements ExpedienteService {
         
         // If a document is RECHAZADO or OBSERVADO, log it in the expediente's states or observations (optional)
         registrarCambioEstado(expediente, expediente.getEstado(), expediente.getEstado(), idUsuario,
-                "Documento " + doc.getTipoDocumento() + " evaluado: " + estado, "EVALUACION_DOCUMENTO");
+                "Documento " + doc.getTipoDocumento() + " evaluado: " + estadoDestino, "EVALUACION_DOCUMENTO");
 
         if (expediente.getEstudiante() != null && expediente.getEstudiante().getUsuario() != null) {
             notificacionEventoService.notificarDocumentoEvaluado(
                     expediente.getEstudiante().getUsuario().getUsername(),
-                    doc.getTipoDocumento(), estado);
+                    doc.getTipoDocumento(), estadoDestino);
         }
                 
         return toResponse(expediente);
+    }
+
+    private void validarTransicionDocumento(String estadoActual, String estadoDestino, String observaciones) {
+        String actual = estadoActual == null ? "PENDIENTE" : estadoActual;
+        boolean permitida = switch (actual) {
+            case "PENDIENTE" -> "EN_REVISION".equals(estadoDestino);
+            case "EN_REVISION" -> "APROBADO".equals(estadoDestino) || "OBSERVADO".equals(estadoDestino);
+            case "OBSERVADO" -> "EN_REVISION".equals(estadoDestino);
+            case "APROBADO" -> "ARCHIVADO".equals(estadoDestino);
+            default -> false;
+        };
+        if (!permitida) {
+            throw new BusinessException("Transición documental inválida: " + actual + " -> " + estadoDestino);
+        }
+        if ("OBSERVADO".equals(estadoDestino) && (observaciones == null || observaciones.isBlank())) {
+            throw new BusinessException("Debe registrar observaciones al observar un documento");
+        }
     }
 
     @Override
@@ -611,6 +631,7 @@ public class ExpedienteServiceImpl implements ExpedienteService {
         expediente = expedienteRepository.save(expediente);
         registrarCambioEstado(expediente, estadoAnterior, nuevoEstado, idUsuario,
                 "Ejecución iniciada el " + fechaInicio + " por " + duracionSemanas + " semanas", "INICIO_EJECUCION");
+        controlHoraService.iniciarControlHora(expediente.getId(), idUsuario);
 
         return toResponse(expediente);
     }
@@ -814,8 +835,15 @@ public class ExpedienteServiceImpl implements ExpedienteService {
         if (roles.contains("TUTOR_EXTERNO")) {
             return findByTutorUsuarioId(idUsuario);
         }
+        if (roles.contains("COMITE_PRACTICAS")) {
+            return comiteRepository.findByUsuarioIdAndActivoTrue(idUsuario).stream()
+                    .map(ExpedienteComite::getExpediente)
+                    .filter(Expediente::getActivo)
+                    .map(this::toResponse)
+                    .collect(Collectors.toList());
+        }
         if (roles.stream().anyMatch(r -> Set.of("ADMIN_SISTEMA", "SECRETARIA", "COORDINADOR",
-                "DIRECTOR", "COMITE_PRACTICAS").contains(r))) {
+                "DIRECTOR").contains(r))) {
             return findAll();
         }
         return List.of();

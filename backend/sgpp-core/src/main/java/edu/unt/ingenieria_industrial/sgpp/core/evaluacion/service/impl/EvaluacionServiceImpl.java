@@ -6,6 +6,7 @@ import edu.unt.ingenieria_industrial.sgpp.core.evaluacion.repository.*;
 import edu.unt.ingenieria_industrial.sgpp.core.evaluacion.service.EvaluacionService;
 import edu.unt.ingenieria_industrial.sgpp.core.expediente.model.Expediente;
 import edu.unt.ingenieria_industrial.sgpp.core.expediente.repository.ExpedienteRepository;
+import edu.unt.ingenieria_industrial.sgpp.core.expediente.service.ExpedienteAccesoService;
 import edu.unt.ingenieria_industrial.sgpp.shared.exception.BusinessException;
 import edu.unt.ingenieria_industrial.sgpp.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -30,13 +31,18 @@ public class EvaluacionServiceImpl implements EvaluacionService {
     private final DetalleEvaluacionRepository detalleEvaluacionRepository;
     private final RubricaRepository rubricaRepository;
     private final ExpedienteRepository expedienteRepository;
+    private final ExpedienteAccesoService expedienteAccesoService;
 
     private static final String[] CALIFICACIONES_CUALITATIVAS = {"Deficiente", "Regular", "Bueno", "Muy Bueno", "Excelente"};
 
     @Override
-    public EvaluacionResponseDTO crearEvaluacion(EvaluacionRequestDTO request, Long idUsuario) {
+    public EvaluacionResponseDTO crearEvaluacion(EvaluacionRequestDTO request, Long idUsuario, Collection<String> roles) {
         Expediente expediente = expedienteRepository.findById(request.getIdExpediente())
                 .orElseThrow(() -> new ResourceNotFoundException("Expediente", "id", request.getIdExpediente()));
+
+        if ("EMPRESA".equals(request.getComponente())) {
+            validarEvaluacionEmpresa(expediente, request, idUsuario, roles);
+        }
 
         int puntajeTotal = request.getDetalles().stream()
                 .mapToInt(DetalleEvaluacionRequestDTO::getPuntajeObtenido)
@@ -127,6 +133,45 @@ public class EvaluacionServiceImpl implements EvaluacionService {
         String codigo = String.valueOf(idCriterio);
         return criterioEvaluacionRepository.findByCodigoAndActivoTrue(codigo)
                 .orElseThrow(() -> new ResourceNotFoundException("Criterio de Evaluación", "codigo", codigo));
+    }
+
+    private void validarEvaluacionEmpresa(Expediente expediente, EvaluacionRequestDTO request,
+                                          Long idUsuario, Collection<String> roles) {
+        if (!"EMPRESA".equals(request.getTipoEvaluador())) {
+            throw new BusinessException("La evaluación de empresa debe registrar el tipo de evaluador EMPRESA");
+        }
+        String tipoPractica = expediente.getTipoPractica() == null ? "" : expediente.getTipoPractica().getCodigo();
+        if ("INICIAL".equals(tipoPractica)) {
+            throw new BusinessException("La evaluación de empresa solo aplica a prácticas finales o profesionales");
+        }
+        if (!roles.contains("TUTOR_EXTERNO") && !roles.contains("ADMIN_SISTEMA")
+                && !roles.contains("COORDINADOR") && !roles.contains("DIRECTOR")) {
+            throw new BusinessException("Solo el tutor externo asignado puede registrar la evaluación de empresa");
+        }
+        if (roles.contains("TUTOR_EXTERNO")) {
+            expedienteAccesoService.verificarLectura(expediente, idUsuario, roles);
+        }
+        if (!Set.of("INFORME_FINAL_PRESENTADO", "INFORME_APROBADO").contains(expediente.getEstado())) {
+            throw new BusinessException("La evaluación de empresa se habilita al presentar el informe final");
+        }
+
+        Set<Long> criteriosRecibidos = new HashSet<>();
+        for (DetalleEvaluacionRequestDTO detalle : request.getDetalles()) {
+            CriterioEvaluacion criterio = buscarCriterio(detalle.getIdCriterio());
+            if (!"EMPRESA".equals(criterio.getComponente())) {
+                throw new BusinessException("Solo se permiten criterios de evaluación de empresa");
+            }
+            if (!criteriosRecibidos.add(criterio.getId())) {
+                throw new BusinessException("No se puede registrar un criterio más de una vez");
+            }
+            if (detalle.getPuntajeObtenido() < 1 || detalle.getPuntajeObtenido() > criterio.getPuntajeMaximo()) {
+                throw new BusinessException("Cada criterio de empresa debe tener un puntaje válido");
+            }
+        }
+        int criteriosEsperados = criterioEvaluacionRepository.findByComponenteAndActivoTrue("EMPRESA").size();
+        if (criteriosRecibidos.size() != criteriosEsperados) {
+            throw new BusinessException("Debe completar todos los criterios de evaluación de empresa");
+        }
     }
 
     private BigDecimal calcularPromedioFinal(Long idExpediente) {

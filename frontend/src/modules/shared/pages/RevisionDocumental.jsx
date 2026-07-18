@@ -5,17 +5,26 @@ import {
   Chip, IconButton, Select, MenuItem, FormControl, InputLabel
 } from '@mui/material';
 import {
-  Download, Edit, History, FileUpload
+  ArrowBack, Download, Edit, History
 } from '@mui/icons-material';
 
 import { useParams, useNavigate } from 'react-router-dom';
 import { expedientesApi } from '../../../api/expedientesApi';
 import api from '../../../api/axios';
-import { ArrowBack } from '@mui/icons-material';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 
 const MySwal = withReactContent(Swal);
+
+const OPCIONES_REVISION = {
+  PENDIENTE: [{ value: 'EN_REVISION', label: 'Iniciar revisión' }],
+  EN_REVISION: [
+    { value: 'APROBADO', label: 'Aprobar' },
+    { value: 'OBSERVADO', label: 'Observar (requiere corrección)' },
+  ],
+  OBSERVADO: [{ value: 'EN_REVISION', label: 'Reabrir revisión' }],
+  APROBADO: [{ value: 'ARCHIVADO', label: 'Archivar documento' }],
+};
 
 export const RevisionDocumental = () => {
   const { id } = useParams();
@@ -57,8 +66,9 @@ export const RevisionDocumental = () => {
   }, [id]);
 
   const handleOpenReview = (doc) => {
+    const opciones = OPCIONES_REVISION[doc.estado || 'PENDIENTE'] || [];
     setSelectedDoc(doc);
-    setEstadoReview(doc.estado === 'PENDIENTE' ? '' : doc.estado);
+    setEstadoReview(opciones[0]?.value || '');
     setObservacion(doc.observaciones || '');
     setReviewDialog(true);
   };
@@ -66,12 +76,7 @@ export const RevisionDocumental = () => {
   const handleSaveReview = async () => {
     try {
         MySwal.fire({ title: 'Guardando...', didOpen: () => MySwal.showLoading() });
-        await api.put(`/expedientes/${id}/documentos/${selectedDoc.id}/evaluar`, null, {
-            params: {
-                estado: estadoReview,
-                observaciones: observacion
-            }
-        });
+        await expedientesApi.evaluarDocumento(id, selectedDoc.id, estadoReview, observacion);
         await fetchExpediente();
         setReviewDialog(false);
         MySwal.fire({ icon: 'success', title: 'Evaluación Guardada', timer: 1500, showConfirmButton: false });
@@ -94,7 +99,7 @@ export const RevisionDocumental = () => {
         link.click();
         link.parentNode.removeChild(link);
         MySwal.close();
-    } catch (error) {
+    } catch {
         MySwal.fire('Error', 'No se pudo descargar el archivo', 'error');
     }
   };
@@ -120,6 +125,9 @@ export const RevisionDocumental = () => {
         <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 720 }}>
           Expediente: {expediente.codigoExpediente} | Estudiante: {expediente.nombreEstudiante} {expediente.apellidoEstudiante} | Tipo: {expediente.nombreTipoPractica}
         </Typography>
+        <Button sx={{ mt: 1 }} startIcon={<ArrowBack />} onClick={() => navigate('/docente/practicantes')}>
+          Volver a practicantes
+        </Button>
       </Box>
 
       <Box sx={{ display: { xs: 'block', md: 'flex' }, gap: 3 }}>
@@ -165,13 +173,15 @@ export const RevisionDocumental = () => {
                   <Button startIcon={<History />} onClick={() => setHistoryDialog(true)}>
                     Historial
                   </Button>
-                  <Button
-                    variant="contained"
-                    startIcon={<Edit />}
-                    onClick={() => handleOpenReview(selectedDoc)}
-                  >
-                    Evaluar
-                  </Button>
+                  {(OPCIONES_REVISION[selectedDoc.estado || 'PENDIENTE'] || []).length > 0 && (
+                    <Button
+                      variant="contained"
+                      startIcon={<Edit />}
+                      onClick={() => handleOpenReview(selectedDoc)}
+                    >
+                      Evaluar
+                    </Button>
+                  )}
                 </Box>
               </Box>
 
@@ -219,9 +229,9 @@ export const RevisionDocumental = () => {
               onChange={(e) => setEstadoReview(e.target.value)}
               label="Estado de Revisión"
             >
-              <MenuItem value="APROBADO">Aprobar</MenuItem>
-              <MenuItem value="OBSERVADO">Observar (Pendiente de correcciones)</MenuItem>
-              <MenuItem value="RECHAZADO">Rechazar</MenuItem>
+              {(OPCIONES_REVISION[selectedDoc?.estado || 'PENDIENTE'] || []).map((opcion) => (
+                <MenuItem key={opcion.value} value={opcion.value}>{opcion.label}</MenuItem>
+              ))}
             </Select>
           </FormControl>
           
@@ -237,12 +247,6 @@ export const RevisionDocumental = () => {
             required={estadoReview === 'OBSERVADO' || estadoReview === 'RECHAZADO'}
           />
 
-          <Box sx={{ mt: 2 }}>
-            <Button startIcon={<FileUpload />} variant="outlined" component="label">
-              Adjuntar archivo complementario
-              <input type="file" hidden />
-            </Button>
-          </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setReviewDialog(false)}>Cancelar</Button>

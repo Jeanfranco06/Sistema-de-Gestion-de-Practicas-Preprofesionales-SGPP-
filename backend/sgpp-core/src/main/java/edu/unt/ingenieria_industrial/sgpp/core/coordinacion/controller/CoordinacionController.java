@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -31,15 +32,9 @@ public class CoordinacionController {
     @Operation(summary = "Emitir y firmar la Carta de Presentación (Director/Coordinador)")
     public ResponseEntity<ApiResponse<ExpedienteResponse>> emitirCartaPresentacion(
             @PathVariable Long id) {
-        Long idUsuario = currentUserService.getCurrentUserId();
-        if (idUsuario == null) idUsuario = 1L;
+        Long idUsuario = getCurrentUserId();
 
         ExpedienteResponse response = expedienteService.emitirCartaPresentacion(id, idUsuario);
-
-        exportacionService.generarDocumentoInterno(GenerarDocumentoInternoRequest.builder()
-                .tipoDocumento(TipoDocumentoInstitucional.CARTA_PRESENTACION)
-                .idExpediente(id)
-                .build());
 
         return ResponseEntity.ok(ApiResponse.<ExpedienteResponse>builder()
                 .success(true).message("Carta de Presentación emitida y firmada electrónicamente")
@@ -50,17 +45,28 @@ public class CoordinacionController {
     @Operation(summary = "Emitir y firmar la Constancia de Prácticas (Director/Coordinador)")
     public ResponseEntity<ApiResponse<ExpedienteResponse>> emitirConstancia(
             @PathVariable Long id) {
-        Long idUsuario = currentUserService.getCurrentUserId();
-        if (idUsuario == null) idUsuario = 1L;
+        Long idUsuario = getCurrentUserId();
 
-        ExportacionService exportacionServiceLocal = exportacionService;
-        exportacionServiceLocal.generarDocumentoInterno(GenerarDocumentoInternoRequest.builder()
+        ExpedienteResponse expedienteActual = expedienteService.findById(id);
+        ExpedienteResponse response = "CERRADO".equals(expedienteActual.getEstado())
+                ? expedienteActual
+                : expedienteService.cerrar(id, idUsuario, "Cierre previo a la emisión de constancia");
+
+        exportacionService.generarDocumentoInterno(GenerarDocumentoInternoRequest.builder()
                 .tipoDocumento(TipoDocumentoInstitucional.CONSTANCIA_CULMINACION)
                 .idExpediente(id)
                 .build());
 
         return ResponseEntity.ok(ApiResponse.<ExpedienteResponse>builder()
                 .success(true).message("Constancia de culminación emitida y firmada electrónicamente")
-                .timestamp(LocalDateTime.now()).build());
+                .data(response).timestamp(LocalDateTime.now()).build());
+    }
+
+    private Long getCurrentUserId() {
+        Long idUsuario = currentUserService.getCurrentUserId();
+        if (idUsuario == null) {
+            throw new AccessDeniedException("No se pudo identificar al usuario autenticado");
+        }
+        return idUsuario;
     }
 }

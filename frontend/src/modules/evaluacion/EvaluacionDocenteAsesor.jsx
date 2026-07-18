@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import {
     Box, Typography, TextField, Button, Grid, Chip, Table, TableBody, TableCell, 
-    TableContainer, TableHead, TableRow, FormControl, InputLabel, Select, MenuItem, 
-    Card, CardContent, List, ListItem, ListItemIcon, ListItemText, ListItemSecondaryAction, 
+    TableContainer, TableHead, TableRow,
     IconButton, Tabs, Tab
 } from '@mui/material';
-import { Download, Description, Person, Business, Assessment, AutoGraph, ArrowBack } from '@mui/icons-material';
+import { Download, Description, Person, Business, Assessment, ArrowBack } from '@mui/icons-material';
 import { evaluacionesApi } from '../../api/evaluacionesApi';
 import { expedientesApi } from '../../api/expedientesApi';
 import api from '../../api/axios';
@@ -24,7 +23,8 @@ export const EvaluacionDocenteAsesor = () => {
     const { user } = useAuth();
     const { id: idExpedienteParams } = useParams();
     const navigate = useNavigate();
-    const idExpediente = idExpedienteParams ? parseInt(idExpedienteParams) : 1;
+    const idExpediente = Number(idExpedienteParams);
+    const expedienteIdValido = Number.isSafeInteger(idExpediente) && idExpediente > 0;
     
     const [criterios, setCriterios] = useState([]);
     const [evaluaciones, setEvaluaciones] = useState([]);
@@ -33,7 +33,7 @@ export const EvaluacionDocenteAsesor = () => {
     const [evaluacion, setEvaluacion] = useState({
         idExpediente: idExpediente,
         tipoEvaluador: 'DOCENTE',
-        evaluadorId: user?.id || 1,
+        evaluadorId: null,
         componente: 'DOCENTE',
         detalles: [],
         comentarios: ''
@@ -69,7 +69,7 @@ export const EvaluacionDocenteAsesor = () => {
             setExpediente(expRes.data?.data || expRes.data);
             setEvaluaciones(evRes.data || []);
             await loadCriterios('DOCENTE');
-        } catch (error) {
+        } catch {
             MySwal.fire({
                 icon: 'error',
                 title: 'Error de carga',
@@ -79,8 +79,10 @@ export const EvaluacionDocenteAsesor = () => {
     };
 
     useEffect(() => {
-        fetchData();
-    }, [idExpediente]);
+        if (expedienteIdValido) {
+            fetchData();
+        }
+    }, [idExpediente, expedienteIdValido]);
 
     const handleTabChange = (event, newValue) => {
         setComponenteActual(newValue);
@@ -118,10 +120,19 @@ export const EvaluacionDocenteAsesor = () => {
 
         if (!confirmResult.isConfirmed) return;
 
+        if (!user?.id) {
+            MySwal.fire('Sesión no disponible', 'Vuelve a iniciar sesión antes de registrar la evaluación.', 'error');
+            return;
+        }
+
         setLoading(true);
         try {
             MySwal.fire({ title: 'Guardando...', didOpen: () => MySwal.showLoading() });
-            await evaluacionesApi.crearEvaluacion(evaluacion);
+            await evaluacionesApi.crearEvaluacion({
+                ...evaluacion,
+                idExpediente,
+                evaluadorId: user.id,
+            });
             
             const evRes = await evaluacionesApi.obtenerEvaluacionesPorPractica(idExpediente);
             setEvaluaciones(evRes.data || []);
@@ -132,7 +143,7 @@ export const EvaluacionDocenteAsesor = () => {
                 timer: 2000,
                 showConfirmButton: false
             });
-        } catch (error) {
+        } catch {
             MySwal.fire('Error', 'No se pudo guardar la evaluación.', 'error');
         } finally {
             setLoading(false);
@@ -151,7 +162,7 @@ export const EvaluacionDocenteAsesor = () => {
             link.click();
             link.parentNode.removeChild(link);
             MySwal.close();
-        } catch (error) {
+        } catch {
             MySwal.fire('Error', 'No se pudo descargar el archivo.', 'error');
         }
     };
@@ -159,6 +170,19 @@ export const EvaluacionDocenteAsesor = () => {
     const ultimaEvaluacion = evaluaciones.length > 0 ? evaluaciones[evaluaciones.length - 1] : null;
     const promedioFinal = ultimaEvaluacion?.promedioFinal || 0;
     const progresoColor = promedioFinal >= 14 ? 'var(--wow-success)' : promedioFinal >= 11 ? 'var(--wow-warning)' : 'var(--wow-danger)';
+
+    if (!expedienteIdValido) {
+        return (
+            <ModulePageShell>
+                <ContentCard>
+                    <Typography color="error">No se indicó un expediente válido para evaluar.</Typography>
+                    <Button sx={{ mt: 2 }} variant="outlined" onClick={() => navigate('/docente/practicantes')}>
+                        Volver a practicantes
+                    </Button>
+                </ContentCard>
+            </ModulePageShell>
+        );
+    }
 
     return (
         <ModulePageShell>

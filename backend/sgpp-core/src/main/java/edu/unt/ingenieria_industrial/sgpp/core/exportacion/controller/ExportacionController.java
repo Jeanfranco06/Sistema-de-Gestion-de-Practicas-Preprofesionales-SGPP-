@@ -32,7 +32,7 @@ import java.util.List;
 @RequestMapping("/admin/exportacion")
 @RequiredArgsConstructor
 @Tag(name = "Exportación Documental", description = "Renderización y exportación institucional a PDF/CSV y documentos internos")
-@PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR')")
+@PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR')")
 public class ExportacionController {
 
     private final ExportacionService exportacionService;

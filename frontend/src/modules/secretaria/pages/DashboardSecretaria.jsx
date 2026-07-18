@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import {
   Box, Grid, Typography, Chip, Button, Alert, CircularProgress,
   IconButton, Stack, LinearProgress, List, ListItem, ListItemText, ListItemIcon,
-  Paper, useTheme, Tooltip, Avatar, Fade, Divider
+  Paper, Tooltip, Avatar, Fade, Divider
 } from '@mui/material';
 import {
   Assignment, RateReview, Refresh, Groups, ChevronRight,
-  TaskAlt, PendingActions, BusinessCenter, FolderOpen, WarningAmber, WorkspacePremium, Description,
-  ArrowForwardIos, InfoOutlined, TrendingUp, Timeline
+  TaskAlt, BusinessCenter, FolderOpen, WarningAmber, WorkspacePremium, Description,
+  ArrowForwardIos
 } from '@mui/icons-material';
 import { useAuth } from '../../../auth/AuthContext';
 import { expedientesApi } from '../../../api/expedientesApi';
@@ -50,7 +50,6 @@ const DashboardCard = ({ title, action, children, sx }) => (
 export default function DashboardSecretaria() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const theme = useTheme();
 
   const [expedientes, setExpedientes] = useState([]);
   const [loading, setLoading] = useState(true);

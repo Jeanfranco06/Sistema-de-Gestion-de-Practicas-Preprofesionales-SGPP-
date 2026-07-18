@@ -293,7 +293,7 @@ export default function DashboardTutor() {
                           <Visibility fontSize="small" />
                         </Button>
                       </Tooltip>
-                      {e.estado === 'EN_EJECUCION' && (
+                      {['INFORME_FINAL_PRESENTADO', 'INFORME_APROBADO'].includes(e.estado) && (
                         <Tooltip title="Evaluar desempeño">
                           <Button size="small" variant="contained" color="secondary"
                             onClick={() => navigate(`/tutor/evaluaciones/${e.id}`)}>

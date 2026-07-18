@@ -6,12 +6,11 @@ import {
 } from '@mui/material';
 import {
   Search, Business, LocationOn, Work, People, CheckCircle,
-  Cancel, Warning, FilterList, Clear, Close, Info,
+  Cancel, FilterList, Clear, Close, Info,
   Apartment, CorporateFare, School
 } from '@mui/icons-material';
 import { sedeApi } from '../../../api/sedesApi';
 import { practicaApi } from '../../../api/practicasApi';
-import { useAuth } from '../../../auth/AuthContext';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import {
@@ -23,7 +22,6 @@ import StatStrip from '../../../shared/components/StatStrip';
 const MySwal = withReactContent(Swal);
 
 export const CatalogoSedes = () => {
-  const { user } = useAuth();
   const [sedes, setSedes] = useState([]);
   const [filteredSedes, setFilteredSedes] = useState([]);
   const [loading, setLoading] = useState(true);
