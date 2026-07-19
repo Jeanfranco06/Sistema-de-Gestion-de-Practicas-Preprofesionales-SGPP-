@@ -6,31 +6,57 @@ interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   size?: 'sm' | 'md';
 }
 
+const variantStyles: Record<string, React.CSSProperties> = {
+  default: {
+    backgroundColor: 'var(--color-primary-100)',
+    color: 'var(--color-primary-800)',
+  },
+  success: {
+    backgroundColor: 'var(--color-emerald-100)',
+    color: 'var(--color-emerald-800)',
+  },
+  warning: {
+    backgroundColor: 'var(--color-amber-100)',
+    color: 'var(--color-amber-800)',
+  },
+  danger: {
+    backgroundColor: 'var(--color-red-100)',
+    color: 'var(--color-red-800)',
+  },
+  info: {
+    backgroundColor: 'var(--color-blue-100)',
+    color: 'var(--color-blue-800)',
+  },
+  neutral: {
+    backgroundColor: 'var(--color-border)',
+    color: 'var(--color-muted-foreground)',
+  },
+};
+
+const sizeStyles = {
+  sm: { padding: '0.25rem 0.5rem', fontSize: '0.75rem' },
+  md: { padding: '0.25rem 0.625rem', fontSize: '0.75rem' },
+};
+
+const baseStyle: React.CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  fontWeight: 500,
+  borderRadius: '9999px',
+  whiteSpace: 'nowrap',
+};
+
 const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
   ({ className, variant = 'neutral', size = 'md', children, ...props }, ref) => {
-    const variants = {
-      default: 'bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-300',
-      success: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300',
-      warning: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
-      danger: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
-      info: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-      neutral: 'bg-surface-border text-text-muted dark:bg-surface-border dark:text-text-muted',
-    };
-
-    const sizes = {
-      sm: 'px-2 py-0.5 text-xs',
-      md: 'px-2.5 py-1 text-xs',
-    };
-
     return (
       <span
         ref={ref}
-        className={cn(
-          'inline-flex items-center font-medium rounded-full',
-          variants[variant],
-          sizes[size],
-          className
-        )}
+        style={{
+          ...baseStyle,
+          ...variantStyles[variant],
+          ...sizeStyles[size],
+        }}
+        className={cn(className)}
         {...props}
       >
         {children}

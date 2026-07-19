@@ -13,6 +13,54 @@
   --color-primary-900: #1e3a8a;
   --color-primary-950: #172554;
 
+  --color-emerald-50: #f0fdf4;
+  --color-emerald-100: #dcfce7;
+  --color-emerald-200: #bbf7d0;
+  --color-emerald-300: #86efac;
+  --color-emerald-400: #4ade80;
+  --color-emerald-500: #22c55e;
+  --color-emerald-600: #16a34a;
+  --color-emerald-700: #15803d;
+  --color-emerald-800: #166534;
+  --color-emerald-900: #14532d;
+  --color-emerald-950: #052e16;
+
+  --color-amber-50: #fffbeb;
+  --color-amber-100: #fef3c7;
+  --color-amber-200: #fde68a;
+  --color-amber-300: #fcd34d;
+  --color-amber-400: #fbbf24;
+  --color-amber-500: #f59e0b;
+  --color-amber-600: #d97706;
+  --color-amber-700: #b45309;
+  --color-amber-800: #92400e;
+  --color-amber-900: #78350f;
+  --color-amber-950: #451a03;
+
+  --color-red-50: #fef2f2;
+  --color-red-100: #fee2e2;
+  --color-red-200: #fecaca;
+  --color-red-300: #fca5a5;
+  --color-red-400: #f87171;
+  --color-red-500: #ef4444;
+  --color-red-600: #dc2626;
+  --color-red-700: #b91c1c;
+  --color-red-800: #991b1b;
+  --color-red-900: #7f1d1d;
+  --color-red-950: #450a0a;
+
+  --color-blue-50: #eff6ff;
+  --color-blue-100: #dbeafe;
+  --color-blue-200: #bfdbfe;
+  --color-blue-300: #93c5fd;
+  --color-blue-400: #60a5fa;
+  --color-blue-500: #3b82f6;
+  --color-blue-600: #2563eb;
+  --color-blue-700: #1d4ed8;
+  --color-blue-800: #1e40af;
+  --color-blue-900: #1e3a8a;
+  --color-blue-950: #172554;
+
   --color-unt-yellow: #F5C518;
   --color-unt-yellow-dark: #C79A00;
   --color-unt-yellow-light: #FCE87A;
@@ -50,6 +98,8 @@
     --color-muted-foreground: #64748B;
     --color-input: var(--color-surface-border);
     --color-ring: var(--color-primary-600);
+    --color-card-rgb: 255, 255, 255;
+    --color-border-rgb: 226, 232, 240;
   }
 
   .dark {
@@ -62,6 +112,8 @@
     --color-muted-foreground: #94A3B8;
     --color-input: var(--color-dark-border);
     --color-ring: var(--color-primary-400);
+    --color-card-rgb: 30, 41, 59;
+    --color-border-rgb: 51, 65, 85;
   }
 
   * {
@@ -92,7 +144,10 @@
   }
 
   .card-hover {
-    @apply card;
+    background-color: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-2xl);
+    box-shadow: var(--shadow-soft);
     transition: box-shadow 200ms ease;
   }
   .card-hover:hover {
@@ -121,7 +176,15 @@
   }
 
   .btn-primary {
-    @apply btn;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: var(--radius-xl);
+    padding: 0.625rem 1rem;
+    font-weight: 500;
+    font-size: 0.875rem;
+    transition: all 150ms ease;
     background-color: var(--color-primary-600);
     color: white;
   }
@@ -134,7 +197,15 @@
   }
 
   .btn-secondary {
-    @apply btn;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: var(--radius-xl);
+    padding: 0.625rem 1rem;
+    font-weight: 500;
+    font-size: 0.875rem;
+    transition: all 150ms ease;
     background-color: var(--color-card);
     color: var(--color-foreground);
     border: 1px solid var(--color-border);
@@ -147,7 +218,15 @@
   }
 
   .btn-ghost {
-    @apply btn;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: var(--radius-xl);
+    padding: 0.625rem 1rem;
+    font-weight: 500;
+    font-size: 0.875rem;
+    transition: all 150ms ease;
     background-color: transparent;
     color: var(--color-foreground);
   }
@@ -159,7 +238,15 @@
   }
 
   .btn-danger {
-    @apply btn;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: var(--radius-xl);
+    padding: 0.625rem 1rem;
+    font-weight: 500;
+    font-size: 0.875rem;
+    transition: all 150ms ease;
     background-color: #ef4444;
     color: white;
   }

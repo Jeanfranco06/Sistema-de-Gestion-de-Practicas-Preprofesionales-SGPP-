@@ -7,23 +7,23 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   loading?: boolean;
 }
 
+const baseStyles = 'inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none';
+
+const variants = {
+  primary: 'bg-[var(--color-primary-600)] text-white hover:bg-[var(--color-primary-700)] focus-visible:ring-[var(--color-primary-500)] shadow-sm hover:shadow-card',
+  secondary: 'bg-[var(--color-card)] text-[var(--color-foreground)] border border-[var(--color-border)] hover:bg-[var(--color-border)] focus-visible:ring-[var(--color-border)]',
+  ghost: 'bg-transparent text-[var(--color-foreground)] hover:bg-[var(--color-border)] focus-visible:ring-[var(--color-border)]',
+  danger: 'bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500',
+};
+
+const sizes = {
+  sm: 'px-3 py-1.5 text-xs',
+  md: 'px-4 py-2.5 text-sm',
+  lg: 'px-6 py-3 text-base',
+};
+
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', size = 'md', loading, disabled, children, ...props }, ref) => {
-    const baseStyles = 'inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none';
-    
-    const variants = {
-      primary: 'bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-primary-500 shadow-sm hover:shadow-card',
-      secondary: 'bg-surface-card text-text-main border border-surface-border hover:bg-surface-border focus-visible:ring-surface-border',
-      ghost: 'bg-transparent text-text-main hover:bg-surface-border focus-visible:ring-surface-border',
-      danger: 'bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500',
-    };
-    
-    const sizes = {
-      sm: 'px-3 py-1.5 text-xs',
-      md: 'px-4 py-2.5 text-sm',
-      lg: 'px-6 py-3 text-base',
-    };
-
     return (
       <button
         ref={ref}
