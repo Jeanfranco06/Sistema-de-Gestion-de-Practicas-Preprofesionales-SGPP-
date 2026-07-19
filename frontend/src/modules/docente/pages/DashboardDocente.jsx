@@ -170,7 +170,7 @@ export default function DashboardDocente() {
                     </Box>
                   </Box>
                 </Box>
-                <Stack direction="row" spacing={1} justifyContent="center" sx={{ mt: -1, flexWrap: 'wrap' }}>
+                <Stack direction="row" spacing={1} sx={{ mt: -1, flexWrap: 'wrap', justifyContent: 'center' }}>
                   <Chip size="small" icon={<TaskAlt />} label={`${kpis.activos} activos`} color="primary" variant="outlined" />
                   <Chip size="small" icon={<PendingActions />} label={`${kpis.observados} observados`} variant="outlined" />
                 </Stack>

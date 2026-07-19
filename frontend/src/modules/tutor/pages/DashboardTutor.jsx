@@ -167,7 +167,7 @@ export default function DashboardTutor() {
                     </Box>
                   </Box>
                 </Box>
-                <Stack direction="row" spacing={1} justifyContent="center" sx={{ mt: -1, flexWrap: 'wrap' }}>
+                <Stack direction="row" spacing={1} sx={{ mt: -1, flexWrap: 'wrap', justifyContent: 'center' }}>
                   <Chip size="small" icon={<PeopleAlt />} label={`${kpis.total} total`} color="primary" variant="outlined" />
                   <Chip size="small" icon={<RateReview />} label={`${kpis.porEvaluar} pendientes`} variant="outlined" />
                 </Stack>

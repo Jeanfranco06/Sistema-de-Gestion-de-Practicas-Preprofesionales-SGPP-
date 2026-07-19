@@ -28,5 +28,8 @@ export const tutoresApi = {
 export const secretariaApi = {
     getAllEstudiantes: () => api.get('/secretaria/estudiantes'),
     validarRequisitos: (id) => api.get(`/secretaria/estudiantes/${id}/validar`),
-    updateDatosAcademicos: (id, data) => api.put(`/secretaria/estudiantes/${id}/datos-academicos`, data)
+    updateDatosAcademicos: (id, data) => api.put(`/secretaria/estudiantes/${id}/datos-academicos`, data),
+    registrarIncidencia: (expedienteId, incidencia) => api.post(
+        `/secretaria/expediente/${expedienteId}/registrar-incidencia?incidencia=${encodeURIComponent(incidencia)}`
+    )
 };

@@ -60,7 +60,7 @@ const StatCard = ({ label, value, icon, accent }) => {
     const colors = accentColors[accent] || accentColors.blue;
     return (
         <Paper elevation={0} sx={{ flex: 1, minWidth: 140, p: 2.5, borderRadius: 3, bgcolor: colors.bg, border: '1px solid', borderColor: `${colors.icon}20` }}>
-            <Stack direction="row" spacing={1.5} alignItems="center">
+            <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
                 <Box sx={{ color: colors.icon }}>{icon}</Box>
                 <Box>
                     <Typography sx={{ fontWeight: 800 }} variant="h5" color={colors.text}>{value}</Typography>
@@ -524,7 +524,7 @@ export const GestionEmpresas = () => {
                                                     <Typography variant="caption" color="text.disabled">{emp.telefono || ''}</Typography>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Stack direction="row" spacing={1} alignItems="center">
+                                                    <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                                                             <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: sc.dot, boxShadow: `0 0 0 2px ${sc.shadow}` }} />
                                                             <Typography sx={{ fontWeight: 700 }} variant="caption" color={sc.dot}>{sc.label}</Typography>
@@ -532,7 +532,7 @@ export const GestionEmpresas = () => {
                                                     </Stack>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Stack direction="row" spacing={0.5} justifyContent="center">
+                                                    <Stack direction="row" spacing={0.5} sx={{ justifyContent: 'center' }}>
                                                         {!emp.validado && emp.activo && (
                                                             <Tooltip title="Validar Perfil" arrow>
                                                                 <IconButton size="small" onClick={() => handleValidate(emp.id)} sx={{ color: '#10b981', bgcolor: '#ecfdf5', '&:hover': { color: '#059669', bgcolor: '#d1fae5' } }}>

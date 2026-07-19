@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box, Typography, Tabs, Tab, Button, IconButton, Chip, Dialog,
   DialogTitle, DialogContent, DialogActions, Alert, TextField, CircularProgress,
@@ -51,6 +52,7 @@ const DOCUMENTOS_OBLIGATORIOS_PROFESIONAL = [
 
 export const GestionDocumental = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [expediente, setExpediente] = useState(null);
 
@@ -119,8 +121,10 @@ export const GestionDocumental = () => {
   const puedeSubirDocumento = (tipoDocumento) => {
     if (tipoDocumento === 'CARTA_PRESENTACION') return false;
     if (['INFORME_PARCIAL_1', 'INFORME_PARCIAL_2', 'INFORME_FINAL', 'INFORME_FINAL_INICIAL'].includes(tipoDocumento)) return false;
-    if (tipoDocumento === 'CARTA_ACEPTACION') return expediente.estado === 'CARTA_PRESENTACION_EMITIDA';
-    if (tipoDocumento === 'PLAN_PRACTICA') return ['ASESOR_ASIGNADO', 'COMITE_ASIGNADO'].includes(expediente.estado);
+    if (tipoDocumento === 'CARTA_ACEPTACION') {
+      return ['CARTA_PRESENTACION_EMITIDA', 'CARTA_ACEPTACION_PRESENTADA'].includes(expediente.estado);
+    }
+    if (tipoDocumento === 'PLAN_PRACTICA') return false;
     if (tipoDocumento === 'FICHA_EVALUACION') return false;
     if (tipoDocumento === 'CONSTANCIA_EMPRESA') {
       return ['EN_EJECUCION', 'INFORME_FINAL_PRESENTADO', 'INFORME_APROBADO',
@@ -136,9 +140,7 @@ export const GestionDocumental = () => {
       return 'Gestionar desde Informes';
     }
     if (tipoDocumento === 'PLAN_PRACTICA') {
-      return expediente.codigoTipoPractica === 'INICIAL'
-        ? 'Pendiente: Secretaría o Coordinación debe asignar un Docente Asesor.'
-        : 'Pendiente: Comité o Coordinación debe asignar el Comité de Prácticas.';
+      return 'Completa el formulario estructurado del Anexo 1.';
     }
     if (tipoDocumento === 'FICHA_EVALUACION') return 'Gestionada por el Tutor Externo.';
     if (tipoDocumento === 'CONSTANCIA_EMPRESA') return 'Disponible cuando la práctica esté en ejecución.';
@@ -324,6 +326,9 @@ export const GestionDocumental = () => {
     if (tipoDocumento === 'CARTA_PRESENTACION') {
       return <StatusChip status="CARTA_PRESENTACION_EMITIDA" label="Emitida por Dirección" />;
     }
+    if (tipoDocumento === 'CARTA_ACEPTACION') {
+      return <StatusChip status="CARTA_ACEPTACION_PRESENTADA" label="Presentada" />;
+    }
     const map = { APROBADO: 'APROBADO', OBSERVADO: 'OBSERVADO' };
     return <StatusChip status={map[estado] || 'PENDIENTE'} label={estado === 'APROBADO' ? 'Aprobado' : estado === 'OBSERVADO' ? 'Observado' : 'Pendiente de revisión'} />;
   };
@@ -405,7 +410,11 @@ export const GestionDocumental = () => {
                     </Box>
 
                     <Box sx={{ flex: '1 1 200px' }}>
-                      {docCargado ? (
+                       {docType.id === 'PLAN_PRACTICA' ? (
+                         <Button size="small" onClick={() => navigate('/estudiante/plan-practicas')}>
+                           Gestionar plan
+                         </Button>
+                       ) : docCargado ? (
                         <>
                           <Typography variant="body2" noWrap title={docCargado.nombreOriginal}>
                             {docCargado.nombreOriginal}

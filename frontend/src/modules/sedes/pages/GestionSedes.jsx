@@ -63,7 +63,7 @@ const StatCard = ({ label, value, icon, accent }) => {
     const colors = accentColors[accent] || accentColors.blue;
     return (
         <Paper elevation={0} sx={{ flex: 1, minWidth: 140, p: 2.5, borderRadius: 3, bgcolor: colors.bg, border: '1px solid', borderColor: `${colors.icon}20` }}>
-            <Stack direction="row" spacing={1.5} alignItems="center">
+            <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
                 <Box sx={{ color: colors.icon }}>{icon}</Box>
                 <Box>
                     <Typography sx={{ fontWeight: 800 }} variant="h5" color={colors.text}>{value}</Typography>
@@ -736,7 +736,7 @@ export const GestionSedes = () => {
                                                     </Box>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Stack direction="row" spacing={1} alignItems="center">
+                                                    <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                                                             <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: sc.dot, boxShadow: `0 0 0 2px ${sc.shadow}` }} />
                                                             <Typography sx={{ fontWeight: 700 }} variant="caption" color={sc.dot}>{sc.label}</Typography>
@@ -773,7 +773,7 @@ export const GestionSedes = () => {
                                                     <Chip label={sede.capacidadMaxima || 0} size="small" variant="outlined" sx={{ fontWeight: 600, borderRadius: 1.5, minWidth: 40 }} />
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Stack direction="row" spacing={0.5} justifyContent="center">
+                                                    <Stack direction="row" spacing={0.5} sx={{ justifyContent: 'center' }}>
                                                         <Tooltip title="Ver Detalle" arrow>
                                                             <IconButton size="small" onClick={() => handleVerDetalle(sede)} sx={{ color: '#64748b', bgcolor: '#f8fafc', '&:hover': { color: '#2563eb', bgcolor: '#eff6ff' } }}>
                                                                 <VisibilityIcon fontSize="small" />

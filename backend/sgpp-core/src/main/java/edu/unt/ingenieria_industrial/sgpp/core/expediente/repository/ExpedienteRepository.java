@@ -27,7 +27,7 @@ public interface ExpedienteRepository extends JpaRepository<Expediente, Long> {
     List<Expediente> findActiveByEstudianteId(@Param("idEstudiante") Long idEstudiante);
 
     @Query("SELECT COALESCE(MAX(CAST(SUBSTRING(e.codigoExpediente, LENGTH(e.codigoExpediente) - 3) AS integer)), 0) " +
-           "FROM Expediente e WHERE e.codigoExpediente LIKE :prefix")
+           "FROM Expediente e WHERE e.codigoExpediente LIKE CONCAT(:prefix, '%')")
     Integer findMaxCorrelativoByPrefix(@Param("prefix") String prefix);
 
     @Query("SELECT e FROM Expediente e LEFT JOIN FETCH e.empresa LEFT JOIN FETCH e.sedePractica " +

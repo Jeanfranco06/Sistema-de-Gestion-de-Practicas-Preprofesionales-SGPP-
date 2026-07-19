@@ -13,8 +13,11 @@ import edu.unt.ingenieria_industrial.sgpp.core.expediente.repository.*;
 import edu.unt.ingenieria_industrial.sgpp.core.expediente.service.ExpedienteAccesoService;
 import edu.unt.ingenieria_industrial.sgpp.core.expediente.service.ExpedienteService;
 import edu.unt.ingenieria_industrial.sgpp.core.practicas.model.TipoPractica;
+import edu.unt.ingenieria_industrial.sgpp.core.practicas.repository.PracticaRepository;
 import edu.unt.ingenieria_industrial.sgpp.core.practicas.repository.TipoPracticaRepository;
 import edu.unt.ingenieria_industrial.sgpp.core.plazo.service.PlazoService;
+import edu.unt.ingenieria_industrial.sgpp.core.model.EstadoPractica;
+import edu.unt.ingenieria_industrial.sgpp.core.repository.EstadoPracticaRepository;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.model.Estudiante;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.model.Usuario;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.repository.EstudianteRepository;
@@ -61,6 +64,8 @@ public class ExpedienteServiceImpl implements ExpedienteService {
     private final ExpedienteObservacionRepository observacionRepository;
     private final EstudianteRepository estudianteRepository;
     private final TipoPracticaRepository tipoPracticaRepository;
+    private final PracticaRepository practicaRepository;
+    private final EstadoPracticaRepository estadoPracticaRepository;
     private final UsuarioRepository usuarioRepository;
     private final EmpresaRepository empresaRepository;
     private final SedePracticaRepository sedePracticaRepository;
@@ -342,13 +347,20 @@ public class ExpedienteServiceImpl implements ExpedienteService {
     @Override
     public ExpedienteResponse presentarCartaAceptacion(Long idExpediente, Long idUsuario) {
         Expediente expediente = findExpediente(idExpediente);
-        validarEstadoPara(expediente, "CARTA_ACEPTACION_PRESENTADA", CARTA_PRESENTACION_EMITIDA);
+        if (!Set.of(CARTA_PRESENTACION_EMITIDA, "CARTA_ACEPTACION_PRESENTADA").contains(expediente.getEstado())) {
+            throw new BusinessException("Estado inválido: " + expediente.getEstado()
+                    + ". Se requiere " + CARTA_PRESENTACION_EMITIDA + " para presentar la Carta de Aceptación");
+        }
 
         expediente.setCartaAceptacionPresentada(true);
+        String estadoAnterior = expediente.getEstado();
         expediente.setEstado("CARTA_ACEPTACION_PRESENTADA");
         expediente = expedienteRepository.save(expediente);
-        registrarCambioEstado(expediente, CARTA_PRESENTACION_EMITIDA, "CARTA_ACEPTACION_PRESENTADA", idUsuario,
-                "Estudiante presentó la Carta de Aceptación de la empresa", "PRESENTACION_ACEPTACION");
+        registrarCambioEstado(expediente, estadoAnterior, "CARTA_ACEPTACION_PRESENTADA", idUsuario,
+                estadoAnterior.equals(CARTA_PRESENTACION_EMITIDA)
+                        ? "Estudiante presentó la Carta de Aceptación de la empresa"
+                        : "Estudiante reemplazó la Carta de Aceptación de la empresa",
+                "PRESENTACION_ACEPTACION");
 
         return toResponse(expediente);
     }
@@ -358,17 +370,24 @@ public class ExpedienteServiceImpl implements ExpedienteService {
         Expediente expediente = findExpediente(idExpediente);
         String tipoCodigo = expediente.getTipoPractica().getCodigo();
 
-        String esperado = TIPO_INICIAL.equals(tipoCodigo) ? "ASESOR_ASIGNADO" : "COMITE_ASIGNADO";
-        String label = TIPO_INICIAL.equals(tipoCodigo) ? "ASESOR_ASIGNADO" : "COMITE_ASIGNADO";
-        validarEstadoPara(expediente, "PLAN_PRESENTADO", esperado);
+        String estadoAsignacion = TIPO_INICIAL.equals(tipoCodigo) ? "ASESOR_ASIGNADO" : "COMITE_ASIGNADO";
+        Set<String> estadosPermitidos = Set.of(
+                estadoAsignacion,
+                EstadoExpediente.PLAN_OBSERVADO.getCodigo(),
+                EstadoExpediente.SUBSANADO.getCodigo());
+        if (!estadosPermitidos.contains(expediente.getEstado())) {
+            throw new BusinessException("Estado inválido: " + expediente.getEstado()
+                    + ". Se requiere " + estadoAsignacion + ", PLAN_OBSERVADO o SUBSANADO para presentar el plan");
+        }
 
+        String estadoAnterior = expediente.getEstado();
         expediente.setFechaPresentacionPlan(request.getFechaPresentacion());
         expediente.setEstado("PLAN_PRESENTADO");
         if (request.getObservaciones() != null) {
             expediente.setObservaciones(request.getObservaciones());
         }
         expediente = expedienteRepository.save(expediente);
-        registrarCambioEstado(expediente, label, "PLAN_PRESENTADO", idUsuario,
+        registrarCambioEstado(expediente, estadoAnterior, "PLAN_PRESENTADO", idUsuario,
                 "Plan de trabajo presentado el " + request.getFechaPresentacion().toLocalDate(), "PRESENTACION_PLAN");
 
         return toResponse(expediente);
@@ -419,6 +438,16 @@ public class ExpedienteServiceImpl implements ExpedienteService {
         }
         if (doc.getRutaArchivo() != null && doc.getRutaArchivo().startsWith("registro:")) {
             throw new BusinessException("No se puede eliminar un documento institucional generado por el sistema");
+        }
+        if ("CARTA_ACEPTACION".equals(doc.getTipoDocumento())) {
+            if (!"CARTA_ACEPTACION_PRESENTADA".equals(expediente.getEstado())) {
+                throw new BusinessException("La Carta de Aceptación solo puede eliminarse antes de asignar asesor o comité");
+            }
+            expediente.setCartaAceptacionPresentada(false);
+            expediente.setEstado(CARTA_PRESENTACION_EMITIDA);
+            expediente = expedienteRepository.save(expediente);
+            registrarCambioEstado(expediente, "CARTA_ACEPTACION_PRESENTADA", CARTA_PRESENTACION_EMITIDA, idUsuario,
+                    "Estudiante eliminó la Carta de Aceptación para reemplazarla", "ELIMINAR_ACEPTACION");
         }
         documentoRepository.delete(doc);
         registrarCambioEstado(expediente, expediente.getEstado(), expediente.getEstado(), idUsuario,
@@ -788,8 +817,26 @@ public class ExpedienteServiceImpl implements ExpedienteService {
         expediente = expedienteRepository.save(expediente);
         registrarCambioEstado(expediente, estadoActual, nuevoEstado, idUsuario,
                 observacion != null ? observacion : "Expediente cerrado", "CIERRE");
+        finalizarPracticaActiva(expediente);
 
         return toResponse(expediente);
+    }
+
+    private void finalizarPracticaActiva(Expediente expediente) {
+        EstadoPractica estadoCompletada = estadoPracticaRepository.findByCodigo("COMPLETADA")
+                .orElseThrow(() -> new BusinessException("No está configurado el estado COMPLETADA para prácticas"));
+
+        practicaRepository.findByEstudianteId(expediente.getEstudiante().getId()).stream()
+                .filter(practica -> Boolean.TRUE.equals(practica.getActivo()))
+                .filter(practica -> practica.getTipoPractica() != null
+                        && practica.getTipoPractica().getId().equals(expediente.getTipoPractica().getId()))
+                .filter(practica -> expediente.getSedePractica() == null || practica.getSede() == null
+                        || practica.getSede().getId().equals(expediente.getSedePractica().getId()))
+                .forEach(practica -> {
+                    practica.setEstado(estadoCompletada);
+                    practica.setActivo(false);
+                    practica.setHorasRestantes(0);
+                });
     }
 
     @Override

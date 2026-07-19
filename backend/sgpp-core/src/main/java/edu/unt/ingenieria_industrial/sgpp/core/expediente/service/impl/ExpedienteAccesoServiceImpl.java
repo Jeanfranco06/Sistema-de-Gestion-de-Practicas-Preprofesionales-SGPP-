@@ -45,6 +45,9 @@ public class ExpedienteAccesoServiceImpl implements ExpedienteAccesoService {
                 && idUsuario.equals(expediente.getAsesor().getId())) {
             return;
         }
+        if (tieneRol(roles, "TUTOR_EXTERNO") && tutorTieneAcceso(expediente, idUsuario)) {
+            return;
+        }
         if (tieneRol(roles, "COMITE_PRACTICAS")
                 && comiteRepository.existsByExpedienteIdAndUsuarioIdAndActivoTrue(expediente.getId(), idUsuario)) {
             return;

@@ -22,7 +22,7 @@ import java.util.Set;
 @RequestMapping("/expedientes")
 @RequiredArgsConstructor
 @Tag(name = "Expediente de Práctica", description = "Gestión del ciclo de vida del expediente de práctica pre-profesional")
-@PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR', 'DOCENTE_ASESOR', 'ESTUDIANTE')")
+@PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR', 'DOCENTE_ASESOR', 'ESTUDIANTE', 'TUTOR_EXTERNO')")
 public class ExpedienteController {
 
     private final ExpedienteService expedienteService;

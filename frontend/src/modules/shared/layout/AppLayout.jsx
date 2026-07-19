@@ -33,6 +33,7 @@ function getNavGroups(roles = []) {
         items: [
           { label: 'Mi Práctica', icon: <Assignment />, path: '/estudiante/practica' },
           { label: 'Solicitar Práctica', icon: <Assignment />, path: '/estudiante/solicitar-practica' },
+          { label: 'Plan de Prácticas', icon: <Assignment />, path: '/estudiante/plan-practicas' },
           { label: 'Documentos', icon: <Description />, path: '/estudiante/documentos' },
           { label: 'Registro de Horas', icon: <AccessTime />, path: '/estudiante/horas' },
           { label: 'Informes', icon: <Assessment />, path: '/estudiante/informes' },
@@ -113,7 +114,7 @@ function getNavGroups(roles = []) {
       {
         group: 'Dirección',
         items: [
-          { label: 'Panel Ejecutivo', icon: <Dashboard />, path: '/coordinacion/dashboard' },
+          { label: 'Coordinación', icon: <Dashboard />, path: '/coordinacion/dashboard' },
           { label: 'Reportes Consolidados', icon: <Assessment />, path: '/coordinacion/reportes' },
           { label: 'Panel Comité', icon: <FactCheck />, path: '/comite/panel' },
         ]
@@ -135,7 +136,10 @@ function getNavGroups(roles = []) {
         group: 'Comité',
         items: [
           { label: 'Panel Comité', icon: <FactCheck />, path: '/comite/panel' },
-          { label: 'Panel Ejecutivo', icon: <Dashboard />, path: '/coordinacion/dashboard' },
+          ...(roleNames.includes('DOCENTE_ASESOR')
+            ? [{ label: 'Mis Practicantes', icon: <School />, path: '/docente/practicantes' }]
+            : []),
+          { label: 'Coordinación', icon: <Dashboard />, path: '/coordinacion/dashboard' },
           { label: 'Reportes Consolidados', icon: <BarChart />, path: '/coordinacion/reportes' },
         ]
       },

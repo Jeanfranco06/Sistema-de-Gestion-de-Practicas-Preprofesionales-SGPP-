@@ -55,6 +55,7 @@ const CHART_COLORS = ['#2563eb', '#0d9488', '#eab308', '#ef4444', '#6366f1', '#e
 export const DashboardCoordinacion = () => {
   const { user } = useAuth();
   const puedeEmitirCarta = hasAnyRole(user?.roles, ['ADMIN_SISTEMA', 'COORDINADOR', 'DIRECTOR']);
+  const puedeAsignarComite = hasAnyRole(user?.roles, ['ADMIN_SISTEMA', 'COORDINADOR', 'DIRECTOR']);
   const navigate = useNavigate();
   const [expedientes, setExpedientes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -301,6 +302,11 @@ export const DashboardCoordinacion = () => {
 
       <ContentCard accent>
         <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>Listado de expedientes</Typography>
+        {puedeAsignarComite && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            Para prácticas Final o Profesional, selecciona <strong>Asignar comité</strong> cuando el estado sea Carta de Aceptación presentada.
+          </Alert>
+        )}
 
         <Box sx={{ p: 2, mb: 3, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap', bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
           <TextField
@@ -363,7 +369,7 @@ export const DashboardCoordinacion = () => {
                     <Typography variant="caption" color="text.secondary">{e.nombreEmpresa || ''}</Typography>
                   </TableCell>
                   <TableCell align="center">
-                    <Stack direction="row" spacing={0.5} justifyContent="center">
+                    <Stack direction="row" spacing={0.5} sx={{ justifyContent: 'center' }}>
                        {puedeEmitirCarta && e.estado === 'VALIDADO_SECRETARIA' && (
                         <Tooltip title="Emitir y firmar Carta de Presentación">
                           <Button size="small" variant="contained" color="success"
@@ -371,9 +377,24 @@ export const DashboardCoordinacion = () => {
                             sx={{ fontWeight: 600, fontSize: '0.7rem', whiteSpace: 'nowrap', px: 1 }}>
                             Emitir Carta
                           </Button>
-                        </Tooltip>
-                      )}
-                      <Tooltip title="Ver detalle">
+                         </Tooltip>
+                       )}
+                       {puedeAsignarComite
+                         && ['FINAL', 'PROFESIONAL'].includes(e.codigoTipoPractica)
+                         && e.estado === 'CARTA_ACEPTACION_PRESENTADA' && (
+                           <Tooltip title="Seleccionar integrantes activos del comité">
+                             <Button
+                               size="small"
+                               variant="contained"
+                               color="secondary"
+                               onClick={() => navigate(`/coordinacion/expedientes/${e.id}`)}
+                               sx={{ fontWeight: 600, fontSize: '0.7rem', whiteSpace: 'nowrap', px: 1 }}
+                             >
+                               Asignar comité
+                             </Button>
+                           </Tooltip>
+                         )}
+                       <Tooltip title="Ver detalle">
                         <Button size="small" variant="outlined" onClick={() => navigate(`/coordinacion/expedientes/${e.id}`)}>
                           <Visibility fontSize="small" />
                         </Button>

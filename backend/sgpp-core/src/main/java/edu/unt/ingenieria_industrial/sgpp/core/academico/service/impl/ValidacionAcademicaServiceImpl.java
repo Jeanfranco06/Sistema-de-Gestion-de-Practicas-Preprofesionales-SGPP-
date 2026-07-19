@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -243,7 +244,18 @@ public class ValidacionAcademicaServiceImpl implements ValidacionAcademicaServic
                 .map(NormaValidacion::getCodigo)
                 .collect(Collectors.toSet());
 
-        return reglaRepository.findWithNormaByTipoPracticaAndNormas(codigoTipoPractica, codigosNormas);
+        Map<String, ReglaValidacion> reglasPorCodigo = reglaRepository
+                .findWithNormaByTipoPracticaAndNormas(codigoTipoPractica, codigosNormas)
+                .stream()
+                .collect(Collectors.toMap(
+                        ReglaValidacion::getCodigo,
+                        Function.identity(),
+                        (actual, candidata) -> candidata.getId() > actual.getId() ? candidata : actual,
+                        LinkedHashMap::new));
+
+        return reglasPorCodigo.values().stream()
+                .sorted(Comparator.comparing(ReglaValidacion::getOrden))
+                .collect(Collectors.toList());
     }
 
     private Map<Long, List<ParametroRegla>> cargarParametrosBatch(List<ReglaValidacion> reglas) {
@@ -326,7 +338,6 @@ public class ValidacionAcademicaServiceImpl implements ValidacionAcademicaServic
         }
 
         boolean tienePPIAprobada = practicas.stream()
-                .filter(p -> Boolean.TRUE.equals(p.getActivo()))
                 .filter(p -> p.getTipoPractica() != null)
                 .anyMatch(p -> p.getTipoPractica().getId().equals(tipoInicial.getId())
                         && p.getEstado() != null

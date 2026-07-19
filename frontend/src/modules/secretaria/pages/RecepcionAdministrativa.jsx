@@ -9,8 +9,7 @@ import {
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import { expedientesApi } from '../../../api/expedientesApi';
-import { secretariaApi } from '../../../api/secretariaApi';
-import { usuariosApi } from '../../../api/usuariosApi';
+import { secretariaApi, usuariosApi } from '../../../api/usuariosApi';
 import {
     Description, WarningAmber, WorkspacePremium,
     Refresh, Search, ContentPasteSearch, PersonAdd
@@ -71,7 +70,7 @@ const StatCard = ({ label, value, icon, accent }) => {
     const colors = accentColors[accent] || accentColors.blue;
     return (
         <Paper elevation={0} sx={{ flex: 1, minWidth: 140, p: 2.5, borderRadius: 3, bgcolor: colors.bg, border: '1px solid', borderColor: `${colors.icon}20` }}>
-            <Stack direction="row" spacing={1.5} alignItems="center">
+            <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
                 <Box sx={{ color: colors.icon }}>{icon}</Box>
                 <Box>
                     <Typography sx={{ fontWeight: 800 }} variant="h5" color={colors.text}>{value}</Typography>
@@ -343,13 +342,13 @@ export const RecepcionAdministrativa = () => {
                                                     {exp.nombreSede && <Typography variant="caption" color="text.disabled">{exp.nombreSede}</Typography>}
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Stack direction="row" spacing={1} alignItems="center">
+                                                    <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                                                         <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: sc.dot }} />
                                                         <Typography sx={{ fontWeight: 700 }} variant="caption" color={sc.dot}>{sc.label}</Typography>
                                                     </Stack>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Stack direction="row" spacing={0.5} justifyContent="center" flexWrap="wrap" useFlexGap>
+                                                    <Stack direction="row" spacing={0.5} useFlexGap sx={{ justifyContent: 'center', flexWrap: 'wrap' }}>
                                                         {exp.estado === 'EMPRESA_SEDE_ASIGNADA' && (
                                                             <Tooltip title="Validar requisitos administrativos y marcar como listo para carta" arrow>
                                                                 <Button size="small" variant="contained" color="success"

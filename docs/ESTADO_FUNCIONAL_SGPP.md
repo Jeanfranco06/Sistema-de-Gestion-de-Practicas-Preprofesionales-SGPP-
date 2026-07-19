@@ -53,7 +53,7 @@ Los endpoints de expediente aplican control por rol y por relación con el exped
 ### Práctica Inicial
 
 1. Secretaría/Coordinación asigna un docente asesor: `ASESOR_ASIGNADO`.
-2. El estudiante presenta el plan: `PLAN_PRESENTADO`.
+2. El estudiante completa el formulario estructurado del Anexo 1 y presenta el plan: `PLAN_PRESENTADO`.
 3. El asesor aprueba el plan: `PLAN_APROBADO`.
 4. Secretaría/Coordinación inicia ejecución: `EN_EJECUCION`.
 5. El estudiante registra horas y presenta informes parciales/final.
@@ -63,7 +63,7 @@ Los endpoints de expediente aplican control por rol y por relación con el exped
 ### Práctica Final o Profesional
 
 1. Comité/Coordinación asigna el comité: `COMITE_ASIGNADO`.
-2. El estudiante presenta el plan: `PLAN_PRESENTADO`.
+2. El estudiante completa el formulario estructurado del Anexo 1 y presenta el plan: `PLAN_PRESENTADO`.
 3. El comité aprueba el plan: `PLAN_APROBADO`.
 4. Secretaría/Coordinación inicia ejecución: `EN_EJECUCION`.
 5. El estudiante registra horas, presenta informe final y constancia empresarial.
@@ -83,12 +83,13 @@ Los estados de observación y subsanación (`PLAN_OBSERVADO`, `OBSERVADO`, `SUBS
 | Módulo | Ruta principal | Capacidades actuales |
 |---|---|---|
 | Estudiante | `/estudiante/dashboard` | Estado de expediente, horas, documentos, informes, perfil y catálogo de sedes. |
+| Plan de Prácticas | `/estudiante/plan-practicas` | Formulario estructurado del Anexo 1: practicante, empresa, área, situación problemática, objetivos, técnicas/procedimientos y cronograma. |
 | Secretaría | `/secretaria/recepcion` | Validación administrativa, incidencias, asignación de asesor y emisión institucional disponible según permisos. |
 | Docente | `/docente/dashboard` | Consulta de practicantes, revisión documental y evaluación. |
 | Tutor externo | `/tutor/dashboard` | Consulta de practicantes asignados y evaluación de empresa. |
 | Comité | `/comite/panel` | Consulta de expedientes sujetos a revisión y acciones de comité. |
-| Coordinación | `/coordinacion/dashboard` | Gestión y consulta institucional de expedientes. |
-| Detalle de coordinación | `/coordinacion/expedientes/:id` | Consulta integral, trazabilidad, horas, documentos y acciones contextuales: carta, aprobación de plan/informe, dictamen y constancia. |
+| Coordinación | `/coordinacion/dashboard` | Gestión y consulta institucional de expedientes, incluida la asignación de comité para prácticas finales/profesionales. |
+| Detalle de coordinación | `/coordinacion/expedientes/:id` | Consulta integral, trazabilidad, horas, documentos y acciones contextuales: carta, asignación de comité, aprobación de plan/informe, dictamen y constancia. |
 | Administración | `/admin/dashboard` | Usuarios, empresas, sedes, convenios, expedientes y reportes. |
 
 ## Endpoints de Operación Relevantes
@@ -103,6 +104,7 @@ Los estados de observación y subsanación (`PLAN_OBSERVADO`, `OBSERVADO`, `SUBS
 | Asignar asesor | `PUT /expedientes/{id}/asignar-asesor` |
 | Asignar comité | `PUT /expedientes/{id}/asignar-comite` |
 | Presentar/aprobar plan | `PUT /expedientes/{id}/presentar-plan`, `PUT /expedientes/{id}/aprobar-plan` |
+| Registrar/presentar Plan estructurado | `POST /planes`, `PUT /planes/{id}/presentar` |
 | Iniciar ejecución | `PUT /expedientes/{id}/iniciar-ejecucion` |
 | Registrar horas | `POST /horas/registrar/{idExpediente}` |
 | Evaluar y cerrar | `PUT /expedientes/{id}/evaluar`, `PUT /expedientes/{id}/cerrar` |
@@ -146,8 +148,23 @@ Una constancia generada se registra con archivo, hash, fecha, usuario solicitant
 - Consistencia de roles: la interfaz de coordinación muestra emisión de carta y constancia solo a Dirección, Coordinación y Administración del Sistema; las acciones de revisión se limitan a los roles autorizados por el backend.
 - Flujo del Plan: asesor o comité solo se asignan después de la Carta de Aceptación. La pantalla documental informa el responsable pendiente, muestra la Carta institucional como emitida y bloquea eliminarla. La Constancia de Empresa se habilita durante la ejecución y la Ficha de Evaluación queda a cargo del Tutor Externo.
 - Verificaciones ejecutadas: compilación Maven del reactor (`mvn -pl sgpp-api -am test -DskipTests`) y bundle del frontend (`npm run build`).
+- Corregido el correlativo de expedientes: la búsqueda del máximo por prefijo usa coincidencia literal de prefijo, evitando conflictos de código único al crear nuevos expedientes.
+- El Plan observado o subsanado puede reenviarse: al cargar una versión corregida se retorna a `PLAN_PRESENTADO` para una nueva revisión.
+- El Tutor Externo asociado a la empresa del expediente puede validar horas; un tutor sin relación con la empresa sigue sin acceso de escritura.
+- El cierre de expediente sincroniza la práctica heredada vinculada como `COMPLETADA` e inactiva. La validación académica reconoce una práctica Inicial completada para habilitar solicitudes Final/Profesional.
+- Se desactivaron reglas académicas duplicadas y la evaluación académica ya no duplica resultados para una misma regla activa.
+- Se habilitó el rol `ADMINISTRADOR` y se asignó al usuario local `adminsys1` mediante migración.
+- Coordinación y Dirección pueden asignar entre uno y tres integrantes activos del comité a expedientes Finales o Profesionales desde el dashboard o el detalle. La asignación deja el expediente en `COMITE_ASIGNADO`.
+- Las descargas institucionales por `/exportacion/descargar/{id}` responden correctamente para registros autorizados; la autenticación admite usuario o correo y los accesos denegados retornan `403` de forma consistente.
+- Calidad frontend: se migraron APIs obsoletas de MUI y props de layout al modelo actual. `npm run lint` finaliza sin errores ni advertencias y `npm run build` finaliza correctamente.
+- Migraciones incorporadas: `V49__habilitar_rol_administrador.sql`, `V50__reiniciar_flujo_e2e_estudiante1.sql`, `V51__sincronizar_practicas_cerradas.sql` y `V52__desactivar_reglas_academicas_duplicadas.sql`.
+- Validación E2E ejecutada: una práctica Inicial de `estudiante3` recorrió el flujo completo hasta `CERRADO`, incluida la descarga de constancia. Una práctica Final del mismo estudiante alcanzó `EN_EJECUCION` con Plan aprobado y 360 horas; su cierre permanece bloqueado hasta distribuir las horas en al menos tres meses, conforme a la regla temporal.
+- Reemplazo de Carta de Aceptación: mientras el expediente esté en `CARTA_ACEPTACION_PRESENTADA`, el estudiante puede eliminar una carta pendiente para volver a `CARTA_PRESENTACION_EMITIDA` y cargar la versión correcta. También se admite completar la carga cuando se eliminó previamente un registro inconsistente y el estado aún era `CARTA_ACEPTACION_PRESENTADA`.
+- Corrección de datos local: se eliminó el vínculo erróneo que registraba la Carta de Presentación como `CARTA_ACEPTACION` en `EXP-2026-INICIAL-0001`; el expediente quedó en `CARTA_PRESENTACION_EMITIDA`, con la Carta de Presentación institucional conservada y listo para cargar la aceptación real.
+- Claridad documental: la Carta de Aceptación se muestra como `Presentada` tras su carga. El estado de revisión del archivo es independiente del estado del expediente y no debe ocultar la transición a `CARTA_ACEPTACION_PRESENTADA`.
+- Navegación multirrol: un usuario con `COMITE_PRACTICAS` y `DOCENTE_ASESOR` conserva el menú de Comité e incorpora `Mis Practicantes`, evitando que la prioridad visual del Comité oculte sus expedientes asignados como asesor.
+- RF-16 implementado en interfaz: el estudiante completa el Anexo 1 mediante `/estudiante/plan-practicas`, en lugar de adjuntar solo un PDF. El formulario usa el modelo de Plan General existente, precarga datos disponibles del expediente y exige carátula, empresa, área, situación problemática, objetivos, técnicas/procedimientos y cronograma antes de presentar el Plan.
 
 ## Pendientes Técnicos Conocidos
 
-- `npm run lint` finaliza sin errores. Persisten advertencias de limpieza por imports/variables sin uso y dependencias de hooks; deben resolverse por lotes funcionales para no mezclar cambios masivos con correcciones de negocio.
 - Las reglas configurables de plazos, modalidad de evaluación y requisito académico deben mantenerse alineadas con los documentos normativos citados al inicio.

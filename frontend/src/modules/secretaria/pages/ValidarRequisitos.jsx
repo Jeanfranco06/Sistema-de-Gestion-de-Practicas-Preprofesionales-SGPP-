@@ -21,7 +21,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import SaveIcon from '@mui/icons-material/Save';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
-import { secretariaApi } from '../../../api/secretariaApi';
+import { secretariaApi } from '../../../api/usuariosApi';
 import { academicoApi } from '../../../api/validacionesApi';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
@@ -76,7 +76,7 @@ const StatCard = ({ label, value, icon, accent }) => {
     const colors = accentColors[accent] || accentColors.blue;
     return (
         <Paper elevation={0} sx={{ flex: 1, minWidth: 140, p: 2.5, borderRadius: 3, bgcolor: colors.bg, border: '1px solid', borderColor: `${colors.icon}20` }}>
-            <Stack direction="row" spacing={1.5} alignItems="center">
+            <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
                 <Box sx={{ color: colors.icon }}>{icon}</Box>
                 <Box>
                     <Typography sx={{ fontWeight: 800 }} variant="h5" color={colors.text}>{value}</Typography>
@@ -404,7 +404,7 @@ export const ValidarRequisitos = () => {
                                                     <Typography variant="body2">{est.promedioPonderado ?? '—'}</Typography>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Stack direction="row" spacing={1} alignItems="center">
+                                                    <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                                                             <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: sc.dot }} />
                                                             <Typography sx={{ fontWeight: 700 }} variant="caption" color={sc.dot}>{est.estadoAcademico || '—'}</Typography>
@@ -412,7 +412,7 @@ export const ValidarRequisitos = () => {
                                                     </Stack>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Stack direction="row" spacing={0.5} justifyContent="center">
+                                                    <Stack direction="row" spacing={0.5} sx={{ justifyContent: 'center' }}>
                                                         <Tooltip title="Validar requisitos" arrow>
                                                             <IconButton size="small" onClick={() => handleOpenValidar(est)} sx={{ color: '#10b981', bgcolor: '#ecfdf5', '&:hover': { color: '#059669', bgcolor: '#d1fae5' } }}>
                                                                 <AssignmentTurnedInIcon fontSize="small" />

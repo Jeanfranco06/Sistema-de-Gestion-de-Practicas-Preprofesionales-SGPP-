@@ -284,7 +284,7 @@ export const InformesPeriodicos = () => {
               }}
             >
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, gap: 2 }}>
-                <Stack direction="row" spacing={1} alignItems="center">
+                <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                   <EventNote fontSize="small" color={hito.bloqueado ? 'disabled' : 'primary'} />
                   <Typography variant="h6" color={hito.bloqueado ? 'text.disabled' : 'text.primary'}>
                     Semana {hito.semana}

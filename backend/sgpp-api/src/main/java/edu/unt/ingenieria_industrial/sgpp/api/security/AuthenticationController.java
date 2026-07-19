@@ -20,6 +20,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -94,7 +95,7 @@ public class AuthenticationController {
         String token = jwtService.generateToken(userDetails);
 
         Usuario usuario = usuarioRepository.findByUsernameWithRoles(request.getUsername())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado"));
 
         usuario.setFechaUltimoAcceso(LocalDateTime.now());
         usuario.setIntentosFallidos(0);

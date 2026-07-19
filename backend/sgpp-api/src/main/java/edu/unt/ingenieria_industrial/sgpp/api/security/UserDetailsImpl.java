@@ -9,6 +9,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.stream.Collectors;
 
 @Getter
@@ -20,7 +21,11 @@ public class UserDetailsImpl implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
+        if (usuario.getUsuarioRoles() == null) {
+            return Collections.emptyList();
+        }
         return usuario.getUsuarioRoles().stream()
+                .filter(usuarioRol -> usuarioRol != null && usuarioRol.getRol() != null && usuarioRol.getRol().getNombre() != null)
                 .map(usuarioRol -> new SimpleGrantedAuthority("ROLE_" + usuarioRol.getRol().getNombre().name()))
                 .collect(Collectors.toList());
     }

@@ -11,6 +11,8 @@ export const expedientesApi = {
     emitirCartaPresentacion: (id) => api.put(`/expedientes/${id}/emitir-carta-presentacion`),
     presentarCartaAceptacion: (id) => api.put(`/expedientes/${id}/presentar-carta-aceptacion`),
     asignarAsesor: (id, payload) => api.put(`/expedientes/${id}/asignar-asesor`, payload),
+    asignarComite: (id, payload) => api.put(`/expedientes/${id}/asignar-comite`, payload),
+    getComiteIntegrantesActivos: () => api.get('/comite-practicas/integrantes/activos'),
     aprobarPlan: (id) => api.put(`/expedientes/${id}/aprobar-plan`),
     aprobarInformeFinal: (id) => api.put(`/expedientes/${id}/aprobar-informe-final`),
     emitirDictamen: (id, dictamen) => api.post(`/expedientes/${id}/emitir-dictamen?dictamen=${encodeURIComponent(dictamen)}`),

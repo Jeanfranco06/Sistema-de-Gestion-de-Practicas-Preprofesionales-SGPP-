@@ -3,9 +3,15 @@ import {
   Alert,
   Box,
   Button,
+  Checkbox,
   Chip,
   CircularProgress,
   Divider,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControlLabel,
   LinearProgress,
   Paper,
   Tab,
@@ -100,6 +106,11 @@ export const DetalleExpediente = () => {
   const [historialGeneracion, setHistorialGeneracion] = useState([]);
   const [warnings, setWarnings] = useState([]);
   const [accionEnCurso, setAccionEnCurso] = useState('');
+  const [openComiteDialog, setOpenComiteDialog] = useState(false);
+  const [integrantesComite, setIntegrantesComite] = useState([]);
+  const [miembrosComiteSeleccionados, setMiembrosComiteSeleccionados] = useState([]);
+  const [cargandoComite, setCargandoComite] = useState(false);
+  const [asignandoComite, setAsignandoComite] = useState(false);
   const puedeEmitirDocumentosInstitucionales = hasAnyRole(
     user?.roles,
     ['ADMIN_SISTEMA', 'COORDINADOR', 'DIRECTOR']
@@ -107,6 +118,10 @@ export const DetalleExpediente = () => {
   const puedeRevisarExpediente = hasAnyRole(
     user?.roles,
     ['ADMIN_SISTEMA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR']
+  );
+  const puedeAsignarComite = hasAnyRole(
+    user?.roles,
+    ['ADMIN_SISTEMA', 'COORDINADOR', 'DIRECTOR']
   );
 
   const cargarDetalle = useCallback(async () => {
@@ -237,6 +252,65 @@ export const DetalleExpediente = () => {
     }
   };
 
+  const abrirAsignacionComite = async () => {
+    try {
+      setCargandoComite(true);
+      const response = await expedientesApi.getComiteIntegrantesActivos();
+      const integrantes = getPayload(response) || [];
+      if (!integrantes.length) {
+        MySwal.fire('Comité no configurado', 'No existen integrantes activos. Regístralos desde la gestión institucional antes de asignarlos.', 'info');
+        return;
+      }
+
+      setIntegrantesComite(integrantes);
+      setMiembrosComiteSeleccionados(integrantes.slice(0, 3).map((integrante) => integrante.idUsuario));
+      setOpenComiteDialog(true);
+    } catch (err) {
+      MySwal.fire('No se pudo cargar el comité', err.response?.data?.message || 'Intenta nuevamente.', 'error');
+    } finally {
+      setCargandoComite(false);
+    }
+  };
+
+  const alternarMiembroComite = (idUsuario) => {
+    setMiembrosComiteSeleccionados((actuales) => {
+      if (actuales.includes(idUsuario)) {
+        return actuales.filter((idActual) => idActual !== idUsuario);
+      }
+      if (actuales.length >= 3) {
+        MySwal.fire('Máximo alcanzado', 'El comité puede tener hasta tres integrantes.', 'info');
+        return actuales;
+      }
+      return [...actuales, idUsuario];
+    });
+  };
+
+  const confirmarAsignacionComite = async () => {
+    const miembros = integrantesComite
+      .filter((integrante) => miembrosComiteSeleccionados.includes(integrante.idUsuario))
+      .map((integrante) => ({
+        idUsuario: integrante.idUsuario,
+        rolComite: integrante.rolComite || 'MIEMBRO',
+      }));
+
+    if (!miembros.length) {
+      MySwal.fire('Selecciona integrantes', 'Debes asignar al menos un integrante activo.', 'warning');
+      return;
+    }
+
+    try {
+      setAsignandoComite(true);
+      await expedientesApi.asignarComite(id, { miembros });
+      setOpenComiteDialog(false);
+      await cargarDetalle();
+      MySwal.fire('Comité asignado', 'El expediente avanzó a COMITE_ASIGNADO.', 'success');
+    } catch (err) {
+      MySwal.fire('No se pudo asignar el comité', err.response?.data?.message || 'Verifica el estado del expediente.', 'error');
+    } finally {
+      setAsignandoComite(false);
+    }
+  };
+
   const ultimaConstancia = useMemo(
     () =>
       historialGeneracion.find((item) =>
@@ -317,6 +391,19 @@ export const DetalleExpediente = () => {
                 {accionEnCurso === 'carta' ? 'Emitiendo...' : 'Emitir carta'}
               </Button>
             )}
+            {puedeAsignarComite
+              && ['FINAL', 'PROFESIONAL'].includes(expediente.codigoTipoPractica)
+              && expediente.estado === 'CARTA_ACEPTACION_PRESENTADA' && (
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  startIcon={<WorkspacePremium />}
+                  disabled={cargandoComite}
+                  onClick={abrirAsignacionComite}
+                >
+                  {cargandoComite ? 'Cargando comité...' : 'Asignar comité'}
+                </Button>
+              )}
             {puedeRevisarExpediente && expediente.estado === 'PLAN_PRESENTADO' && (
               <Button
                 variant="contained"
@@ -375,6 +462,36 @@ export const DetalleExpediente = () => {
       {warnings.length > 0 && (
         <StackWarnings warnings={warnings} />
       )}
+
+      <Dialog open={openComiteDialog} onClose={() => !asignandoComite && setOpenComiteDialog(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Asignar comité activo</DialogTitle>
+        <DialogContent dividers>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+            Selecciona entre uno y tres integrantes vigentes. Sus cargos institucionales se conservarán en el expediente.
+          </Typography>
+          <Box sx={{ display: 'grid', gap: 0.5 }}>
+            {integrantesComite.map((integrante) => (
+              <FormControlLabel
+                key={integrante.idUsuario}
+                control={(
+                  <Checkbox
+                    checked={miembrosComiteSeleccionados.includes(integrante.idUsuario)}
+                    onChange={() => alternarMiembroComite(integrante.idUsuario)}
+                    disabled={asignandoComite}
+                  />
+                )}
+                label={`${integrante.nombres || ''} ${integrante.apellidos || ''} (${integrante.rolComite || 'MIEMBRO'})`}
+              />
+            ))}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenComiteDialog(false)} disabled={asignandoComite}>Cancelar</Button>
+          <Button variant="contained" onClick={confirmarAsignacionComite} disabled={asignandoComite || !miembrosComiteSeleccionados.length}>
+            {asignandoComite ? 'Asignando...' : 'Confirmar asignación'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Paper sx={{ borderRadius: 3, overflow: 'hidden', border: '1px solid', borderColor: 'divider' }}>
         <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)} variant="scrollable" scrollButtons="auto">

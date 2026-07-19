@@ -31,6 +31,7 @@ import { InformesPeriodicos } from './modules/estudiante/pages/InformesPeriodico
 import { RegistroHoras } from './modules/estudiante/pages/RegistroHoras';
 import { PerfilEstudiante } from './modules/estudiante/pages/PerfilEstudiante';
 import { MiPractica } from './modules/estudiante/pages/MiPractica';
+import { PlanPracticas } from './modules/estudiante/pages/PlanPracticas';
 import { RevisionDocumental } from './modules/shared/pages/RevisionDocumental';
 import { EvaluacionTutorExterno } from './modules/evaluacion/EvaluacionTutorExterno';
 import { EvaluacionDocenteAsesor } from './modules/evaluacion/EvaluacionDocenteAsesor';
@@ -87,6 +88,11 @@ export default function App() {
               <Route path="/estudiante/documentos" element={
                 <ProtectedRoute allowedRoles={['ESTUDIANTE']}>
                   <GestionDocumental />
+                </ProtectedRoute>
+              } />
+              <Route path="/estudiante/plan-practicas" element={
+                <ProtectedRoute allowedRoles={['ESTUDIANTE']}>
+                  <PlanPracticas />
                 </ProtectedRoute>
               } />
               <Route path="/estudiante/informes" element={
