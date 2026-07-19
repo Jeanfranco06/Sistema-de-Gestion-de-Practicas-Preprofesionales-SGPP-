@@ -1,12 +1,14 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider, CssBaseline } from '@mui/material';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import '@fontsource/inter/300.css';
 import '@fontsource/inter/400.css';
 import '@fontsource/inter/500.css';
 import '@fontsource/inter/600.css';
 import '@fontsource/inter/700.css';
 
-import theme from './shared/theme/theme';
+import { ThemeProvider as AppThemeProvider } from './shared/theme/ThemeContext';
+import ThemeProviderWrapper from './shared/theme/ThemeProviderWrapper';
 import { AuthProvider } from './auth/AuthContext';
 import ProtectedRoute from './auth/ProtectedRoute';
 import AppLayout from './modules/shared/layout/AppLayout';
@@ -45,12 +47,23 @@ import AdminDashboardPage from './modules/admin/pages/AdminDashboardPage';
 import AdminReportesPage from './modules/admin/pages/AdminReportesPage';
 import { GestionExpedientes } from './modules/admin/pages/GestionExpedientes';
 
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5,
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
 export default function App() {
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <AuthProvider>
-        <BrowserRouter>
+    <QueryClientProvider client={queryClient}>
+      <AppThemeProvider>
+        <ThemeProviderWrapper>
+          <AuthProvider>
+            <BrowserRouter>
           <Routes>
             {/* Pública */}
             <Route path="/login" element={<LoginPage />} />
@@ -285,9 +298,12 @@ export default function App() {
             {/* Raíz → login */}
             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="*" element={<Navigate to="/login" replace />} />
-          </Routes>
+</Routes>
         </BrowserRouter>
       </AuthProvider>
-    </ThemeProvider>
-  );
+    </ThemeProviderWrapper>
+  </AppThemeProvider>
+  <ReactQueryDevtools initialIsOpen={false} />
+</QueryClientProvider>
+);
 }

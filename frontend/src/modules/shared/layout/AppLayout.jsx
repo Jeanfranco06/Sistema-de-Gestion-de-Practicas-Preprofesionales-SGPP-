@@ -9,9 +9,11 @@ import {
   Dashboard, Assignment, Description, Assessment,
   Business, AccountCircle, Logout, Menu as MenuIcon,
   School, AccessTime, CheckCircle, BarChart,
-  People, SupervisorAccount, FactCheck, FolderOpen
+  People, SupervisorAccount, FactCheck, FolderOpen,
+  DarkMode, LightMode,
 } from '@mui/icons-material';
 import { useAuth } from '../../../auth/AuthContext';
+import { useThemeContext } from '../../../shared/theme/ThemeContext';
 
 import { NotificationsMenu } from '../components/NotificationsMenu';
 
@@ -199,6 +201,7 @@ function getPerfilRoute(roles = []) {
 
 export default function AppLayout() {
   const { user, logout } = useAuth();
+  const { mode, toggleTheme } = useThemeContext();
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
@@ -309,7 +312,7 @@ export default function AppLayout() {
   };
 
   const drawerContent = (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: '#ffffff' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: 'background.paper' }}>
 
       {/* Header Sidebar */}
       <Box sx={{
@@ -413,14 +416,14 @@ export default function AppLayout() {
   );
 
   return (
-    <Box sx={{ display: 'flex', bgcolor: '#f8fafc', minHeight: '100vh' }}>
+    <Box sx={{ display: 'flex', bgcolor: 'background.default', minHeight: '100vh' }}>
       {/* AppBar */}
       <AppBar
         position="fixed"
         elevation={0}
         sx={{
           zIndex: theme.zIndex.drawer + 1,
-          bgcolor: 'rgba(255, 255, 255, 0.85)',
+          bgcolor: 'background.paper',
           backdropFilter: 'blur(8px)',
           borderBottom: '2px solid',
           borderColor: 'primary.main',
@@ -447,6 +450,9 @@ export default function AppLayout() {
           </Typography>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <IconButton onClick={toggleTheme} aria-label={mode === 'light' ? 'Activar modo oscuro' : 'Activar modo claro'} sx={{ color: 'secondary.main' }}>
+              {mode === 'light' ? <DarkMode /> : <LightMode />}
+            </IconButton>
             <NotificationsMenu />
           </Box>
         </Toolbar>

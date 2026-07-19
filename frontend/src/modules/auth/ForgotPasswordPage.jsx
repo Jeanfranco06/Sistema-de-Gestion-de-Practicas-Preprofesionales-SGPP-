@@ -3,11 +3,14 @@ import { Link as RouterLink } from 'react-router-dom';
 import {
   Box, Card, CardContent, TextField, Button, Typography,
   InputAdornment, Alert, CircularProgress, Link,
+  IconButton,
 } from '@mui/material';
-import { School, EmailOutlined, ArrowBack } from '@mui/icons-material';
+import { School, EmailOutlined, ArrowBack, DarkMode, LightMode } from '@mui/icons-material';
 import { forgotPassword } from '../../api/authService';
+import { useThemeContext } from '../../shared/theme/ThemeContext';
 
 export default function ForgotPasswordPage() {
+  const { mode, toggleTheme } = useThemeContext();
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -39,8 +42,26 @@ export default function ForgotPasswordPage() {
     }
   };
 
+  const bgGradient = mode === 'dark'
+    ? 'linear-gradient(160deg, #0f172a 0%, #1e293b 45%, #0f172a 100%)'
+    : 'linear-gradient(160deg, #eff6ff 0%, #f8fafc 45%, #f0fdfa 100%)';
+
   return (
-    <Box sx={{ minHeight: '100vh', background: 'linear-gradient(160deg, #eff6ff 0%, #f8fafc 45%, #f0fdfa 100%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', p: 2 }}>
+    <Box sx={{ minHeight: '100vh', background: bgGradient, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', p: 2 }}>
+      <IconButton
+        onClick={toggleTheme}
+        aria-label={mode === 'light' ? 'Activar modo oscuro' : 'Activar modo claro'}
+        sx={{
+          position: 'absolute',
+          top: 2,
+          right: 2,
+          color: 'secondary.main',
+          zIndex: 10,
+        }}
+      >
+        {mode === 'light' ? <DarkMode /> : <LightMode />}
+      </IconButton>
+
       <Box sx={{ textAlign: 'center', mb: 3 }}>
         <Box sx={{ width: 64, height: 64, borderRadius: 2, bgcolor: 'primary.main', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 1.5, boxShadow: '0 4px 14px rgba(37, 99, 235, 0.25)' }}>
           <School sx={{ fontSize: 32, color: '#fff' }} />
