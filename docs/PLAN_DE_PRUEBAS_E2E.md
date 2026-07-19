@@ -72,7 +72,7 @@ Credenciales locales iniciales, si se cargaron las migraciones de seed: usuario 
   - Seleccionar entre uno y tres integrantes activos y confirmar.
   - **Resultado esperado:** `COMITE_ASIGNADO`; los integrantes seleccionados ven el expediente en `Panel Comité` y se inicia el plazo de Plan Final/Profesional.
   - **Pruebas negativas:** comité para Inicial, más de tres integrantes, integrante inactivo o segunda asignación.
-- [ ] **Estudiante - comprobar bloqueo/habilitación del Plan**:
+- [X] **Estudiante - comprobar bloqueo/habilitación del Plan**:
   - Antes de la asignación, `Plan de Prácticas` debe informar el responsable pendiente y no permitir su presentación.
   - Después de `ASESOR_ASIGNADO` o `COMITE_ASIGNADO`, debe habilitarse `Plan de Prácticas` en el menú y `Gestionar plan` en Documentos.
 
@@ -85,7 +85,7 @@ Credenciales locales iniciales, si se cargaron las migraciones de seed: usuario 
   - Seleccionar `Presentar Plan para revisión`.
   - **Resultado esperado:** se registra una versión estructurada del Plan con estado `PRESENTADO` y el expediente pasa a `PLAN_PRESENTADO`.
   - **Pruebas negativas:** omitir secciones obligatorias, no registrar objetivo general/dos específicos, cronograma vacío o fechas inválidas.
-- [ ] **Revisor - iniciar revisión y observar**:
+- [X] **Revisor - iniciar revisión y observar**:
   - Para Inicial usar `DOCENTE_ASESOR`; para Final/Profesional usar integrante asignado de `COMITE_PRACTICAS`.
   - Cambiar el documento de `PENDIENTE` a `EN_REVISION`, luego a `OBSERVADO`, con comentario obligatorio.
   - Registrar una observación de expediente con motivo concreto.

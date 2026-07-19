@@ -4,6 +4,7 @@ import edu.unt.ingenieria_industrial.sgpp.core.documental.service.FileStorageSer
 import edu.unt.ingenieria_industrial.sgpp.core.expediente.model.ExpedienteDocumento;
 import edu.unt.ingenieria_industrial.sgpp.core.expediente.repository.ExpedienteDocumentoRepository;
 import edu.unt.ingenieria_industrial.sgpp.core.expediente.service.ExpedienteAccesoService;
+import edu.unt.ingenieria_industrial.sgpp.core.exportacion.service.ExportacionService;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.service.CurrentUserService;
 import edu.unt.ingenieria_industrial.sgpp.shared.exception.BusinessException;
 import edu.unt.ingenieria_industrial.sgpp.shared.exception.ResourceNotFoundException;
@@ -31,6 +32,7 @@ public class DocumentoUploadController {
     private final ExpedienteDocumentoRepository expedienteDocumentoRepository;
     private final ExpedienteAccesoService expedienteAccesoService;
     private final CurrentUserService currentUserService;
+    private final ExportacionService exportacionService;
 
     @PostMapping("/upload")
     @PreAuthorize("hasAnyRole('ESTUDIANTE', 'DOCENTE_ASESOR', 'TUTOR_EXTERNO', 'SECRETARIA', 'COORDINADOR', 'DIRECTOR', 'ADMIN_SISTEMA')")
@@ -52,7 +54,7 @@ public class DocumentoUploadController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/expediente/{idDocumento}/download")
+@GetMapping("/expediente/{idDocumento}/download")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Resource> downloadExpedienteDocument(
             @PathVariable Long idDocumento, Authentication authentication) {
@@ -65,6 +67,21 @@ public class DocumentoUploadController {
             throw new BusinessException("No se pudo identificar al usuario autenticado");
         }
 
+        // Manejar documento virtual PLAN_GENERAL (ruta: plan_general:{id})
+        if (idDocumento < 0) {
+            Long planId = Math.abs(idDocumento);
+            try {
+                byte[] pdfBytes = exportacionService.generarPlanGeneralPdf(planId);
+                Resource resource = new org.springframework.core.io.ByteArrayResource(pdfBytes);
+                return ResponseEntity.ok()
+                        .contentType(MediaType.APPLICATION_PDF)
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"Plan_General_v1.pdf\"")
+                        .body(resource);
+            } catch (Exception ex) {
+                throw new BusinessException("No se pudo generar el PDF del plan: " + ex.getMessage());
+            }
+        }
+
         ExpedienteDocumento documento = expedienteDocumentoRepository.findById(idDocumento)
                 .orElseThrow(() -> new ResourceNotFoundException("Documento de expediente no encontrado"));
         expedienteAccesoService.verificarLectura(
@@ -74,6 +91,21 @@ public class DocumentoUploadController {
 
         if (documento.getRutaArchivo() == null || documento.getRutaArchivo().startsWith("registro:")) {
             throw new BusinessException("El documento debe descargarse desde su registro institucional");
+        }
+
+        // Manejar documento virtual PLAN_GENERAL en base de datos
+        if (documento.getRutaArchivo() != null && documento.getRutaArchivo().startsWith("plan_general:")) {
+            Long planId = Long.parseLong(documento.getRutaArchivo().replace("plan_general:", ""));
+            try {
+                byte[] pdfBytes = exportacionService.generarPlanGeneralPdf(planId);
+                Resource resource = new org.springframework.core.io.ByteArrayResource(pdfBytes);
+                return ResponseEntity.ok()
+                        .contentType(MediaType.APPLICATION_PDF)
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + documento.getNombreArchivo() + "\"")
+                        .body(resource);
+            } catch (Exception ex) {
+                throw new BusinessException("No se pudo generar el PDF del plan: " + ex.getMessage());
+            }
         }
 
         Resource resource = fileStorageService.loadFileAsResource(documento.getRutaArchivo());

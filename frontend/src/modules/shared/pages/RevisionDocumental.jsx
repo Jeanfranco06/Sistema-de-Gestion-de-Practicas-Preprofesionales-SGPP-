@@ -57,7 +57,7 @@ export const RevisionDocumental = () => {
     } finally {
       setLoading(false);
     }
-  }, [id, selectedDoc]);
+  }, [id]);
 
   useEffect(() => {
     if (id) {

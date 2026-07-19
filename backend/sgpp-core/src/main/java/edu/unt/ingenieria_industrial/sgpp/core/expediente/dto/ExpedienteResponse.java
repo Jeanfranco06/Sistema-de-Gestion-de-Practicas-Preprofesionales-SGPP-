@@ -1,5 +1,6 @@
 package edu.unt.ingenieria_industrial.sgpp.core.expediente.dto;
 
+import edu.unt.ingenieria_industrial.sgpp.core.plan.dto.PlanGeneralResponse;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -57,6 +58,7 @@ public class ExpedienteResponse {
     private List<ExpedienteDocumentoResponse> documentos;
     private List<ExpedienteComiteResponse> comite;
     private List<ExpedienteObservacionResponse> observacionesList;
+    private PlanGeneralResponse planGeneral;
 
     @Data
     @Builder

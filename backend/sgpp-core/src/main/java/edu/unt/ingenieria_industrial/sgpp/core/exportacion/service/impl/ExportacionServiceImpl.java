@@ -1,7 +1,7 @@
 package edu.unt.ingenieria_industrial.sgpp.core.exportacion.service.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.unt.ingenieria_industrial.sgpp.core.plan.dto.PlanGeneralResponse;
+import edu.unt.ingenieria_industrial.sgpp.core.plan.service.PlanGeneralService;
 import edu.unt.ingenieria_industrial.sgpp.core.exportacion.config.ExportacionProperties;
 import edu.unt.ingenieria_industrial.sgpp.core.exportacion.domain.DocumentoRenderizable;
 import edu.unt.ingenieria_industrial.sgpp.core.exportacion.dto.ArchivoExportadoDTO;
@@ -35,23 +35,50 @@ import edu.unt.ingenieria_industrial.sgpp.shared.enums.TipoEntidadAuditable;
 import edu.unt.ingenieria_industrial.sgpp.shared.enums.TipoReporte;
 import edu.unt.ingenieria_industrial.sgpp.shared.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.lowagie.text.Document;
+import com.lowagie.text.DocumentException;
+import com.lowagie.text.Element;
+import com.lowagie.text.Font;
+import com.lowagie.text.FontFactory;
+import com.lowagie.text.PageSize;
+import com.lowagie.text.Paragraph;
+import com.lowagie.text.Phrase;
+import com.lowagie.text.pdf.PdfPCell;
+import com.lowagie.text.pdf.PdfPTable;
+import com.lowagie.text.pdf.PdfWriter;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import java.awt.Color;
 import java.util.HexFormat;
-import java.util.List;
-import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import java.awt.Color;
+import java.util.HexFormat;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ExportacionServiceImpl implements ExportacionService {
@@ -70,6 +97,7 @@ public class ExportacionServiceImpl implements ExportacionService {
     private final UsuarioAutenticadoHelper usuarioHelper;
     private final AuditoriaTransaccionalService auditoriaService;
     private final ObjectMapper objectMapper;
+    private final PlanGeneralService planGeneralService;
 
     @Override
     @Transactional
@@ -348,5 +376,182 @@ public class ExportacionServiceImpl implements ExportacionService {
                 .fechaGeneracion(r.getFechaGeneracion())
                 .observaciones(r.getObservaciones())
                 .build();
+    }
+
+    @Override
+    public byte[] generarPlanGeneralPdf(Long planId) {
+        PlanGeneralResponse plan = planGeneralService.findById(planId);
+        if (plan == null) {
+            throw new BusinessException("Plan General no encontrado: " + planId);
+        }
+
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            com.lowagie.text.Document document = new com.lowagie.text.Document();
+            PdfWriter.getInstance(document, baos);
+            document.open();
+
+            com.lowagie.text.Font font = FontFactory.getFont(FontFactory.HELVETICA, 10);
+            com.lowagie.text.Font fontBold = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10);
+            com.lowagie.text.Font fontTitle = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14);
+            com.lowagie.text.Font fontSubTitle = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12);
+
+            // Título
+            document.add(new com.lowagie.text.Paragraph("UNIVERSIDAD NACIONAL DE TRUJILLO", fontTitle));
+            document.add(new com.lowagie.text.Paragraph("FACULTAD DE INGENIERÍA INDUSTRIAL Y DE SISTEMAS", fontSubTitle));
+            document.add(new com.lowagie.text.Paragraph("PLAN DE PRÁCTICAS PREPROFESIONALES (ANEXO 1)", fontSubTitle));
+            document.add(new com.lowagie.text.Paragraph(" "));
+
+            // Carátula
+            if (plan.getCaratula() != null) {
+                PdfPTable table = new PdfPTable(2);
+                table.setWidthPercentage(100);
+                table.setWidths(new float[]{30, 70});
+                table.addCell(new PdfPCell(new com.lowagie.text.Phrase("Institución", fontBold)));
+                table.addCell(new PdfPCell(new com.lowagie.text.Phrase(plan.getCaratula().getInstitucion(), font)));
+                table.addCell(new PdfPCell(new com.lowagie.text.Phrase("Nombre del Plan", fontBold)));
+                table.addCell(new PdfPCell(new com.lowagie.text.Phrase(plan.getCaratula().getNombrePlan(), font)));
+                table.addCell(new PdfPCell(new com.lowagie.text.Phrase("Autor", fontBold)));
+                table.addCell(new PdfPCell(new com.lowagie.text.Phrase(plan.getCaratula().getAutor(), font)));
+                table.addCell(new PdfPCell(new com.lowagie.text.Phrase("Asesor", fontBold)));
+                table.addCell(new PdfPCell(new com.lowagie.text.Phrase(plan.getCaratula().getAsesor(), font)));
+                table.addCell(new PdfPCell(new com.lowagie.text.Phrase("Fecha", fontBold)));
+                table.addCell(new PdfPCell(new com.lowagie.text.Phrase(plan.getCaratula().getFecha() != null ? plan.getCaratula().getFecha().toString() : "", font)));
+                document.add(table);
+                document.add(new com.lowagie.text.Paragraph(" "));
+            }
+
+            // Datos de la empresa
+            if (plan.getDatosEmpresa() != null) {
+                document.add(new com.lowagie.text.Paragraph("2. DATOS DE LA EMPRESA O INSTITUCIÓN RECEPTORA", fontSubTitle));
+                PdfPTable table = new PdfPTable(2);
+                table.setWidthPercentage(100);
+                table.setWidths(new float[]{30, 70});
+                table.addCell(new PdfPCell(new com.lowagie.text.Phrase("Razón Social", fontBold)));
+                table.addCell(new PdfPCell(new com.lowagie.text.Phrase(plan.getDatosEmpresa().getRazonSocial(), font)));
+                table.addCell(new PdfPCell(new com.lowagie.text.Phrase("Dirección", fontBold)));
+                table.addCell(new PdfPCell(new com.lowagie.text.Phrase(plan.getDatosEmpresa().getDireccion(), font)));
+                table.addCell(new PdfPCell(new com.lowagie.text.Phrase("Representante Legal", fontBold)));
+                table.addCell(new PdfPCell(new com.lowagie.text.Phrase(plan.getDatosEmpresa().getRepresentanteLegal(), font)));
+                table.addCell(new PdfPCell(new com.lowagie.text.Phrase("Teléfono", fontBold)));
+                table.addCell(new PdfPCell(new com.lowagie.text.Phrase(plan.getDatosEmpresa().getTelefono(), font)));
+                table.addCell(new PdfPCell(new com.lowagie.text.Phrase("Correo", fontBold)));
+                table.addCell(new PdfPCell(new com.lowagie.text.Phrase(plan.getDatosEmpresa().getCorreo(), font)));
+                table.addCell(new PdfPCell(new com.lowagie.text.Phrase("Celular", fontBold)));
+                table.addCell(new PdfPCell(new com.lowagie.text.Phrase(plan.getDatosEmpresa().getCelular(), font)));
+                table.addCell(new PdfPCell(new com.lowagie.text.Phrase("Descripción General", fontBold)));
+                table.addCell(new PdfPCell(new com.lowagie.text.Phrase(plan.getDatosEmpresa().getDescripcionGeneral(), font)));
+                document.add(table);
+                document.add(new com.lowagie.text.Paragraph(" "));
+            }
+
+            // Área/Departamento
+            if (plan.getAreaDepartamento() != null) {
+                document.add(new com.lowagie.text.Paragraph("3. ÁREA, DEPARTAMENTO O SECCIÓN", fontSubTitle));
+                PdfPTable table = new PdfPTable(2);
+                table.setWidthPercentage(100);
+                table.setWidths(new float[]{30, 70});
+                table.addCell(new PdfPCell(new com.lowagie.text.Phrase("Área/Departamento", fontBold)));
+                table.addCell(new PdfPCell(new com.lowagie.text.Phrase(plan.getAreaDepartamento().getAreaDepartamento(), font)));
+                table.addCell(new PdfPCell(new com.lowagie.text.Phrase("Funcionario a Cargo", fontBold)));
+                table.addCell(new PdfPCell(new com.lowagie.text.Phrase(plan.getAreaDepartamento().getFuncionarioACargo(), font)));
+                document.add(table);
+                document.add(new com.lowagie.text.Paragraph(" "));
+            }
+
+            // Situación Problemática
+            if (plan.getSituacionProblematica() != null) {
+                document.add(new com.lowagie.text.Paragraph("4. SITUACIÓN PROBLEMÁTICA", fontSubTitle));
+                document.add(new com.lowagie.text.Paragraph(plan.getSituacionProblematica(), font));
+                document.add(new com.lowagie.text.Paragraph(" "));
+            }
+
+            // Objetivos
+            if (plan.getObjetivos() != null && !plan.getObjetivos().isEmpty()) {
+                document.add(new com.lowagie.text.Paragraph("5. OBJETIVOS O LOGROS PREVISTOS", fontSubTitle));
+                for (PlanGeneralResponse.ObjetivoResponse obj : plan.getObjetivos()) {
+                    document.add(new com.lowagie.text.Paragraph(obj.getTipo() + ": " + obj.getDescripcion(), font));
+                }
+                document.add(new com.lowagie.text.Paragraph(" "));
+            }
+
+            // Técnicas y Procedimientos
+            if (plan.getTecnicasProcedimientos() != null) {
+                document.add(new com.lowagie.text.Paragraph("6. TÉCNICAS Y PROCEDIMIENTOS DE INGENIERÍA INDUSTRIAL", fontSubTitle));
+                document.add(new com.lowagie.text.Paragraph(plan.getTecnicasProcedimientos(), font));
+                document.add(new com.lowagie.text.Paragraph(" "));
+            }
+
+            // Teorías y Técnicas
+            if (plan.getTeoriasTecnicas() != null && !plan.getTeoriasTecnicas().isEmpty()) {
+                document.add(new com.lowagie.text.Paragraph("7. TEORÍAS Y TÉCNICAS APLICABLES", fontSubTitle));
+                for (PlanGeneralResponse.TeoriaTecnicaResponse t : plan.getTeoriasTecnicas()) {
+                    document.add(new com.lowagie.text.Paragraph("• " + t.getNombre() + ": " + t.getDescripcion(), font));
+                }
+                document.add(new com.lowagie.text.Paragraph(" "));
+            }
+
+            // Cronograma
+            if (plan.getCronograma() != null && !plan.getCronograma().isEmpty()) {
+                document.add(new com.lowagie.text.Paragraph("8. CRONOGRAMA DE ACTIVIDADES", fontSubTitle));
+                PdfPTable table = new PdfPTable(7);
+                table.setWidthPercentage(100);
+                table.setWidths(new float[]{5, 20, 15, 15, 15, 15, 15});
+                String[] headers = {"#", "Actividad", "Inicio", "Fin", "Dur. (sem)", "Objetivo Esp.", "Orden"};
+                for (String h : headers) {
+                    PdfPCell cell = new PdfPCell(new com.lowagie.text.Phrase(h, fontBold));
+                    cell.setBackgroundColor(new Color(211, 211, 211)); // Light gray
+                    table.addCell(cell);
+                }
+                for (PlanGeneralResponse.ActividadResponse act : plan.getCronograma()) {
+                    table.addCell(new PdfPCell(new com.lowagie.text.Phrase(String.valueOf(act.getOrden()), font)));
+                    table.addCell(new PdfPCell(new com.lowagie.text.Phrase(act.getActividad(), font)));
+                    table.addCell(new PdfPCell(new com.lowagie.text.Phrase(act.getFechaInicioPrevista() != null ? act.getFechaInicioPrevista().toString() : "", font)));
+                    table.addCell(new PdfPCell(new com.lowagie.text.Phrase(act.getFechaFinPrevista() != null ? act.getFechaFinPrevista().toString() : "", font)));
+                    table.addCell(new PdfPCell(new com.lowagie.text.Phrase(act.getDuracionSemanas() != null ? String.valueOf(act.getDuracionSemanas()) : "", font)));
+                    table.addCell(new PdfPCell(new com.lowagie.text.Phrase(act.getIdObjetivoEspecifico() != null ? String.valueOf(act.getIdObjetivoEspecifico()) : "", font)));
+                    table.addCell(new PdfPCell(new com.lowagie.text.Phrase(String.valueOf(act.getOrden()), font)));
+                }
+                document.add(table);
+                document.add(new com.lowagie.text.Paragraph(" "));
+            }
+
+            // Observaciones
+            if (plan.getObservaciones() != null && !plan.getObservaciones().isEmpty()) {
+                document.add(new com.lowagie.text.Paragraph("9. OBSERVACIONES", fontSubTitle));
+                for (PlanGeneralResponse.ObservacionResponse obs : plan.getObservaciones()) {
+                    document.add(new com.lowagie.text.Paragraph("[" + obs.getTipo() + "] " + obs.getDescripcion(), font));
+                }
+                document.add(new com.lowagie.text.Paragraph(" "));
+            }
+
+            // Historial
+            if (plan.getHistorialEstados() != null && !plan.getHistorialEstados().isEmpty()) {
+                document.add(new com.lowagie.text.Paragraph("10. HISTORIAL DE ESTADOS", fontSubTitle));
+                PdfPTable table = new PdfPTable(5);
+                table.setWidthPercentage(100);
+                table.setWidths(new float[]{15, 15, 25, 20, 25});
+                String[] headers = {"Estado Ant.", "Estado Nuevo", "Usuario", "Fecha", "Observación"};
+                for (String h : headers) {
+                    PdfPCell cell = new PdfPCell(new com.lowagie.text.Phrase(h, fontBold));
+                    cell.setBackgroundColor(new Color(211, 211, 211)); // Light gray
+                    table.addCell(cell);
+                }
+                for (PlanGeneralResponse.HistorialEstadoResponse hist : plan.getHistorialEstados()) {
+                    table.addCell(new PdfPCell(new com.lowagie.text.Phrase(hist.getEstadoAnterior(), font)));
+                    table.addCell(new PdfPCell(new com.lowagie.text.Phrase(hist.getEstadoNuevo(), font)));
+                    table.addCell(new PdfPCell(new com.lowagie.text.Phrase(hist.getNombreUsuario(), font)));
+                    table.addCell(new PdfPCell(new com.lowagie.text.Phrase(hist.getFechaCambio().toString(), font)));
+                    table.addCell(new PdfPCell(new com.lowagie.text.Phrase(hist.getObservacion() != null ? hist.getObservacion() : "", font)));
+                }
+                document.add(table);
+            }
+
+            document.close();
+            return baos.toByteArray();
+
+        } catch (Exception e) {
+            log.error("Error generando PDF del Plan General {}", planId, e);
+            throw new BusinessException("Error generando PDF: " + e.getMessage());
+        }
     }
 }

@@ -1,5 +1,6 @@
 package edu.unt.ingenieria_industrial.sgpp.core.exportacion.service;
 
+import edu.unt.ingenieria_industrial.sgpp.core.plan.dto.PlanGeneralResponse;
 import edu.unt.ingenieria_industrial.sgpp.core.exportacion.dto.ArchivoExportadoDTO;
 import edu.unt.ingenieria_industrial.sgpp.core.exportacion.dto.GenerarDocumentoInternoRequest;
 import edu.unt.ingenieria_industrial.sgpp.core.exportacion.dto.RegistroGeneracionDTO;
@@ -16,4 +17,6 @@ public interface ExportacionService {
     ArchivoExportadoDTO generarDocumentoInterno(GenerarDocumentoInternoRequest request);
 
     List<RegistroGeneracionDTO> consultarHistorial(Long idExpediente, Long idUsuario);
+
+    byte[] generarPlanGeneralPdf(Long planId);
 }

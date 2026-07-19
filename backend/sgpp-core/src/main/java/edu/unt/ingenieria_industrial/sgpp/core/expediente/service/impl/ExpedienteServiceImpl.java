@@ -12,6 +12,8 @@ import edu.unt.ingenieria_industrial.sgpp.core.expediente.model.*;
 import edu.unt.ingenieria_industrial.sgpp.core.expediente.repository.*;
 import edu.unt.ingenieria_industrial.sgpp.core.expediente.service.ExpedienteAccesoService;
 import edu.unt.ingenieria_industrial.sgpp.core.expediente.service.ExpedienteService;
+import edu.unt.ingenieria_industrial.sgpp.core.plan.dto.PlanGeneralResponse;
+import edu.unt.ingenieria_industrial.sgpp.core.plan.service.PlanGeneralService;
 import edu.unt.ingenieria_industrial.sgpp.core.practicas.model.TipoPractica;
 import edu.unt.ingenieria_industrial.sgpp.core.practicas.repository.PracticaRepository;
 import edu.unt.ingenieria_industrial.sgpp.core.practicas.repository.TipoPracticaRepository;
@@ -57,7 +59,7 @@ public class ExpedienteServiceImpl implements ExpedienteService {
     private static final String VALIDADO_SECRETARIA = "VALIDADO_SECRETARIA";
     private static final String CARTA_PRESENTACION_EMITIDA = "CARTA_PRESENTACION_EMITIDA";
 
-    private final ExpedienteRepository expedienteRepository;
+private final ExpedienteRepository expedienteRepository;
     private final ExpedienteEstadoRepository estadoRepository;
     private final ExpedienteDocumentoRepository documentoRepository;
     private final ExpedienteComiteRepository comiteRepository;
@@ -78,6 +80,7 @@ public class ExpedienteServiceImpl implements ExpedienteService {
     private final NotificacionEventoService notificacionEventoService;
     private final edu.unt.ingenieria_industrial.sgpp.core.evaluacion.service.ComponenteEvaluacionService componenteEvaluacionService;
     private final ExportacionService exportacionService;
+    private final PlanGeneralService planGeneralService;
 
     @Override
     public ExpedienteResponse crear(CrearExpedienteRequest request, Long idUsuario) {
@@ -1204,6 +1207,40 @@ public class ExpedienteServiceImpl implements ExpedienteService {
                         .observaciones(doc.getObservaciones())
                         .build())
                 .collect(Collectors.toList()));
+
+        // Incluir Plan General (Anexo 1) si existe
+        try {
+            PlanGeneralResponse planActivo = planGeneralService.findActivoByExpedienteId(e.getId());
+            if (planActivo != null) {
+                builder.planGeneral(planActivo);
+                // También agregarlo como documento virtual en la lista
+List<ExpedienteResponse.ExpedienteDocumentoResponse> docs = new ArrayList<>(e.getDocumentos().stream()
+                .map(doc -> ExpedienteResponse.ExpedienteDocumentoResponse.builder()
+                        .id(doc.getId())
+                        .tipoDocumento(doc.getTipoDocumento())
+                        .nombreArchivo(doc.getNombreArchivo())
+                        .rutaArchivo(doc.getRutaArchivo())
+                        .estado(doc.getEstado())
+                        .idUsuario(doc.getUsuario() != null ? doc.getUsuario().getId() : null)
+                        .fechaSubida(doc.getFechaSubida())
+                        .observaciones(doc.getObservaciones())
+                        .build())
+                .collect(Collectors.toList()));
+                docs.add(ExpedienteResponse.ExpedienteDocumentoResponse.builder()
+                        .id(planActivo.getId() * -1) // ID negativo para distinguir
+                        .tipoDocumento("PLAN_GENERAL")
+                        .nombreArchivo("Plan de Prácticas (Anexo 1) v" + planActivo.getVersion() + ".pdf")
+                        .rutaArchivo("plan_general:" + planActivo.getId())
+                        .estado(planActivo.getEstado())
+                        .idUsuario(null)
+                        .fechaSubida(planActivo.getFechaPresentacion() != null ? planActivo.getFechaPresentacion() : planActivo.getFechaCreacion())
+                        .observaciones("Plan General estructurado - Anexo 1")
+                        .build());
+                builder.documentos(docs);
+            }
+        } catch (Exception ex) {
+            log.warn("No se pudo cargar plan general para expediente {}", e.getId(), ex);
+        }
 
         builder.comite(e.getComite().stream()
                 .filter(ExpedienteComite::getActivo)

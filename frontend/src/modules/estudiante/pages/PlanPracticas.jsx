@@ -66,6 +66,7 @@ export const PlanPracticas = () => {
   const [expediente, setExpediente] = useState(null);
   const [plan, setPlan] = useState(null);
   const [planEstado, setPlanEstado] = useState(null);
+  const [existingPlanId, setExistingPlanId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -75,15 +76,28 @@ export const PlanPracticas = () => {
         const response = await expedientesApi.getMisExpedientes();
         const expedientes = response.data?.data || [];
         const activo = expedientes[0];
-        if (!activo) return;
-
+        if (!activo) {
+          setLoading(false);
+          return;
+        }
         setExpediente(activo);
-        const planResponse = await planesApi.getActivoByExpediente(activo.id);
-        const existente = planResponse.data?.data;
-        if (existente) {
-          setPlan(mapPlan(existente));
-          setPlanEstado(existente.estado);
-        } else {
+        try {
+          const planResponse = await planesApi.getActivoByExpediente(activo.id);
+          const existente = planResponse.data?.data;
+          if (existente) {
+            setExistingPlanId(existente.id);
+            setPlanEstado(existente.estado);
+            if (existente.estado === 'BORRADOR' && existente.caratula) {
+              setPlan(mapPlan(existente));
+            } else if (existente.estado === 'BORRADOR' && !existente.caratula) {
+              setPlan(planInitial(activo));
+            } else {
+              setPlan(mapPlan(existente));
+            }
+          } else {
+            setPlan(planInitial(activo));
+          }
+        } catch {
           setPlan(planInitial(activo));
         }
       } catch (error) {
@@ -157,14 +171,35 @@ export const PlanPracticas = () => {
         objetivos: plan.objetivos.map((item, index) => ({ ...item, orden: index + 1 })),
         cronograma: plan.cronograma.map((item, index) => ({ ...item, orden: index + 1, duracionSemanas: Number(item.duracionSemanas) || null })),
       };
-      const created = await planesApi.registrar(payload);
-      const planId = created.data?.data?.id;
-      await planesApi.presentar(planId);
+      if (existingPlanId && planEstado === 'BORRADOR') {
+        await planesApi.presentar(existingPlanId);
+      } else {
+        const created = await planesApi.registrar(payload);
+        const planId = created.data?.data?.id;
+        if (!planId) throw new Error('No se obtuvo el ID del plan creado');
+        await planesApi.presentar(planId);
+      }
       setPlanEstado('PRESENTADO');
       await Swal.fire({ icon: 'success', title: 'Plan presentado', text: 'El Plan de Prácticas fue enviado para revisión.' });
     } catch (error) {
-      console.error('No se pudo presentar el plan', error);
-      await Swal.fire({ icon: 'error', title: 'No se pudo presentar', text: error.response?.data?.message || 'Revisa los datos obligatorios e intenta nuevamente.' });
+      const message = error.response?.data?.message || '';
+      if (message.includes('Ya existe un plan activo')) {
+        try {
+          const planResponse = await planesApi.getActivoByExpediente(expediente.id);
+          const activo = planResponse.data?.data;
+          if (activo && activo.estado === 'BORRADOR') {
+            await planesApi.presentar(activo.id);
+            setPlanEstado('PRESENTADO');
+            await Swal.fire({ icon: 'success', title: 'Plan presentado', text: 'El Plan existente fue presentado correctamente.' });
+            return;
+          }
+        } catch (innerError) {
+          console.error('Error al recuperar plan activo', innerError);
+        }
+        await Swal.fire({ icon: 'error', title: 'Plan duplicado', text: 'Ya existe un Plan activo que no se pudo presentar. Contacta al administrador.' });
+      } else {
+        await Swal.fire({ icon: 'error', title: 'No se pudo presentar', text: message || 'Revisa los datos obligatorios e intenta nuevamente.' });
+      }
     } finally {
       setSubmitting(false);
     }
@@ -173,7 +208,7 @@ export const PlanPracticas = () => {
   if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}><CircularProgress /></Box>;
   if (!expediente || !plan) return <ModulePageShell><Alert severity="info">No tienes un expediente activo.</Alert></ModulePageShell>;
 
-  const editable = !planEstado || planEstado === 'OBSERVADO';
+  const editable = !planEstado || planEstado === 'BORRADOR' || planEstado === 'OBSERVADO';
   const field = (section, name, label, options = {}) => (
     <TextField fullWidth label={label} value={plan[section][name] || ''} onChange={(event) => update(section, name, event.target.value)} disabled={!editable} {...options} />
   );
@@ -187,7 +222,7 @@ export const PlanPracticas = () => {
           <Typography variant="h6" gutterBottom>1. Del practicante</Typography>
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, md: 6 }}>{field('caratula', 'autor', 'Nombre del practicante', { required: true })}</Grid>
-            <Grid size={{ xs: 12, md: 6 }}>{field('caratula', 'fecha', 'Fecha del Plan', { type: 'date', InputLabelProps: { shrink: true }, required: true })}</Grid>
+            <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth type="date" label="Fecha del Plan" value={plan.caratula.fecha || ''} onChange={(event) => update('caratula', 'fecha', event.target.value)} disabled={!editable} required slotProps={{ inputLabel: { shrink: true } }} /></Grid>
             <Grid size={{ xs: 12 }}>{field('caratula', 'institucion', 'Institución', { required: true })}</Grid>
             <Grid size={{ xs: 12 }}>{field('caratula', 'nombrePlan', 'Nombre del Plan', { required: true })}</Grid>
             <Grid size={{ xs: 12 }}>{field('caratula', 'asesor', expediente.codigoTipoPractica === 'INICIAL' ? 'Docente asesor' : 'Responsable de revisión')}</Grid>
@@ -225,7 +260,7 @@ export const PlanPracticas = () => {
           <Stack spacing={1.5}>
             {plan.objetivos.map((objective, index) => (
               <Box key={index} sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                <TextField select SelectProps={{ native: true }} disabled={!editable || index === 0} label="Tipo" value={objective.tipo} onChange={(event) => updateList('objetivos', index, 'tipo', event.target.value)} sx={{ width: 150 }}>
+                <TextField select disabled={!editable || index === 0} label="Tipo" value={objective.tipo} onChange={(event) => updateList('objetivos', index, 'tipo', event.target.value)} sx={{ width: 150 }} slotProps={{ select: { native: true } }}>
                   <option value="GENERAL">General</option><option value="ESPECIFICO">Específico</option>
                 </TextField>
                 <TextField fullWidth required disabled={!editable} label={`Objetivo ${index + 1}`} value={objective.descripcion} onChange={(event) => updateList('objetivos', index, 'descripcion', event.target.value)} />
@@ -243,11 +278,11 @@ export const PlanPracticas = () => {
           <Stack spacing={1.5}>
             {plan.cronograma.map((activity, index) => (
               <Box key={index} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
-                <Grid container spacing={1.5} alignItems="center">
+                <Grid container spacing={1.5} sx={{ alignItems: 'center' }}>
                   <Grid size={{ xs: 12, md: 5 }}><TextField fullWidth required disabled={!editable} label="Actividad" value={activity.actividad} onChange={(event) => updateList('cronograma', index, 'actividad', event.target.value)} /></Grid>
-                  <Grid size={{ xs: 6, md: 2 }}><TextField fullWidth required disabled={!editable} type="date" label="Inicio" InputLabelProps={{ shrink: true }} value={activity.fechaInicioPrevista} onChange={(event) => updateList('cronograma', index, 'fechaInicioPrevista', event.target.value)} /></Grid>
-                  <Grid size={{ xs: 6, md: 2 }}><TextField fullWidth required disabled={!editable} type="date" label="Fin" InputLabelProps={{ shrink: true }} value={activity.fechaFinPrevista} onChange={(event) => updateList('cronograma', index, 'fechaFinPrevista', event.target.value)} /></Grid>
-                  <Grid size={{ xs: 10, md: 2 }}><TextField fullWidth disabled={!editable} type="number" label="Duración (semanas)" value={activity.duracionSemanas} onChange={(event) => updateList('cronograma', index, 'duracionSemanas', event.target.value)} inputProps={{ min: 1 }} /></Grid>
+                  <Grid size={{ xs: 6, md: 2 }}><TextField fullWidth required disabled={!editable} type="date" label="Inicio" value={activity.fechaInicioPrevista} onChange={(event) => updateList('cronograma', index, 'fechaInicioPrevista', event.target.value)} slotProps={{ inputLabel: { shrink: true } }} /></Grid>
+                  <Grid size={{ xs: 6, md: 2 }}><TextField fullWidth required disabled={!editable} type="date" label="Fin" value={activity.fechaFinPrevista} onChange={(event) => updateList('cronograma', index, 'fechaFinPrevista', event.target.value)} slotProps={{ inputLabel: { shrink: true } }} /></Grid>
+                  <Grid size={{ xs: 10, md: 2 }}><TextField fullWidth disabled={!editable} type="number" label="Duración (semanas)" value={activity.duracionSemanas} onChange={(event) => updateList('cronograma', index, 'duracionSemanas', event.target.value)} slotProps={{ htmlInput: { min: 1 } }} /></Grid>
                   <Grid size={{ xs: 2, md: 1 }}>{editable && plan.cronograma.length > 1 && <IconButton onClick={() => removeActivity(index)}><Delete /></IconButton>}</Grid>
                 </Grid>
               </Box>
