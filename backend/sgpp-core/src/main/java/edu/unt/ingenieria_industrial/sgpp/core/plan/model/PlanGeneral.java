@@ -8,6 +8,8 @@ import lombok.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.LinkedHashSet;
 
 @Data
 @Entity
@@ -47,25 +49,25 @@ public class PlanGeneral extends BaseEntity {
     @OneToMany(mappedBy = "plan", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude @EqualsAndHashCode.Exclude
     @Builder.Default
-    private List<PlanSeccion> secciones = new ArrayList<>();
+    private Set<PlanSeccion> secciones = new LinkedHashSet<>();
 
     @OneToMany(mappedBy = "plan", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude @EqualsAndHashCode.Exclude
     @Builder.Default
-    private List<PlanObjetivo> objetivos = new ArrayList<>();
+    private Set<PlanObjetivo> objetivos = new LinkedHashSet<>();
 
     @OneToMany(mappedBy = "plan", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude @EqualsAndHashCode.Exclude
     @Builder.Default
-    private List<PlanCronogramaActividad> cronograma = new ArrayList<>();
+    private Set<PlanCronogramaActividad> cronograma = new LinkedHashSet<>();
 
     @OneToMany(mappedBy = "plan", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude @EqualsAndHashCode.Exclude
     @Builder.Default
-    private List<PlanObservacion> observaciones = new ArrayList<>();
+    private Set<PlanObservacion> observaciones = new LinkedHashSet<>();
 
     @OneToMany(mappedBy = "plan", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude @EqualsAndHashCode.Exclude
     @Builder.Default
-    private List<PlanHistorialEstado> historialEstados = new ArrayList<>();
+    private Set<PlanHistorialEstado> historialEstados = new LinkedHashSet<>();
 }

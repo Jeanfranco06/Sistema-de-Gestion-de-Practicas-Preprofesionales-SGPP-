@@ -360,7 +360,7 @@ public class PlanGeneralServiceImpl implements PlanGeneralService {
     @Override
     @Transactional(readOnly = true)
     public PlanGeneralResponse findById(Long id) {
-        PlanGeneral plan = planRepository.findByIdWithAllRelations(id)
+        PlanGeneral plan = planRepository.findByIdWithExpediente(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Plan General no encontrado: " + id));
         return toResponse(plan);
     }
@@ -372,7 +372,8 @@ public class PlanGeneralServiceImpl implements PlanGeneralService {
                 .findTopByExpedienteIdAndActivoTrueOrderByVersionDesc(expedienteId)
                 .orElse(null);
         if (plan == null) return null;
-        return toResponse(plan);
+        PlanGeneral full = planRepository.findByIdWithExpediente(plan.getId()).orElse(plan);
+        return toResponse(full);
     }
 
     @Override
@@ -386,7 +387,7 @@ public class PlanGeneralServiceImpl implements PlanGeneralService {
     @Override
     @Transactional(readOnly = true)
     public ValidacionEstructuraResponse validarEstructura(Long idPlan) {
-        PlanGeneral plan = planRepository.findByIdWithAllRelations(idPlan)
+        PlanGeneral plan = planRepository.findByIdWithExpediente(idPlan)
                 .orElseThrow(() -> new ResourceNotFoundException("Plan General no encontrado: " + idPlan));
         return validarEstructura(plan);
     }
@@ -426,6 +427,7 @@ public class PlanGeneralServiceImpl implements PlanGeneralService {
                     if (isBlank(car.getInstitucion())) errores.add("Carátula: falta 'institución'");
                     if (isBlank(car.getNombrePlan())) errores.add("Carátula: falta 'nombre del plan'");
                     if (isBlank(car.getAutor())) errores.add("Carátula: falta 'autor'");
+                    if (isBlank(car.getAsesor())) errores.add("Carátula: falta 'asesor'");
                     if (car.getFecha() == null) errores.add("Carátula: falta 'fecha'");
                 } catch (JsonProcessingException e) {
                     errores.add("Carátula: formato inválido");
@@ -447,6 +449,9 @@ public class PlanGeneralServiceImpl implements PlanGeneralService {
                     if (isBlank(emp.getDireccion())) errores.add("Empresa: falta 'dirección'");
                     if (isBlank(emp.getRepresentanteLegal())) errores.add("Empresa: falta 'representante legal'");
                     if (isBlank(emp.getTelefono())) errores.add("Empresa: falta 'teléfono'");
+                    if (isBlank(emp.getCorreo())) errores.add("Empresa: falta 'correo'");
+                    if (isBlank(emp.getCelular())) errores.add("Empresa: falta 'celular'");
+                    if (isBlank(emp.getDescripcionGeneral())) errores.add("Empresa: falta 'descripción general'");
                 } catch (JsonProcessingException e) {
                     errores.add("Datos de Empresa: formato inválido");
                 }
@@ -512,13 +517,13 @@ public class PlanGeneralServiceImpl implements PlanGeneralService {
                 errores.add("Cronograma actividad #" + (i + 1) + ": fecha fin es anterior a fecha inicio");
             }
             if (act.getObjetivoEspecifico() == null) {
-                advertencias.add("Cronograma actividad #" + (i + 1) + ": no está vinculada a un objetivo específico");
+                errores.add("Cronograma actividad #" + (i + 1) + ": debe estar vinculada a un objetivo específico");
             } else {
                 boolean valido = objetivos.stream()
                         .anyMatch(o -> o.getId().equals(act.getObjetivoEspecifico().getId())
                                 && "ESPECIFICO".equals(o.getTipo()));
                 if (!valido) {
-                    advertencias.add("Cronograma actividad #" + (i + 1) +
+                    errores.add("Cronograma actividad #" + (i + 1) +
                             ": el objetivo vinculado no es específico o no pertenece al plan");
                 }
             }
@@ -673,7 +678,7 @@ public class PlanGeneralServiceImpl implements PlanGeneralService {
     }
 
     private PlanGeneral findPlan(Long id) {
-        return planRepository.findByIdWithAllRelations(id)
+        return planRepository.findByIdWithExpediente(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Plan General no encontrado: " + id));
     }
 

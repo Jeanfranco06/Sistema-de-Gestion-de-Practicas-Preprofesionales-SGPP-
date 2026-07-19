@@ -18,15 +18,6 @@ public interface PlanGeneralRepository extends JpaRepository<PlanGeneral, Long> 
     @Query("SELECT p FROM PlanGeneral p JOIN FETCH p.expediente WHERE p.id = :id")
     Optional<PlanGeneral> findByIdWithExpediente(Long id);
 
-    @Query("SELECT p FROM PlanGeneral p JOIN FETCH p.expediente e " +
-           "LEFT JOIN FETCH p.secciones s " +
-           "LEFT JOIN FETCH p.objetivos o " +
-           "LEFT JOIN FETCH p.cronograma c " +
-           "LEFT JOIN FETCH p.observaciones obs " +
-           "LEFT JOIN FETCH p.historialEstados h " +
-           "WHERE p.id = :id")
-    Optional<PlanGeneral> findByIdWithAllRelations(Long id);
-
     List<PlanGeneral> findByExpedienteIdAndEstadoAndActivoTrue(Long expedienteId, String estado);
 
     boolean existsByExpedienteIdAndEstadoInAndActivoTrue(Long expedienteId, List<String> estados);
