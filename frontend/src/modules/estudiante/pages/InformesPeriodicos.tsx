@@ -1,13 +1,17 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { CloudUpload, Download, Clock, CheckCircle, Lock, FileText, Calendar, FileSpreadsheet } from 'lucide-react';
+import {
+  CloudUpload, Download, Clock, CheckCircle, Lock, FileText, Calendar,
+  FileSpreadsheet, Loader2, FolderArchive,
+} from 'lucide-react';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
-import { expedientesApi } from '../../../api/expedientesApi';
-import { exportacionApi } from '../../../api/exportacionApi';
-import api from '../../../api/axios';
-import { ESTADOS_EXPEDIENTE } from '../../../lib/constants';
-import { useAuth } from '../../../auth/AuthContext';
-import { Card, CardContent, Badge, Button, Progress, Separator, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../../../ui';
+import { expedientesApi } from '@/api/expedientesApi';
+import { exportacionApi } from '@/api/exportacionApi';
+import api from '@/api/axios';
+import { ESTADOS_EXPEDIENTE } from '@/lib/constants';
+import { useAuth } from '@/auth/AuthContext';
+import { Card, CardContent, Badge, Button, Progress, Separator, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/ui';
+import { cn } from '@/lib/utils';
 
 const MySwal = withReactContent(Swal);
 
@@ -170,7 +174,7 @@ export const InformesPeriodicos = () => {
       const { fileName } = uploadRes.data as { fileName: string };
 
       await api.post(`/expedientes/${expediente.id}/documentos`, null, {
-        params: { tipoDocumento: uploadDialog.hito.tipo, nombreDoc: selectedFile.name, fileName }
+        params: { tipoDocumento: uploadDialog.hito.tipo, nombreDoc: selectedFile.name, fileName },
       });
 
       if (uploadDialog.hito.tipo === 'INFORME_PARCIAL_1' || uploadDialog.hito.tipo === 'INFORME_PARCIAL_2') {
@@ -238,7 +242,7 @@ export const InformesPeriodicos = () => {
     }
   };
 
-  const getEstadoBadge = (estado: HitoConEstado['estado']): React.ReactNode => {
+  const getEstadoBadge = (estado: HitoConEstado['estado']) => {
     switch (estado) {
       case 'APROBADO':
         return <Badge variant="success" size="sm"><CheckCircle className="h-3 w-3" /> Aprobado</Badge>;
@@ -264,102 +268,117 @@ export const InformesPeriodicos = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-[50vh]">
-        <svg className="animate-spin h-8 w-8" style={{ color: 'var(--color-primary-600)' }} viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" fill="none" />
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-        </svg>
+      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
+        <Loader2 className="h-8 w-8 animate-spin text-primary-600" aria-hidden="true" />
+        <p className="text-sm text-muted-foreground">Cargando informes...</p>
       </div>
     );
   }
 
   if (!expediente) {
     return (
-      <div className="px-4 sm:px-6 lg:px-10 py-4 md:py-8 w-full">
-        <Card>
-          <CardContent className="flex flex-col items-center text-center py-12">
-            <FileText className="h-12 w-12" style={{ color: 'var(--color-muted-foreground)' }} />
-            <h3 className="text-lg font-semibold mt-4" style={{ color: 'var(--color-foreground)' }}>Sin expediente activo</h3>
-            <p className="text-sm mt-2" style={{ color: 'var(--color-muted-foreground)' }}>No tienes ninguna práctica registrada para gestionar informes.</p>
-          </CardContent>
+      <div className="flex min-h-[60vh] items-center justify-center p-4 animate-in">
+        <Card className="max-w-2xl w-full text-center px-8 py-16 md:px-16 md:py-20">
+          <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900/20">
+            <FolderArchive className="h-12 w-12 text-primary-700 dark:text-primary-300" />
+          </div>
+          <h2 className="text-3xl md:text-4xl font-extrabold text-foreground mb-4 tracking-tight">
+            Sin expediente activo
+          </h2>
+          <p className="text-foreground/70 leading-relaxed mb-8 text-base md:text-lg max-w-lg mx-auto">
+            No tienes ninguna práctica registrada para gestionar informes.
+          </p>
         </Card>
       </div>
     );
   }
 
   return (
-    <div className="px-4 sm:px-6 lg:px-10 py-4 md:py-8 w-full">
-
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl" style={{ backgroundColor: 'var(--color-primary-100)', color: 'var(--color-primary-700)' }}>
-            <FileText className="h-6 w-6" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold" style={{ color: 'var(--color-foreground)' }}>Informes periódicos</h1>
-            <p className="text-sm mt-0.5" style={{ color: 'var(--color-muted-foreground)' }}>
-              Carga tus informes en las ventanas de tiempo establecidas para prácticas {expediente.codigoTipoPractica?.toLowerCase() || ''}.
-            </p>
-          </div>
+    <div className="space-y-6 p-4 sm:p-6 lg:p-8 w-full">
+      {/* Header Banner */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary-700 to-primary-900 text-white p-6 md:p-8">
+        <div className="absolute right-[-20px] top-2 opacity-10 md:right-[-50px] md:top-[-50px]">
+          <FileText className="h-[150px] w-[150px] md:h-[300px] md:w-[300px]" />
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="secondary" size="sm" onClick={handleDownloadPlantilla}>
-            <FileSpreadsheet className="h-4 w-4" /> Plantilla informe final
-          </Button>
-          <Badge variant="info" size="sm">{enviados} de {hitos.length} enviados</Badge>
+        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center justify-center rounded-full shrink-0 w-14 h-14 bg-white/15">
+              <Calendar className="h-7 w-7" />
+            </div>
+            <div>
+              <h1 className="text-2xl md:text-3xl font-extrabold">Informes periódicos</h1>
+              <p className="text-sm opacity-90 mt-1">
+                Carga tus informes en las ventanas de tiempo establecidas para prácticas {expediente.codigoTipoPractica?.toLowerCase() || ''}.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 self-start md:self-auto shrink-0">
+            <Button variant="secondary" size="sm" onClick={handleDownloadPlantilla}>
+              <FileSpreadsheet className="h-4 w-4" /> Plantilla informe final
+            </Button>
+            <Badge variant="info" size="sm" className="bg-white/15 text-white border border-white/20 px-3 py-1.5">
+              {enviados} de {hitos.length} enviados
+            </Badge>
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+      {/* Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
-          { label: 'Disponibles', value: disponibles, color: 'var(--color-primary-600)' },
-          { label: 'Enviados', value: enviados, color: 'var(--color-emerald-600)' },
-          { label: 'Bloqueados', value: hitos.length - disponibles, color: 'var(--color-muted-foreground)' },
+          { label: 'Disponibles', value: disponibles, color: 'bg-primary-600 text-white dark:bg-primary-700' },
+          { label: 'Enviados', value: enviados, color: 'bg-emerald-600 text-white dark:bg-emerald-700' },
+          { label: 'Bloqueados', value: hitos.length - disponibles, color: 'bg-muted text-muted-foreground dark:bg-muted' },
         ].map((item) => (
-          <Card key={item.label}>
-            <CardContent className="p-4">
-              <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--color-muted-foreground)' }}>{item.label}</p>
-              <p className="text-2xl font-bold mt-1" style={{ color: item.color }}>{item.value}</p>
-            </CardContent>
+          <Card key={item.label} variant="hover" className="p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-hover">
+            <p className="text-[0.65rem] font-bold uppercase tracking-wider text-muted-foreground">{item.label}</p>
+            <div className="flex items-center justify-between mt-2">
+              <p className="text-3xl font-extrabold text-foreground">{item.value}</p>
+              <div className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg', item.color)}>
+                <FileText className="h-5 w-5" />
+              </div>
+            </div>
           </Card>
         ))}
       </div>
 
-      <Card className="mb-6">
-        <CardContent>
-          <h3 className="text-sm font-bold mb-3" style={{ color: 'var(--color-foreground)' }}>Progreso del semestre</h3>
+      {/* Progress */}
+      <Card className="p-5">
+        <CardContent className="p-0">
+          <h3 className="text-sm font-bold text-foreground mb-3">Progreso del semestre</h3>
           <div className="flex items-center gap-4">
             <div className="flex-1">
               <Progress value={progreso} />
             </div>
-            <span className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>{progreso}%</span>
+            <span className="text-sm font-semibold text-muted-foreground">{progreso}%</span>
           </div>
-          <p className="text-xs mt-2" style={{ color: 'var(--color-muted-foreground)' }}>Expediente: {expediente.codigoExpediente}</p>
+          <p className="text-xs text-muted-foreground mt-2">Expediente: {expediente.codigoExpediente}</p>
         </CardContent>
       </Card>
 
+      {/* Hitos */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {hitos.map((hito) => {
           const isProximo = hito.estado === 'PENDIENTE' && !hito.bloqueado;
           return (
-            <Card key={hito.id}>
+            <Card key={hito.id} className="flex flex-col">
               <CardContent className="p-5 flex flex-col h-full">
                 <div className="flex items-center justify-between gap-2 mb-3">
                   <div className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5" style={{ color: hito.bloqueado ? 'var(--color-muted-foreground)' : 'var(--color-primary-600)' }} />
-                    <h3 className="text-base font-bold" style={{ color: hito.bloqueado ? 'var(--color-muted-foreground)' : 'var(--color-foreground)' }}>
+                    <Calendar className={cn('h-5 w-5', hito.bloqueado ? 'text-muted-foreground' : 'text-primary-700 dark:text-primary-400')} />
+                    <h3 className={cn('text-base font-bold', hito.bloqueado ? 'text-muted-foreground' : 'text-foreground')}>
                       Semana {hito.semana}
                     </h3>
                   </div>
                   {getEstadoBadge(hito.estado)}
                 </div>
 
-                <p className="text-sm font-semibold mb-2" style={{ color: 'var(--color-foreground)' }}>{hito.nombre}</p>
+                <p className="text-sm font-semibold text-foreground mb-2">{hito.nombre}</p>
 
                 <div className="mb-4 flex-1">
-                  <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>{hito.descripcion}</p>
+                  <p className="text-sm text-muted-foreground">{hito.descripcion}</p>
                   {isProximo && (
-                    <div className="mt-2 px-2 py-1 rounded-md text-xs font-medium bg-[var(--color-amber-100)] text-[var(--color-amber-800)]">
+                    <div className="mt-2 px-2 py-1 rounded-md text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">
                       Pendiente de envío
                     </div>
                   )}
@@ -370,7 +389,7 @@ export const InformesPeriodicos = () => {
                 <div>
                   {hito.archivo ? (
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm truncate max-w-[65%]" title={hito.archivo} style={{ color: 'var(--color-foreground)' }}>
+                      <span className="text-sm truncate max-w-[65%] text-foreground" title={hito.archivo}>
                         {hito.archivo}
                       </span>
                       <Button variant="secondary" size="sm" onClick={() => handleDownload(hito)}>
@@ -395,13 +414,16 @@ export const InformesPeriodicos = () => {
         })}
       </div>
 
+      {/* Upload Dialog */}
       <Dialog open={uploadDialog.open} onOpenChange={() => handleCloseUpload()}>
-        <DialogContent size="sm">
-          <DialogHeader>
-            <DialogTitle>Cargar {uploadDialog.hito?.nombre}</DialogTitle>
-          </DialogHeader>
+        <DialogContent size="sm" className="p-0 overflow-hidden">
+          <div className="bg-[#1A3A6E] dark:bg-[#4A6FA5] text-white px-6 py-5 border-b-4 border-primary-600">
+            <DialogHeader>
+              <DialogTitle className="text-white">Cargar {uploadDialog.hito?.nombre}</DialogTitle>
+            </DialogHeader>
+          </div>
           <div className="p-6">
-            <div className="border-2 border-dashed rounded-xl p-6 text-center" style={{ borderColor: 'var(--color-border)' }}>
+            <div className="border-2 border-dashed border-primary-200 dark:border-primary-800 bg-primary-50/50 dark:bg-primary-950/20 hover:bg-primary-50 dark:hover:bg-primary-900/30 transition-colors rounded-xl p-6 text-center">
               <input
                 ref={fileInputRef}
                 accept="application/pdf"
@@ -415,13 +437,13 @@ export const InformesPeriodicos = () => {
                 Seleccionar archivo PDF
               </Button>
               {selectedFile && (
-                <p className="mt-3 text-sm" style={{ color: 'var(--color-emerald-600)' }}>
+                <p className="mt-3 text-sm text-emerald-600 dark:text-emerald-400">
                   Archivo: {selectedFile.name}
                 </p>
               )}
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="bg-muted/30 px-6 py-4 border-t border-border">
             <Button variant="secondary" onClick={handleCloseUpload}>Cancelar</Button>
             <Button onClick={handleUpload} disabled={!selectedFile}>Subir</Button>
           </DialogFooter>

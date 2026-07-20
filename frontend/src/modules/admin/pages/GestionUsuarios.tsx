@@ -4,9 +4,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import Drawer from '@mui/material/Drawer';
-import Stepper from '@mui/material/Stepper';
-import Step from '@mui/material/Step';
-import StepLabel from '@mui/material/StepLabel';
 import {
   useUsuarios,
   useUsuarioDetalle,
@@ -66,6 +63,7 @@ import {
   AlertTriangle,
   Loader2,
 } from 'lucide-react';
+import { cn } from '../../../lib/utils';
 
 const MySwal = withReactContent(Swal);
 
@@ -733,50 +731,84 @@ function GestionUsuarios() {
 
   const totalPages = Math.ceil(sortedUsuarios.length / rowsPerPage);
 
+  const Stepper = ({ activeStep }: { activeStep: number }) => (
+    <div className="w-full">
+      <div className="flex items-center justify-between">
+        {WIZARD_STEPS.map((label, idx) => {
+          const isActive = idx === activeStep;
+          const isCompleted = idx < activeStep;
+          const isLast = idx === WIZARD_STEPS.length - 1;
+          return (
+            <div key={label} className={cn('flex flex-col items-center', idx === 0 ? 'items-start' : isLast ? 'items-end' : 'items-center')}>
+              <div className="flex items-center w-full">
+                <div
+                  className={cn(
+                    'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold border-2 transition-colors',
+                    isActive ? 'bg-primary-600 text-white border-primary-600 dark:bg-primary-700 dark:border-primary-700' :
+                    isCompleted ? 'bg-emerald-600 text-white border-emerald-600 dark:bg-emerald-700 dark:border-emerald-700' :
+                    'bg-card text-muted-foreground border-border'
+                  )}
+                >
+                  {isCompleted ? <CheckCircle2 className="h-4 w-4" /> : idx + 1}
+                </div>
+                {!isLast && (
+                  <div className={cn('h-1 flex-1 mx-2 rounded-full transition-colors', isCompleted ? 'bg-emerald-600 dark:bg-emerald-700' : 'bg-border')} />
+                )}
+              </div>
+              <span className={cn('text-[0.65rem] mt-1.5 font-semibold hidden sm:block', isActive ? 'text-foreground' : 'text-muted-foreground')}>
+                {label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+
   if (isLoading && usuarios.length === 0) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh', flexDirection: 'column', gap: '0.75rem' }}>
-        <Loader2 className="w-12 h-12 animate-spin" style={{ color: '#1a365d' }} />
-        <p style={{ fontWeight: 500, color: 'var(--color-muted-foreground)' }}>Cargando directorio de usuarios...</p>
+      <div className="flex justify-center items-center h-[60vh] flex-col gap-3">
+        <Loader2 className="w-12 h-12 animate-spin text-primary-700" />
+        <p className="font-medium text-muted-foreground">Cargando directorio de usuarios...</p>
       </div>
     );
   }
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
-      <div className="space-y-6" style={{ padding: '1rem 1.5rem', width: '100%', paddingBottom: '2rem' }}>
+      <div className="space-y-6 p-4 pb-8 w-full">
 
-        <div
-          className="rounded-2xl p-6 md:p-8"
-          style={{ backgroundColor: '#1a365d', color: 'white', position: 'relative', overflow: 'hidden' }}
-        >
-          <div style={{ position: 'absolute', right: '-20px', top: '10px', opacity: 0.1, pointerEvents: 'none' }}>
-            <Shield style={{ width: 150, height: 150 }} />
+        {/* Header */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary-700 to-primary-900 p-6 md:p-8 text-white shadow-lg">
+          <div className="absolute right-[-20px] top-[10px] opacity-10 pointer-events-none">
+            <Shield className="w-40 h-40" />
           </div>
-          <div style={{ position: 'relative', zIndex: 1 }}>
-            <p style={{ opacity: 0.8, letterSpacing: '1.5px', fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Administración</p>
-            <h2 style={{ fontWeight: 800, fontSize: '1.75rem', marginBottom: '0.375rem' }} className="sm:text-2xl md:text-3xl">Gestión de Usuarios</h2>
-            <p style={{ opacity: 0.9 }}>Directorio centralizado de cuentas, roles y accesos al sistema SGPP</p>
+          <div className="relative z-10">
+            <p className="opacity-80 tracking-widest font-semibold text-xs uppercase mb-1">Administración</p>
+            <h2 className="text-2xl md:text-3xl font-extrabold mb-1">Gestión de Usuarios</h2>
+            <p className="opacity-90">Directorio centralizado de cuentas, roles y accesos al sistema SGPP</p>
           </div>
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', position: 'relative', zIndex: 1, marginTop: '1.5rem' }}>
-            <Button variant="primary" onClick={() => handleOpenDialog()}>
+          <div className="flex gap-2 items-center relative z-10 mt-4">
+            <Button variant="primary" onClick={() => handleOpenDialog()} className="bg-white text-[#1A3A6E] hover:bg-white/90 font-bold">
               <Plus className="w-4 h-4" /> Nuevo Usuario
             </Button>
             <Tooltip content="Actualizar Directorio">
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => refetch()}
-                style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: 'white', border: 'none', borderRadius: '8px', padding: '0.5rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                className="h-9 w-9 bg-white/10 text-white border-white/20 hover:bg-white/20 p-0"
               >
                 <RefreshCw className="w-5 h-5" />
-              </button>
+              </Button>
             </Tooltip>
           </div>
         </div>
 
-        <div className="rounded-xl border p-4" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }}>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
-            <div style={{ flex: 1, minWidth: '250px', position: 'relative' }}>
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--color-muted-foreground)' }} />
+        {/* Filters */}
+        <Card className="p-4">
+          <CardContent className="p-0 flex flex-wrap gap-3 items-end">
+            <div className="flex-1 min-w-[250px] relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar por nombre, correo o usuario..."
                 value={searchTerm}
@@ -792,7 +824,7 @@ function GestionUsuarios() {
                 { value: 'todos', label: 'Todos los roles' },
                 ...ROLES_DISPONIBLES.map((r) => ({ value: r, label: r.replace(/_/g, ' ') })),
               ]}
-              className="min-w-[140px]"
+              className="min-w-[160px]"
             />
             <Select
               label="Estado"
@@ -802,7 +834,7 @@ function GestionUsuarios() {
                 value: e,
                 label: e === 'todos' ? 'Todos' : e.charAt(0) + e.slice(1).toLowerCase(),
               }))}
-              className="min-w-[120px]"
+              className="min-w-[140px]"
             />
             <Select
               label="Origen"
@@ -812,38 +844,37 @@ function GestionUsuarios() {
                 value: t,
                 label: t === 'todos' ? 'Todos' : t,
               }))}
-              className="min-w-[120px]"
+              className="min-w-[140px]"
             />
             <Tooltip content="Limpiar filtros">
-              <button
+              <Button
+                variant="secondary"
                 onClick={limpiarFiltros}
-                style={{ backgroundColor: '#f1f5f9', color: '#64748b', border: 'none', borderRadius: '8px', padding: '0.5rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginTop: '1.25rem' }}
+                className="h-10 w-10 p-0"
               >
                 <Filter className="w-4 h-4" />
-              </button>
+              </Button>
             </Tooltip>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)', position: 'relative' }}>
+        {/* Table */}
+        <Card className="overflow-hidden relative">
           {isLoading && (
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 }}>
+            <div className="absolute top-0 left-0 right-0 z-10">
               <Progress value={100} size="sm" />
             </div>
           )}
-          <div style={{ overflowX: 'auto', opacity: isLoading ? 0.6 : 1, transition: 'opacity 0.2s ease-in-out' }}>
+          <div className={cn('overflow-x-auto transition-opacity duration-200', isLoading ? 'opacity-60' : 'opacity-100')}>
             <Table className="min-w-[800px]">
               <TableHeader>
-                <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                <TableRow className="bg-muted hover:bg-muted">
                   {headCells.map((hc) => (
-                    <th
-                      key={hc.id}
-                      style={{ fontWeight: 700, color: '#475569', padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.875rem' }}
-                    >
+                    <TableHead key={hc.id} className="font-bold text-muted-foreground">
                       {hc.sortable !== false ? (
                         <button
                           onClick={() => handleSort(hc.id)}
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontWeight: 700, color: '#475569', padding: 0, fontSize: '0.875rem' }}
+                          className="inline-flex items-center gap-1 font-bold text-muted-foreground bg-transparent border-none cursor-pointer p-0 text-sm"
                         >
                           {hc.label}
                           {orderBy === hc.id ? (
@@ -853,45 +884,42 @@ function GestionUsuarios() {
                       ) : (
                         hc.label
                       )}
-                    </th>
+                    </TableHead>
                   ))}
-                </tr>
+                </TableRow>
               </TableHeader>
               <TableBody>
                 {paginatedUsuarios.map((usuario) => (
-                  <tr key={usuario.id} style={{ borderBottom: '1px solid var(--color-border)', transition: 'background-color 0.15s' }} className="hover:bg-muted/50">
-                    <td style={{ padding: '0.75rem 1rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                  <TableRow key={usuario.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
                         <Avatar
                           size="md"
                           fallback={getInitials(usuario.nombres, usuario.apellidoPaterno)}
-                          style={{
-                            backgroundColor: usuario.tipoUsuario === 'EXTERNO' ? '#f0fdf4' : '#eff6ff',
-                            color: usuario.tipoUsuario === 'EXTERNO' ? '#166534' : '#1e40af',
-                            fontWeight: 700,
-                            border: '1px solid',
-                            borderColor: usuario.tipoUsuario === 'EXTERNO' ? '#bbf7d0' : '#bfdbfe',
-                            width: '40px',
-                            height: '40px',
-                          }}
+                          className={cn(
+                            'border font-bold',
+                            usuario.tipoUsuario === 'EXTERNO'
+                              ? 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-900/40 dark:text-emerald-300'
+                              : 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/40 dark:text-blue-300'
+                          )}
                         />
                         <div>
-                          <p style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--color-foreground)' }}>@{usuario.username}</p>
-                          <p style={{ fontSize: '0.75rem', color: 'var(--color-muted-foreground)', fontWeight: 600 }}>{usuario.tipoUsuario}</p>
+                          <p className="font-bold text-sm text-foreground">@{usuario.username}</p>
+                          <p className="text-xs text-muted-foreground font-semibold">{usuario.tipoUsuario}</p>
                         </div>
                       </div>
-                    </td>
-                    <td style={{ padding: '0.75rem 1rem' }}>
-                      <p style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--color-foreground)' }}>{`${usuario.nombres} ${usuario.apellidoPaterno}`}</p>
-                      <p style={{ fontSize: '0.75rem', color: 'var(--color-muted-foreground)' }}>
+                    </TableCell>
+                    <TableCell>
+                      <p className="font-semibold text-sm text-foreground">{`${usuario.nombres} ${usuario.apellidoPaterno}`}</p>
+                      <p className="text-xs text-muted-foreground">
                         {usuario.numeroDocumento ? `${usuario.tipoDocumento}: ${usuario.numeroDocumento}` : 'Sin documento'}
                       </p>
-                    </td>
-                    <td style={{ padding: '0.75rem 1rem' }}>
-                      <p style={{ fontWeight: 500, fontSize: '0.875rem', color: 'var(--color-muted-foreground)' }}>{usuario.email}</p>
-                    </td>
-                    <td style={{ padding: '0.75rem 1rem' }}>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
+                    </TableCell>
+                    <TableCell>
+                      <p className="font-medium text-sm text-muted-foreground">{usuario.email}</p>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1">
                         {(usuario.roles || []).slice(0, 2).map((rol) => {
                           const raw = typeof rol === 'string' ? rol : ((rol as { nombre?: string }).nombre || (rol as { authority?: string }).authority || String(rol));
                           const colorKey = raw.toUpperCase().replace(/^ROLE_/, '');
@@ -900,182 +928,157 @@ function GestionUsuarios() {
                           return (
                             <span
                               key={raw}
-                              style={{
-                                fontSize: '0.65rem', fontWeight: 700, borderRadius: '6px',
-                                padding: '0.125rem 0.375rem',
-                                backgroundColor: `${bgColor}15`, color: bgColor,
-                                border: `1px solid ${bgColor}30`,
-                                whiteSpace: 'nowrap',
-                              }}
+                              className="text-[0.65rem] font-bold rounded-md px-1.5 py-0.5 whitespace-nowrap"
+                              style={{ backgroundColor: `${bgColor}15`, color: bgColor, border: `1px solid ${bgColor}30` }}
                             >
                               {raw.replace(/_/g, ' ')}
                             </span>
                           );
                         })}
                         {(usuario.roles || []).length > 2 && (
-                          <span style={{ fontSize: '0.65rem', fontWeight: 700, borderRadius: '6px', padding: '0.125rem 0.375rem', backgroundColor: '#f8fafc', color: '#64748b' }}>
+                          <span className="text-[0.65rem] font-bold rounded-md px-1.5 py-0.5 bg-muted text-muted-foreground">
                             +{usuario.roles.length - 2}
                           </span>
                         )}
                         {(!usuario.roles || usuario.roles.length === 0) && (
-                          <span style={{ fontSize: '0.75rem', color: 'var(--color-muted-foreground)', fontStyle: 'italic' }}>Sin roles</span>
+                          <span className="text-xs text-muted-foreground italic">Sin roles</span>
                         )}
                       </div>
-                    </td>
-                    <td style={{ padding: '0.75rem 1rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5">
                           <span
-                            style={{
-                              width: 8, height: 8, borderRadius: '50%',
-                              backgroundColor: usuario.activo ? '#10b981' : '#ef4444',
-                              boxShadow: `0 0 0 2px ${usuario.activo ? '#d1fae5' : '#fee2e2'}`,
-                              display: 'inline-block',
-                            }}
+                            className={cn(
+                              'w-2 h-2 rounded-full inline-block ring-2',
+                              usuario.activo ? 'bg-emerald-500 ring-emerald-100 dark:ring-emerald-900/50' : 'bg-red-500 ring-red-100 dark:ring-red-900/50'
+                            )}
                           />
-                          <span style={{ fontWeight: 700, fontSize: '0.75rem', color: usuario.activo ? '#10b981' : '#ef4444' }}>
+                          <span className={cn('font-bold text-xs', usuario.activo ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400')}>
                             {usuario.activo ? 'ACTIVO' : 'INACTIVO'}
                           </span>
                         </div>
                         {usuario.cuentaBloqueada && (
                           <Tooltip content="Cuenta bloqueada">
-                            <Lock className="w-4 h-4" style={{ color: '#f59e0b' }} />
+                            <Lock className="w-4 h-4 text-amber-500" />
                           </Tooltip>
                         )}
                       </div>
-                    </td>
-                    <td style={{ padding: '0.75rem 1rem' }}>
-                      <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1 items-center">
                         <Tooltip content="Ver Detalle">
-                          <button
-                            onClick={() => loadDetalle(usuario.id!)}
-                            style={{ color: '#64748b', backgroundColor: '#f8fafc', border: 'none', borderRadius: '6px', padding: '0.375rem', cursor: 'pointer', display: 'inline-flex' }}
-                            className="hover:bg-muted"
-                          >
+                          <Button variant="ghost" size="sm" onClick={() => loadDetalle(usuario.id!)} className="h-8 w-8 p-0">
                             <Eye className="w-4 h-4" />
-                          </button>
+                          </Button>
                         </Tooltip>
                         <Tooltip content="Editar Usuario">
-                          <button
-                            onClick={() => handleOpenDialog(usuario)}
-                            style={{ color: '#64748b', backgroundColor: '#f8fafc', border: 'none', borderRadius: '6px', padding: '0.375rem', cursor: 'pointer', display: 'inline-flex' }}
-                            className="hover:bg-blue-50"
-                          >
+                          <Button variant="ghost" size="sm" onClick={() => handleOpenDialog(usuario)} className="h-8 w-8 p-0">
                             <Pencil className="w-4 h-4" />
-                          </button>
+                          </Button>
                         </Tooltip>
                         <Tooltip content="Gestionar Roles">
-                          <button
-                            onClick={() => handleOpenRoles(usuario)}
-                            style={{ color: '#64748b', backgroundColor: '#f8fafc', border: 'none', borderRadius: '6px', padding: '0.375rem', cursor: 'pointer', display: 'inline-flex' }}
-                            className="hover:bg-purple-50"
-                          >
+                          <Button variant="ghost" size="sm" onClick={() => handleOpenRoles(usuario)} className="h-8 w-8 p-0">
                             <Shield className="w-4 h-4" />
-                          </button>
+                          </Button>
                         </Tooltip>
                         {usuario.cuentaBloqueada && (
                           <Tooltip content="Desbloquear">
-                            <button
-                              onClick={() => handleUnlock(usuario.id!)}
-                              style={{ color: '#f59e0b', backgroundColor: '#fffbeb', border: 'none', borderRadius: '6px', padding: '0.375rem', cursor: 'pointer', display: 'inline-flex' }}
-                              className="hover:bg-amber-100"
-                            >
+                            <Button variant="ghost" size="sm" onClick={() => handleUnlock(usuario.id!)} className="h-8 w-8 p-0 bg-amber-50 text-amber-600 hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-400">
                               <Unlock className="w-4 h-4" />
-                            </button>
+                            </Button>
                           </Tooltip>
                         )}
                         <Tooltip content={usuario.activo ? 'Deshabilitar' : 'Habilitar'}>
-                          <button
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => handleToggleEstado(usuario)}
-                            style={{
-                              color: usuario.activo ? '#ef4444' : '#10b981',
-                              backgroundColor: usuario.activo ? '#fef2f2' : '#ecfdf5',
-                              border: 'none', borderRadius: '6px', padding: '0.375rem', cursor: 'pointer', display: 'inline-flex',
-                            }}
-                            className={usuario.activo ? 'hover:bg-red-100' : 'hover:bg-green-100'}
+                            className={cn(
+                              'h-8 w-8 p-0',
+                              usuario.activo ? 'bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-950/40 dark:text-red-400' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400'
+                            )}
                           >
                             {usuario.activo ? <Ban className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
-                          </button>
+                          </Button>
                         </Tooltip>
                       </div>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
                 {sortedUsuarios.length === 0 && !isLoading && (
-                  <tr>
-                    <td colSpan={6} style={{ textAlign: 'center', padding: '2rem 0' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem', color: '#94a3b8' }}>
-                        <Search className="w-12 h-12" style={{ opacity: 0.5 }} />
-                        <p style={{ fontWeight: 600 }}>No se encontraron resultados</p>
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      <div className="flex flex-col items-center gap-1">
+                        <Search className="w-12 h-12 opacity-50" />
+                        <p className="font-semibold">No se encontraron resultados</p>
                       </div>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 )}
               </TableBody>
             </Table>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 1rem', borderTop: '1px solid #e2e8f0', fontSize: '0.875rem', color: 'var(--color-muted-foreground)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div className="flex items-center justify-between px-4 py-3 border-t border-border text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
               <span>Usuarios por pág:</span>
-              <select
-                value={rowsPerPage}
+              <Select
+                label=""
+                value={String(rowsPerPage)}
                 onChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
-                style={{ border: '1px solid var(--color-border)', borderRadius: '6px', padding: '0.25rem 0.5rem', backgroundColor: 'var(--color-card)', color: 'var(--color-foreground)' }}
-              >
-                <option value={10}>10</option>
-                <option value={25}>25</option>
-                <option value={50}>50</option>
-              </select>
+                options={[
+                  { value: '10', label: '10' },
+                  { value: '25', label: '25' },
+                  { value: '50', label: '50' },
+                ]}
+                className="w-16"
+              />
               <span>{sortedUsuarios.length} total</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <button
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
                 disabled={page === 0}
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
-                style={{ background: 'none', border: '1px solid var(--color-border)', borderRadius: '6px', padding: '0.375rem 0.5rem', cursor: page === 0 ? 'default' : 'pointer', opacity: page === 0 ? 0.4 : 1, color: 'var(--color-foreground)' }}
               >
                 <ChevronLeft className="w-4 h-4" />
-              </button>
+              </Button>
               <span>Página {page + 1} de {Math.max(1, totalPages)}</span>
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 disabled={page + 1 >= totalPages}
                 onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-                style={{ background: 'none', border: '1px solid var(--color-border)', borderRadius: '6px', padding: '0.375rem 0.5rem', cursor: page + 1 >= totalPages ? 'default' : 'pointer', opacity: page + 1 >= totalPages ? 0.4 : 1, color: 'var(--color-foreground)' }}
               >
                 <ChevronRight className="w-4 h-4" />
-              </button>
+              </Button>
             </div>
           </div>
-        </div>
+        </Card>
 
-        {/* WIZARD DIALOG: Crear / Editar Usuario */}
+        {/* WIZARD DIALOG */}
         <Dialog open={openDialog} onOpenChange={(v) => { if (!v) handleCloseDialog(); }}>
-          <DialogContent size="full" className="max-w-2xl">
-            <div style={{ backgroundColor: '#1a365d', color: '#fff', padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <DialogContent size="full" className="max-w-2xl p-0 overflow-hidden">
+            <div className="bg-gradient-to-r from-primary-700 to-primary-900 text-white px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
                 <BadgeCheck className="w-5 h-5" />
-                <h6 style={{ fontWeight: 700, margin: 0, fontSize: '1.125rem' }}>{isEditing ? 'Editar Usuario' : 'Registrar Nuevo Usuario'}</h6>
+                <h2 className="text-lg font-bold">{isEditing ? 'Editar Usuario' : 'Registrar Nuevo Usuario'}</h2>
               </div>
-              <span style={{ opacity: 0.8, fontSize: '0.75rem' }}>Paso {activeStep + 1} de {WIZARD_STEPS.length}</span>
+              <span className="text-xs opacity-80">Paso {activeStep + 1} de {WIZARD_STEPS.length}</span>
             </div>
 
-            <div style={{ backgroundColor: '#f8fafc', padding: '0.75rem 1.5rem', borderBottom: '1px solid #e2e8f0' }}>
-              <Stepper activeStep={activeStep} alternativeLabel>
-                {WIZARD_STEPS.map((label) => (
-                  <Step key={label}>
-                    <StepLabel>{label}</StepLabel>
-                  </Step>
-                ))}
-              </Stepper>
+            <div className="bg-muted border-b border-border px-6 py-4">
+              <Stepper activeStep={activeStep} />
             </div>
 
-            <div style={{ padding: '1.5rem 2rem', backgroundColor: '#fff', minHeight: '350px' }}>
+            <div className="p-6 md:p-8 bg-card min-h-[350px]">
               {/* STEP 0: ROL */}
               {activeStep === 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  <p style={{ fontWeight: 700, fontSize: '0.9375rem', color: 'var(--color-muted-foreground)' }}>¿Qué tipo de usuario deseas crear?</p>
+                <div className="flex flex-col gap-3">
+                  <p className="font-bold text-sm text-muted-foreground">¿Qué tipo de usuario deseas crear?</p>
                   {errors.rolPrincipal && (
-                    <p style={{ color: '#ef4444', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <p className="text-red-600 text-sm flex items-center gap-1">
                       <AlertCircle className="w-4 h-4" /> {errors.rolPrincipal}
                     </p>
                   )}
@@ -1083,8 +1086,12 @@ function GestionUsuarios() {
                     {ROLES_DISPONIBLES.map((rol) => (
                       <Card
                         key={rol}
-                        variant="default"
-                        className="cursor-pointer transition-all duration-200"
+                        className={cn(
+                          'cursor-pointer transition-all duration-200 p-3',
+                          formData.rolPrincipal === rol
+                            ? 'ring-2 ring-primary-500/20'
+                            : 'hover:border-primary-400/50 dark:hover:border-primary-700/50'
+                        )}
                         style={{
                           borderColor: formData.rolPrincipal === rol ? roleColorMap[rol] : 'var(--color-border)',
                           backgroundColor: formData.rolPrincipal === rol ? `${roleColorMap[rol]}0A` : 'var(--color-card)',
@@ -1092,11 +1099,11 @@ function GestionUsuarios() {
                         }}
                         onClick={() => { if (!isEditing) setFormData({ ...formData, rolPrincipal: rol }); }}
                       >
-                        <CardContent style={{ padding: '0.75rem', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', height: '100%' }}>
+                        <CardContent className="p-0 flex flex-col items-start h-full">
                           {rol === 'ESTUDIANTE' && <GraduationCap className="w-8 h-8 mb-1" style={{ color: roleColorMap[rol] }} />}
                           {rol === 'TUTOR_EXTERNO' && <Building2 className="w-8 h-8 mb-1" style={{ color: roleColorMap[rol] }} />}
                           {(rol !== 'ESTUDIANTE' && rol !== 'TUTOR_EXTERNO') && <ShieldAlert className="w-8 h-8 mb-1" style={{ color: roleColorMap[rol] }} />}
-                          <p style={{ fontWeight: 700, fontSize: '0.875rem', color: formData.rolPrincipal === rol ? 'var(--color-foreground)' : 'var(--color-muted-foreground)' }}>
+                          <p className={cn('font-bold text-sm', formData.rolPrincipal === rol ? 'text-foreground' : 'text-muted-foreground')}>
                             {rol.replace(/_/g, ' ')}
                           </p>
                         </CardContent>
@@ -1108,18 +1115,12 @@ function GestionUsuarios() {
 
               {/* STEP 1: DATOS PERSONALES */}
               {activeStep === 1 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  <h6 style={{ fontWeight: 700, fontSize: '1.125rem', color: 'var(--color-foreground)', marginBottom: '0.25rem' }}>Datos Personales y Contacto</h6>
+                <div className="flex flex-col gap-3">
+                  <h3 className="font-bold text-lg text-foreground mb-1">Datos Personales y Contacto</h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <Input label="Nombres *" value={formData.nombres} onChange={(e) => handleFieldChange('nombres', e.target.value)} onBlur={() => handleBlur('nombres')} error={errors.nombres} />
-                    </div>
-                    <div>
-                      <Input label="Apellido Paterno *" value={formData.apellidoPaterno} onChange={(e) => handleFieldChange('apellidoPaterno', e.target.value)} onBlur={() => handleBlur('apellidoPaterno')} error={errors.apellidoPaterno} />
-                    </div>
-                    <div>
-                      <Input label="Apellido Materno" value={formData.apellidoMaterno} onChange={(e) => handleFieldChange('apellidoMaterno', e.target.value)} />
-                    </div>
+                    <Input label="Nombres *" value={formData.nombres} onChange={(e) => handleFieldChange('nombres', e.target.value)} onBlur={() => handleBlur('nombres')} error={errors.nombres} />
+                    <Input label="Apellido Paterno *" value={formData.apellidoPaterno} onChange={(e) => handleFieldChange('apellidoPaterno', e.target.value)} onBlur={() => handleBlur('apellidoPaterno')} error={errors.apellidoPaterno} />
+                    <Input label="Apellido Materno" value={formData.apellidoMaterno} onChange={(e) => handleFieldChange('apellidoMaterno', e.target.value)} />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
@@ -1138,7 +1139,7 @@ function GestionUsuarios() {
                         options={TIPO_DOCUMENTO.map((t) => ({ value: t, label: t }))}
                       />
                     </div>
-                    <div style={{ gridColumn: 'span 3' }}>
+                    <div className="md:col-span-3">
                       <Input
                         label="Número Documento *"
                         value={formData.numeroDocumento}
@@ -1157,7 +1158,7 @@ function GestionUsuarios() {
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
-                    <div style={{ gridColumn: 'span 4' }}>
+                    <div className="md:col-span-4">
                       <div className="relative">
                         <Input
                           label="Correo Electrónico *"
@@ -1168,12 +1169,12 @@ function GestionUsuarios() {
                           error={errors.email}
                         />
                         {formData.email && !errors.email && (
-                          <CheckCircle2 className="absolute right-3 top-[38px] w-4 h-4" style={{ color: 'var(--color-success)' }} />
+                          <CheckCircle2 className="absolute right-3 top-[38px] w-4 h-4 text-emerald-600" />
                         )}
                       </div>
-                      <p style={{ fontSize: '0.75rem', color: 'var(--color-muted-foreground)', marginTop: '0.25rem' }}>Debe ser correo institucional @unitru.edu.pe</p>
+                      <p className="text-xs text-muted-foreground mt-1">Debe ser correo institucional @unitru.edu.pe</p>
                     </div>
-                    <div style={{ gridColumn: 'span 3' }}>
+                    <div className="md:col-span-3">
                       <Input
                         label="Teléfono / Celular"
                         value={formData.telefono}
@@ -1193,8 +1194,8 @@ function GestionUsuarios() {
 
               {/* STEP 2: DATOS ESPECÍFICOS */}
               {activeStep === 2 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  <h6 style={{ fontWeight: 700, fontSize: '1.125rem', color: 'var(--color-foreground)', marginBottom: '0.25rem' }}>Perfil: {effectiveFormRole.replace(/_/g, ' ')}</h6>
+                <div className="flex flex-col gap-3">
+                  <h3 className="font-bold text-lg text-foreground mb-1">Perfil: {effectiveFormRole.replace(/_/g, ' ')}</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {effectiveFormRole === 'ESTUDIANTE' && (
                       <>
@@ -1232,7 +1233,7 @@ function GestionUsuarios() {
                     )}
                     {effectiveFormRole === 'TUTOR_EXTERNO' && (
                       <>
-                        <div style={{ gridColumn: '1 / -1' }}>
+                        <div className="md:col-span-2">
                           <Input label="Nombre de la Empresa *" value={formData.empresaNombre} onChange={(e) => handleFieldChange('empresaNombre', e.target.value)} onBlur={() => handleBlur('empresaNombre')} error={errors.empresaNombre} />
                         </div>
                         <Input label="Cargo *" value={formData.cargo} onChange={(e) => handleFieldChange('cargo', e.target.value)} onBlur={() => handleBlur('cargo')} error={errors.cargo} />
@@ -1240,8 +1241,8 @@ function GestionUsuarios() {
                       </>
                     )}
                     {ADMIN_ROLES.includes(effectiveFormRole) && (
-                      <div style={{ gridColumn: '1 / -1' }}>
-                        <p style={{ color: 'var(--color-muted-foreground)' }}>No se requieren datos adicionales para este rol administrativo.</p>
+                      <div className="md:col-span-2">
+                        <p className="text-muted-foreground">No se requieren datos adicionales para este rol administrativo.</p>
                       </div>
                     )}
                   </div>
@@ -1250,13 +1251,13 @@ function GestionUsuarios() {
 
               {/* STEP 3: CREDENCIALES */}
               {activeStep === 3 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  <h6 style={{ fontWeight: 700, fontSize: '1.125rem', color: 'var(--color-foreground)', marginBottom: '0.25rem' }}>Credenciales de Acceso</h6>
-                  <div style={{ padding: '0.75rem', backgroundColor: '#eff6ff', borderRadius: '8px', border: '1px solid #bfdbfe', marginBottom: '0.5rem' }}>
-                    <p style={{ fontSize: '0.875rem', color: '#1e40af' }}>Estas credenciales permitirán al usuario autenticarse en el sistema SGPP. Puedes autogenerar una contraseña segura si lo deseas.</p>
+                <div className="flex flex-col gap-3">
+                  <h3 className="font-bold text-lg text-foreground mb-1">Credenciales de Acceso</h3>
+                  <div className="rounded-lg p-3 bg-blue-50 border border-blue-200 dark:bg-blue-950/40 dark:border-blue-800 mb-2">
+                    <p className="text-sm text-blue-800 dark:text-blue-300">Estas credenciales permitirán al usuario autenticarse en el sistema SGPP. Puedes autogenerar una contraseña segura si lo deseas.</p>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div style={{ gridColumn: '1 / -1' }}>
+                    <div className="md:col-span-2">
                       <Input label="Nombre de Usuario *" value={formData.username} onChange={(e) => handleFieldChange('username', e.target.value)} onBlur={() => handleBlur('username')} error={errors.username} disabled={isEditing} />
                     </div>
                     <div>
@@ -1272,19 +1273,19 @@ function GestionUsuarios() {
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          style={{ position: 'absolute', right: '0.75rem', top: '38px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-muted-foreground)', padding: 0 }}
+                          className="absolute right-3 top-[38px] bg-transparent border-none cursor-pointer text-muted-foreground p-0"
                         >
                           {showPassword ? <KeyRound className="w-4 h-4" /> : <Key className="w-4 h-4" />}
                         </button>
                       </div>
                       {(!isEditing || formData.password) && (
-                        <div style={{ marginTop: '0.5rem' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                            <span style={{ fontSize: '0.75rem', color: 'var(--color-muted-foreground)' }}>Fortaleza de contraseña</span>
-                            <span style={{
-                              fontWeight: 700, fontSize: '0.75rem',
-                              color: calculatePasswordStrength(formData.password) < 50 ? '#ef4444' : calculatePasswordStrength(formData.password) < 75 ? '#f59e0b' : '#10b981',
-                            }}>
+                        <div className="mt-2">
+                          <div className="flex justify-between mb-1">
+                            <span className="text-xs text-muted-foreground">Fortaleza de contraseña</span>
+                            <span className={cn(
+                              'font-bold text-xs',
+                              calculatePasswordStrength(formData.password) < 50 ? 'text-red-600' : calculatePasswordStrength(formData.password) < 75 ? 'text-amber-500' : 'text-emerald-600'
+                            )}>
                               {calculatePasswordStrength(formData.password) < 50 ? 'Débil' : calculatePasswordStrength(formData.password) < 75 ? 'Buena' : 'Fuerte'}
                             </span>
                           </div>
@@ -1315,34 +1316,34 @@ function GestionUsuarios() {
 
               {/* STEP 4: RESUMEN */}
               {activeStep === 4 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  <div style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
-                    <Avatar size="lg" fallback={<CheckCircle2 className="w-6 h-6" />} style={{ backgroundColor: '#1a365d', color: 'white', margin: '0 auto 0.5rem', width: 64, height: 64 }} />
-                    <h5 style={{ fontWeight: 800, fontSize: '1.25rem', color: 'var(--color-foreground)' }}>Casi listo</h5>
-                    <p style={{ fontSize: '0.875rem', color: 'var(--color-muted-foreground)' }}>Por favor, verifica los datos ingresados antes de confirmar la creación del usuario.</p>
+                <div className="flex flex-col gap-3">
+                  <div className="text-center mb-2">
+                    <Avatar size="lg" fallback={<CheckCircle2 className="w-6 h-6" />} className="bg-primary-700 text-white mx-auto mb-2" style={{ width: 64, height: 64 }} />
+                    <h3 className="text-xl font-extrabold text-foreground">Casi listo</h3>
+                    <p className="text-sm text-muted-foreground">Por favor, verifica los datos ingresados antes de confirmar la creación del usuario.</p>
                   </div>
 
-                  <div style={{ borderRadius: '12px', border: '1px solid var(--color-border)', overflow: 'hidden' }}>
-                    <div style={{ padding: '0.75rem 1rem', backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <p style={{ fontWeight: 700, fontSize: '0.8125rem' }}>Rol: {effectiveFormRole.replace(/_/g, ' ')}</p>
+                  <div className="rounded-xl border border-border overflow-hidden">
+                    <div className="px-4 py-3 bg-muted border-b border-border flex justify-between items-center">
+                      <p className="font-bold text-sm text-foreground">Rol: {effectiveFormRole.replace(/_/g, ' ')}</p>
                       <Badge variant="neutral" size="sm">{formData.tipoUsuario}</Badge>
                     </div>
-                    <div style={{ padding: '1rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                    <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--color-muted-foreground)' }}>Nombre Completo</span>
-                        <p style={{ fontWeight: 600, fontSize: '0.875rem' }}>{formData.nombres} {formData.apellidoPaterno} {formData.apellidoMaterno}</p>
+                        <span className="block text-xs text-muted-foreground">Nombre Completo</span>
+                        <p className="font-semibold text-sm text-foreground">{formData.nombres} {formData.apellidoPaterno} {formData.apellidoMaterno}</p>
                       </div>
                       <div>
-                        <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--color-muted-foreground)' }}>Documento ({formData.tipoDocumento})</span>
-                        <p style={{ fontWeight: 600, fontSize: '0.875rem' }}>{formData.numeroDocumento}</p>
+                        <span className="block text-xs text-muted-foreground">Documento ({formData.tipoDocumento})</span>
+                        <p className="font-semibold text-sm text-foreground">{formData.numeroDocumento}</p>
                       </div>
                       <div>
-                        <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--color-muted-foreground)' }}>Correo Institucional / Contacto</span>
-                        <p style={{ fontWeight: 600, fontSize: '0.875rem' }}>{formData.email}</p>
+                        <span className="block text-xs text-muted-foreground">Correo Institucional / Contacto</span>
+                        <p className="font-semibold text-sm text-foreground">{formData.email}</p>
                       </div>
                       <div>
-                        <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--color-muted-foreground)' }}>Nombre de Usuario (Login)</span>
-                        <p style={{ fontWeight: 700, fontSize: '0.875rem', color: '#1a365d' }}>@{formData.username}</p>
+                        <span className="block text-xs text-muted-foreground">Nombre de Usuario (Login)</span>
+                        <p className="font-bold text-sm text-primary-700 dark:text-primary-400">@{formData.username}</p>
                       </div>
                     </div>
                   </div>
@@ -1350,9 +1351,9 @@ function GestionUsuarios() {
               )}
             </div>
 
-            <div style={{ padding: '0.75rem 1.5rem', backgroundColor: '#f8fafc', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="px-6 py-4 bg-muted border-t border-border flex justify-between items-center">
               <Button variant="ghost" onClick={handleCloseDialog}>Cancelar</Button>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <div className="flex gap-2">
                 <Button variant="secondary" disabled={activeStep === 0 || createUsuario.isPending || updateUsuario.isPending} onClick={handleBack}>
                   <ChevronLeft className="w-4 h-4" /> Atrás
                 </Button>
@@ -1365,7 +1366,7 @@ function GestionUsuarios() {
                     variant="primary"
                     onClick={handleSubmit}
                     loading={createUsuario.isPending || updateUsuario.isPending}
-                    style={{ backgroundColor: '#10b981' }}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
                   >
                     <Save className="w-4 h-4" /> {createUsuario.isPending || updateUsuario.isPending ? 'Procesando...' : (isEditing ? 'Confirmar Cambios' : 'Crear Usuario')}
                   </Button>
@@ -1383,22 +1384,23 @@ function GestionUsuarios() {
           sx={{ zIndex: (theme) => theme.zIndex.drawer + 2, '& .MuiDrawer-paper': { width: { xs: '100%', sm: 480, md: 540 }, borderLeft: 'none', boxShadow: '-10px 0 30px rgba(0,0,0,0.1)' } }}
         >
           {detalleLoading ? (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-              <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#1a365d' }} />
+            <div className="flex justify-center items-center h-full">
+              <Loader2 className="w-8 h-8 animate-spin text-primary-700" />
             </div>
           ) : selectedUsuario ? (
-            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: '#f8fafc' }}>
-              <div style={{ padding: '0.75rem 1rem', backgroundColor: '#1a365d', color: 'white', display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
-                <button
+            <div className="flex flex-col h-full bg-card">
+              <div className="px-4 py-3 bg-gradient-to-r from-primary-700 to-primary-900 text-white flex items-start gap-2">
+                <Button
+                  variant="ghost"
                   onClick={() => setDrawerOpen(false)}
-                  style={{ color: 'white', backgroundColor: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '8px', padding: '0.5rem', cursor: 'pointer', display: 'inline-flex', marginTop: '0.25rem' }}
+                  className="h-9 w-9 bg-white/10 text-white border-white/20 hover:bg-white/20 p-0 mt-1"
                 >
                   <ArrowLeft className="w-5 h-5" />
-                </button>
-                <div style={{ flex: 1 }}>
-                  <p style={{ opacity: 0.7, fontWeight: 600, letterSpacing: '1px', fontSize: '0.75rem', textTransform: 'uppercase', margin: 0 }}>Perfil de Usuario</p>
-                  <h5 style={{ fontWeight: 800, fontSize: '1.25rem', margin: '0.25rem 0 0.5rem' }}>{selectedUsuario.nombres} {selectedUsuario.apellidoPaterno}</h5>
-                  <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap' }}>
+                </Button>
+                <div className="flex-1">
+                  <p className="opacity-70 font-semibold tracking-wider text-xs uppercase mb-0">Perfil de Usuario</p>
+                  <h3 className="text-xl font-extrabold my-1">{selectedUsuario.nombres} {selectedUsuario.apellidoPaterno}</h3>
+                  <div className="flex gap-1 flex-wrap">
                     <Badge variant={selectedUsuario.activo ? 'success' : 'danger'} size="sm">{selectedUsuario.activo ? 'Activo' : 'Inactivo'}</Badge>
                     {selectedUsuario.cuentaBloqueada && <Badge variant="warning" size="sm">Bloqueado</Badge>}
                     <Badge variant="neutral" size="sm">{selectedUsuario.tipoUsuario || '—'}</Badge>
@@ -1406,136 +1408,137 @@ function GestionUsuarios() {
                 </div>
               </div>
 
-              <div style={{ flex: 1, overflowY: 'auto', padding: '0.75rem' }}>
-                <div style={{ padding: '0.75rem', borderRadius: '12px', border: '1px solid #e2e8f0', backgroundColor: 'white', marginBottom: '0.75rem' }}>
-                  <p style={{ fontSize: '0.8125rem', fontWeight: 700, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.375rem', color: 'var(--color-primary)' }}>
-                    <User className="w-4 h-4" /> Información General
-                  </p>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                    <div>
-                      <span style={{ fontWeight: 600, fontSize: '0.75rem', color: 'var(--color-muted-foreground)', display: 'block' }}>Usuario</span>
-                      <p style={{ fontWeight: 700, fontSize: '0.875rem' }}>@{selectedUsuario.username}</p>
+              <div className="flex-1 overflow-y-auto p-3">
+                <Card className="mb-3">
+                  <CardContent className="p-3">
+                    <p className="text-sm font-bold mb-2 flex items-center gap-1 text-primary-700 dark:text-primary-400">
+                      <User className="w-4 h-4" /> Información General
+                    </p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <span className="font-semibold text-xs text-muted-foreground block">Usuario</span>
+                        <p className="font-bold text-sm text-foreground">@{selectedUsuario.username}</p>
+                      </div>
+                      <div>
+                        <span className="font-semibold text-xs text-muted-foreground block">Documento ({selectedUsuario.tipoDocumento})</span>
+                        <p className="font-semibold text-sm text-foreground">{selectedUsuario.numeroDocumento}</p>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="font-semibold text-xs text-muted-foreground block">Correo Electrónico</span>
+                        <p className="font-semibold text-sm text-foreground">{selectedUsuario.email}</p>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="font-semibold text-xs text-muted-foreground block">Teléfono</span>
+                        <p className="font-semibold text-sm text-foreground">{selectedUsuario.telefono || 'No registrado'}</p>
+                      </div>
                     </div>
-                    <div>
-                      <span style={{ fontWeight: 600, fontSize: '0.75rem', color: 'var(--color-muted-foreground)', display: 'block' }}>Documento ({selectedUsuario.tipoDocumento})</span>
-                      <p style={{ fontWeight: 600, fontSize: '0.875rem' }}>{selectedUsuario.numeroDocumento}</p>
-                    </div>
-                    <div style={{ gridColumn: '1 / -1' }}>
-                      <span style={{ fontWeight: 600, fontSize: '0.75rem', color: 'var(--color-muted-foreground)', display: 'block' }}>Correo Electrónico</span>
-                      <p style={{ fontWeight: 600, fontSize: '0.875rem' }}>{selectedUsuario.email}</p>
-                    </div>
-                    <div style={{ gridColumn: '1 / -1' }}>
-                      <span style={{ fontWeight: 600, fontSize: '0.75rem', color: 'var(--color-muted-foreground)', display: 'block' }}>Teléfono</span>
-                      <p style={{ fontWeight: 600, fontSize: '0.875rem' }}>{selectedUsuario.telefono || 'No registrado'}</p>
-                    </div>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
 
-                <div style={{ padding: '0.75rem', borderRadius: '12px', border: '1px solid #e2e8f0', backgroundColor: 'white', marginBottom: '0.75rem' }}>
-                  <p style={{ fontSize: '0.8125rem', fontWeight: 700, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.375rem', color: 'var(--color-primary)' }}>
-                    <Shield className="w-4 h-4" /> Roles Asignados
-                  </p>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
-                    {(selectedUsuario.roles || []).map((r) => {
-                      const raw = typeof r === 'string' ? r : ((r as { nombre?: string }).nombre || (r as { authority?: string }).authority || String(r));
-                      const label = String(raw).replace(/_/g, ' ');
-                      const key = raw;
-                      const colorKey = (typeof r === 'string' ? r : ((r as { nombre?: string }).nombre || (r as { authority?: string }).authority || raw)).toUpperCase().replace(/^ROLE_/, '');
-                      const finalKey = ROLES_DISPONIBLES.find((rd) => rd.startsWith(colorKey.substring(0, 4))) || (roleColorMap[colorKey] ? colorKey : '');
-                      const bgColor = roleColorMap[finalKey] || '#64748b';
-                      return (
-                        <span
-                          key={key}
-                          style={{
-                            fontWeight: 700, fontSize: '0.75rem', borderRadius: '6px',
-                            padding: '0.125rem 0.5rem',
-                            backgroundColor: `${bgColor}15`, color: bgColor,
-                            border: `1px solid ${bgColor}30`,
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          {label}
-                        </span>
-                      );
-                    })}
-                    {(!selectedUsuario.roles || selectedUsuario.roles.length === 0) && (
-                      <p style={{ fontSize: '0.875rem', color: 'var(--color-muted-foreground)', fontStyle: 'italic' }}>Sin roles asignados en el sistema.</p>
-                    )}
-                  </div>
-                </div>
+                <Card className="mb-3">
+                  <CardContent className="p-3">
+                    <p className="text-sm font-bold mb-2 flex items-center gap-1 text-primary-700 dark:text-primary-400">
+                      <Shield className="w-4 h-4" /> Roles Asignados
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      {(selectedUsuario.roles || []).map((r) => {
+                        const raw = typeof r === 'string' ? r : ((r as { nombre?: string }).nombre || (r as { authority?: string }).authority || String(r));
+                        const label = String(raw).replace(/_/g, ' ');
+                        const key = raw;
+                        const colorKey = (typeof r === 'string' ? r : ((r as { nombre?: string }).nombre || (r as { authority?: string }).authority || raw)).toUpperCase().replace(/^ROLE_/, '');
+                        const finalKey = ROLES_DISPONIBLES.find((rd) => rd.startsWith(colorKey.substring(0, 4))) || (roleColorMap[colorKey] ? colorKey : '');
+                        const bgColor = roleColorMap[finalKey] || '#64748b';
+                        return (
+                          <span
+                            key={key}
+                            className="font-bold text-xs rounded-md px-2 py-0.5 whitespace-nowrap"
+                            style={{ backgroundColor: `${bgColor}15`, color: bgColor, border: `1px solid ${bgColor}30` }}
+                          >
+                            {label}
+                          </span>
+                        );
+                      })}
+                      {(!selectedUsuario.roles || selectedUsuario.roles.length === 0) && (
+                        <p className="text-sm text-muted-foreground italic">Sin roles asignados en el sistema.</p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
 
                 {selectedUsuario.tipoUsuario === 'INTERNO' && (selectedUsuario.estudiante || selectedUsuario.codigoEstudiantil || selectedUsuario.codigoMatricula) && (
-                  <div style={{ padding: '0.75rem', borderRadius: '12px', border: '1px solid #bfdbfe', backgroundColor: '#eff6ff', marginBottom: '0.75rem' }}>
-                    <p style={{ fontSize: '0.8125rem', fontWeight: 700, marginBottom: '0.5rem', color: '#1e40af' }}>
-                      Perfil Académico (Estudiante)
-                    </p>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                      <div>
-                        <span style={{ fontWeight: 600, fontSize: '0.75rem', color: '#60a5fa', display: 'block' }}>Código Matrícula</span>
-                        <p style={{ fontWeight: 700, fontSize: '0.875rem', color: '#1e3a8a' }}>
-                          {selectedUsuario.estudiante?.codigoEstudiantil || selectedUsuario.estudiante?.codigoMatricula || selectedUsuario.codigoEstudiantil || selectedUsuario.codigoMatricula || '—'}
-                        </p>
+                  <Card className="mb-3 border-blue-200 bg-blue-50 dark:bg-blue-950/40 dark:border-blue-800">
+                    <CardContent className="p-3">
+                      <p className="text-sm font-bold mb-2 text-blue-800 dark:text-blue-300">
+                        Perfil Académico (Estudiante)
+                      </p>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <span className="font-semibold text-xs text-blue-600 dark:text-blue-400 block">Código Matrícula</span>
+                          <p className="font-bold text-sm text-blue-900 dark:text-blue-200">
+                            {selectedUsuario.estudiante?.codigoEstudiantil || selectedUsuario.estudiante?.codigoMatricula || selectedUsuario.codigoEstudiantil || selectedUsuario.codigoMatricula || '—'}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="font-semibold text-xs text-blue-600 dark:text-blue-400 block">Semestre Actual</span>
+                          <p className="font-bold text-sm text-blue-900 dark:text-blue-200">
+                            {selectedUsuario.estudiante?.semestreActual || selectedUsuario.estudiante?.semestre || selectedUsuario.semestre || '—'}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="font-semibold text-xs text-blue-600 dark:text-blue-400 block">Créditos Aprobados</span>
+                          <p className="font-bold text-sm text-blue-900 dark:text-blue-200">
+                            {selectedUsuario.estudiante?.creditosAprobados || '—'}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <span style={{ fontWeight: 600, fontSize: '0.75rem', color: '#60a5fa', display: 'block' }}>Semestre Actual</span>
-                        <p style={{ fontWeight: 700, fontSize: '0.875rem', color: '#1e3a8a' }}>
-                          {selectedUsuario.estudiante?.semestreActual || selectedUsuario.estudiante?.semestre || selectedUsuario.semestre || '—'}
-                        </p>
-                      </div>
-                      <div>
-                        <span style={{ fontWeight: 600, fontSize: '0.75rem', color: '#60a5fa', display: 'block' }}>Créditos Aprobados</span>
-                        <p style={{ fontWeight: 700, fontSize: '0.875rem', color: '#1e3a8a' }}>
-                          {selectedUsuario.estudiante?.creditosAprobados || '—'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                    </CardContent>
+                  </Card>
                 )}
 
                 {selectedUsuario.tutorExterno && (
-                  <div style={{ padding: '0.75rem', borderRadius: '12px', border: '1px solid #bbf7d0', backgroundColor: '#f0fdf4', marginBottom: '0.75rem' }}>
-                    <p style={{ fontSize: '0.8125rem', fontWeight: 700, marginBottom: '0.5rem', color: '#166534' }}>
-                      Perfil Empresarial (Tutor Externo)
-                    </p>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.75rem' }}>
-                      <div>
-                        <span style={{ fontWeight: 600, fontSize: '0.75rem', color: '#4ade80', display: 'block' }}>Empresa</span>
-                        <p style={{ fontWeight: 700, fontSize: '0.875rem', color: '#14532d' }}>{selectedUsuario.tutorExterno.empresaNombre}</p>
+                  <Card className="mb-3 border-emerald-200 bg-emerald-50 dark:bg-emerald-950/40 dark:border-emerald-800">
+                    <CardContent className="p-3">
+                      <p className="text-sm font-bold mb-2 text-emerald-800 dark:text-emerald-300">
+                        Perfil Empresarial (Tutor Externo)
+                      </p>
+                      <div className="space-y-2">
+                        <div>
+                          <span className="font-semibold text-xs text-emerald-600 dark:text-emerald-400 block">Empresa</span>
+                          <p className="font-bold text-sm text-emerald-900 dark:text-emerald-200">{selectedUsuario.tutorExterno.empresaNombre}</p>
+                        </div>
+                        <div>
+                          <span className="font-semibold text-xs text-emerald-600 dark:text-emerald-400 block">Cargo / Área</span>
+                          <p className="font-bold text-sm text-emerald-900 dark:text-emerald-200">
+                            {selectedUsuario.tutorExterno.cargo} {selectedUsuario.tutorExterno.area ? `(${selectedUsuario.tutorExterno.area})` : ''}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <span style={{ fontWeight: 600, fontSize: '0.75rem', color: '#4ade80', display: 'block' }}>Cargo / Área</span>
-                        <p style={{ fontWeight: 700, fontSize: '0.875rem', color: '#14532d' }}>
-                          {selectedUsuario.tutorExterno.cargo} {selectedUsuario.tutorExterno.area ? `(${selectedUsuario.tutorExterno.area})` : ''}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                    </CardContent>
+                  </Card>
                 )}
               </div>
 
-              <div style={{ padding: '0.75rem', backgroundColor: 'white', borderTop: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <Button variant="secondary" style={{ flex: 1 }} onClick={() => { setDrawerOpen(false); handleOpenRoles(selectedUsuario); }}>
+              <div className="p-3 bg-card border-t border-border flex flex-col gap-2">
+                <div className="flex gap-2">
+                  <Button variant="secondary" className="flex-1" onClick={() => { setDrawerOpen(false); handleOpenRoles(selectedUsuario); }}>
                     <Shield className="w-4 h-4" /> Roles
                   </Button>
-                  <Button variant="secondary" style={{ flex: 1 }} onClick={() => { setDrawerOpen(false); handleOpenDialog(selectedUsuario); }}>
+                  <Button variant="secondary" className="flex-1" onClick={() => { setDrawerOpen(false); handleOpenDialog(selectedUsuario); }}>
                     <Pencil className="w-4 h-4" /> Editar
                   </Button>
                 </div>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <div className="flex gap-2">
                   {selectedUsuario.cuentaBloqueada && (
-                    <Button variant="primary" style={{ flex: 1, backgroundColor: '#f59e0b', border: 'none' }} onClick={() => { setDrawerOpen(false); handleUnlock(selectedUsuario.id!); }}>
+                    <Button className="flex-1 bg-amber-500 hover:bg-amber-600 text-white border-none" onClick={() => { setDrawerOpen(false); handleUnlock(selectedUsuario.id!); }}>
                       <Unlock className="w-4 h-4" /> Desbloquear
                     </Button>
                   )}
                   <Button
                     variant="secondary"
-                    style={{
-                      flex: 1,
-                      backgroundColor: selectedUsuario.activo ? '#fee2e2' : '#d1fae5',
-                      color: selectedUsuario.activo ? '#dc2626' : '#059669',
-                      border: 'none',
-                    }}
+                    className={cn(
+                      'flex-1 border-none',
+                      selectedUsuario.activo ? 'bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-950/40 dark:text-red-300' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300'
+                    )}
                     onClick={() => { setDrawerOpen(false); handleToggleEstado(selectedUsuario); }}
                   >
                     {selectedUsuario.activo ? <Ban className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
@@ -1549,31 +1552,27 @@ function GestionUsuarios() {
 
         {/* Rol Dialog */}
         <Dialog open={openRolDialog} onOpenChange={setOpenRolDialog}>
-          <DialogContent size="xl" className="max-w-lg">
-            <div style={{ padding: '1rem', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: '#f8fafc' }}>
-              <Shield className="w-5 h-5" style={{ color: 'var(--color-primary)' }} />
-              <h6 style={{ fontWeight: 700, fontSize: '1.125rem', color: '#1e293b', margin: 0 }}>Gestionar Permisos</h6>
+          <DialogContent size="xl" className="max-w-lg p-0 overflow-hidden">
+            <div className="px-4 py-3 border-b border-border bg-muted flex items-center gap-2">
+              <Shield className="w-5 h-5 text-primary-700 dark:text-primary-400" />
+              <h3 className="text-lg font-bold text-foreground">Gestionar Permisos</h3>
             </div>
-            <div style={{ padding: '1.5rem' }}>
-              <p style={{ fontSize: '0.875rem', color: 'var(--color-muted-foreground)', marginBottom: '1rem' }}>
+            <div className="p-6">
+              <p className="text-sm text-muted-foreground mb-4">
                 Selecciona los roles que definirán el acceso y las funciones de este usuario en el sistema.
               </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <div className="flex flex-col gap-2">
                 {ROLES_DISPONIBLES.map((rol) => (
                   <label
                     key={rol}
+                    className={cn(
+                      'flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-all hover:bg-muted',
+                      selectedRoles.includes(rol) ? 'bg-muted' : 'bg-transparent'
+                    )}
                     style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.75rem',
-                      padding: '0.5rem 0.75rem',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      backgroundColor: selectedRoles.includes(rol) ? `${roleColorMap[rol]}0A` : 'transparent',
                       border: selectedRoles.includes(rol) ? `1px solid ${roleColorMap[rol]}30` : '1px solid transparent',
-                      transition: 'all 0.15s ease',
+                      backgroundColor: selectedRoles.includes(rol) ? `${roleColorMap[rol]}0A` : 'transparent',
                     }}
-                    className="hover:bg-muted"
                   >
                     <input
                       type="checkbox"
@@ -1583,16 +1582,12 @@ function GestionUsuarios() {
                           prev.includes(rol) ? prev.filter((r) => r !== rol) : [...prev, rol]
                         );
                       }}
-                      style={{ width: '1rem', height: '1rem', borderRadius: '4px', border: '1px solid var(--color-border)', accentColor: roleColorMap[rol] }}
+                      className="w-4 h-4 rounded border-border accent-primary-600"
+                      style={{ accentColor: roleColorMap[rol] }}
                     />
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
-                      <span
-                        style={{
-                          width: 8, height: 8, borderRadius: '50%',
-                          backgroundColor: roleColorMap[rol] || '#64748b', display: 'inline-block',
-                        }}
-                      />
-                      <span style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--color-foreground)' }}>{rol.replace(/_/g, ' ')}</span>
+                    <div className="flex items-center gap-2 flex-1">
+                      <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: roleColorMap[rol] || '#64748b' }} />
+                      <span className="font-semibold text-sm text-foreground">{rol.replace(/_/g, ' ')}</span>
                     </div>
                     {ADMIN_ROLES.includes(rol) && (
                       <Badge variant="info" size="sm">Admin</Badge>
@@ -1601,7 +1596,7 @@ function GestionUsuarios() {
                 ))}
               </div>
             </div>
-            <div style={{ padding: '0.75rem 1.5rem', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+            <div className="px-6 py-4 border-t border-border flex justify-end gap-2">
               <Button variant="ghost" onClick={() => setOpenRolDialog(false)}>Cancelar</Button>
               <Button variant="primary" onClick={handleSaveRoles} loading={assignRoles.isPending}>Guardar Permisos</Button>
             </div>

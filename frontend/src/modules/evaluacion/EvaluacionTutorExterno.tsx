@@ -1,29 +1,19 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { User, Building2, Upload, ArrowLeft } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { evaluacionesApi } from '../../api/evaluacionesApi';
-import { expedientesApi } from '../../api/expedientesApi';
-import { useAuth } from '../../auth/AuthContext';
-import Swal from 'sweetalert2';
-import withReactContent from 'sweetalert2-react-content';
+import { evaluacionesApi } from '@/api/evaluacionesApi';
+import { expedientesApi } from '@/api/expedientesApi';
+import { useAuth } from '@/auth/AuthContext';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useExpedienteById } from '@/hooks/useExpedientes';
 import { useTiposPractica } from '@/hooks/usePracticas';
 import {
-  Button,
-  Input,
-  Select,
-  Badge,
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-  Card,
-  Textarea,
+  Button, Input, Select, Badge, Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
+  Card, CardContent, Textarea,
 } from '@/ui';
+import { cn } from '@/lib/utils';
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
 
 const MySwal = withReactContent(Swal);
 
@@ -94,6 +84,12 @@ interface EvaluacionPayload {
   tipoCalificacion: string;
   calificacionCualitativa: string;
 }
+
+const CUALITATIVAS = [
+  { value: 'Logrado', label: 'Logrado' },
+  { value: 'En proceso', label: 'En proceso' },
+  { value: 'No logrado', label: 'No logrado' },
+];
 
 const agruparCriterios = (criterios: Criterio[]): Grupo[] => {
   const grupos: Record<string, Grupo> = {};
@@ -306,68 +302,83 @@ export const EvaluacionTutorExterno = () => {
       : totalGeneral >= totalMaximo * 0.4
         ? 'warning'
         : 'error';
-  const colorVar =
+  const colorClass =
     colorTotal === 'success'
-      ? 'var(--color-success)'
+      ? 'text-emerald-600 dark:text-emerald-400'
       : colorTotal === 'warning'
-        ? 'var(--color-warning)'
-        : 'var(--color-error)';
+        ? 'text-amber-600 dark:text-amber-400'
+        : 'text-red-600 dark:text-red-400';
+  const barClass =
+    colorTotal === 'success'
+      ? 'bg-emerald-500 dark:bg-emerald-400'
+      : colorTotal === 'warning'
+        ? 'bg-amber-500 dark:bg-amber-400'
+        : 'bg-red-500 dark:bg-red-400';
 
   if (!expedienteIdValido) {
     return (
-      <div className="space-y-6">
-        <Card className="p-6">
-          <p className="text-[var(--color-error)]">No se indicó un expediente válido para evaluar.</p>
-          <Button variant="secondary" className="mt-4" onClick={() => navigate('/tutor/practicantes')}>
-            Volver a practicantes
-          </Button>
+      <div className="space-y-6 p-4 sm:p-6 lg:p-8">
+        <Card>
+          <CardContent className="p-6">
+            <p className="text-red-600 dark:text-red-400">No se indicó un expediente válido para evaluar.</p>
+            <Button variant="secondary" className="mt-4" onClick={() => navigate('/tutor/practicantes')}>
+              Volver a practicantes
+            </Button>
+          </CardContent>
         </Card>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.4 }}
-        className="space-y-6"
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--color-primary)] text-white">
-              <Building2 size={20} />
+    <div className="space-y-6 animate-in p-4 sm:p-6 lg:p-8">
+      {/* ── Header Banner ────────────────────────────────────── */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary-700 to-primary-900 text-white p-6 md:p-8">
+        <div className="absolute right-[-20px] top-2 opacity-10 md:right-[-50px] md:top-[-50px]">
+          <Building2 className="h-[150px] w-[150px] md:h-[300px] md:w-[300px]" />
+        </div>
+
+        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/15 text-white">
+              <Building2 className="h-6 w-6" />
             </div>
             <div>
-              <h2 className="text-2xl font-semibold text-[var(--color-foreground)]">
-                Evaluación de Prácticas Pre-Profesionales
-              </h2>
-              <p className="text-sm text-[var(--color-muted-foreground)]">
+              <p className="text-xs uppercase tracking-widest font-semibold opacity-80 mb-1">
                 Anexo 2 — Evaluación por la Empresa Receptora
+              </p>
+              <h1 className="text-2xl sm:text-3xl font-extrabold leading-tight">
+                Evaluación de Prácticas Pre-Profesionales
+              </h1>
+              <p className="text-sm opacity-90 mt-1">
+                UNT · Evaluación del desempeño del practicante
               </p>
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => navigate('/tutor/practicantes')}>
-            <ArrowLeft size={16} />
+
+          <Button variant="ghost" size="sm" className="h-9 w-9 bg-white/10 hover:bg-white/20 text-white border-white/20" onClick={() => navigate('/tutor/practicantes')} aria-label="Volver">
+            <ArrowLeft className="h-4 w-4" />
           </Button>
         </div>
+      </div>
 
-        {expediente && (
-          <Card className="p-6">
+      {/* ── Expediente Card ──────────────────────────────────── */}
+      {expediente && (
+        <Card>
+          <CardContent className="p-4 sm:p-6">
             <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
               <div className="md:col-span-2">
-                <p className="text-xs text-[var(--color-muted-foreground)]">1. DEL PRACTICANTE</p>
-                <h3 className="mb-2 mt-1 text-lg font-semibold text-[var(--color-foreground)]">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider">1. DEL PRACTICANTE</p>
+                <h2 className="mb-2 mt-1 text-lg md:text-xl font-bold text-foreground">
                   {expediente.nombreEstudiante} {expediente.apellidoEstudiante}
-                </h3>
+                </h2>
                 <div className="flex flex-wrap gap-2">
-                  <Badge variant="neutral">
-                    <User size={14} className="mr-1" />
+                  <Badge variant="neutral" size="sm">
+                    <User className="h-3.5 w-3.5 mr-1" />
                     DNI: {expediente.numeroDocumento || '—'}
                   </Badge>
-                  <Badge variant="neutral">
-                    <Building2 size={14} className="mr-1" />
+                  <Badge variant="neutral" size="sm">
+                    <Building2 className="h-3.5 w-3.5 mr-1" />
                     {expediente.nombreEmpresa}
                   </Badge>
                 </div>
@@ -375,118 +386,121 @@ export const EvaluacionTutorExterno = () => {
               <div>
                 {esCualitativa ? (
                   <>
-                    <p className="text-xs text-[var(--color-muted-foreground)]">Calificación final</p>
-                    <div className="text-xl font-semibold text-[var(--color-foreground)]">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Calificación final</p>
+                    <p className="text-xl font-bold text-foreground">
                       {evaluacion.calificacionCualitativa || '—'}
-                    </div>
+                    </p>
                   </>
                 ) : (
                   <>
-                    <p className="text-xs text-[var(--color-muted-foreground)]">Puntaje Total</p>
-                    <div className="text-3xl font-semibold" style={{ color: colorVar }}>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Puntaje Total</p>
+                    <p className={cn('text-3xl font-bold', colorClass)}>
                       {totalGeneral}{' '}
-                      <span className="text-sm text-[var(--color-muted-foreground)]">/ {totalMaximo}</span>
-                    </div>
-                    <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-[var(--color-border)]">
+                      <span className="text-sm text-muted-foreground">/ {totalMaximo}</span>
+                    </p>
+                    <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-border">
                       <div
-                        className="h-full rounded-full transition-all"
-                        style={{ width: `${porcentaje}%`, backgroundColor: colorVar }}
+                        className={cn('h-full rounded-full transition-all', barClass)}
+                        style={{ width: `${porcentaje}%` }}
                       />
                     </div>
                   </>
                 )}
               </div>
             </div>
-          </Card>
-        )}
+          </CardContent>
+        </Card>
+      )}
 
-        <Card className="p-6">
-          <h3 className="mb-4 text-base font-semibold text-[var(--color-foreground)]">4. EVALUACIÓN</h3>
-          <p className="mb-4 block text-xs text-[var(--color-muted-foreground)]">
+      {/* ── Evaluación ───────────────────────────────────────── */}
+      <Card>
+        <CardContent className="p-4 sm:p-6">
+          <h2 className="text-base font-bold text-foreground mb-1">4. EVALUACIÓN</h2>
+          <p className="mb-4 text-xs text-muted-foreground">
             {esCualitativa
               ? 'Para cada criterio, seleccione la calificación cualitativa que corresponde al desempeño del practicante.'
-              : '(En la columna de puntaje, para cada criterio, sírvase marcar un número de 1 a 5 según corresponda al practicante que está evaluando. El número 1 corresponde al peor desempeño y el número 5 corresponde al mejor desempeño)'}
+              : 'En la columna de puntaje, para cada criterio, sírvase marcar un número de 1 a 5 según corresponda. El número 1 corresponde al peor desempeño y el 5 al mejor.'}
           </p>
 
           {grupos.map((cat, catIndex) => (
             <div key={cat.categoria} className="mb-6">
               <div className="mb-3 flex items-center justify-between">
-                <h4 className="text-sm font-bold text-[var(--color-foreground)]">{cat.categoria}</h4>
+                <h3 className="text-sm font-bold text-foreground">{cat.categoria}</h3>
                 {!esCualitativa && (
                   <Badge
                     variant={calcularTotalCategoria(cat) >= cat.puntajeMaximo * 0.7 ? 'success' : 'neutral'}
+                    size="sm"
                   >
                     {calcularTotalCategoria(cat)} / {cat.puntajeMaximo} pts
                   </Badge>
                 )}
               </div>
 
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-1/2">Criterio de Evaluación</TableHead>
-                    <TableHead className="w-1/4 text-center">
-                      {esCualitativa ? 'Calificación' : `Puntaje (${Math.max(
-                        ...cat.criterios.map((c) => c.puntajeMaximo || 5),
-                        5,
-                      )})`}
-                    </TableHead>
-                    <TableHead className="w-1/4 text-center">Observaciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {cat.criterios.map((criterio) => (
-                    <TableRow key={criterio.id}>
-                      <TableCell>
-                        <p className="text-sm text-[var(--color-foreground)]">{criterio.nombre}</p>
-                        {criterio.descripcion && (
-                          <p className="text-xs text-[var(--color-muted-foreground)]">{criterio.descripcion}</p>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {esCualitativa ? (
+              <div className="rounded-xl border border-border overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted hover:bg-muted">
+                      <TableHead className="text-foreground w-1/2">Criterio de Evaluación</TableHead>
+                      <TableHead className="text-foreground w-1/4 text-center">
+                        {esCualitativa ? 'Calificación' : `Puntaje (${Math.max(
+                          ...cat.criterios.map((c) => c.puntajeMaximo || 5),
+                          5,
+                        )})`}
+                      </TableHead>
+                      <TableHead className="text-foreground w-1/4 text-center">Observaciones</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {cat.criterios.map((criterio) => (
+                      <TableRow key={criterio.id}>
+                        <TableCell>
+                          <p className="text-sm text-foreground">{criterio.nombre}</p>
+                          {criterio.descripcion && (
+                            <p className="text-xs text-muted-foreground">{criterio.descripcion}</p>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {esCualitativa ? (
                           <Select
-                            options={[
-                              { value: 'Logrado', label: 'Logrado' },
-                              { value: 'En proceso', label: 'En proceso' },
-                              { value: 'No logrado', label: 'No logrado' },
-                            ]}
+                            id={`criterio-${criterio.id}`}
+                            options={CUALITATIVAS}
                             placeholder="Seleccionar"
                             value={detalles[criterio.id]?.calificacionCualitativa || ''}
                             onChange={(e) => handleCalificacionCualitativaChange(criterio.id, e.target.value)}
                             className="mx-auto w-32"
                           />
-                        ) : (
+                          ) : (
+                            <Input
+                              type="number"
+                              min={0}
+                              max={criterio.puntajeMaximo || 5}
+                              value={detalles[criterio.id]?.puntajeObtenido || ''}
+                              onChange={(e) =>
+                                handlePuntajeChange(criterio.id, e.target.value, criterio.puntajeMaximo || 5)
+                              }
+                              className="mx-auto w-20 text-center"
+                            />
+                          )}
+                        </TableCell>
+                        <TableCell>
                           <Input
-                            type="number"
-                            min={0}
-                            max={criterio.puntajeMaximo || 5}
-                            value={detalles[criterio.id]?.puntajeObtenido || ''}
-                            onChange={(e) =>
-                              handlePuntajeChange(criterio.id, e.target.value, criterio.puntajeMaximo || 5)
-                            }
-                            className="mx-auto w-20 text-center"
+                            value={detalles[criterio.id]?.comentarios || ''}
+                            onChange={(e) => handleComentarioChange(criterio.id, e.target.value)}
+                            placeholder="Opcional"
                           />
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          value={detalles[criterio.id]?.comentarios || ''}
-                          onChange={(e) => handleComentarioChange(criterio.id, e.target.value)}
-                          placeholder="Opcional"
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
 
-              {catIndex < grupos.length - 1 && <div className="my-4 border-t border-[var(--color-border)]" />}
+              {catIndex < grupos.length - 1 && <div className="my-4 border-t border-border" />}
             </div>
           ))}
 
-          <div className="mt-6 border-t-2 border-[var(--color-primary)] pt-4">
-            <div className="grid grid-cols-1 items-center gap-4 md:grid-cols-3">
+          <div className="mt-6 border-t-2 border-primary-600 dark:border-primary-400 pt-4">
+            <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-3">
               <Input
                 label="Horas registradas"
                 type="number"
@@ -500,7 +514,7 @@ export const EvaluacionTutorExterno = () => {
               />
               <div className="relative">
                 <Button variant={file ? 'secondary' : 'primary'} className="w-full">
-                  <Upload size={16} />
+                  <Upload className="h-4 w-4" />
                   {evaluacion.rutaConstancia || 'Subir constancia de horas'}
                 </Button>
                 <input
@@ -514,11 +528,7 @@ export const EvaluacionTutorExterno = () => {
                 <Select
                   label="Calificación final"
                   placeholder="Seleccionar calificación final"
-                  options={[
-                    { value: 'Logrado', label: 'Logrado' },
-                    { value: 'En proceso', label: 'En proceso' },
-                    { value: 'No logrado', label: 'No logrado' },
-                  ]}
+                  options={CUALITATIVAS}
                   value={evaluacion.calificacionCualitativa}
                   onChange={(e) =>
                     setEvaluacion((prev) => ({ ...prev, calificacionCualitativa: e.target.value }))
@@ -526,10 +536,10 @@ export const EvaluacionTutorExterno = () => {
                 />
               ) : (
                 <div className="py-2 text-center">
-                  <p className="text-xs text-[var(--color-muted-foreground)]">Puntaje Total Obtenido</p>
-                  <div className="text-xl font-bold" style={{ color: colorVar }}>
+                  <p className="text-xs text-muted-foreground">Puntaje Total Obtenido</p>
+                  <p className={cn('text-xl font-bold', colorClass)}>
                     {totalGeneral} / {totalMaximo}
-                  </div>
+                  </p>
                 </div>
               )}
             </div>
@@ -545,8 +555,8 @@ export const EvaluacionTutorExterno = () => {
             </div>
           </div>
 
-          <div className="mt-6 flex flex-col items-center justify-between gap-4 sm:flex-row">
-            <p className="text-sm text-[var(--color-muted-foreground)]">
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p className="text-sm text-muted-foreground">
               Lugar y fecha: _______________,{' '}
               {new Date().toLocaleDateString('es-PE', { day: '2-digit', month: 'long', year: 'numeric' })}
             </p>
@@ -560,53 +570,58 @@ export const EvaluacionTutorExterno = () => {
                 : 'Firma y Sello del Funcionario a Cargo'}
             </Button>
           </div>
-        </Card>
+        </CardContent>
+      </Card>
 
-        {evaluaciones.length > 0 && (
-          <Card className="p-6">
-            <h3 className="mb-4 text-base font-semibold text-[var(--color-foreground)]">
+      {/* ── Historial ────────────────────────────────────────── */}
+      {evaluaciones.length > 0 && (
+        <Card>
+          <CardContent className="p-4 sm:p-6">
+            <h3 className="mb-4 text-base font-bold text-foreground">
               Historial de evaluaciones
             </h3>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Fecha</TableHead>
-                  <TableHead>Horas</TableHead>
-                  <TableHead>Evaluador</TableHead>
-                  <TableHead>Puntaje</TableHead>
-                  <TableHead>Detalles</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {evaluaciones
-                  .filter((ev) => ev.componente === 'EMPRESA')
-                  .map((ev) => (
-                    <TableRow key={ev.id}>
-                      <TableCell>{ev.fechaEvaluacion}</TableCell>
-                      <TableCell>{ev.horasRegistradas} hrs</TableCell>
-                      <TableCell>{ev.tipoEvaluador}</TableCell>
-                      <TableCell>
-                        <span className="text-sm font-semibold">
-                          {ev.puntajeTotal ?? ev.promedioFinal ?? '—'}/{totalMaximo}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        {ev.detalles?.map((d) => (
-                          <span
-                            key={d.idCriterio || d.id}
-                            className="block text-xs text-[var(--color-muted-foreground)]"
-                          >
-                            {d.nombreCriterio || d.criterio}: {d.puntajeObtenido}
+            <div className="rounded-xl border border-border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted hover:bg-muted">
+                    <TableHead className="text-foreground">Fecha</TableHead>
+                    <TableHead className="text-foreground">Horas</TableHead>
+                    <TableHead className="text-foreground">Evaluador</TableHead>
+                    <TableHead className="text-foreground">Puntaje</TableHead>
+                    <TableHead className="text-foreground">Detalles</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {evaluaciones
+                    .filter((ev) => ev.componente === 'EMPRESA')
+                    .map((ev) => (
+                      <TableRow key={ev.id}>
+                        <TableCell className="text-foreground">{ev.fechaEvaluacion}</TableCell>
+                        <TableCell className="text-foreground">{ev.horasRegistradas} hrs</TableCell>
+                        <TableCell className="text-foreground">{ev.tipoEvaluador}</TableCell>
+                        <TableCell>
+                          <span className="text-sm font-semibold text-foreground">
+                            {ev.puntajeTotal ?? ev.promedioFinal ?? '—'}/{totalMaximo}
                           </span>
-                        ))}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-              </TableBody>
-            </Table>
-          </Card>
-        )}
-      </motion.div>
+                        </TableCell>
+                        <TableCell>
+                          {ev.detalles?.map((d) => (
+                            <span
+                              key={d.idCriterio || d.id}
+                              className="block text-xs text-muted-foreground"
+                            >
+                              {d.nombreCriterio || d.criterio}: {d.puntajeObtenido}
+                            </span>
+                          ))}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

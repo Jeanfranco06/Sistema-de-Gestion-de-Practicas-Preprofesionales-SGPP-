@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Download, Filter, Eye, BarChart3 } from 'lucide-react';
@@ -18,7 +18,12 @@ import {
   Select,
   Tooltip,
   Skeleton,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
 } from '../../../ui';
+import { cn } from '../../../lib/utils';
 
 const REPORT_TYPES = [
   { value: 'EXPEDIENTES_ACTIVOS', label: 'Expedientes activos' },
@@ -209,6 +214,14 @@ export const ReportesCoordinacion = ({ variant = 'coordinacion' }: ReportesCoord
     ? 'No se pudo generar el reporte solicitado.'
     : '';
 
+  const getEstadoBadgeVariant = (value: unknown): 'default' | 'success' | 'warning' | 'danger' | 'info' | 'neutral' => {
+    const estado = String(value).toUpperCase();
+    if ([ESTADOS_EXPEDIENTE.CERRADO, ESTADOS_EXPEDIENTE.EVALUADO, ESTADOS_EXPEDIENTE.DICTAMEN_EMITIDO, ESTADOS_EXPEDIENTE.INFORME_APROBADO, ESTADOS_EXPEDIENTE.PLAN_APROBADO].includes(estado)) return 'success';
+    if ([ESTADOS_EXPEDIENTE.OBSERVADO, ESTADOS_EXPEDIENTE.PLAN_OBSERVADO].includes(estado)) return 'danger';
+    if ([ESTADOS_EXPEDIENTE.PLAN_PRESENTADO, ESTADOS_EXPEDIENTE.INFORME_FINAL_PRESENTADO, 'EN_REVISION'].includes(estado)) return 'warning';
+    return 'info';
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -216,22 +229,16 @@ export const ReportesCoordinacion = ({ variant = 'coordinacion' }: ReportesCoord
       transition={{ duration: 0.4 }}
       className="space-y-6"
     >
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-start gap-3">
-          <div
-            className="rounded-xl p-2"
-            style={{ backgroundColor: 'var(--color-muted)', color: 'var(--color-primary)' }}
-          >
-            <BarChart3 size={24} />
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#1A3A6E] text-white dark:bg-[#4A6FA5]">
+            <BarChart3 size={24} aria-hidden="true" />
           </div>
           <div>
-            <h1
-              className="text-2xl font-bold"
-              style={{ color: 'var(--color-foreground)' }}
-            >
+            <h1 className="text-xl font-bold text-foreground md:text-2xl">
               {isAdminView ? 'Reportes Administrativos' : 'Reportes Consolidados'}
             </h1>
-            <p style={{ color: 'var(--color-muted-foreground)' }}>
+            <p className="text-sm text-muted-foreground">
               {isAdminView
                 ? 'Consulta y exporta reportes operativos de expedientes, empresas, sedes y convenios para la gestión administrativa del SGPP.'
                 : 'Genera reportes ejecutivos por periodo, tipo de práctica, estado, empresa y sede.'}
@@ -240,149 +247,124 @@ export const ReportesCoordinacion = ({ variant = 'coordinacion' }: ReportesCoord
         </div>
       </div>
 
-      <div
-        className="rounded-xl border p-6"
-        style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }}
-      >
-        <h2
-          className="text-base font-semibold mb-4"
-          style={{ color: 'var(--color-foreground)' }}
-        >
-          Configuración de Reporte
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-4 items-end">
-          <Select
-            label="Tipo de reporte"
-            options={REPORT_TYPES}
-            value={tipoReporte}
-            onChange={(e) => setTipoReporte(e.target.value)}
-          />
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base font-semibold">Configuración de Reporte</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3 xl:grid-cols-6 items-end">
+            <Select
+              label="Tipo de reporte"
+              options={REPORT_TYPES}
+              value={tipoReporte}
+              onChange={(e) => setTipoReporte(e.target.value)}
+            />
 
-          <Input
-            label="Periodo"
-            placeholder="Ej. 2025-I"
-            value={filtros.periodoAcademico}
-            onChange={(e) =>
-              setFiltros((prev) => ({ ...prev, periodoAcademico: e.target.value }))
-            }
-          />
+            <Input
+              label="Periodo"
+              placeholder="Ej. 2025-I"
+              value={filtros.periodoAcademico}
+              onChange={(e) =>
+                setFiltros((prev) => ({ ...prev, periodoAcademico: e.target.value }))
+              }
+            />
 
-          <Select
-            label="Tipo de práctica"
-            options={TIPOS_PRACTICA}
-            value={filtros.codigoTipoPractica}
-            onChange={(e) =>
-              setFiltros((prev) => ({ ...prev, codigoTipoPractica: e.target.value }))
-            }
-          />
+            <Select
+              label="Tipo de práctica"
+              options={TIPOS_PRACTICA}
+              value={filtros.codigoTipoPractica}
+              onChange={(e) =>
+                setFiltros((prev) => ({ ...prev, codigoTipoPractica: e.target.value }))
+              }
+            />
 
-          <Select
-            label="Estado"
-            options={ESTADOS}
-            value={filtros.estadoExpediente}
-            onChange={(e) =>
-              setFiltros((prev) => ({ ...prev, estadoExpediente: e.target.value }))
-            }
-          />
+            <Select
+              label="Estado"
+              options={ESTADOS}
+              value={filtros.estadoExpediente}
+              onChange={(e) =>
+                setFiltros((prev) => ({ ...prev, estadoExpediente: e.target.value }))
+              }
+            />
 
-          <Select
-            label="Empresa"
-            options={empresaOptions}
-            value={filtros.idEmpresa}
-            onChange={(e) =>
-              setFiltros((prev) => ({ ...prev, idEmpresa: e.target.value }))
-            }
-            disabled={loadingCatalogos}
-          />
+            <Select
+              label="Empresa"
+              options={empresaOptions}
+              value={filtros.idEmpresa}
+              onChange={(e) =>
+                setFiltros((prev) => ({ ...prev, idEmpresa: e.target.value }))
+              }
+              disabled={loadingCatalogos}
+            />
 
-          <Select
-            label="Sede"
-            options={sedeOptions}
-            value={filtros.idSede}
-            onChange={(e) => setFiltros((prev) => ({ ...prev, idSede: e.target.value }))}
-            disabled={loadingCatalogos}
-          />
-        </div>
+            <Select
+              label="Sede"
+              options={sedeOptions}
+              value={filtros.idSede}
+              onChange={(e) => setFiltros((prev) => ({ ...prev, idSede: e.target.value }))}
+              disabled={loadingCatalogos}
+            />
+          </div>
 
-        <div className="flex flex-wrap gap-3 mt-5 justify-end">
-          <Button
-            variant="secondary"
-            onClick={() =>
-              setFiltros({
-                periodoAcademico: '',
-                codigoTipoPractica: '',
-                estadoExpediente: '',
-                idEmpresa: '',
-                idSede: '',
-              })
-            }
-          >
-            Limpiar filtros
-          </Button>
-          <Button
-            loading={loading}
-            onClick={generarReporte}
-            disabled={loading}
-          >
-            <Filter size={16} />
-            Generar reporte
-          </Button>
-        </div>
-      </div>
+          <div className="mt-5 flex flex-wrap justify-end gap-3">
+            <Button
+              variant="secondary"
+              className="w-full sm:w-auto"
+              onClick={() =>
+                setFiltros({
+                  periodoAcademico: '',
+                  codigoTipoPractica: '',
+                  estadoExpediente: '',
+                  idEmpresa: '',
+                  idSede: '',
+                })
+              }
+            >
+              Limpiar filtros
+            </Button>
+            <Button
+              loading={loading}
+              onClick={generarReporte}
+              disabled={loading}
+              className="w-full sm:w-auto"
+            >
+              <Filter size={16} aria-hidden="true" />
+              Generar reporte
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {errorMessage && (
-        <div
-          className="rounded-xl border px-4 py-3"
-          style={{
-            backgroundColor: 'var(--color-muted)',
-            borderColor: 'var(--color-error)',
-            color: 'var(--color-error)',
-          }}
-        >
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">
           {errorMessage}
         </div>
       )}
       {exportMessage && (
-        <div
-          className="rounded-xl border px-4 py-3"
-          style={{
-            backgroundColor: 'var(--color-muted)',
-            borderColor: 'var(--color-info)',
-            color: 'var(--color-info)',
-          }}
-        >
+        <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-blue-800 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-200">
           {exportMessage}
         </div>
       )}
 
       {loading ? (
-        <div
-          className="rounded-xl border p-10 text-center"
-          style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }}
-        >
+        <Card className="p-10 text-center">
           <div className="flex flex-col items-center gap-3">
             <Skeleton variant="circular" className="h-10 w-10" />
             <Skeleton variant="text" className="w-40" />
           </div>
-          <p className="mt-4 text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
+          <p className="mt-4 text-sm text-muted-foreground">
             Generando reporte...
           </p>
-        </div>
+        </Card>
       ) : hasGenerated && resultado ? (
-        <>
-          <div
-            className="rounded-xl border p-6"
-            style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }}
-          >
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+        <Card>
+          <CardContent>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
               <div>
-                <h3
-                  className="text-base font-semibold"
-                  style={{ color: 'var(--color-primary)' }}
-                >
+                <h3 className="text-base font-semibold text-primary-700 dark:text-primary-400">
                   {resultado.titulo || REPORT_TYPES.find((item) => item.value === tipoReporte)?.label}
                 </h3>
-                <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
+                <p className="text-sm text-muted-foreground">
                   {resultado.totalRegistros || 0} registros · {resultado.descripcion || 'Consulta consolidada del SGPP.'}
                 </p>
               </div>
@@ -392,26 +374,25 @@ export const ReportesCoordinacion = ({ variant = 'coordinacion' }: ReportesCoord
                   loading={exportando}
                   onClick={() => exportarReporte('CSV')}
                   disabled={exportando}
+                  className="w-full sm:w-auto"
                 >
-                  <Download size={16} />
+                  <Download size={16} aria-hidden="true" />
                   Exportar CSV
                 </Button>
                 <Button
                   loading={exportando}
                   onClick={() => exportarReporte('PDF')}
                   disabled={exportando}
+                  className="w-full sm:w-auto"
                 >
-                  <Download size={16} />
+                  <Download size={16} aria-hidden="true" />
                   Exportar PDF
                 </Button>
               </div>
             </div>
 
             {resultado.registros?.length > 0 ? (
-              <div
-                className="rounded-xl border overflow-hidden"
-                style={{ borderColor: 'var(--color-border)' }}
-              >
+              <div className="overflow-hidden rounded-xl border border-border">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -426,12 +407,12 @@ export const ReportesCoordinacion = ({ variant = 'coordinacion' }: ReportesCoord
                       <TableRow key={row.idExpediente || row.id || index}>
                         {columnas.map((col) => (
                           <TableCell key={`${col.key}-${row.idExpediente || row.id || index}`}>
-                            {col.key.toLowerCase().includes('estado') ? (
-                              <Badge variant="primary" size="sm">
+                            {col.key.toLowerCase().includes('estado') || col.key.toLowerCase().includes('vigente') ? (
+                              <Badge variant={getEstadoBadgeVariant(row[col.key])} size="sm">
                                 {formatValue(row[col.key])}
                               </Badge>
                             ) : (
-                              <span className="text-sm" style={{ color: 'var(--color-foreground)' }}>
+                              <span className="text-sm text-foreground">
                                 {formatValue(row[col.key])}
                               </span>
                             )}
@@ -443,6 +424,7 @@ export const ReportesCoordinacion = ({ variant = 'coordinacion' }: ReportesCoord
                               <Button
                                 size="sm"
                                 variant="secondary"
+                                className="min-h-10 w-full sm:w-auto"
                                 onClick={() =>
                                   navigate(
                                     isAdminView
@@ -451,12 +433,12 @@ export const ReportesCoordinacion = ({ variant = 'coordinacion' }: ReportesCoord
                                   )
                                 }
                               >
-                                <Eye size={14} />
-                                {isAdminView ? 'Ver expedientes' : 'Ver detalle'}
+                                <Eye size={14} aria-hidden="true" />
+                                <span className="hidden sm:inline">{isAdminView ? 'Ver expedientes' : 'Ver detalle'}</span>
                               </Button>
                             </Tooltip>
                           ) : (
-                            <span className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
+                            <span className="text-xs text-muted-foreground">
                               Sin detalle
                             </span>
                           )}
@@ -467,34 +449,21 @@ export const ReportesCoordinacion = ({ variant = 'coordinacion' }: ReportesCoord
                 </Table>
               </div>
             ) : (
-              <div
-                className="rounded-xl border px-4 py-3"
-                style={{
-                  backgroundColor: 'var(--color-muted)',
-                  borderColor: 'var(--color-info)',
-                  color: 'var(--color-info)',
-                }}
-              >
+              <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-blue-800 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-200">
                 El reporte no devolvió registros con los filtros seleccionados.
               </div>
             )}
-          </div>
-        </>
+          </CardContent>
+        </Card>
       ) : (
-        <div
-          className="rounded-xl border p-8 text-center"
-          style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }}
-        >
-          <h3
-            className="text-lg font-semibold mb-1"
-            style={{ color: 'var(--color-primary)' }}
-          >
+        <Card className="p-8 text-center">
+          <h3 className="mb-1 text-lg font-semibold text-primary-700 dark:text-primary-400">
             Aún no se ha generado un reporte
           </h3>
-          <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
-            Selecciona el tipo de reporte, aplica los filtros necesarios y luego pulsa `Generar reporte`.
+          <p className="text-sm text-muted-foreground">
+            Selecciona el tipo de reporte, aplica los filtros necesarios y luego pulsa <strong>Generar reporte</strong>.
           </p>
-        </div>
+        </Card>
       )}
     </motion.div>
   );

@@ -12,14 +12,14 @@ import {
   AlertTriangle,
   ArrowLeft,
   Award,
+  Loader2,
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
-import { useAuth } from '../../../auth/AuthContext';
-import { usePerfilAcademico, useActualizarPerfilAcademico } from '../../../hooks/useUsuarios';
-import { Card, CardContent, Badge, Button, Avatar, Separator } from '../../../ui';
-import { Input } from '../../../ui/Input';
-import { Select } from '../../../ui/Select';
+import { useAuth } from '@/auth/AuthContext';
+import { usePerfilAcademico, useActualizarPerfilAcademico } from '@/hooks/useUsuarios';
+import { Card, CardContent, Badge, Button, Avatar, Separator, Input, Select } from '@/ui';
+import { cn } from '@/lib/utils';
 
 const MySwal = withReactContent(Swal);
 
@@ -102,11 +102,9 @@ function getEstadoVariant(estado: string): 'success' | 'warning' | 'info' | 'neu
 
 function LoadingState() {
   return (
-    <div className="flex items-center justify-center min-h-[60vh]">
-      <svg className="animate-spin h-12 w-12" style={{ color: 'var(--color-primary-600)' }} viewBox="0 0 24 24">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-      </svg>
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+      <Loader2 className="h-12 w-12 animate-spin text-primary-600" aria-hidden="true" />
+      <p className="font-medium text-muted-foreground">Cargando perfil académico...</p>
     </div>
   );
 }
@@ -194,41 +192,52 @@ function PerfilEstudiante() {
   if (isLoading) return <LoadingState />;
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8 w-full min-h-screen" style={{ backgroundColor: '#f8fafc' }}>
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
-        <Button variant="secondary" size="sm" onClick={() => navigate('/estudiante/dashboard')}>
-          <ArrowLeft className="h-4 w-4" />
-          Volver al Dashboard
-        </Button>
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: '#0f172a' }}>
-            Perfil Académico
-          </h1>
-          <p className="text-sm mt-1" style={{ color: '#64748b' }}>
-            Mantén actualizada tu información para acceder a las prácticas
-          </p>
+    <div className="space-y-6 p-4 sm:p-6 lg:p-8 w-full min-h-screen">
+      {/* Header Banner */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary-700 to-primary-900 text-white p-6 md:p-8">
+        <div className="absolute right-[-20px] top-2 opacity-10 md:right-[-50px] md:top-[-50px]">
+          <GraduationCap className="h-[150px] w-[150px] md:h-[300px] md:w-[300px]" />
+        </div>
+        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center justify-center rounded-full shrink-0 w-14 h-14 bg-white/15">
+              <User className="h-7 w-7" />
+            </div>
+            <div>
+              <h1 className="text-2xl md:text-3xl font-extrabold">Perfil Académico</h1>
+              <p className="text-sm opacity-90 mt-1">
+                Mantén actualizada tu información para acceder a las prácticas
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-white border border-white/30 rounded-lg hover:bg-white/10 self-start md:self-auto"
+            onClick={() => navigate('/estudiante/dashboard')}
+          >
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            Volver al Dashboard
+          </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column - Profile Card */}
         <div className="lg:col-span-4">
-          <Card className="h-full">
-            <div
-              className="h-24 rounded-t-[calc(var(--radius-2xl)-1px)]"
-              style={{ background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)' }}
-            />
+          <Card className="h-full overflow-hidden">
+            <div className="h-24 rounded-t-2xl bg-gradient-to-br from-primary-700 to-primary-900" />
             <CardContent className="pt-0 px-6 pb-6">
               <div className="flex flex-col items-center -mt-12 text-center">
                 <Avatar
                   size="xl"
-                  className="border-4 border-white shadow-lg mb-3"
+                  className="border-4 border-white shadow-lg mb-3 bg-muted"
                   fallback={userData?.nombres?.charAt(0) || 'E'}
                 />
-                <h2 className="text-xl font-bold" style={{ color: '#0f172a' }}>
+                <h2 className="text-xl font-bold text-foreground">
                   {userData?.nombres} {userData?.apellidoPaterno}
                 </h2>
-                <p className="text-sm" style={{ color: '#64748b' }}>
+                <p className="text-sm text-muted-foreground">
                   {userData?.codigoEstudiantil}
                 </p>
                 <Badge
@@ -243,42 +252,33 @@ function PerfilEstudiante() {
               <Separator className="my-4" />
 
               <div className="space-y-3">
-                <div
-                  className="flex items-center gap-3 p-3 rounded-xl"
-                  style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}
-                >
-                  <div className="p-2.5 rounded-xl" style={{ backgroundColor: '#eff6ff' }}>
-                    <GraduationCap className="h-4 w-4" style={{ color: '#2563eb' }} />
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 border border-border">
+                  <div className="p-2.5 rounded-xl bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">
+                    <GraduationCap className="h-4 w-4" />
                   </div>
                   <div>
-                    <p className="text-xs font-medium" style={{ color: '#64748b' }}>Semestre Actual</p>
-                    <p className="text-lg font-bold" style={{ color: '#0f172a' }}>{watched.semestreActual}°</p>
+                    <p className="text-xs font-medium text-muted-foreground">Semestre Actual</p>
+                    <p className="text-lg font-bold text-foreground">{watched.semestreActual}°</p>
                   </div>
                 </div>
 
-                <div
-                  className="flex items-center gap-3 p-3 rounded-xl"
-                  style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}
-                >
-                  <div className="p-2.5 rounded-xl" style={{ backgroundColor: '#ecfdf5' }}>
-                    <User className="h-4 w-4" style={{ color: '#059669' }} />
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 border border-border">
+                  <div className="p-2.5 rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                    <User className="h-4 w-4" />
                   </div>
                   <div>
-                    <p className="text-xs font-medium" style={{ color: '#64748b' }}>Créditos Aprobados</p>
-                    <p className="text-lg font-bold" style={{ color: '#0f172a' }}>{watched.creditosAprobados}</p>
+                    <p className="text-xs font-medium text-muted-foreground">Créditos Aprobados</p>
+                    <p className="text-lg font-bold text-foreground">{watched.creditosAprobados}</p>
                   </div>
                 </div>
 
-                <div
-                  className="flex items-center gap-3 p-3 rounded-xl"
-                  style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}
-                >
-                  <div className="p-2.5 rounded-xl" style={{ backgroundColor: '#fffbeb' }}>
-                    <Award className="h-4 w-4" style={{ color: '#d97706' }} />
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 border border-border">
+                  <div className="p-2.5 rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                    <Award className="h-4 w-4" />
                   </div>
                   <div>
-                    <p className="text-xs font-medium" style={{ color: '#64748b' }}>Promedio Ponderado</p>
-                    <p className="text-lg font-bold" style={{ color: '#0f172a' }}>{watched.promedioPonderado || '-'}</p>
+                    <p className="text-xs font-medium text-muted-foreground">Promedio Ponderado</p>
+                    <p className="text-lg font-bold text-foreground">{watched.promedioPonderado || '-'}</p>
                   </div>
                 </div>
               </div>
@@ -291,14 +291,14 @@ function PerfilEstudiante() {
           <Card className="h-full">
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-6">
-                <div className="p-2.5 rounded-xl" style={{ backgroundColor: '#eff6ff' }}>
-                  <Pencil className="h-5 w-5" style={{ color: '#2563eb' }} />
+                <div className="p-2.5 rounded-xl bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">
+                  <Pencil className="h-5 w-5" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold" style={{ color: '#0f172a' }}>
+                  <h2 className="text-xl font-bold text-foreground">
                     Actualizar Información Académica
                   </h2>
-                  <p className="text-sm" style={{ color: '#64748b' }}>
+                  <p className="text-sm text-muted-foreground">
                     Modifica tus datos y guarda los cambios
                   </p>
                 </div>
@@ -370,10 +370,6 @@ function PerfilEstudiante() {
                     type="submit"
                     loading={isSubmitting}
                     className="px-6"
-                    style={{
-                      background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-                      boxShadow: '0 4px 10px rgba(37, 99, 235, 0.3)',
-                    }}
                   >
                     {isSubmitting ? 'Guardando...' : (
                       <>
@@ -390,18 +386,18 @@ function PerfilEstudiante() {
       </div>
 
       {/* Requirements Verification */}
-      <div className="mt-6">
+      <div>
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center gap-3 mb-6">
-              <div className="p-2.5 rounded-xl" style={{ backgroundColor: '#ecfdf5' }}>
-                <CheckCircle className="h-5 w-5" style={{ color: '#059669' }} />
+              <div className="p-2.5 rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                <CheckCircle className="h-5 w-5" />
               </div>
               <div>
-                <h2 className="text-xl font-bold" style={{ color: '#0f172a' }}>
+                <h2 className="text-xl font-bold text-foreground">
                   Verificación de Requisitos
                 </h2>
-                <p className="text-sm" style={{ color: '#64748b' }}>
+                <p className="text-sm text-muted-foreground">
                   Revisa si cumples con los requisitos para cada tipo de práctica
                 </p>
               </div>
@@ -411,83 +407,65 @@ function PerfilEstudiante() {
               {tiposPractica.map((tipo) => {
                 const cumple = cumpleRequisito(tipo.key);
                 return (
-                  <div
+                  <Card
                     key={tipo.key}
-                    className="h-full transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+                    className={cn(
+                      'h-full transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-hover',
+                      cumple
+                        ? 'border-2 border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 dark:border-emerald-500'
+                        : 'border-2 border-red-500 bg-red-50 dark:bg-red-950/30 dark:border-red-500'
+                    )}
                   >
-                    <Card
-                      className="h-full"
-                      style={{
-                        border: `2px solid ${cumple ? '#10b981' : '#ef4444'}`,
-                        backgroundColor: cumple ? '#ecfdf5' : '#fef2f2',
-                      }}
-                    >
-                      <CardContent className="p-5">
-                        <div className="flex items-center gap-2 mb-4">
-                          <div
-                            className="p-1.5 rounded-xl"
-                            style={{ backgroundColor: cumple ? '#10b981' : '#ef4444' }}
-                          >
-                            {cumple ? (
-                              <CheckCircle className="h-4 w-4 text-white" />
-                            ) : (
-                              <AlertTriangle className="h-4 w-4 text-white" />
-                            )}
-                          </div>
-                          <h3 className="font-bold text-sm" style={{ color: '#0f172a' }}>
-                            {tipo.nombre}
-                          </h3>
+                    <CardContent className="p-5">
+                      <div className="flex items-center gap-2 mb-4">
+                        <div className={cn('p-1.5 rounded-xl', cumple ? 'bg-emerald-500' : 'bg-red-500')}>
+                          {cumple ? (
+                            <CheckCircle className="h-4 w-4 text-white" />
+                          ) : (
+                            <AlertTriangle className="h-4 w-4 text-white" />
+                          )}
                         </div>
+                        <h3 className="font-bold text-sm text-foreground">
+                          {tipo.nombre}
+                        </h3>
+                      </div>
 
-                        <div className="space-y-2 mb-4">
-                          <div className="flex items-center gap-2">
-                            <span
-                              className="h-1.5 w-1.5 rounded-full shrink-0"
-                              style={{ backgroundColor: cumple ? '#10b981' : '#ef4444' }}
-                            />
-                            <span className="text-sm font-medium" style={{ color: '#475569' }}>
-                              {tipo.creditosStr}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span
-                              className="h-1.5 w-1.5 rounded-full shrink-0"
-                              style={{ backgroundColor: cumple ? '#10b981' : '#ef4444' }}
-                            />
-                            <span className="text-sm font-medium" style={{ color: '#475569' }}>
-                              {tipo.semestreStr}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span
-                              className="h-1.5 w-1.5 rounded-full shrink-0"
-                              style={{ backgroundColor: cumple ? '#10b981' : '#ef4444' }}
-                            />
-                            <span className="text-sm font-medium" style={{ color: '#475569' }}>
-                              Estado ACTIVO
-                            </span>
-                          </div>
+                      <div className="space-y-2 mb-4">
+                        <div className="flex items-center gap-2">
+                          <span className={cn('h-1.5 w-1.5 rounded-full shrink-0', cumple ? 'bg-emerald-500' : 'bg-red-500')} />
+                          <span className="text-sm font-medium text-muted-foreground">
+                            {tipo.creditosStr}
+                          </span>
                         </div>
+                        <div className="flex items-center gap-2">
+                          <span className={cn('h-1.5 w-1.5 rounded-full shrink-0', cumple ? 'bg-emerald-500' : 'bg-red-500')} />
+                          <span className="text-sm font-medium text-muted-foreground">
+                            {tipo.semestreStr}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={cn('h-1.5 w-1.5 rounded-full shrink-0', cumple ? 'bg-emerald-500' : 'bg-red-500')} />
+                          <span className="text-sm font-medium text-muted-foreground">
+                            Estado ACTIVO
+                          </span>
+                        </div>
+                      </div>
 
-                        <Badge
-                          variant={cumple ? 'success' : 'danger'}
-                          size="sm"
-                          className="w-full justify-center font-bold py-1.5"
-                        >
-                          {cumple ? '✓ CUMPLE' : '✗ NO CUMPLE'}
-                        </Badge>
-                      </CardContent>
-                    </Card>
-                  </div>
+                      <Badge
+                        variant={cumple ? 'success' : 'danger'}
+                        size="sm"
+                        className="w-full justify-center font-bold py-1.5"
+                      >
+                        {cumple ? '✓ CUMPLE' : '✗ NO CUMPLE'}
+                      </Badge>
+                    </CardContent>
+                  </Card>
                 );
               })}
             </div>
 
-            <div
-              className="mt-4 rounded-xl p-4 text-sm flex items-start gap-3"
-              style={{ backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', color: '#1e40af' }}
-            >
-              <GraduationCap className="h-5 w-5 shrink-0 mt-0.5" style={{ color: '#2563eb' }} />
+            <div className="mt-4 rounded-xl p-4 text-sm flex items-start gap-3 bg-blue-50 text-blue-800 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-200 dark:border-blue-800">
+              <GraduationCap className="h-5 w-5 shrink-0 mt-0.5 text-blue-600 dark:text-blue-300" />
               <p>
                 <strong>Nota:</strong> Para solicitar una práctica, debes cumplir con los requisitos mínimos.
                 Actualiza tu información para reflejar tu progreso.

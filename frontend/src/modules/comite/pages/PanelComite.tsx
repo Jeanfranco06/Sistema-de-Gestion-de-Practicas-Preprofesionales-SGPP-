@@ -5,6 +5,7 @@ import {
   CheckCircle2, Scale, Eye, AlertTriangle,
   Users, ClipboardList, FileEdit, ListChecks, RefreshCw,
   ChevronRight, Building2, Search, FileText, X, BarChart3,
+  Loader2, Info,
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
@@ -17,12 +18,14 @@ import {
 } from '../../../hooks/useExpedientes';
 import { planesApi } from '../../../api/planesApi';
 import { ESTADOS_EXPEDIENTE, ESTADOS_CON_PLAN_EN_REVISION, ESTADOS_PARA_DICTAMEN } from '../../../lib/constants';
+import { cn } from '../../../lib/utils';
 import {
   Button, Input, Badge, Select, Progress, Tooltip,
-  Dialog, Textarea, Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+  Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
+  Textarea, Card, CardContent, CardHeader, CardTitle,
 } from '../../../ui';
 import StatusChip from '../../../shared/components/StatusChip';
-import Alert from '@mui/material/Alert';
 
 const MySwal = withReactContent(Swal);
 
@@ -89,11 +92,11 @@ export const PanelComite = () => {
   }), [expedientes]);
 
   const estadoChart = useMemo(() => [
-    { name: 'Plan por revisar', value: kpis.pendientes, color: '#f59e0b' },
-    { name: 'En ejecución', value: kpis.enEjecucion, color: '#10b981' },
-    { name: 'Inf. final x aprobar', value: kpis.infFinalPresentado, color: '#8b5cf6' },
-    { name: 'Observados', value: kpis.observados, color: '#ef4444' },
-    { name: 'Cerrados', value: kpis.cerrados, color: '#3b82f6' },
+    { name: 'Plan por revisar', value: kpis.pendientes, color: 'bg-amber-500 dark:bg-amber-500' },
+    { name: 'En ejecución', value: kpis.enEjecucion, color: 'bg-emerald-500 dark:bg-emerald-500' },
+    { name: 'Inf. final x aprobar', value: kpis.infFinalPresentado, color: 'bg-violet-500 dark:bg-violet-500' },
+    { name: 'Observados', value: kpis.observados, color: 'bg-red-500 dark:bg-red-500' },
+    { name: 'Cerrados', value: kpis.cerrados, color: 'bg-blue-500 dark:bg-blue-500' },
   ], [kpis]);
 
   const tipoChart = useMemo(() => {
@@ -187,10 +190,10 @@ export const PanelComite = () => {
   };
 
   const stats = [
-    { label: 'Total expedientes', value: kpis.total, icon: Users, color: 'var(--color-primary)' },
-    { label: 'Plan por revisar', value: kpis.pendientes, icon: ClipboardList, color: 'var(--color-warning)' },
-    { label: 'En ejecución', value: kpis.enEjecucion, icon: ListChecks, color: 'var(--color-info)' },
-    { label: 'Inf. final x aprobar', value: kpis.infFinalPresentado, icon: FileEdit, color: 'var(--color-success)' },
+    { label: 'Total expedientes', value: kpis.total, icon: Users, color: 'bg-[#1A3A6E] text-white dark:bg-[#4A6FA5] dark:text-white' },
+    { label: 'Plan por revisar', value: kpis.pendientes, icon: ClipboardList, color: 'bg-amber-500 text-white dark:bg-amber-600 dark:text-white' },
+    { label: 'En ejecución', value: kpis.enEjecucion, icon: ListChecks, color: 'bg-emerald-600 text-white dark:bg-emerald-700 dark:text-white' },
+    { label: 'Inf. final x aprobar', value: kpis.infFinalPresentado, icon: FileEdit, color: 'bg-violet-600 text-white dark:bg-violet-700 dark:text-white' },
   ];
 
   const tipoOptions = [
@@ -210,8 +213,9 @@ export const PanelComite = () => {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-[50vh]">
-        <div className="animate-spin h-8 w-8 border-2 rounded-full" style={{ borderColor: 'var(--color-primary)', borderTopColor: 'transparent' }} />
+      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4" role="status" aria-live="polite">
+        <Loader2 className="h-8 w-8 animate-spin text-primary-600" aria-hidden="true" />
+        <p className="text-sm text-muted-foreground">Cargando expedientes...</p>
       </div>
     );
   }
@@ -221,412 +225,472 @@ export const PanelComite = () => {
       initial={initialMotion}
       animate={animateMotion}
       transition={transitionMotion}
-      className="space-y-6"
+      className="space-y-6 animate-in p-4 sm:p-6"
     >
-      <div
-        className="rounded-2xl p-6 text-white flex flex-wrap items-center justify-between gap-4"
-        style={{ backgroundColor: '#1a365d' }}
-      >
-        <div className="flex items-center gap-4">
-          <div className="p-3 rounded-xl bg-white/15">
-            <Building2 className="h-8 w-8" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold">
-              Hola, {user?.nombres?.split(' ')[0] || 'Comité'}
-            </h1>
-            <p className="text-sm text-white/80">
-              Panel del Comité de Prácticas · Revisa, aprueba planes, supervisa informes finales y emite dictámenes
-            </p>
-          </div>
+      {/* Header Banner */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary-700 to-primary-900 p-6 text-white shadow-lg">
+        <div className="absolute right-[-20px] top-2 opacity-10 md:right-[-50px] md:top-[-50px]">
+          <Building2 className="h-[150px] w-[150px] md:h-[300px] md:w-[300px]" />
         </div>
-        <Button variant="secondary" size="sm" onClick={() => refetch()} className="text-white border-white/30 hover:bg-white/10">
-          <RefreshCw className="h-4 w-4" /> Actualizar
-        </Button>
-      </div>
-
-      {isError && (
-        <Alert severity="error" className="rounded-xl">
-          {error instanceof Error ? error.message : 'No se pudieron cargar los expedientes.'}
-        </Alert>
-      )}
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {stats.map((stat, idx) => (
-          <div
-            key={idx}
-            className="rounded-xl border p-4 flex items-center gap-3"
-            style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }}
-          >
-            <div className="p-2 rounded-lg" style={{ backgroundColor: `${stat.color}15`, color: stat.color }}>
-              <stat.icon className="h-5 w-5" />
+        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/15 shrink-0">
+              <Building2 className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-2xl font-bold" style={{ color: 'var(--color-foreground)' }}>{stat.value}</p>
-              <p className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>{stat.label}</p>
+              <h1 className="text-2xl font-bold leading-tight">
+                Hola, {user?.nombres?.split(' ')[0] || 'Comité'}
+              </h1>
+              <p className="text-sm text-white/80 mt-1">
+                Panel del Comité de Prácticas · Revisa, aprueba planes, supervisa informes finales y emite dictámenes
+              </p>
             </div>
           </div>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => refetch()}
+            className="text-white border-white/30 bg-white/10 hover:bg-white/20"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" /> Actualizar
+          </Button>
+        </div>
+      </div>
+
+      {/* Error Alert */}
+      {isError && (
+        <div className="rounded-xl border border-red-200 bg-red-50 dark:bg-red-950/40 dark:border-red-800 p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/50">
+            <Info className="h-5 w-5 text-red-600 dark:text-red-400" />
+          </div>
+          <div className="flex-1">
+            <p className="font-bold text-sm text-red-900 dark:text-red-200">Error de carga</p>
+            <p className="text-sm text-red-800 dark:text-red-300 mt-1">
+              {error instanceof Error ? error.message : 'No se pudieron cargar los expedientes.'}
+            </p>
+          </div>
+          <Button variant="secondary" size="sm" onClick={() => refetch()} className="shrink-0">
+            Reintentar
+          </Button>
+        </div>
+      )}
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {stats.map((stat, idx) => (
+          <Card key={idx} variant="hover" className="p-5 flex items-center gap-3">
+            <div className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-lg', stat.color)}>
+              <stat.icon className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-2xl font-extrabold text-foreground leading-tight">{stat.value}</p>
+              <p className="text-xs text-muted-foreground truncate">{stat.label}</p>
+            </div>
+          </Card>
         ))}
       </div>
 
+      {/* Pendientes Alert */}
       {pendientesAccion.length > 0 && (
-        <Alert severity="info" className="rounded-xl">
-          Hay {pendientesAccion.length} acción(es) pendiente(s) en el panel.
-        </Alert>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 rounded-2xl border p-5" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)', borderTop: '3px solid var(--color-primary)' }}>
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold" style={{ color: 'var(--color-foreground)' }}>Resumen de Expedientes</h2>
-            <Badge variant="info">{avancePct}% cerrados</Badge>
+        <div className="rounded-xl border border-blue-200 bg-blue-50 dark:bg-blue-950/40 dark:border-blue-800 p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/50">
+            <Info className="h-5 w-5 text-blue-600 dark:text-blue-400" />
           </div>
-          <Progress value={avancePct} max={100} size="md" />
-          <p className="text-xs mt-2" style={{ color: 'var(--color-muted-foreground)' }}>
-            {kpis.cerrados} expedientes cerrados · {kpis.enEjecucion} en ejecución
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-            <div>
-              <p className="text-xs text-center mb-3" style={{ color: 'var(--color-muted-foreground)' }}>Expedientes por Estado</p>
-              <div className="h-52 flex items-center justify-center">
-                <div
-                  className="w-36 h-36 rounded-full flex items-center justify-center"
-                  style={{
-                    background: `conic-gradient(#10b981 0 ${kpis.total ? (kpis.cerrados / kpis.total) * 100 : 0}%, #f59e0b 0 ${kpis.total ? ((kpis.cerrados + kpis.pendientes) / kpis.total) * 100 : 0}%, #e0e7ff 0 100%)`,
-                  }}
-                >
-                  <div className="w-24 h-24 rounded-full flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--color-card)' }}>
-                    <span className="text-xl font-bold text-emerald-600">{kpis.cerrados}</span>
-                    <span className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>de {kpis.total}</span>
-                  </div>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-2 justify-center mt-2">
-                <Badge variant="info"><Users className="h-3 w-3 mr-1" />{kpis.total} total</Badge>
-                <Badge variant="warning"><AlertTriangle className="h-3 w-3 mr-1" />{kpis.observados} observados</Badge>
-              </div>
-            </div>
-
-            <div>
-              <p className="text-xs text-center mb-3" style={{ color: 'var(--color-muted-foreground)' }}>Distribución de Estados</p>
-              <div
-                className="h-52 flex items-end justify-center gap-3 px-2 pb-2 border-b"
-                style={{ borderColor: 'var(--color-border)' }}
-              >
-                {estadoChart.map((item) => {
-                  const height = Math.max((item.value / maxEstado) * 160, item.value > 0 ? 16 : 4);
-                  return (
-                    <div key={item.name} className="w-14 text-center">
-                      <span className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>{item.value}</span>
-                      <div
-                        className="mt-2 rounded-t-lg"
-                        style={{ height, backgroundColor: item.color }}
-                      />
-                      <span className="text-[0.65rem] leading-tight mt-2 block" style={{ color: 'var(--color-muted-foreground)' }}>
-                        {item.name}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+          <div className="flex-1">
+            <p className="font-bold text-sm text-blue-900 dark:text-blue-200">Acciones pendientes</p>
+            <p className="text-sm text-blue-800 dark:text-blue-300 mt-1">
+              Hay {pendientesAccion.length} acción(es) pendiente(s) en el panel.
+            </p>
           </div>
         </div>
+      )}
 
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Resumen */}
+        <Card className="lg:col-span-2">
+          <CardHeader className="pb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                <BarChart3 className="h-5 w-5 text-primary-700 dark:text-primary-400" />
+                Resumen de Expedientes
+              </CardTitle>
+              <Badge variant="info" size="sm">{avancePct}% cerrados</Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Progress value={avancePct} max={100} size="md" />
+            <p className="text-xs text-muted-foreground">
+              {kpis.cerrados} expedientes cerrados · {kpis.enEjecucion} en ejecución
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+              {/* Donut Chart */}
+              <div>
+                <p className="text-xs text-center mb-3 font-semibold text-muted-foreground">Expedientes por Estado</p>
+                <div className="h-52 flex items-center justify-center">
+                  <div
+                    className="w-36 h-36 rounded-full flex items-center justify-center"
+                    style={{
+                      background: `conic-gradient(#10b981 0 ${kpis.total ? (kpis.cerrados / kpis.total) * 100 : 0}%, #f59e0b 0 ${kpis.total ? ((kpis.cerrados + kpis.pendientes) / kpis.total) * 100 : 0}%, #e2e8f0 0 100%)`,
+                    }}
+                  >
+                    <div className="w-24 h-24 rounded-full flex flex-col items-center justify-center bg-card">
+                      <span className="text-xl font-bold text-emerald-600 dark:text-emerald-400">{kpis.cerrados}</span>
+                      <span className="text-xs text-muted-foreground">de {kpis.total}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2 justify-center mt-2">
+                  <Badge variant="info" size="sm"><Users className="h-3 w-3 mr-1" />{kpis.total} total</Badge>
+                  <Badge variant="warning" size="sm"><AlertTriangle className="h-3 w-3 mr-1" />{kpis.observados} observados</Badge>
+                </div>
+              </div>
+
+              {/* Bar Chart */}
+              <div>
+                <p className="text-xs text-center mb-3 font-semibold text-muted-foreground">Distribución de Estados</p>
+                <div className="h-52 flex items-end justify-center gap-3 px-2 pb-2 border-b border-border">
+                  {estadoChart.map((item) => {
+                    const height = Math.max((item.value / maxEstado) * 160, item.value > 0 ? 16 : 4);
+                    return (
+                      <div key={item.name} className="w-14 text-center">
+                        <span className="text-xs text-muted-foreground">{item.value}</span>
+                        <div
+                          className={cn('mt-2 rounded-t-lg', item.color)}
+                          style={{ height }}
+                        />
+                        <span className="text-[0.65rem] leading-tight mt-2 block text-muted-foreground">
+                          {item.name}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Sidebar */}
         <div className="space-y-6">
-          <div className="rounded-2xl border p-5" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)', borderTop: '3px solid var(--color-primary)' }}>
-            <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--color-primary)' }}>Accesos rápidos</h3>
-            <div className="space-y-2">
+          {/* Accesos rápidos */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2 text-primary-700 dark:text-primary-400">
+                <FileText className="h-4 w-4" />
+                Accesos rápidos
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
               <Button variant="secondary" size="sm" className="w-full justify-start" onClick={() => navigate('/admin/expedientes')}>
                 <ClipboardList className="h-4 w-4 mr-2" /> Ver expedientes
               </Button>
               <Button variant="secondary" size="sm" className="w-full justify-start" onClick={() => navigate('/admin/sedes')}>
                 <Building2 className="h-4 w-4 mr-2" /> Ver sedes
               </Button>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
-          <div className="rounded-2xl border p-5" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }}>
-            <div className="flex justify-between items-center mb-3">
-              <h3 className="text-sm font-semibold" style={{ color: 'var(--color-muted-foreground)' }}>Últimos expedientes</h3>
-              <Button variant="ghost" size="sm" onClick={() => navigate('/admin/expedientes')}>
-                Ver todos <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="space-y-2">
+          {/* Últimos expedientes */}
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2 text-muted-foreground">
+                  <Clock className="h-4 w-4" />
+                  Últimos expedientes
+                </CardTitle>
+                <Button variant="ghost" size="sm" onClick={() => navigate('/admin/expedientes')}>
+                  Ver todos <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-2">
               {recientes.map((e: Expediente) => (
-                <div key={e.id} className="flex items-center gap-2 py-1">
-                  <Users className="h-4 w-4" style={{ color: 'var(--color-primary)' }} />
-                  <div>
-                    <p className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>
+                <div key={e.id} className="flex items-center gap-3 py-1">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900/30">
+                    <Users className="h-4 w-4 text-primary-700 dark:text-primary-400" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-foreground truncate">
                       {e.nombreEstudiante} {e.apellidoEstudiante}
                     </p>
-                    <p className="text-xs capitalize" style={{ color: 'var(--color-muted-foreground)' }}>
+                    <p className="text-xs capitalize text-muted-foreground truncate">
                       {e.estado?.replace(/_/g, ' ')}
                     </p>
                   </div>
                 </div>
               ))}
               {recientes.length === 0 && (
-                <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>No hay expedientes recientes.</p>
+                <p className="text-sm text-muted-foreground">No hay expedientes recientes.</p>
               )}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
-          <div className="rounded-2xl border p-5" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }}>
-            <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--color-muted-foreground)' }}>Expedientes por Modalidad</h3>
-            <div
-              className="h-40 flex items-end justify-center gap-6 px-2 pb-2 border-b"
-              style={{ borderColor: 'var(--color-border)' }}
-            >
-              {tipoChart.map((item, index) => {
-                const height = Math.max((item.value / maxTipo) * 120, item.value > 0 ? 16 : 4);
-                const color = index === 0 ? '#3b82f6' : index === 1 ? '#8b5cf6' : '#10b981';
-                return (
-                  <div key={item.name} className="w-16 text-center">
-                    <span className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>{item.value}</span>
-                    <div className="mt-2 rounded-t-lg" style={{ height, backgroundColor: color }} />
-                    <span className="text-xs mt-2 block" style={{ color: 'var(--color-muted-foreground)' }}>{item.name}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          {/* Modalidades */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2 text-muted-foreground">
+                <BarChart3 className="h-4 w-4" />
+                Expedientes por Modalidad
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-40 flex items-end justify-center gap-6 px-2 pb-2 border-b border-border">
+                {tipoChart.map((item, index) => {
+                  const height = Math.max((item.value / maxTipo) * 120, item.value > 0 ? 16 : 4);
+                  const color = index === 0 ? 'bg-blue-500' : index === 1 ? 'bg-violet-500' : 'bg-emerald-500';
+                  return (
+                    <div key={item.name} className="w-16 text-center">
+                      <span className="text-xs text-muted-foreground">{item.value}</span>
+                      <div className={cn('mt-2 rounded-t-lg', color)} style={{ height }} />
+                      <span className="text-xs mt-2 block text-muted-foreground">{item.name}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
 
-      <div
-        className="rounded-2xl border p-5"
-        style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)', borderTop: '3px solid var(--color-primary)' }}
-      >
-        <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--color-foreground)' }}>Lista de Expedientes</h2>
+      {/* Lista de Expedientes */}
+      <Card>
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg font-semibold flex items-center gap-2">
+            <ClipboardList className="h-5 w-5 text-primary-700 dark:text-primary-400" />
+            Lista de Expedientes
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {/* Filters */}
+          <div className="rounded-xl border border-border bg-muted/40 p-4 mb-4 flex flex-wrap gap-3 items-center">
+            <div className="relative flex-1 min-w-[260px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Estudiante o código"
+                value={searchTerm}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setSearchTerm(e.target.value); setPage(0); }}
+                className="pl-9"
+              />
+              {searchTerm && (
+                <button
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  onClick={() => { setSearchTerm(''); setPage(0); }}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            <div className="min-w-[160px]">
+              <Select
+                label="Tipo"
+                value={filtroTipo}
+                options={tipoOptions}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => { setFiltroTipo(e.target.value); setPage(0); }}
+              />
+            </div>
+            <div className="min-w-[190px]">
+              <Select
+                label="Estado"
+                value={filtroEstado}
+                options={estadoOptions}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => { setFiltroEstado(e.target.value); setPage(0); }}
+              />
+            </div>
+          </div>
 
-        <div
-          className="rounded-xl border p-4 mb-4 flex flex-wrap gap-3 items-center"
-          style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }}
-        >
-          <div className="relative flex-1 min-w-[260px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: 'var(--color-muted-foreground)' }} />
-            <Input
-              placeholder="Estudiante o código"
-              value={searchTerm}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setSearchTerm(e.target.value); setPage(0); }}
-              className="pl-9"
-            />
-            {searchTerm && (
-              <button
-                className="absolute right-3 top-1/2 -translate-y-1/2"
-                onClick={() => { setSearchTerm(''); setPage(0); }}
-                style={{ color: 'var(--color-muted-foreground)' }}
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-          <div className="min-w-[160px]">
-            <Select
-              label="Tipo"
-              value={filtroTipo}
-              options={tipoOptions}
-              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => { setFiltroTipo(e.target.value); setPage(0); }}
-            />
-          </div>
-          <div className="min-w-[190px]">
-            <Select
-              label="Estado"
-              value={filtroEstado}
-              options={estadoOptions}
-              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => { setFiltroEstado(e.target.value); setPage(0); }}
-            />
-          </div>
-        </div>
-
-        <div className="rounded-xl border overflow-hidden" style={{ borderColor: 'var(--color-border)' }}>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="font-semibold">Código</TableHead>
-                  <TableHead className="font-semibold">Estudiante</TableHead>
-                  <TableHead className="font-semibold">Tipo</TableHead>
-                  <TableHead className="font-semibold">Estado</TableHead>
-                  <TableHead className="font-semibold">Asesor / Empresa</TableHead>
-                  <TableHead className="text-center font-semibold">Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paginated.map((e: Expediente) => (
-                  <TableRow key={e.id}>
-                    <TableCell><span className="font-mono text-xs" style={{ color: 'var(--color-muted-foreground)' }}>{e.codigoExpediente}</span></TableCell>
-                    <TableCell>
-                      <span className="font-medium text-sm" style={{ color: 'var(--color-foreground)' }}>{e.nombreEstudiante} {e.apellidoEstudiante}</span>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="info">{e.nombreTipoPractica}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <StatusChip status={e.estado} label={estadoLabel(e.estado)} />
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-xs block" style={{ color: 'var(--color-foreground)' }}>{e.nombreAsesor || '—'}</span>
-                      <span className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>{e.nombreEmpresa || ''}</span>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex gap-1 justify-center">
-                        <Tooltip content="Ver detalle">
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={() => navigate(`/coordinacion/expedientes/${e.id}`)}
-                            className="px-2"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </Tooltip>
-                        {esFinalOProfesional(e) && e.estado === ESTADOS_EXPEDIENTE.PLAN_PRESENTADO && (
-                          <Tooltip content="Aprobar plan">
-                            <Button
-                              size="sm"
-                              variant="primary"
-                              onClick={() => handleAction('aprobarPlan', e.id)}
-                              className="px-2"
-                              disabled={isMutating}
-                            >
-                              <CheckCircle2 className="h-4 w-4" />
-                            </Button>
-                          </Tooltip>
-                        )}
-                        {esFinalOProfesional(e) && e.estado === ESTADOS_EXPEDIENTE.PLAN_PRESENTADO && (
-                          <Tooltip content="Observar plan">
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              onClick={() => handleObservarPlan(e.id)}
-                              className="px-2"
-                              disabled={isMutating}
-                            >
-                              <AlertTriangle className="h-4 w-4" />
-                            </Button>
-                          </Tooltip>
-                        )}
-                        {esFinalOProfesional(e) && e.estado === ESTADOS_EXPEDIENTE.INFORME_FINAL_PRESENTADO && (
-                          <Tooltip content="Aprobar informe final">
-                            <Button
-                              size="sm"
-                              variant="primary"
-                              onClick={() => handleAction('aprobarInforme', e.id)}
-                              className="px-2"
-                              disabled={isMutating}
-                            >
-                              <CheckCircle2 className="h-4 w-4" />
-                            </Button>
-                          </Tooltip>
-                        )}
-                        {esFinalOProfesional(e) && (
-                          <Tooltip content="Evaluar componentes">
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              onClick={() => navigate(`/comite/evaluaciones/${e.id}`)}
-                              className="px-2"
-                            >
-                              <BarChart3 className="h-4 w-4" />
-                            </Button>
-                          </Tooltip>
-                        )}
-                        {esFinalOProfesional(e) && ESTADOS_PARA_DICTAMEN.includes(e.estado) && (
-                          <Tooltip content="Emitir dictamen">
-                            <Button
-                              size="sm"
-                              variant="primary"
-                              onClick={() => { setDictamenExp(e); setDictamenText(''); setOpenDictamen(true); }}
-                              className="px-2"
-                            >
-                              <Scale className="h-4 w-4" />
-                            </Button>
-                          </Tooltip>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {filtered.length === 0 && (
+          {/* Table */}
+          <div className="rounded-xl border border-border overflow-hidden">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
-                      No hay expedientes
-                    </TableCell>
+                    <TableHead className="font-semibold">Código</TableHead>
+                    <TableHead className="font-semibold">Estudiante</TableHead>
+                    <TableHead className="font-semibold">Tipo</TableHead>
+                    <TableHead className="font-semibold">Estado</TableHead>
+                    <TableHead className="font-semibold">Asesor / Empresa</TableHead>
+                    <TableHead className="text-center font-semibold">Acciones</TableHead>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-          <div
-            className="flex items-center justify-between px-4 py-3 border-t text-sm"
-            style={{ borderColor: 'var(--color-border)', color: 'var(--color-muted-foreground)' }}
-          >
-            <span>{filtered.length} expedientes</span>
-            <div className="flex items-center gap-3">
-              <select
-                value={rowsPerPage}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => { setRowsPerPage(+e.target.value); setPage(0); }}
-                className="rounded border px-2 py-1 text-xs"
-                style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)', color: 'var(--color-foreground)' }}
-              >
-                <option value={5}>5</option>
-                <option value={10}>10</option>
-                <option value={25}>25</option>
-              </select>
-              <div className="flex gap-2 items-center">
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => setPage((p) => p - 1)}
-                  disabled={page === 0}
+                </TableHeader>
+                <TableBody>
+                  {paginated.map((e: Expediente) => (
+                    <TableRow key={e.id}>
+                      <TableCell>
+                        <span className="font-mono text-xs text-muted-foreground">{e.codigoExpediente}</span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="font-medium text-sm text-foreground">{e.nombreEstudiante} {e.apellidoEstudiante}</span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="info" size="sm">{e.nombreTipoPractica}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <StatusChip status={e.estado} label={estadoLabel(e.estado)} />
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-xs block text-foreground">{e.nombreAsesor || '—'}</span>
+                        <span className="text-xs text-muted-foreground">{e.nombreEmpresa || ''}</span>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <div className="flex flex-wrap gap-1 justify-center">
+                          <Tooltip content="Ver detalle">
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => navigate(`/coordinacion/expedientes/${e.id}`)}
+                              className="px-2.5"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </Tooltip>
+                          {esFinalOProfesional(e) && e.estado === ESTADOS_EXPEDIENTE.PLAN_PRESENTADO && (
+                            <Tooltip content="Aprobar plan">
+                              <Button
+                                size="sm"
+                                variant="primary"
+                                onClick={() => handleAction('aprobarPlan', e.id)}
+                                className="px-2.5"
+                                disabled={isMutating}
+                              >
+                                <CheckCircle2 className="h-4 w-4" />
+                              </Button>
+                            </Tooltip>
+                          )}
+                          {esFinalOProfesional(e) && e.estado === ESTADOS_EXPEDIENTE.PLAN_PRESENTADO && (
+                            <Tooltip content="Observar plan">
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => handleObservarPlan(e.id)}
+                                className="px-2.5"
+                                disabled={isMutating}
+                              >
+                                <AlertTriangle className="h-4 w-4" />
+                              </Button>
+                            </Tooltip>
+                          )}
+                          {esFinalOProfesional(e) && e.estado === ESTADOS_EXPEDIENTE.INFORME_FINAL_PRESENTADO && (
+                            <Tooltip content="Aprobar informe final">
+                              <Button
+                                size="sm"
+                                variant="primary"
+                                onClick={() => handleAction('aprobarInforme', e.id)}
+                                className="px-2.5"
+                                disabled={isMutating}
+                              >
+                                <CheckCircle2 className="h-4 w-4" />
+                              </Button>
+                            </Tooltip>
+                          )}
+                          {esFinalOProfesional(e) && (
+                            <Tooltip content="Evaluar componentes">
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => navigate(`/comite/evaluaciones/${e.id}`)}
+                                className="px-2.5"
+                              >
+                                <BarChart3 className="h-4 w-4" />
+                              </Button>
+                            </Tooltip>
+                          )}
+                          {esFinalOProfesional(e) && ESTADOS_PARA_DICTAMEN.includes(e.estado) && (
+                            <Tooltip content="Emitir dictamen">
+                              <Button
+                                size="sm"
+                                variant="primary"
+                                onClick={() => { setDictamenExp(e); setDictamenText(''); setOpenDictamen(true); }}
+                                className="px-2.5"
+                              >
+                                <Scale className="h-4 w-4" />
+                              </Button>
+                            </Tooltip>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {filtered.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8 text-sm text-muted-foreground">
+                        No hay expedientes
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+            {/* Pagination */}
+            <div className="flex items-center justify-between px-4 py-3 border-t border-border text-sm text-muted-foreground flex-wrap gap-3">
+              <span>{filtered.length} expedientes</span>
+              <div className="flex items-center gap-3">
+                <select
+                  value={rowsPerPage}
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => { setRowsPerPage(+e.target.value); setPage(0); }}
+                  className="rounded-xl border border-border bg-card px-2 py-1.5 text-xs text-foreground"
                 >
-                  Anterior
-                </Button>
-                <span>Pág. {page + 1} de {totalPages}</span>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => setPage((p) => p + 1)}
-                  disabled={(page + 1) * rowsPerPage >= filtered.length}
-                >
-                  Siguiente
-                </Button>
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                </select>
+                <div className="flex gap-2 items-center">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => setPage((p) => p - 1)}
+                    disabled={page === 0}
+                  >
+                    Anterior
+                  </Button>
+                  <span>Pág. {page + 1} de {totalPages}</span>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => setPage((p) => p + 1)}
+                    disabled={(page + 1) * rowsPerPage >= filtered.length}
+                  >
+                    Siguiente
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
+      {/* Dialog Dictamen */}
       <Dialog open={openDictamen} onOpenChange={setOpenDictamen}>
-        <div className="mx-auto w-full max-w-lg">
-          <div className="rounded-2xl border shadow-xl" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }}>
-            <div className="p-6 border-b" style={{ borderColor: 'var(--color-border)' }}>
-              <h2 className="text-lg font-semibold" style={{ color: 'var(--color-foreground)' }}>Emitir Dictamen Final</h2>
-              <p className="text-sm mt-1" style={{ color: 'var(--color-muted-foreground)' }}>
-                Expediente: {dictamenExp?.codigoExpediente} — {dictamenExp?.nombreEstudiante} {dictamenExp?.apellidoEstudiante}
-              </p>
-            </div>
-            <div className="p-6">
-              <Textarea
-                label="Detalle del dictamen"
-                rows={4}
-                value={dictamenText}
-                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDictamenText(e.target.value)}
-              />
-            </div>
-            <div className="p-6 border-t flex justify-end gap-2" style={{ borderColor: 'var(--color-border)' }}>
-              <Button variant="secondary" onClick={() => setOpenDictamen(false)}>Cancelar</Button>
-              <Button onClick={handleEmitirDictamen} disabled={!dictamenText.trim() || isMutating}>
-                Emitir
-              </Button>
-            </div>
+        <DialogContent size="lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Scale className="h-5 w-5 text-primary-700 dark:text-primary-400" />
+              Emitir Dictamen Final
+            </DialogTitle>
+            <DialogDescription>
+              Expediente: {dictamenExp?.codigoExpediente} — {dictamenExp?.nombreEstudiante} {dictamenExp?.apellidoEstudiante}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="p-6">
+            <Textarea
+              label="Detalle del dictamen"
+              rows={4}
+              value={dictamenText}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDictamenText(e.target.value)}
+            />
           </div>
-        </div>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setOpenDictamen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleEmitirDictamen} disabled={!dictamenText.trim() || isMutating}>
+              Emitir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
       </Dialog>
     </motion.div>
   );
 };
+

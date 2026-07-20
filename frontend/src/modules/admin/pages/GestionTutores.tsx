@@ -7,7 +7,10 @@ import { empresaApi, sedeApi } from '../../../api/sedesApi';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import { Button, Badge, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Dialog, DialogContent, DialogTitle, DialogFooter, Select, Avatar, Tooltip, Separator } from '../../../ui';
+import { Card, CardContent } from '../../../ui/Card';
+import { Input } from '../../../ui/Input';
 import { Drawer } from '@mui/material';
+import { cn } from '../../../lib/utils';
 
 const MySwal = withReactContent(Swal);
 
@@ -296,10 +299,10 @@ export const GestionTutores = () => {
   );
 
   const stats = useMemo(() => [
-    { label: 'Totales', value: tutores.length, icon: <Users size={16} />, accent: 'blue' },
-    { label: 'Activos', value: tutores.filter(t => getEstado(t) === 'ACTIVO').length, icon: <CheckCircle2 size={16} />, accent: 'emerald' },
-    { label: 'Inactivos', value: tutores.filter(t => getEstado(t) !== 'ACTIVO').length, icon: <XCircle size={16} />, accent: 'red' },
-    { label: 'Empresas', value: new Set(tutores.filter(t => t.idEmpresa).map(t => t.idEmpresa)).size, icon: <Building2 size={16} />, accent: 'violet' },
+    { label: 'Totales', value: tutores.length, icon: <Users size={18} />, color: 'bg-[#1A3A6E] text-white dark:bg-[#4A6FA5] dark:text-white' },
+    { label: 'Activos', value: tutores.filter(t => getEstado(t) === 'ACTIVO').length, icon: <CheckCircle2 size={18} />, color: 'bg-emerald-600 text-white dark:bg-emerald-700 dark:text-emerald-50' },
+    { label: 'Inactivos', value: tutores.filter(t => getEstado(t) !== 'ACTIVO').length, icon: <XCircle size={18} />, color: 'bg-red-600 text-white dark:bg-red-700 dark:text-white' },
+    { label: 'Empresas', value: new Set(tutores.filter(t => t.idEmpresa).map(t => t.idEmpresa)).size, icon: <Building2 size={18} />, color: 'bg-primary-600 text-white dark:bg-primary-700 dark:text-white' },
   ], [tutores]);
 
   const totalPages = Math.ceil(sortedTutores.length / rowsPerPage);
@@ -309,90 +312,89 @@ export const GestionTutores = () => {
   if (tutoresLoading && tutores.length === 0) {
     return (
       <div className="flex justify-center items-center h-[50vh]">
-        <div className="animate-spin h-8 w-8 border-4 border-[var(--color-border)] border-t-[var(--color-primary)] rounded-full" />
+        <div className="animate-spin h-8 w-8 border-4 border-border border-t-primary-600 rounded-full" />
       </div>
     );
   }
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
-      <div className="rounded-2xl p-6 md:p-8 mb-4" style={{ backgroundColor: '#1a365d', color: 'white' }}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div style={{ backgroundColor: 'rgba(255,255,255,0.15)' }} className="w-14 h-14 rounded-full flex items-center justify-center">
-              <Users size={28} />
+      {/* Header */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary-700 to-primary-900 p-6 md:p-8 mb-4 text-white shadow-lg">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/15">
+              <Users size={24} />
             </div>
             <div>
-              <h2 className="text-2xl font-bold">Gestión de Tutores Externos</h2>
+              <h2 className="text-xl md:text-2xl font-bold">Gestión de Tutores Externos</h2>
               <p className="text-sm opacity-85 mt-0.5">Registro y control de tutores designados por las entidades receptoras.</p>
             </div>
           </div>
-          <Button onClick={() => handleOpenDialog()} variant="primary" style={{ backgroundColor: 'white', color: '#1a365d', fontWeight: 700 }}>
+          <Button onClick={() => handleOpenDialog()} className="shrink-0 bg-white text-[#1A3A6E] hover:bg-white/90 font-bold">
             <Plus size={18} /> Nuevo Tutor
           </Button>
         </div>
       </div>
 
+      {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-        {stats.map((stat) => {
-          const accentMap: Record<string, { bg: string; text: string; icon: string }> = {
-            blue: { bg: '#eff6ff', text: '#1d4ed8', icon: '#3b82f6' },
-            emerald: { bg: '#ecfdf5', text: '#065f46', icon: '#10b981' },
-            red: { bg: '#fef2f2', text: '#991b1b', icon: '#ef4444' },
-            violet: { bg: '#f5f3ff', text: '#5b21b6', icon: '#8b5cf6' },
-          };
-          const colors = accentMap[stat.accent] || accentMap.blue;
-          return (
-            <div key={stat.label} className="rounded-xl p-4 flex items-center gap-3" style={{ backgroundColor: colors.bg, border: `1px solid ${colors.icon}20` }}>
-              <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: colors.icon }}>{stat.icon}</div>
-              <div>
-                <div className="text-2xl font-bold" style={{ color: colors.text }}>{stat.value}</div>
-                <div className="text-sm" style={{ color: colors.text, opacity: 0.8 }}>{stat.label}</div>
-              </div>
+        {stats.map((stat) => (
+          <Card key={stat.label} className="p-4 flex items-center gap-3">
+            <div className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-full', stat.color)}>
+              {stat.icon}
             </div>
-          );
-        })}
+            <div>
+              <div className="text-2xl font-extrabold text-foreground">{stat.value}</div>
+              <div className="text-sm font-medium text-muted-foreground">{stat.label}</div>
+            </div>
+          </Card>
+        ))}
       </div>
 
-      <div className="rounded-xl border p-4 flex flex-wrap gap-3 mb-4" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }}>
-        <div className="flex items-center gap-2 bg-white rounded-xl px-3 py-1.5 border border-border min-w-[260px]">
-          <Search size={16} className="text-muted-foreground shrink-0" />
-          <input
-            type="text"
-            placeholder="Buscar por nombre, empresa o cargo..."
-            value={searchTerm}
-            onChange={handleSearchChange}
-            className="bg-transparent border-none outline-none text-sm w-full"
+      {/* Filters */}
+      <Card className="p-4 mb-4">
+        <CardContent className="p-0 flex flex-wrap gap-3 items-center">
+          <div className="relative flex-1 min-w-[260px]">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground shrink-0" />
+            <Input
+              placeholder="Buscar por nombre, empresa o cargo..."
+              value={searchTerm}
+              onChange={handleSearchChange}
+              className="pl-9"
+            />
+          </div>
+          <Select
+            label="Estado"
+            value={filtroEstado}
+            onChange={(e) => setFiltroEstado(e.target.value)}
+            options={ESTADOS_FILTRO.map(e => ({
+              value: e,
+              label: e === 'todos' ? 'Todos' : e === 'ACTIVO' ? 'Activo' : 'Inactivo'
+            }))}
+            className="min-w-[130px]"
           />
-        </div>
-        <select
-          value={filtroEstado}
-          onChange={(e) => setFiltroEstado(e.target.value)}
-          className="rounded-xl border border-border bg-white px-3 py-1.5 text-sm min-w-[130px]"
-        >
-          {ESTADOS_FILTRO.map(e => (
-            <option key={e} value={e}>{e === 'todos' ? 'Todos' : e === 'ACTIVO' ? 'Activo' : 'Inactivo'}</option>
-          ))}
-        </select>
-        <select
-          value={filtroEmpresa}
-          onChange={(e) => setFiltroEmpresa(e.target.value)}
-          className="rounded-xl border border-border bg-white px-3 py-1.5 text-sm min-w-[190px]"
-        >
-          <option value="todos">Todas</option>
-          {empresas.map(emp => (
-            <option key={emp.id} value={emp.id}>{emp.razonSocial}</option>
-          ))}
-        </select>
-        <Button variant="secondary" size="sm" onClick={limpiarFiltros}>
-          <Filter size={14} /> Limpiar Filtros
-        </Button>
-      </div>
+          <Select
+            label="Empresa"
+            value={filtroEmpresa}
+            onChange={(e) => setFiltroEmpresa(e.target.value)}
+            options={[
+              { value: 'todos', label: 'Todas' },
+              ...empresas.map(emp => ({ value: String(emp.id), label: emp.razonSocial })),
+            ]}
+            className="min-w-[190px]"
+          />
+          <Button variant="secondary" size="sm" onClick={limpiarFiltros}>
+            <Filter size={14} /> Limpiar Filtros
+          </Button>
+        </CardContent>
+      </Card>
 
-      <div className="rounded-xl border overflow-hidden" style={{ borderColor: 'var(--color-border)' }}>
+      {/* Table */}
+      <Card className="overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow>
+            <TableRow className="bg-muted hover:bg-muted">
               {[
                 { id: 'nombres', label: 'Tutor' },
                 { id: 'empresaNombre', label: 'Empresa' },
@@ -402,9 +404,9 @@ export const GestionTutores = () => {
                 { id: 'estado', label: 'Estado', sortable: false },
                 { id: 'acciones', label: 'Acciones', sortable: false },
               ].map(hc => (
-                <TableHead key={hc.id} className="font-semibold text-[#475569]">
+                <TableHead key={hc.id} className="font-semibold text-muted-foreground">
                   {hc.sortable !== false ? (
-                    <button className="flex items-center gap-1 font-semibold text-[#475569] bg-transparent border-none cursor-pointer" onClick={() => handleSort(hc.id)}>
+                    <button className="flex items-center gap-1 font-semibold text-muted-foreground bg-transparent border-none cursor-pointer" onClick={() => handleSort(hc.id)}>
                       {hc.label}
                       {orderBy === hc.id ? (
                         <span>{order === 'asc' ? '↑' : '↓'}</span>
@@ -424,34 +426,32 @@ export const GestionTutores = () => {
               return (
                 <TableRow key={tutor.id}>
                   <TableCell>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-2">
                       <div className="relative">
-                        <Avatar size="sm" className={activo ? 'bg-blue-500' : 'bg-gray-400'} fallback={getInitials(tutor.nombres, tutor.apellidoPaterno)} />
-                        <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white" style={{ backgroundColor: activo ? '#22c55e' : '#ef4444' }} />
+                        <Avatar size="sm" className={cn(activo ? 'bg-[#1A3A6E] text-white dark:bg-[#4A6FA5]' : 'bg-muted text-muted-foreground')} fallback={getInitials(tutor.nombres, tutor.apellidoPaterno)} />
+                        <div className={cn('absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-card', activo ? 'bg-emerald-500' : 'bg-red-500')} />
                       </div>
                       <div>
-                        <div className="font-semibold text-sm">{getNombreUsuario(tutor)}</div>
+                        <div className="font-semibold text-sm text-foreground">{getNombreUsuario(tutor)}</div>
                         <div className="text-xs text-muted-foreground">@{tutor.username || '—'}</div>
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-0.5">
-                      <Building2 size={14} className="text-gray-400 shrink-0" />
-                      <span className="text-sm">{tutor.empresaNombre || tutor.razonSocialEmpresa || '—'}</span>
+                    <div className="flex items-center gap-1">
+                      <Building2 size={14} className="text-muted-foreground shrink-0" />
+                      <span className="text-sm text-foreground">{tutor.empresaNombre || tutor.razonSocialEmpresa || '—'}</span>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className="text-sm" style={{ color: tutor.nombreSede ? 'inherit' : '#94a3b8' }}>
-                      {tutor.nombreSede || '—'}
-                    </span>
+                    <span className="text-sm text-foreground">{tutor.nombreSede || '—'}</span>
                   </TableCell>
                   <TableCell>
-                    <div className="text-sm">{tutor.cargo || '—'}</div>
+                    <div className="text-sm text-foreground">{tutor.cargo || '—'}</div>
                     {tutor.area && <div className="text-xs text-muted-foreground">{tutor.area}</div>}
                   </TableCell>
                   <TableCell>
-                    <div className="text-sm">{getEmailUsuario(tutor)}</div>
+                    <div className="text-sm text-foreground">{getEmailUsuario(tutor)}</div>
                     {tutor.telefono && <div className="text-xs text-muted-foreground">{tutor.telefono}</div>}
                   </TableCell>
                   <TableCell>
@@ -481,30 +481,28 @@ export const GestionTutores = () => {
             })}
             {sortedTutores.length === 0 && !tutoresLoading && (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-10">
-                  <Users size={48} className="mx-auto text-gray-400 mb-1" />
-                  <h3 className="text-lg font-semibold text-muted-foreground">No se encontraron tutores</h3>
-                  <p className="text-sm text-muted-foreground">Ajusta los filtros o crea un nuevo tutor.</p>
+                <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
+                  <Users size={48} className="mx-auto mb-2 text-muted-foreground opacity-50" />
+                  <h3 className="text-lg font-semibold">No se encontraron tutores</h3>
+                  <p className="text-sm">Ajusta los filtros o crea un nuevo tutor.</p>
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
         {sortedTutores.length > 0 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t" style={{ borderColor: 'var(--color-border)' }}>
-            <div className="text-sm text-muted-foreground">
+          <div className="flex items-center justify-between px-4 py-3 border-t border-border text-sm">
+            <div className="text-muted-foreground">
               {from}-{to} de {sortedTutores.length}
             </div>
             <div className="flex items-center gap-3">
-              <select
-                value={rowsPerPage}
+              <Select
+                label="Filas"
+                value={String(rowsPerPage)}
                 onChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
-                className="text-sm border border-border rounded-lg px-2 py-1"
-              >
-                {[5, 10, 25].map(n => (
-                  <option key={n} value={n}>{n} filas</option>
-                ))}
-              </select>
+                options={[5, 10, 25].map(n => ({ value: String(n), label: `${n} filas` }))}
+                className="min-w-[90px]"
+              />
               <div className="flex items-center gap-1">
                 <Button variant="ghost" size="sm" disabled={page === 0} onClick={() => setPage(page - 1)}>Anterior</Button>
                 <span className="text-sm text-muted-foreground px-2">Pág. {page + 1}</span>
@@ -513,11 +511,12 @@ export const GestionTutores = () => {
             </div>
           </div>
         )}
-      </div>
+      </Card>
 
+      {/* Dialog */}
       <Dialog open={openDialog} onOpenChange={setOpenDialog}>
         <DialogContent size="xl" className="p-0 overflow-hidden">
-          <div className="bg-[#1a365d] text-white px-6 py-4 flex items-center gap-3 rounded-t-2xl">
+          <div className="bg-gradient-to-r from-primary-700 to-primary-900 text-white px-6 py-4 flex items-center gap-3">
             <div className="bg-white/15 rounded-full p-1.5"><Users size={18} /></div>
             <DialogTitle className="text-white text-lg font-semibold m-0">
               {isEditing ? 'Editar Perfil Tutor' : 'Registrar Nuevo Tutor Externo'}
@@ -525,7 +524,7 @@ export const GestionTutores = () => {
           </div>
           <div className="p-6 space-y-5 max-h-[65vh] overflow-y-auto">
             <div>
-              <h4 className="text-sm font-bold text-[#1a365d] border-b-2 pb-0.5 mb-3" style={{ borderColor: '#1a365d20' }}>
+              <h4 className="text-sm font-bold text-primary-700 dark:text-primary-400 border-b-2 pb-1 mb-3 border-primary-700/20 dark:border-primary-400/20">
                 Vinculación al Sistema
               </h4>
               <Select
@@ -540,7 +539,7 @@ export const GestionTutores = () => {
               />
             </div>
             <div>
-              <h4 className="text-sm font-bold text-[#1a365d] border-b-2 pb-0.5 mb-3" style={{ borderColor: '#1a365d20' }}>
+              <h4 className="text-sm font-bold text-primary-700 dark:text-primary-400 border-b-2 pb-1 mb-3 border-primary-700/20 dark:border-primary-400/20">
                 Empresa y Sede
               </h4>
               <div className="flex gap-2 flex-col md:flex-row">
@@ -559,14 +558,11 @@ export const GestionTutores = () => {
                   />
                 </div>
                 <div className="flex-1">
-                  <div className="w-full">
-                    <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1.5">Nombre de Empresa (manual)</label>
-                    <input
-                      value={formData.empresaNombre}
-                      onChange={(e) => setFormData({ ...formData, empresaNombre: e.target.value })}
-                      className="w-full rounded-xl border border-input bg-card px-4 py-2.5 text-sm text-foreground"
-                    />
-                  </div>
+                  <Input
+                    label="Nombre de Empresa (manual)"
+                    value={formData.empresaNombre}
+                    onChange={(e) => setFormData({ ...formData, empresaNombre: e.target.value })}
+                  />
                 </div>
               </div>
               <div className="mt-3">
@@ -584,30 +580,24 @@ export const GestionTutores = () => {
               </div>
             </div>
             <div>
-              <h4 className="text-sm font-bold text-[#1a365d] border-b-2 pb-0.5 mb-3" style={{ borderColor: '#1a365d20' }}>
+              <h4 className="text-sm font-bold text-primary-700 dark:text-primary-400 border-b-2 pb-1 mb-3 border-primary-700/20 dark:border-primary-400/20">
                 Datos del Cargo
               </h4>
               <div className="flex gap-2 flex-col md:flex-row">
                 <div className="flex-1">
-                  <div className="w-full">
-                    <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1.5">Cargo *</label>
-                    <input
-                      value={formData.cargo}
-                      onChange={(e) => setFormData({ ...formData, cargo: e.target.value })}
-                      className={`w-full rounded-xl border ${errors.cargo ? 'border-red-500' : 'border-input'} bg-card px-4 py-2.5 text-sm text-foreground`}
-                    />
-                    {errors.cargo && <p className="mt-1.5 text-sm text-red-600">{errors.cargo}</p>}
-                  </div>
+                  <Input
+                    label="Cargo *"
+                    value={formData.cargo}
+                    onChange={(e) => setFormData({ ...formData, cargo: e.target.value })}
+                    error={errors.cargo}
+                  />
                 </div>
                 <div className="flex-1">
-                  <div className="w-full">
-                    <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1.5">Área</label>
-                    <input
-                      value={formData.area}
-                      onChange={(e) => setFormData({ ...formData, area: e.target.value })}
-                      className="w-full rounded-xl border border-input bg-card px-4 py-2.5 text-sm text-foreground"
-                    />
-                  </div>
+                  <Input
+                    label="Área"
+                    value={formData.area}
+                    onChange={(e) => setFormData({ ...formData, area: e.target.value })}
+                  />
                 </div>
               </div>
               <div className="mt-3">
@@ -620,7 +610,7 @@ export const GestionTutores = () => {
               </div>
             </div>
           </div>
-          <DialogFooter className="bg-[#f8fafc] border-t border-border px-6 py-4">
+          <DialogFooter className="bg-muted dark:bg-muted/50 border-t border-border px-6 py-4">
             <Button variant="secondary" onClick={() => setOpenDialog(false)}>Cancelar</Button>
             <Button onClick={handleSubmit}>
               <Save size={16} /> {isEditing ? 'Actualizar' : 'Guardar'}
@@ -629,42 +619,43 @@ export const GestionTutores = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Drawer */}
       <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)}
         sx={{ zIndex: (theme: any) => theme.zIndex.drawer + 2, '& .MuiDrawer-paper': { width: 620 } }}>
         {detalleLoading ? (
           <div className="text-center py-6">
-            <div className="animate-spin h-8 w-8 border-4 border-[var(--color-border)] border-t-[var(--color-primary)] rounded-full mx-auto" />
+            <div className="animate-spin h-8 w-8 border-4 border-border border-t-primary-600 rounded-full mx-auto" />
           </div>
         ) : selectedTutor ? (
-          <div className="p-6">
+          <div className="p-6 bg-card h-full">
             <div className="flex items-center gap-2 mb-4">
               <Button variant="ghost" size="sm" onClick={() => setDrawerOpen(false)}>
                 <ArrowLeft size={20} />
               </Button>
-              <h3 className="text-xl font-bold">Detalle del Tutor</h3>
+              <h3 className="text-xl font-bold text-foreground">Detalle del Tutor</h3>
             </div>
-            <div className="flex items-center gap-2.5 mb-4 p-2.5 rounded-xl" style={{ backgroundColor: '#f8fafc' }}>
-              <Avatar size="lg" className={getEstado(selectedTutor) === 'ACTIVO' ? 'bg-blue-500' : 'bg-gray-400'} fallback={getInitials(selectedTutor.nombres, selectedTutor.apellidoPaterno)} />
+            <div className="flex items-center gap-3 mb-4 p-3 rounded-xl bg-muted">
+              <Avatar size="lg" className={cn(getEstado(selectedTutor) === 'ACTIVO' ? 'bg-[#1A3A6E] text-white dark:bg-[#4A6FA5]' : 'bg-muted text-muted-foreground')} fallback={getInitials(selectedTutor.nombres, selectedTutor.apellidoPaterno)} />
               <div>
-                <h4 className="text-lg font-bold">{getNombreUsuario(selectedTutor)}</h4>
+                <h4 className="text-lg font-bold text-foreground">{getNombreUsuario(selectedTutor)}</h4>
                 <p className="text-sm text-muted-foreground">{selectedTutor.username || ''}</p>
                 <Badge variant={getEstado(selectedTutor) === 'ACTIVO' ? 'success' : 'danger'}>{getEstado(selectedTutor)}</Badge>
               </div>
             </div>
             <Separator className="my-4" />
-            <h5 className="font-bold text-base mb-2">Información de Contacto</h5>
-            <p className="text-sm mb-1"><strong>Correo:</strong> {getEmailUsuario(selectedTutor)}</p>
-            <p className="text-sm mb-1"><strong>Teléfono:</strong> {selectedTutor.telefono || '—'}</p>
+            <h5 className="font-bold text-base mb-2 text-foreground">Información de Contacto</h5>
+            <p className="text-sm mb-1 text-foreground"><strong>Correo:</strong> {getEmailUsuario(selectedTutor)}</p>
+            <p className="text-sm mb-1 text-foreground"><strong>Teléfono:</strong> {selectedTutor.telefono || '—'}</p>
             <Separator className="my-4" />
-            <h5 className="font-bold text-base mb-2">Empresa y Cargo</h5>
-            <div className="rounded-xl p-2.5 mb-2 border" style={{ backgroundColor: '#f8fafc', borderColor: 'var(--color-border)' }}>
-              <p className="text-sm mb-0.5"><strong>Empresa:</strong> {selectedTutor.empresaNombre || selectedTutor.razonSocialEmpresa || '—'}</p>
-              <p className="text-sm mb-0.5"><strong>Sede:</strong> {selectedTutor.nombreSede || '—'}</p>
-              <p className="text-sm mb-0.5"><strong>Cargo:</strong> {selectedTutor.cargo || '—'}</p>
-              <p className="text-sm"><strong>Área:</strong> {selectedTutor.area || '—'}</p>
+            <h5 className="font-bold text-base mb-2 text-foreground">Empresa y Cargo</h5>
+            <div className="rounded-xl p-3 mb-2 border bg-muted border-border">
+              <p className="text-sm mb-0.5 text-foreground"><strong>Empresa:</strong> {selectedTutor.empresaNombre || selectedTutor.razonSocialEmpresa || '—'}</p>
+              <p className="text-sm mb-0.5 text-foreground"><strong>Sede:</strong> {selectedTutor.nombreSede || '—'}</p>
+              <p className="text-sm mb-0.5 text-foreground"><strong>Cargo:</strong> {selectedTutor.cargo || '—'}</p>
+              <p className="text-sm text-foreground"><strong>Área:</strong> {selectedTutor.area || '—'}</p>
             </div>
             <Separator className="my-4" />
-            <h5 className="font-bold text-base mb-2">Auditoría</h5>
+            <h5 className="font-bold text-base mb-2 text-foreground">Auditoría</h5>
             <p className="text-xs text-muted-foreground"><strong>Registro creado:</strong> {selectedTutor.fechaCreacion ? new Date(selectedTutor.fechaCreacion).toLocaleString() : '—'}</p>
             <p className="text-xs text-muted-foreground"><strong>Última actualización:</strong> {selectedTutor.fechaActualizacion ? new Date(selectedTutor.fechaActualizacion).toLocaleString() : '—'}</p>
             <div className="mt-4 flex gap-2 flex-col">

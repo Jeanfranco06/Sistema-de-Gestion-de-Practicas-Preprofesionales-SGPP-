@@ -285,10 +285,23 @@ Una constancia generada se registra con archivo, hash, fecha, usuario solicitant
 - Frontend: ampliado `frontend/src/lib/constants.ts` con `ESTADOS_PARA_EVALUAR`, `ESTADOS_PARA_DICTAMEN` y `ESTADOS_FINALIZADOS`; refactorizados múltiples componentes para usar las constantes compartidas en lugar de literales dispersos.
 - Verificaciones ejecutadas: `mvn -pl sgpp-api -am test` (4 tests), `npm run lint` y `npm run build`.
 
+### 2026-07-20 (continuación) — Notificaciones de plan, literales restantes y unificación visual del estudiante
+
+- Backend: `PlanGeneralServiceImpl` ahora notifica al estudiante cuando su plan es observado, aprobado o rechazado vía `NotificacionEventoService`.
+- Frontend: migrados los últimos literales de estado en `DetalleExpediente`, `designTokens.ts`, `DashboardTutor` y `RevisionDocumental` a las constantes compartidas.
+- Frontend: refactorizadas `DashboardEstudiante` y `SolicitarPractica` para usar la paleta institucional UNT (amarillo primario / azul secundario), componentes del Design System, dark mode completo y mejor responsive.
+- Frontend: actualizados `wow-theme.css` (primary amarillo UNT) y `Button.tsx` (texto oscuro sobre primario, área táctil mínima).
+- Verificaciones ejecutadas: `mvn -pl sgpp-api -am test` (4 tests), `npm run lint` y `npm run build`.
+
+### 2026-07-20 (continuación) — Uniformización visual general y mejora de chunking
+
+- Frontend: refactorizadas masivamente las vistas de coordinación, docente/tutor, comité, secretaría/administración, estudiante y componentes compartidos para usar la paleta institucional UNT, el Design System (`@/ui`), variables CSS, modo oscuro y diseño responsive.
+- Frontend: convertidas casi todas las rutas protegidas a carga diferida (`React.lazy`), reduciendo el chunk inicial de ~1.2 MB a ~302 KB (gzip ~90 KB).
+- Frontend: eliminadas dependencias residuales de MUI en vistas que ya tienen equivalentes en el Design System; se conservan MUI solo donde es indispensable (Drawer, Menu, Modal, Tabs, Stepper, etc.).
+- Verificaciones ejecutadas: `mvn -pl sgpp-api -am test` (4 tests), `npm run lint` y `npm run build`.
+
 ## Pendientes Técnicos Conocidos
 
-- Refinar chunking adicional del frontend para reducir más el bundle principal.
 - Ajustar reglas configurables de plazos y requisitos académicos según evolución normativa.
-- Revisar reglas de integridad y notificaciones en los nuevos flujos de plan estructurado.
 - Evaluar si se requiere una UI de cambio manual de estado para administradores, tras eliminar `PUT /expedientes/{id}/cambiar-estado`.
-- Continuar migrando literales de estado restantes a `frontend/src/lib/constants.ts`.
+- Revisar visualmente cada rol en modo claro y oscuro para detectar ajustes finos de contraste.

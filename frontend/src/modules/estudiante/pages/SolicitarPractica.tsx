@@ -11,7 +11,7 @@ import { useTiposPractica, useSolicitarPractica } from '../../../hooks/usePracti
 import { useCatalogoSedes } from '../../../hooks/useSedes';
 import {
   Button, Card, CardContent, CardHeader, CardTitle, Badge,
-  Dialog, DialogContent, DialogFooter,
+  Dialog, DialogContent, DialogFooter, Input, Select,
 } from '../../../ui';
 import { cn } from '../../../lib/utils';
 
@@ -51,20 +51,6 @@ const tipoIcons: Record<string, React.ReactNode> = {
   PROFESIONAL: <Trophy className="h-12 w-12" />,
 };
 
-const tipoColors: Record<string, { icon: string }> = {
-  INICIAL: { icon: 'text-blue-600 dark:text-blue-400' },
-  FINAL: { icon: 'text-green-600 dark:text-green-400' },
-  PROFESIONAL: { icon: 'text-purple-600 dark:text-purple-400' },
-};
-
-const getTipoColorClasses = (codigo: string) => {
-  const defaultColor = tipoColors.INICIAL;
-  const colors = tipoColors[codigo] || defaultColor;
-  return {
-    icon: colors?.icon || defaultColor?.icon || 'text-blue-600',
-  };
-};
-
 export function SolicitarPractica() {
   const navigate = useNavigate();
   const [activeStep, setActiveStep] = useState(0);
@@ -102,7 +88,7 @@ export function SolicitarPractica() {
         icon: 'warning',
         title: 'Selecciona un tipo',
         text: 'Debes seleccionar un tipo de práctica para continuar.',
-        confirmButtonColor: '#0ea5e9',
+        confirmButtonColor: '#F5C518',
       });
       return;
     }
@@ -111,7 +97,7 @@ export function SolicitarPractica() {
         icon: 'warning',
         title: 'Selecciona una sede',
         text: 'Debes seleccionar una empresa y sede para continuar.',
-        confirmButtonColor: '#0ea5e9',
+        confirmButtonColor: '#F5C518',
       });
       return;
     }
@@ -157,28 +143,28 @@ export function SolicitarPractica() {
       if (detalles && detalles.length > 0) {
         const detallesHtml = detalles
           .map((d) => {
-            if (typeof d === 'string') return `<li style="text-align: left; margin-bottom: 8px;">${d}</li>`;
-            return `<li style="text-align: left; margin-bottom: 8px;">${d.descripcion || d.nombreRegla || ''}</li>`;
+            if (typeof d === 'string') return `<li class="text-left mb-2">${d}</li>`;
+            return `<li class="text-left mb-2">${d.descripcion || d.nombreRegla || ''}</li>`;
           })
           .join('');
 
         MySwal.fire({
           icon: 'warning',
           title: 'Requisitos académicos no cumplidos',
-          html: `<div style="text-align: left; font-size: 0.9rem;">
-            <p style="margin-bottom: 12px;">No cumples con los requisitos académicos para este tipo de práctica:</p>
-            <ul style="padding-left: 20px; margin: 0;">${detallesHtml}</ul>
-            <p style="margin-top: 12px; color: #666;">Por favor, completa los requisitos faltantes antes de solicitar la práctica.</p>
+          html: `<div class="text-left text-sm text-slate-700 dark:text-slate-300">
+            <p class="mb-3">No cumples con los requisitos académicos para este tipo de práctica:</p>
+            <ul class="list-disc pl-5">${detallesHtml}</ul>
+            <p class="mt-3 text-slate-500 dark:text-slate-400">Por favor, completa los requisitos faltantes antes de solicitar la práctica.</p>
           </div>`,
           confirmButtonText: 'Entendido',
-          confirmButtonColor: '#f59e0b',
+          confirmButtonColor: '#F59E0B',
         });
       } else {
         MySwal.fire({
           icon: 'error',
           title: 'Error',
           text: msg,
-          confirmButtonColor: '#dc2626',
+          confirmButtonColor: '#C62828',
         });
       }
     }
@@ -192,10 +178,6 @@ export function SolicitarPractica() {
       seen.add(key);
       return true;
     });
-  };
-
-  const getSedesPorEmpresa = (razonSocial: string): SedeCatalogo[] => {
-    return filteredSedes.filter((s: SedeCatalogo) => s.razonSocialEmpresa === razonSocial);
   };
 
   // Filter logic
@@ -225,6 +207,10 @@ export function SolicitarPractica() {
     return true;
   });
 
+  const getSedesPorEmpresa = (razonSocial: string): SedeCatalogo[] => {
+    return filteredSedes.filter((s: SedeCatalogo) => s.razonSocialEmpresa === razonSocial);
+  };
+
   // Get unique departamentos for filter
   const departamentosUnicos = Array.from(new Set(sedes.map((s: SedeCatalogo) => s.departamento)))
     .filter((d): d is string => typeof d === 'string')
@@ -253,19 +239,19 @@ export function SolicitarPractica() {
   }
 
   return (
-    <motion.div 
-      initial={{ opacity: 0 }} 
-      animate={{ opacity: 1 }} 
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
       className="space-y-6"
     >
       {/* Banner */}
-      <div className="bg-gradient-to-r from-blue-900 to-blue-800 rounded-2xl p-6 mb-6 flex items-center gap-4 text-white shadow-lg">
+      <div className="bg-gradient-to-r from-primary-700 to-primary-900 rounded-2xl p-6 mb-6 flex items-center gap-4 text-white shadow-lg">
         <div className="flex items-center justify-center rounded-full shrink-0 w-14 h-14 bg-white/15">
           <FileText className="h-6 w-6" aria-hidden="true" />
         </div>
         <div>
-          <h2 className="text-xl font-bold">Solicitar Práctica Preprofesional</h2>
+          <h2 className="text-xl md:text-2xl font-bold">Solicitar Práctica Preprofesional</h2>
           <p className="text-sm opacity-90 mt-1">
             Completa los pasos para solicitar tu práctica en una empresa o institución.
           </p>
@@ -280,15 +266,15 @@ export function SolicitarPractica() {
               <div className="flex items-center gap-2">
                 <div
                   className={cn(
-                    'flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold shrink-0 transition-colors',
-                    index < activeStep && 'bg-green-500 text-white dark:bg-green-600',
-                    index === activeStep && 'bg-blue-600 text-white ring-4 ring-blue-100 dark:ring-blue-900/50',
-                    index > activeStep && 'bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400',
+                    'flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full text-sm md:text-base font-bold shrink-0 transition-colors',
+                    index < activeStep && 'bg-primary-600 text-white dark:bg-primary-700',
+                    index === activeStep && 'bg-primary-600 text-white ring-4 ring-primary-100 dark:ring-primary-900/50',
+                    index > activeStep && 'bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground',
                   )}
                   aria-current={index === activeStep ? 'step' : undefined}
                 >
                   {index < activeStep ? (
-                    <CheckCircle className="h-4 w-4" aria-hidden="true" />
+                    <CheckCircle className="h-4 w-4 md:h-5 md:w-5" aria-hidden="true" />
                   ) : (
                     <span className="sr-only">Paso {index + 1}:</span>
                   )}
@@ -298,8 +284,8 @@ export function SolicitarPractica() {
                   className={cn(
                     'text-sm hidden sm:inline transition-colors',
                     index === activeStep && 'font-semibold text-foreground',
-                    index < activeStep && 'text-slate-600 dark:text-slate-300',
-                    index > activeStep && 'text-slate-400 dark:text-slate-500',
+                    index < activeStep && 'text-muted-foreground',
+                    index > activeStep && 'text-muted-foreground',
                   )}
                 >
                   {step.label}
@@ -308,8 +294,8 @@ export function SolicitarPractica() {
               {index < STEPS.length - 1 && (
                 <div
                   className={cn(
-                    'h-px w-8 sm:w-16 mx-2 transition-colors',
-                    index < activeStep ? 'bg-green-500 dark:bg-green-600' : 'bg-slate-200 dark:bg-slate-700'
+                    'h-px w-6 sm:w-12 md:w-16 mx-2 transition-colors',
+                    index < activeStep ? 'bg-primary-600 dark:bg-primary-700' : 'bg-border dark:bg-border'
                   )}
                   aria-hidden="true"
                 />
@@ -323,67 +309,75 @@ export function SolicitarPractica() {
       {activeStep === 0 && (
         <section aria-labelledby="step1-heading" className="space-y-4">
           <div>
-            <h3 id="step1-heading" className="text-lg font-semibold mb-1 text-foreground">
+            <h3 id="step1-heading" className="text-lg md:text-xl font-semibold mb-1 text-foreground">
               Selecciona el tipo de práctica que deseas solicitar
             </h3>
             <p className="text-sm text-muted-foreground">
               Cada tipo de práctica tiene un requisito de horas mínimo. Elige según tu avance académico.
             </p>
           </div>
-          <div 
-            className="space-y-3" 
+          <div
+            className="space-y-3"
             role="radiogroup"
             aria-labelledby="step1-heading"
           >
             {tipos.map((tipo: TipoPractica) => {
               const selected = selectedTipo?.id === tipo.id;
-              const colors = getTipoColorClasses(tipo.codigo);
               return (
-                <label
+                <Card
                   key={tipo.id}
                   className={cn(
-                    'relative flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200',
-                    'hover:border-blue-300 hover:bg-blue-50/50 dark:hover:border-blue-700 dark:hover:bg-blue-900/20',
-                    'focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2',
-                    selected ? 'border-blue-500 bg-blue-50 dark:border-blue-600 dark:bg-blue-900/30' : 'border-border bg-card',
+                    'p-0 overflow-hidden transition-all duration-200',
+                    selected
+                      ? 'border-primary-600 dark:border-primary-500 ring-2 ring-primary-500/20'
+                      : 'border-border hover:border-primary-400 dark:hover:border-primary-700'
                   )}
                 >
-                  <input
-                    type="radio"
-                    name="tipo-practica"
-                    value={tipo.id}
-                    checked={selected}
-                    onChange={() => handleSelectTipo(tipo)}
-                    className="sr-only"
-                  />
-                  <div className={cn(
-                    'flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center mt-1 transition-colors',
-                    selected ? 'border-blue-600 bg-blue-600 dark:border-blue-500 dark:bg-blue-500' : 'border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-800'
-                  )}>
-                    {selected && (
-                      <div className="w-3 h-3 rounded-full bg-white" />
+                  <label
+                    className={cn(
+                      'relative flex items-start gap-4 p-4 md:p-5 cursor-pointer transition-colors',
+                      selected
+                        ? 'bg-primary-50/50 dark:bg-primary-950/30'
+                        : 'bg-card hover:bg-muted/50'
                     )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-1">
-                      <div className={cn('flex items-center justify-center w-12 h-12 rounded-lg', colors.icon, selected ? 'bg-blue-100 dark:bg-blue-900/50' : 'bg-slate-100 dark:bg-slate-800')}>
-                        {tipoIcons[tipo.codigo] || <GraduationCap className="h-6 w-6" aria-hidden="true" />}
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-foreground text-base">{tipo.nombre}</h4>
-                        <Badge variant={selected ? 'info' : 'neutral'} size="sm" className="mt-1">
-                          {tipo.horasRequeridas} horas
-                        </Badge>
-                      </div>
+                  >
+                    <input
+                      type="radio"
+                      name="tipo-practica"
+                      value={tipo.id}
+                      checked={selected}
+                      onChange={() => handleSelectTipo(tipo)}
+                      className="sr-only"
+                    />
+                    <div className={cn(
+                      'flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center mt-1 transition-colors',
+                      selected ? 'border-primary-600 bg-primary-600 dark:border-primary-500 dark:bg-primary-500' : 'border-border bg-card dark:border-border dark:bg-muted'
+                    )}>
+                      {selected && (
+                        <div className="w-3 h-3 rounded-full bg-white" />
+                      )}
                     </div>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      {tipo.descripcion || `Práctica ${tipo.nombre.toLowerCase()}`}
-                    </p>
-                  </div>
-                  {selected && (
-                    <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-1" aria-hidden="true" />
-                  )}
-                </label>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 mb-1">
+                        <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-[#1A3A6E] text-white dark:bg-[#4A6FA5]">
+                          {tipoIcons[tipo.codigo] || <GraduationCap className="h-6 w-6" aria-hidden="true" />}
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-foreground text-base md:text-lg">{tipo.nombre}</h4>
+                          <Badge variant="info" size="sm" className="mt-1">
+                            {tipo.horasRequeridas} horas
+                          </Badge>
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        {tipo.descripcion || `Práctica ${tipo.nombre.toLowerCase()}`}
+                      </p>
+                    </div>
+                    {selected && (
+                      <CheckCircle className="h-5 w-5 text-primary-600 flex-shrink-0 mt-1" aria-hidden="true" />
+                    )}
+                  </label>
+                </Card>
               );
             })}
           </div>
@@ -394,7 +388,7 @@ export function SolicitarPractica() {
       {activeStep === 1 && (
         <section aria-labelledby="step2-heading" className="space-y-4">
           <div>
-            <h3 id="step2-heading" className="text-lg font-semibold mb-1 text-foreground">
+            <h3 id="step2-heading" className="text-lg md:text-xl font-semibold mb-1 text-foreground">
               Selecciona la empresa y sede para tu práctica
             </h3>
             <div className="mb-4">
@@ -409,17 +403,17 @@ export function SolicitarPractica() {
           </div>
 
           {/* Filters */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-900 border border-blue-200 dark:border-blue-900 rounded-xl overflow-hidden">
+          <div className="bg-card border border-border rounded-xl overflow-hidden">
             {/* Filter Header */}
             <button
               onClick={() => setFiltersExpanded(!filtersExpanded)}
-              className="w-full px-4 py-3 flex items-center justify-between hover:bg-blue-100/50 dark:hover:bg-slate-700/50 transition-colors"
+              className="w-full px-4 py-3 flex items-center justify-between hover:bg-muted transition-colors"
               aria-expanded={filtersExpanded}
               aria-controls="filters-content"
             >
               <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-600 dark:bg-blue-700">
-                  <Filter className="h-4 w-4 text-white" aria-hidden="true" />
+                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#1A3A6E] dark:bg-[#4A6FA5] text-white">
+                  <Filter className="h-4 w-4" aria-hidden="true" />
                 </div>
                 <div className="flex flex-col items-start">
                   <h4 className="font-semibold text-foreground text-sm">Filtros de búsqueda</h4>
@@ -435,7 +429,7 @@ export function SolicitarPractica() {
                       e.stopPropagation();
                       clearFilters();
                     }}
-                    className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium px-2 py-1 rounded-md hover:bg-blue-100 dark:hover:bg-slate-700 transition-colors"
+                    className="text-xs text-primary-700 hover:text-primary-800 dark:text-primary-400 dark:hover:text-primary-300 font-medium px-2 py-1 rounded-md hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors"
                   >
                     Limpiar
                   </button>
@@ -454,62 +448,38 @@ export function SolicitarPractica() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {/* Search */}
                   <div className="md:col-span-2 lg:col-span-3">
-                    <label htmlFor="search-sedes" className="block text-xs font-semibold text-foreground mb-1.5">
-                      <Building2 className="h-3 w-3 inline mr-1" aria-hidden="true" />
-                      Buscar por nombre, empresa o dirección
-                    </label>
-                    <div className="relative">
-                      <input
-                        id="search-sedes"
-                        type="text"
-                        value={filterSearch}
-                        onChange={(e) => setFilterSearch(e.target.value)}
-                        placeholder="Ej: Empresa XYZ, Av. Principal..."
-                        className="w-full px-3 py-2.5 pl-10 text-sm border border-blue-200 dark:border-blue-900 rounded-lg bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
-                      />
-                      <Building2 className="h-4 w-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
-                    </div>
+                    <Input
+                      id="search-sedes"
+                      label="Buscar por nombre, empresa o dirección"
+                      value={filterSearch}
+                      onChange={(e) => setFilterSearch(e.target.value)}
+                      placeholder="Ej: Empresa XYZ, Av. Principal..."
+                    />
                   </div>
 
                   {/* Empresa */}
-                  <div>
-                    <label htmlFor="filter-empresa" className="block text-xs font-semibold text-foreground mb-1.5">
-                      Empresa
-                    </label>
-                    <select
-                      id="filter-empresa"
-                      value={filterEmpresa}
-                      onChange={(e) => setFilterEmpresa(e.target.value)}
-                      className="w-full px-3 py-2.5 text-sm border border-blue-200 dark:border-blue-900 rounded-lg bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
-                    >
-                      <option value="">Todas las empresas</option>
-                      {empresasUnicas.map((empresa) => (
-                        <option key={empresa} value={empresa}>{empresa}</option>
-                      ))}
-                    </select>
-                  </div>
+                  <Select
+                    id="filter-empresa"
+                    label="Empresa"
+                    value={filterEmpresa}
+                    onChange={(e) => setFilterEmpresa(e.target.value)}
+                    placeholder="Todas las empresas"
+                    options={empresasUnicas.map((empresa) => ({ value: empresa, label: empresa }))}
+                  />
 
                   {/* Departamento */}
-                  <div>
-                    <label htmlFor="filter-departamento" className="block text-xs font-semibold text-foreground mb-1.5">
-                      Departamento
-                    </label>
-                    <select
-                      id="filter-departamento"
-                      value={filterDepartamento}
-                      onChange={(e) => setFilterDepartamento(e.target.value)}
-                      className="w-full px-3 py-2.5 text-sm border border-blue-200 dark:border-blue-900 rounded-lg bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
-                    >
-                      <option value="">Todos los departamentos</option>
-                      {departamentosUnicos.map((dept) => (
-                        <option key={dept} value={dept}>{dept}</option>
-                      ))}
-                    </select>
-                  </div>
+                  <Select
+                    id="filter-departamento"
+                    label="Departamento"
+                    value={filterDepartamento}
+                    onChange={(e) => setFilterDepartamento(e.target.value)}
+                    placeholder="Todos los departamentos"
+                    options={departamentosUnicos.map((dept) => ({ value: dept, label: dept }))}
+                  />
                 </div>
 
                 {/* Elegible toggle */}
-                <div className="flex items-center justify-between pt-2 border-t border-blue-200 dark:border-blue-900">
+                <div className="flex items-center justify-between pt-2 border-t border-border">
                   <label className="flex items-center gap-3 cursor-pointer">
                     <div className="relative">
                       <input
@@ -520,7 +490,7 @@ export function SolicitarPractica() {
                       />
                       <div className={cn(
                         'w-5 h-5 rounded border-2 flex items-center justify-center transition-colors',
-                        filterElegible ? 'bg-blue-600 border-blue-600' : 'border-gray-300 bg-white dark:border-slate-600 dark:bg-slate-800'
+                        filterElegible ? 'bg-primary-600 border-primary-600 dark:bg-primary-500 dark:border-primary-500' : 'border-border bg-card dark:border-border dark:bg-muted'
                       )}>
                         {filterElegible && (
                           <CheckCircle className="h-3.5 w-3.5 text-white" aria-hidden="true" />
@@ -552,7 +522,7 @@ export function SolicitarPractica() {
               </p>
             </div>
           ) : (
-            <div 
+            <div
               className="flex flex-col gap-4"
               role="radiogroup"
               aria-labelledby="step2-heading"
@@ -563,10 +533,10 @@ export function SolicitarPractica() {
                 return (
                   <div key={empresa.razonSocialEmpresa} className="space-y-3">
                     <div className="flex items-center gap-2 px-1">
-                      <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-600">
-                        <Building2 className="h-4 w-4 text-white" aria-hidden="true" />
+                      <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#1A3A6E] dark:bg-[#4A6FA5] text-white">
+                        <Building2 className="h-4 w-4" aria-hidden="true" />
                       </div>
-                      <h4 className="font-semibold text-foreground text-base">{empresa.razonSocialEmpresa}</h4>
+                      <h4 className="font-semibold text-foreground text-base md:text-lg">{empresa.razonSocialEmpresa}</h4>
                       {!tieneElegible && (
                         <Badge variant="warning" size="sm">Sin sedes elegibles</Badge>
                       )}
@@ -576,69 +546,81 @@ export function SolicitarPractica() {
                         const selected = selectedSede?.id === sede.id;
                         const elegible = sede.esElegible;
                         return (
-                          <label
+                          <Card
                             key={sede.id}
                             className={cn(
-                              'relative flex items-start gap-4 p-4 rounded-xl border cursor-pointer transition-all duration-200',
-                              elegible ? 'hover:border-blue-300 hover:bg-blue-50/50 dark:hover:border-blue-700 dark:hover:bg-blue-900/20' : 'cursor-not-allowed opacity-75',
-                              'focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2',
-                              selected ? 'border-blue-500 bg-blue-50 dark:border-blue-600 dark:bg-blue-900/30' : 'border-border bg-card',
-                              !elegible && 'border-red-200 bg-red-50 dark:border-red-800/50 dark:bg-red-950/20',
+                              'p-0 overflow-hidden transition-all duration-200',
+                              !elegible && 'opacity-75 border-red-200 dark:border-red-800/50',
+                              selected && elegible && 'border-primary-600 dark:border-primary-500 ring-2 ring-primary-500/20'
                             )}
                           >
-                            <input
-                              type="radio"
-                              name="sede-practica"
-                              value={sede.id}
-                              checked={selected}
-                              onChange={() => elegible && handleSelectSede(sede)}
-                              disabled={!elegible}
-                              className="sr-only"
-                            />
-                            <div className={cn(
-                              'flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center mt-1 transition-colors',
-                              selected ? 'border-blue-600 bg-blue-600 dark:border-blue-500 dark:bg-blue-500' : 'border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-800',
-                              !elegible && 'border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-900/30'
-                            )}>
-                              {selected && (
-                                <div className="w-3 h-3 rounded-full bg-white" />
+                            <label
+                              className={cn(
+                                'relative flex items-start gap-4 p-4 cursor-pointer transition-colors',
+                                !elegible && 'cursor-not-allowed',
+                                selected && elegible
+                                  ? 'bg-primary-50/50 dark:bg-primary-950/30'
+                                  : 'bg-card hover:bg-muted/50'
                               )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-start justify-between gap-2 mb-2">
-                                <div className="flex-1 min-w-0">
-                                  <h5 className="font-semibold text-foreground text-base">{sede.nombreSede}</h5>
-                                  <p className="text-sm text-muted-foreground mt-1">{sede.direccion}</p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {sede.departamento}, {sede.provincia}, {sede.distrito}
-                                  </p>
-                                </div>
-                                {elegible ? (
-                                  <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-1" aria-hidden="true" />
-                                ) : (
-                                  <XCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-1" aria-hidden="true" />
+                            >
+                              <input
+                                type="radio"
+                                name="sede-practica"
+                                value={sede.id}
+                                checked={selected}
+                                onChange={() => elegible && handleSelectSede(sede)}
+                                disabled={!elegible}
+                                className="sr-only"
+                              />
+                              <div className={cn(
+                                'flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center mt-1 transition-colors',
+                                selected ? 'border-primary-600 bg-primary-600 dark:border-primary-500 dark:bg-primary-500' : 'border-border bg-card dark:border-border dark:bg-muted',
+                                !elegible && 'border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-950/30'
+                              )}>
+                                {selected && (
+                                  <div className="w-3 h-3 rounded-full bg-white" />
                                 )}
                               </div>
-                              <div className="flex flex-wrap gap-2">
-                                <Badge variant="neutral" size="sm">{sede.tipoEntidad}</Badge>
-                                {sede.vacantesDisponibles > 0 && (
-                                  <Badge variant="success" size="sm">
-                                    {sede.vacantesDisponibles} vacantes
-                                  </Badge>
-                                )}
-                                {elegible && (
-                                  <Badge variant="success" size="sm">
-                                    <CheckCircle className="h-3 w-3 mr-0.5" aria-hidden="true" /> Elegible
-                                  </Badge>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-start justify-between gap-2 mb-2">
+                                  <div className="flex-1 min-w-0">
+                                    <h5 className="font-semibold text-foreground text-base md:text-lg">{sede.nombreSede}</h5>
+                                    <p className="text-sm text-muted-foreground mt-1">{sede.direccion}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {sede.departamento}, {sede.provincia}, {sede.distrito}
+                                    </p>
+                                  </div>
+                                  {elegible ? (
+                                    <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-1" aria-hidden="true" />
+                                  ) : (
+                                    <XCircle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-1" aria-hidden="true" />
+                                  )}
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                  <Badge variant="neutral" size="sm">{sede.tipoEntidad}</Badge>
+                                  {sede.vacantesDisponibles > 0 && (
+                                    <Badge variant="success" size="sm">
+                                      {sede.vacantesDisponibles} vacantes
+                                    </Badge>
+                                  )}
+                                  {elegible ? (
+                                    <Badge variant="success" size="sm">
+                                      <CheckCircle className="h-3 w-3 mr-0.5" aria-hidden="true" /> Elegible
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="danger" size="sm">
+                                      <XCircle className="h-3 w-3 mr-0.5" aria-hidden="true" /> No elegible
+                                    </Badge>
+                                  )}
+                                </div>
+                                {!elegible && sede.motivoNoElegible && (
+                                  <div className="mt-2 rounded-md py-1.5 px-2 text-xs font-medium bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+                                    {sede.motivoNoElegible}
+                                  </div>
                                 )}
                               </div>
-                              {!elegible && sede.motivoNoElegible && (
-                                <div className="mt-2 rounded-md py-1.5 px-2 text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">
-                                  {sede.motivoNoElegible}
-                                </div>
-                              )}
-                            </div>
-                          </label>
+                            </label>
+                          </Card>
                         );
                       })}
                     </div>
@@ -654,7 +636,7 @@ export function SolicitarPractica() {
       {activeStep === 2 && (
         <section aria-labelledby="step3-heading" className="space-y-6">
           <div>
-            <h3 id="step3-heading" className="text-xl font-bold mb-2 text-foreground">
+            <h3 id="step3-heading" className="text-xl md:text-2xl font-bold mb-2 text-foreground">
               Confirma tu solicitud de práctica
             </h3>
             <p className="text-sm text-muted-foreground">
@@ -666,22 +648,19 @@ export function SolicitarPractica() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Tipo de Práctica Card */}
             {selectedTipo && (
-              <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-200 dark:border-blue-900 overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-100 dark:bg-blue-900/20 rounded-full -translate-y-1/2 translate-x-1/2 opacity-50" />
-                <CardContent className="p-6 relative">
+              <Card className="border-l-4 border-l-primary-600 overflow-hidden">
+                <CardContent className="p-5 md:p-6">
                   <div className="flex items-start gap-4">
-                    <div className="flex items-center justify-center rounded-xl shrink-0 h-14 w-14 bg-gradient-to-br from-blue-600 to-indigo-600 shadow-lg">
-                      <div className="text-white">
-                        {tipoIcons[selectedTipo.codigo] || <GraduationCap className="h-7 w-7" aria-hidden="true" />}
-                      </div>
+                    <div className="flex items-center justify-center rounded-xl shrink-0 h-14 w-14 bg-primary-600 text-white shadow-md">
+                      {tipoIcons[selectedTipo.codigo] || <GraduationCap className="h-7 w-7" aria-hidden="true" />}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 mb-1">
+                      <p className="text-xs font-bold uppercase tracking-wider text-primary-700 dark:text-primary-400 mb-1">
                         Tipo de Práctica
                       </p>
                       <h4 className="font-bold text-lg text-foreground mb-1">{selectedTipo.nombre}</h4>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="info" size="sm" className="bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge variant="info" size="sm">
                           {selectedTipo.horasRequeridas} horas
                         </Badge>
                         {selectedTipo.descripcion && (
@@ -698,21 +677,20 @@ export function SolicitarPractica() {
 
             {/* Empresa y Sede Card */}
             {selectedSede && (
-              <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-green-200 dark:border-green-900 overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-green-100 dark:bg-green-900/20 rounded-full -translate-y-1/2 translate-x-1/2 opacity-50" />
-                <CardContent className="p-6 relative">
+              <Card className="border-l-4 border-l-[#1A3A6E] dark:border-l-[#4A6FA5] overflow-hidden">
+                <CardContent className="p-5 md:p-6">
                   <div className="flex items-start gap-4">
-                    <div className="flex items-center justify-center rounded-xl shrink-0 h-14 w-14 bg-gradient-to-br from-green-600 to-emerald-600 shadow-lg">
-                      <Building2 className="h-7 w-7 text-white" aria-hidden="true" />
+                    <div className="flex items-center justify-center rounded-xl shrink-0 h-14 w-14 bg-[#1A3A6E] dark:bg-[#4A6FA5] text-white shadow-md">
+                      <Building2 className="h-7 w-7" aria-hidden="true" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold uppercase tracking-wider text-green-600 dark:text-green-400 mb-1">
+                      <p className="text-xs font-bold uppercase tracking-wider text-[#1A3A6E] dark:text-[#7A9FD5] mb-1">
                         Empresa y Sede
                       </p>
                       <h4 className="font-bold text-lg text-foreground mb-1">{selectedSede.razonSocialEmpresa}</h4>
                       <p className="text-sm font-medium text-foreground mb-1">{selectedSede.nombreSede}</p>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <Badge variant="success" size="sm" className="bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300">
+                        <Badge variant="success" size="sm">
                           <CheckCircle className="h-3 w-3 mr-1" aria-hidden="true" /> Elegible
                         </Badge>
                         <Badge variant="neutral" size="sm">{selectedSede.tipoEntidad}</Badge>
@@ -725,10 +703,10 @@ export function SolicitarPractica() {
           </div>
 
           {/* Detailed Information */}
-          <Card className="border border-border bg-card">
+          <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" aria-hidden="true" />
+                <FileText className="h-5 w-5 text-primary-700 dark:text-primary-400" aria-hidden="true" />
                 Detalles de la Sede
               </CardTitle>
             </CardHeader>
@@ -761,7 +739,7 @@ export function SolicitarPractica() {
           </Card>
 
           {/* Important Notice */}
-          <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border border-amber-200 dark:border-amber-900 rounded-xl p-4">
+          <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-xl p-4">
             <div className="flex items-start gap-3">
               <div className="flex items-center justify-center rounded-full shrink-0 h-10 w-10 bg-amber-100 dark:bg-amber-900/50">
                 <Info className="h-5 w-5 text-amber-600 dark:text-amber-400" aria-hidden="true" />
@@ -770,15 +748,15 @@ export function SolicitarPractica() {
                 <h4 className="font-semibold text-foreground text-sm">Información Importante</h4>
                 <ul className="text-sm text-muted-foreground space-y-1.5">
                   <li className="flex items-start gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400 shrink-0 mt-0.5" aria-hidden="true" />
-                    <span>Al confirmar, se registrará tu solicitud con estado "REGISTRADA"</span>
+                    <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" aria-hidden="true" />
+                    <span>Al confirmar, se registrará tu solicitud con estado &quot;REGISTRADA&quot;</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400 shrink-0 mt-0.5" aria-hidden="true" />
+                    <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" aria-hidden="true" />
                     <span>Posteriormente deberás completar los documentos requeridos</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400 shrink-0 mt-0.5" aria-hidden="true" />
+                    <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" aria-hidden="true" />
                     <span>Recibirás notificaciones sobre el estado de tu solicitud</span>
                   </li>
                 </ul>
@@ -794,7 +772,7 @@ export function SolicitarPractica() {
           variant="secondary"
           onClick={activeStep === 0 ? () => navigate('/estudiante/sedes') : handleBack}
           disabled={solicitarMutation.isPending}
-          className="flex-1 sm:flex-none"
+          className="flex-1 sm:flex-none w-full sm:w-auto"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           {activeStep === 0 ? 'Ir a Catálogo' : 'Anterior'}
@@ -803,7 +781,7 @@ export function SolicitarPractica() {
           variant="primary"
           onClick={handleNext}
           disabled={solicitarMutation.isPending}
-          className="flex-1 sm:flex-none"
+          className="flex-1 sm:flex-none w-full sm:w-auto"
         >
           {activeStep === STEPS.length - 1 ? 'Solicitar Práctica' : 'Siguiente'}
           {activeStep < STEPS.length - 1 && <ArrowRight className="h-4 w-4" aria-hidden="true" />}
@@ -814,27 +792,27 @@ export function SolicitarPractica() {
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <DialogContent size="md" aria-labelledby="dialog-title" className="p-0 overflow-hidden">
           {/* Header */}
-          <div className="bg-unt-blue text-white px-6 py-5 relative overflow-hidden border-b-4 border-unt-yellow">
+          <div className="bg-[#1A3A6E] dark:bg-[#4A6FA5] text-white px-6 py-5 relative overflow-hidden border-b-4 border-primary-600">
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
             <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
             <div className="relative flex items-center gap-4">
-              <div className="flex items-center justify-center rounded-xl h-14 w-14 bg-unt-yellow/20 border border-unt-yellow/50 backdrop-blur-sm">
-                <FileText className="h-7 w-7 text-unt-yellow" aria-hidden="true" />
+              <div className="flex items-center justify-center rounded-xl h-14 w-14 bg-primary-500/20 border border-primary-400/50 backdrop-blur-sm">
+                <FileText className="h-7 w-7 text-primary-400" aria-hidden="true" />
               </div>
               <div>
                 <CardTitle className="text-xl font-bold text-white" id="dialog-title">Confirmar Solicitud</CardTitle>
-                <p className="text-slate-200 text-sm mt-1">Revisa los detalles antes de enviar</p>
+                <p className="text-white/80 text-sm mt-1">Revisa los detalles antes de enviar</p>
               </div>
             </div>
           </div>
 
           {/* Content */}
           <div className="p-6 space-y-5">
-            <div className="bg-blue-50 dark:bg-slate-900/50 border border-blue-200 dark:border-blue-900 rounded-lg p-4">
+            <div className="bg-muted dark:bg-muted border border-border rounded-lg p-4">
               <div className="flex items-start gap-3">
-                <Info className="h-5 w-5 text-unt-blue shrink-0 mt-0.5" aria-hidden="true" />
-                <p className="text-sm text-slate-700 dark:text-slate-300">
-                  Esta acción registrará tu solicitud de práctica con estado "REGISTRADA". 
+                <Info className="h-5 w-5 text-[#1A3A6E] dark:text-[#7A9FD5] shrink-0 mt-0.5" aria-hidden="true" />
+                <p className="text-sm text-foreground">
+                  Esta acción registrará tu solicitud de práctica con estado &quot;REGISTRADA&quot;.
                   Podrás completar los documentos requeridos posteriormente.
                 </p>
               </div>
@@ -842,20 +820,18 @@ export function SolicitarPractica() {
 
             {/* Practice Type Summary */}
             {selectedTipo && (
-              <div className="bg-slate-50 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
+              <div className="bg-card border border-border rounded-xl p-4">
                 <div className="flex items-center gap-4">
-                  <div className="flex items-center justify-center rounded-xl h-12 w-12 bg-unt-blue text-white shadow-md border-2 border-unt-yellow/30">
-                    <div className="text-white">
-                      {tipoIcons[selectedTipo.codigo] || <GraduationCap className="h-6 w-6" aria-hidden="true" />}
-                    </div>
+                  <div className="flex items-center justify-center rounded-xl h-12 w-12 bg-primary-600 text-white shadow-md border-2 border-primary-400/30">
+                    {tipoIcons[selectedTipo.codigo] || <GraduationCap className="h-6 w-6" aria-hidden="true" />}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold uppercase tracking-wider text-unt-blue dark:text-unt-yellow mb-1">
+                    <p className="text-xs font-bold uppercase tracking-wider text-primary-700 dark:text-primary-400 mb-1">
                       Tipo de Práctica
                     </p>
                     <h4 className="font-semibold text-foreground">{selectedTipo.nombre}</h4>
                     <div className="flex items-center gap-2 mt-1">
-                      <Badge variant="info" size="sm" className="bg-blue-100 text-unt-blue dark:bg-unt-blue/30 dark:text-blue-200">
+                      <Badge variant="info" size="sm">
                         {selectedTipo.horasRequeridas} horas
                       </Badge>
                     </div>
@@ -866,19 +842,19 @@ export function SolicitarPractica() {
 
             {/* Sede Summary */}
             {selectedSede && (
-              <div className="bg-green-50/50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-xl p-4">
+              <div className="bg-card border border-border rounded-xl p-4">
                 <div className="flex items-center gap-4">
-                  <div className="flex items-center justify-center rounded-xl h-12 w-12 bg-green-600 shadow-md">
+                  <div className="flex items-center justify-center rounded-xl h-12 w-12 bg-[#1A3A6E] dark:bg-[#4A6FA5] shadow-md">
                     <Building2 className="h-6 w-6 text-white" aria-hidden="true" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold uppercase tracking-wider text-green-700 dark:text-green-400 mb-1">
+                    <p className="text-xs font-bold uppercase tracking-wider text-[#1A3A6E] dark:text-[#7A9FD5] mb-1">
                       Empresa y Sede
                     </p>
                     <h4 className="font-semibold text-foreground">{selectedSede.razonSocialEmpresa}</h4>
                     <p className="text-sm text-muted-foreground mt-1">{selectedSede.nombreSede}</p>
                     <div className="flex items-center gap-2 mt-1">
-                      <Badge variant="success" size="sm" className="bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300">
+                      <Badge variant="success" size="sm">
                         <CheckCircle className="h-3 w-3 mr-1" aria-hidden="true" /> Elegible
                       </Badge>
                     </div>
@@ -889,12 +865,12 @@ export function SolicitarPractica() {
           </div>
 
           {/* Footer */}
-          <DialogFooter className="px-6 py-4 bg-slate-50 dark:bg-slate-900/50 border-t border-border">
-            <Button 
-              variant="secondary" 
-              onClick={() => setConfirmOpen(false)} 
+          <DialogFooter className="px-6 py-4 bg-muted dark:bg-muted/50 border-t border-border">
+            <Button
+              variant="secondary"
+              onClick={() => setConfirmOpen(false)}
               disabled={solicitarMutation.isPending}
-              className="flex-1 sm:flex-none"
+              className="flex-1 sm:flex-none w-full sm:w-auto"
             >
               Cancelar
             </Button>
@@ -902,7 +878,7 @@ export function SolicitarPractica() {
               variant="primary"
               onClick={handleSubmit}
               loading={solicitarMutation.isPending}
-              className="flex-1 sm:flex-none bg-unt-blue hover:bg-unt-blue-light text-white"
+              className="flex-1 sm:flex-none w-full sm:w-auto"
             >
               {solicitarMutation.isPending ? 'Solicitando...' : 'Confirmar y Solicitar'}
             </Button>

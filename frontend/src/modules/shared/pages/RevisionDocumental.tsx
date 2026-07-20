@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Download, Pencil, History } from 'lucide-react';
+import { ArrowLeft, Download, Pencil, History, FileText, Info } from 'lucide-react';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 
 import { expedientesApi } from '../../../api/expedientesApi';
 import api from '../../../api/axios';
+import { ESTADOS_REVISION_DOCUMENTAL } from '../../../lib/constants';
 import {
   Button,
   Badge,
@@ -18,18 +19,21 @@ import {
   DialogFooter,
   Select,
   Textarea,
+  Card,
+  CardContent,
 } from '../../../ui';
+import { cn } from '../../../lib/utils';
 
 const MySwal = withReactContent(Swal);
 
 const OPCIONES_REVISION: Record<string, Array<{ value: string; label: string }>> = {
-  PENDIENTE: [{ value: 'EN_REVISION', label: 'Iniciar revisión' }],
-  EN_REVISION: [
-    { value: 'APROBADO', label: 'Aprobar' },
-    { value: 'OBSERVADO', label: 'Observar (requiere corrección)' },
+  [ESTADOS_REVISION_DOCUMENTAL.PENDIENTE]: [{ value: ESTADOS_REVISION_DOCUMENTAL.EN_REVISION, label: 'Iniciar revisión' }],
+  [ESTADOS_REVISION_DOCUMENTAL.EN_REVISION]: [
+    { value: ESTADOS_REVISION_DOCUMENTAL.APROBADO, label: 'Aprobar' },
+    { value: ESTADOS_REVISION_DOCUMENTAL.OBSERVADO, label: 'Observar (requiere corrección)' },
   ],
-  OBSERVADO: [{ value: 'EN_REVISION', label: 'Reabrir revisión' }],
-  APROBADO: [{ value: 'ARCHIVADO', label: 'Archivar documento' }],
+  [ESTADOS_REVISION_DOCUMENTAL.OBSERVADO]: [{ value: ESTADOS_REVISION_DOCUMENTAL.EN_REVISION, label: 'Reabrir revisión' }],
+  [ESTADOS_REVISION_DOCUMENTAL.APROBADO]: [{ value: ESTADOS_REVISION_DOCUMENTAL.ARCHIVADO, label: 'Archivar documento' }],
 };
 
 interface HistorialItem {
@@ -61,11 +65,11 @@ interface Expediente {
 
 const getEstadoVariant = (estado?: string): 'success' | 'danger' | 'warning' | 'default' => {
   switch (estado) {
-    case 'APROBADO':
+    case ESTADOS_REVISION_DOCUMENTAL.APROBADO:
       return 'success';
-    case 'RECHAZADO':
+    case ESTADOS_REVISION_DOCUMENTAL.RECHAZADO:
       return 'danger';
-    case 'OBSERVADO':
+    case ESTADOS_REVISION_DOCUMENTAL.OBSERVADO:
       return 'warning';
     default:
       return 'default';
@@ -144,7 +148,7 @@ export const RevisionDocumental = () => {
   });
 
   const handleOpenReview = (doc: Documento) => {
-    const opciones = OPCIONES_REVISION[doc.estado ?? 'PENDIENTE'] ?? [];
+    const opciones = OPCIONES_REVISION[doc.estado ?? ESTADOS_REVISION_DOCUMENTAL.PENDIENTE] ?? [];
     setSelectedDoc(doc);
     setEstadoReview(opciones[0]?.value ?? '');
     setObservacion(doc.observaciones ?? '');
@@ -183,8 +187,8 @@ export const RevisionDocumental = () => {
     }
   };
 
-  const reviewOptions = OPCIONES_REVISION[selectedDoc?.estado ?? 'PENDIENTE'] ?? [];
-  const requiereObservacion = estadoReview === 'OBSERVADO' || estadoReview === 'RECHAZADO';
+  const reviewOptions = OPCIONES_REVISION[selectedDoc?.estado ?? ESTADOS_REVISION_DOCUMENTAL.PENDIENTE] ?? [];
+  const requiereObservacion = estadoReview === ESTADOS_REVISION_DOCUMENTAL.OBSERVADO || estadoReview === ESTADOS_REVISION_DOCUMENTAL.RECHAZADO;
   const puedeGuardar =
     estadoReview && (!requiereObservacion || observacion.trim().length > 0);
 
@@ -194,8 +198,7 @@ export const RevisionDocumental = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.4 }}
-        className="p-8 text-center"
-        style={{ color: 'var(--color-muted-foreground)' }}
+        className="p-8 text-center text-muted-foreground"
       >
         Cargando documentos...
       </motion.div>
@@ -208,8 +211,7 @@ export const RevisionDocumental = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.4 }}
-        className="p-8 text-center"
-        style={{ color: 'var(--color-muted-foreground)' }}
+        className="p-8 text-center text-muted-foreground"
       >
         Expediente no encontrado.
       </motion.div>
@@ -224,26 +226,22 @@ export const RevisionDocumental = () => {
       className="w-full px-2 sm:px-4 md:px-5 py-4 md:py-6 pb-16"
     >
       {/* Banner */}
-      <div
-        className="mb-6 md:mb-8 rounded-2xl md:rounded-3xl p-4 md:p-8 relative overflow-hidden"
-        style={{ backgroundColor: '#1a365d', color: 'white' }}
-      >
+      <div className="mb-6 md:mb-8 relative overflow-hidden rounded-2xl md:rounded-3xl bg-gradient-to-br from-primary-700 to-primary-900 text-white p-4 md:p-8 shadow-lg">
+        <div className="absolute right-[-20px] top-2 opacity-10 md:right-[-50px] md:top-[-50px]">
+          <FileText className="h-[120px] w-[120px] md:h-[240px] md:w-[240px]" aria-hidden="true" />
+        </div>
         <div className="relative z-10">
-          <h1
-            className="font-extrabold mb-2 break-words"
-            style={{ fontSize: 'clamp(1.5rem, 4vw, 2.25rem)' }}
-          >
-            Revisión Documental
+          <p className="text-xs uppercase tracking-widest font-semibold opacity-80 mb-1">Revisión Documental</p>
+          <h1 className="font-extrabold mb-2 break-words text-2xl sm:text-3xl md:text-4xl">
+            Expediente {expediente.codigoExpediente}
           </h1>
-          <p style={{ opacity: 0.9 }}>
-            Expediente: {expediente.codigoExpediente} | Estudiante:{' '}
-            {expediente.nombreEstudiante} {expediente.apellidoEstudiante} | Tipo:{' '}
-            {expediente.nombreTipoPractica}
+          <p className="text-sm md:text-base opacity-90">
+            Estudiante: {expediente.nombreEstudiante} {expediente.apellidoEstudiante} | Tipo: {expediente.nombreTipoPractica}
           </p>
           <Button
             variant="secondary"
             size="sm"
-            className="mt-3"
+            className="mt-3 bg-white/10 text-white border-white/20 hover:bg-white/20"
             onClick={() => navigate('/docente/practicantes')}
           >
             <ArrowLeft size={16} />
@@ -255,14 +253,8 @@ export const RevisionDocumental = () => {
       <div className="flex flex-col md:flex-row gap-4 md:gap-6">
         {/* Lista de documentos */}
         <div className="w-full md:w-[34%] shrink-0">
-          <div
-            className="h-full rounded-2xl border overflow-hidden"
-            style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }}
-          >
-            <div
-              className="p-4"
-              style={{ backgroundColor: 'var(--color-primary-600)', color: 'white' }}
-            >
+          <Card className="h-full overflow-hidden">
+            <div className="p-4 bg-[var(--color-unt-blue)] text-white dark:bg-[var(--color-unt-blue-light)]">
               <h2 className="font-bold text-base">Documentos del Expediente</h2>
             </div>
             <div>
@@ -273,76 +265,48 @@ export const RevisionDocumental = () => {
                     <button
                       type="button"
                       onClick={() => setSelectedDoc(doc)}
-                      className="w-full text-left transition-colors"
-                      style={{
-                        backgroundColor: isSelected
-                          ? 'var(--color-muted)'
-                          : 'var(--color-card)',
-                        borderLeft: isSelected
-                          ? '4px solid var(--color-primary-600)'
-                          : '4px solid transparent',
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!isSelected) {
-                          e.currentTarget.style.backgroundColor = 'var(--color-muted)';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!isSelected) {
-                          e.currentTarget.style.backgroundColor = 'var(--color-card)';
-                        }
-                      }}
+                      className={cn(
+                        'w-full text-left transition-colors',
+                        isSelected
+                          ? 'bg-muted border-l-4 border-l-primary-600'
+                          : 'bg-card border-l-4 border-l-transparent hover:bg-muted'
+                      )}
                     >
                       <div className="p-4">
-                        <p
-                          className="font-medium text-sm"
-                          style={{ color: 'var(--color-foreground)' }}
-                        >
+                        <p className="font-medium text-sm text-foreground">
                           {doc.tipoDocumento}
                         </p>
                         <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                           <Badge variant={getEstadoVariant(doc.estado)} size="sm">
                             {doc.estado ?? 'PENDIENTE'}
                           </Badge>
-                          <span
-                            className="text-xs"
-                            style={{ color: 'var(--color-muted-foreground)' }}
-                          >
+                          <span className="text-xs text-muted-foreground">
                             {new Date(doc.fechaSubida).toLocaleDateString()}
                           </span>
                         </div>
                       </div>
                     </button>
                     {index < documentos.length - 1 && (
-                      <hr style={{ borderColor: 'var(--color-border)' }} />
+                      <hr className="border-[var(--color-border)]" />
                     )}
                   </div>
                 );
               })}
               {documentos.length === 0 && (
-                <div
-                  className="p-6 text-center text-sm"
-                  style={{ color: 'var(--color-muted-foreground)' }}
-                >
+                <div className="p-6 text-center text-sm text-muted-foreground">
                   No hay documentos registrados.
                 </div>
               )}
             </div>
-          </div>
+          </Card>
         </div>
 
         {/* Detalle del documento */}
         <div className="w-full md:w-[66%]">
           {selectedDoc ? (
-            <div
-              className="h-full rounded-2xl border p-4 md:p-6"
-              style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }}
-            >
+            <Card className="h-full p-4 md:p-6">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
-                <h3
-                  className="text-lg font-bold"
-                  style={{ color: 'var(--color-foreground)' }}
-                >
+                <h3 className="text-lg font-bold text-foreground">
                   {selectedDoc.tipoDocumento}
                 </h3>
                 <div className="flex items-center gap-2 shrink-0">
@@ -368,44 +332,26 @@ export const RevisionDocumental = () => {
 
               <div className="flex flex-wrap gap-4 mb-4">
                 <div className="flex-1 min-w-[280px]">
-                  <p
-                    className="text-xs font-medium uppercase mb-1"
-                    style={{ color: 'var(--color-muted-foreground)' }}
-                  >
+                  <p className="text-xs font-medium uppercase mb-1 text-muted-foreground">
                     Archivo Actual
                   </p>
                   <div className="flex items-center gap-2">
-                    <p
-                      className="text-sm break-words"
-                      style={{ color: 'var(--color-foreground)' }}
-                    >
+                    <p className="text-sm break-words text-foreground">
                       {selectedDoc.nombreArchivo}
                     </p>
-                    <button
-                      type="button"
-                      title="Descargar documento"
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      aria-label="Descargar documento"
                       onClick={() => handleDownload(selectedDoc)}
-                      className="p-1.5 rounded-lg transition-colors"
-                      style={{
-                        color: 'var(--color-primary-600)',
-                        backgroundColor: 'var(--color-primary-100)',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = 'var(--color-primary-200)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = 'var(--color-primary-100)';
-                      }}
+                      className="h-8 w-8 p-0 text-[var(--color-primary-600)] bg-primary-100 hover:bg-primary-200 dark:bg-primary-900/30 dark:hover:bg-primary-900/50"
                     >
                       <Download size={18} />
-                    </button>
+                    </Button>
                   </div>
                 </div>
                 <div className="flex-1 min-w-[200px]">
-                  <p
-                    className="text-xs font-medium uppercase mb-1"
-                    style={{ color: 'var(--color-muted-foreground)' }}
-                  >
+                  <p className="text-xs font-medium uppercase mb-1 text-muted-foreground">
                     Estado Actual
                   </p>
                   <Badge variant={getEstadoVariant(selectedDoc.estado)}>
@@ -414,26 +360,20 @@ export const RevisionDocumental = () => {
                 </div>
               </div>
 
-              <hr className="my-4" style={{ borderColor: 'var(--color-border)' }} />
+              <hr className="my-4 border-[var(--color-border)]" />
 
-              <div
-                className="rounded-xl text-center min-h-[300px] flex items-center justify-center p-6"
-                style={{ backgroundColor: 'var(--color-muted)' }}
-              >
-                <p style={{ color: 'var(--color-muted-foreground)' }}>
+              <div className="rounded-xl text-center min-h-[300px] flex items-center justify-center p-6 bg-muted">
+                <p className="text-muted-foreground">
                   [Visor de PDF Integrado iría aquí]
                 </p>
               </div>
-            </div>
+            </Card>
           ) : (
-            <div
-              className="h-full rounded-2xl border p-6 flex items-center justify-center"
-              style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }}
-            >
-              <p style={{ color: 'var(--color-muted-foreground)' }}>
+            <Card className="h-full p-6 flex items-center justify-center">
+              <p className="text-muted-foreground">
                 Seleccione un documento para revisar
               </p>
-            </div>
+            </Card>
           )}
         </div>
       </div>
@@ -488,43 +428,35 @@ export const RevisionDocumental = () => {
           </DialogHeader>
           <div className="p-6">
             {(selectedDoc?.historial ?? []).length > 0 ? (
-              <div className="space-y-3">
-                {(selectedDoc?.historial ?? []).map((hist, index) => (
-                  <div key={index}>
-                    <div className="flex flex-col sm:flex-row justify-between gap-2 py-2">
-                      <div className="flex-1">
-                        <p
-                          className="text-sm font-semibold"
-                          style={{ color: 'var(--color-foreground)' }}
-                        >
-                          {hist.accion}
-                        </p>
-                        <p
-                          className="text-xs mt-0.5"
-                          style={{ color: 'var(--color-muted-foreground)' }}
-                        >
-                          Usuario: {hist.usuario} | Versión: {hist.version}
-                        </p>
+              <Card>
+                <CardContent className="p-0">
+                  <div className="divide-y divide-[var(--color-border)]">
+                    {(selectedDoc?.historial ?? []).map((hist, index) => (
+                      <div key={index} className="p-4">
+                        <div className="flex flex-col sm:flex-row justify-between gap-2">
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold text-foreground">
+                              {hist.accion}
+                            </p>
+                            <p className="text-xs mt-0.5 text-muted-foreground">
+                              Usuario: {hist.usuario} | Versión: {hist.version}
+                            </p>
+                          </div>
+                          <span className="text-xs shrink-0 text-muted-foreground">
+                            {hist.fecha}
+                          </span>
+                        </div>
                       </div>
-                      <span
-                        className="text-xs shrink-0"
-                        style={{ color: 'var(--color-muted-foreground)' }}
-                      >
-                        {hist.fecha}
-                      </span>
-                    </div>
-                    {index < (selectedDoc?.historial ?? []).length - 1 && (
-                      <hr style={{ borderColor: 'var(--color-border)' }} />
-                    )}
+                    ))}
                   </div>
-                ))}
-              </div>
+                </CardContent>
+              </Card>
             ) : (
-              <div
-                className="p-4 text-sm text-center"
-                style={{ color: 'var(--color-muted-foreground)' }}
-              >
-                No hay historial disponible para este documento.
+              <div className="flex flex-col items-center justify-center py-12 text-center bg-muted rounded-xl">
+                <Info className="h-12 w-12 text-muted-foreground mb-3" aria-hidden="true" />
+                <p className="text-sm font-medium text-muted-foreground">
+                  No hay historial disponible para este documento.
+                </p>
               </div>
             )}
           </div>

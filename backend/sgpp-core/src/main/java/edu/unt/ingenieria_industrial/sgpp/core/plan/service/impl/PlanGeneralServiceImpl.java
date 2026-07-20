@@ -14,6 +14,7 @@ import edu.unt.ingenieria_industrial.sgpp.core.plan.service.PlanGeneralService;
 import edu.unt.ingenieria_industrial.sgpp.core.plazo.service.PlazoService;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.model.Usuario;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.repository.UsuarioRepository;
+import edu.unt.ingenieria_industrial.sgpp.core.service.NotificacionEventoService;
 import edu.unt.ingenieria_industrial.sgpp.shared.exception.BusinessException;
 import edu.unt.ingenieria_industrial.sgpp.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -58,6 +59,7 @@ public class PlanGeneralServiceImpl implements PlanGeneralService {
     private final UsuarioRepository usuarioRepository;
     private final ObjectMapper objectMapper;
     private final PlazoService plazoService;
+    private final NotificacionEventoService notificacionEventoService;
 
     @Override
     public PlanGeneralResponse registrar(RegistrarPlanRequest request, Long idUsuario) {
@@ -232,6 +234,11 @@ public class PlanGeneralServiceImpl implements PlanGeneralService {
                 .build();
         expedienteEstadoRepository.save(expEstado);
 
+        notificarEstudiante(expediente, "PLAN_OBSERVADO",
+                "Plan de prácticas observado",
+                "Tu plan de prácticas del expediente " + expediente.getCodigoExpediente() +
+                        " fue observado. Revisa las observaciones y subsánalas.");
+
         return toResponse(plan);
     }
 
@@ -340,6 +347,10 @@ public class PlanGeneralServiceImpl implements PlanGeneralService {
                 .build();
         expedienteEstadoRepository.save(expEstado);
 
+        notificarEstudiante(expediente, "PLAN_APROBADO",
+                "Plan de prácticas aprobado",
+                "Tu plan de prácticas del expediente " + expediente.getCodigoExpediente() + " fue aprobado.");
+
         log.info("Plan General v{} aprobado para expediente {}", plan.getVersion(), expediente.getCodigoExpediente());
         return toResponse(plan);
     }
@@ -375,7 +386,24 @@ public class PlanGeneralServiceImpl implements PlanGeneralService {
                 .build();
         expedienteEstadoRepository.save(expEstado);
 
+        notificarEstudiante(expediente, "PLAN_RECHAZADO",
+                "Plan de prácticas rechazado",
+                "Tu plan de prácticas del expediente " + expediente.getCodigoExpediente() +
+                        " fue rechazado. Motivo: " + (observacion != null ? observacion : "No especificado"));
+
         return toResponse(plan);
+    }
+
+    private void notificarEstudiante(Expediente expediente, String tipo, String titulo, String mensaje) {
+        try {
+            if (expediente.getEstudiante() != null && expediente.getEstudiante().getUsuario() != null) {
+                notificacionEventoService.notificarPorUsuarioId(
+                        expediente.getEstudiante().getUsuario().getId(), tipo, titulo, mensaje);
+            }
+        } catch (Exception e) {
+            log.warn("No se pudo notificar al estudiante del expediente {}: {}",
+                    expediente.getCodigoExpediente(), e.getMessage());
+        }
     }
 
     @Override

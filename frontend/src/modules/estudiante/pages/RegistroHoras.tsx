@@ -2,17 +2,15 @@ import { useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod/v4';
-import { Clock, CheckCircle, Hourglass, Plus } from 'lucide-react';
+import { Clock, CheckCircle, Hourglass, Plus, Loader2 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
-import { useMisExpedientes } from '../../../hooks/useExpedientes';
-import { useControlHoras, useRegistrosHoras, useCumplimientoHoras, useRegistrarHoras } from '../../../hooks/useHoras';
-import { tieneControlHoras } from '../../../shared/utils/controlHoras';
-import { ESTADOS_EXPEDIENTE } from '../../../lib/constants';
-import { Card, CardContent, Badge, Progress, Button, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../ui';
-import { Input } from '../../../ui/Input';
-import { Select } from '../../../ui/Select';
-import { Textarea } from '../../../ui/Textarea';
+import { useMisExpedientes } from '@/hooks/useExpedientes';
+import { useControlHoras, useRegistrosHoras, useCumplimientoHoras, useRegistrarHoras } from '@/hooks/useHoras';
+import { tieneControlHoras } from '@/shared/utils/controlHoras';
+import { ESTADOS_EXPEDIENTE } from '@/lib/constants';
+import { Card, CardContent, Badge, Progress, Button, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Input, Select, Textarea } from '@/ui';
+import { cn } from '@/lib/utils';
 
 const MySwal = withReactContent(Swal);
 
@@ -71,11 +69,9 @@ const calcularHoras = (inicio: string, fin: string): number | null => {
 
 function LoadingState() {
   return (
-    <div className="flex items-center justify-center min-h-[50vh]">
-      <svg className="animate-spin h-8 w-8" style={{ color: 'var(--color-primary-600)' }} viewBox="0 0 24 24">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-      </svg>
+    <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
+      <Loader2 className="h-8 w-8 animate-spin text-primary-600" aria-hidden="true" />
+      <p className="text-sm text-muted-foreground">Cargando control de horas...</p>
     </div>
   );
 }
@@ -83,9 +79,9 @@ function LoadingState() {
 function SinExpedienteState() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
-      <Clock className="h-12 w-12" style={{ color: 'var(--color-muted-foreground)' }} />
-      <h2 className="text-lg font-semibold" style={{ color: 'var(--color-foreground)' }}>Sin expediente activo</h2>
-      <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>No tienes ninguna práctica registrada para registrar horas.</p>
+      <Clock className="h-12 w-12 text-muted-foreground" aria-hidden="true" />
+      <h2 className="text-lg font-semibold text-foreground">Sin expediente activo</h2>
+      <p className="text-sm text-muted-foreground">No tienes ninguna práctica registrada para registrar horas.</p>
     </div>
   );
 }
@@ -177,36 +173,56 @@ export default function RegistroHoras() {
   const cumplido = horasValidadas >= horasRequeridas;
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 animate-in">
-      <div className="flex items-center gap-2 mb-1">
-        <Clock className="h-5 w-5" style={{ color: 'var(--color-primary-600)' }} />
-        <h1 className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--color-foreground)' }}>Registro de Horas</h1>
+    <div className="space-y-6 p-4 sm:p-6 lg:p-8 w-full animate-in">
+      {/* Header Banner */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary-700 to-primary-900 text-white p-6 md:p-8">
+        <div className="absolute right-[-20px] top-2 opacity-10 md:right-[-50px] md:top-[-50px]">
+          <Clock className="h-[150px] w-[150px] md:h-[300px] md:w-[300px]" />
+        </div>
+        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center justify-center rounded-full shrink-0 w-14 h-14 bg-white/15">
+              <Clock className="h-7 w-7" />
+            </div>
+            <div>
+              <h1 className="text-2xl md:text-3xl font-extrabold">Registro de Horas</h1>
+              <p className="text-sm opacity-90 mt-1">
+                Registra tu avance semanal de horas para el expediente {expediente.codigoExpediente}
+              </p>
+            </div>
+          </div>
+          <Badge
+            variant={cumplido ? 'success' : 'warning'}
+            size="md"
+            className="self-start md:self-auto shrink-0 bg-white/15 text-white border border-white/20 px-3 py-1.5"
+          >
+            {cumplido ? <CheckCircle className="h-3.5 w-3.5" /> : <Hourglass className="h-3.5 w-3.5" />}
+            {cumplido ? 'Completado' : `${horasValidadas} / ${horasRequeridas} h`}
+          </Badge>
+        </div>
       </div>
-      <p className="text-sm -mt-4" style={{ color: 'var(--color-muted-foreground)' }}>
-        Registra tu avance semanal de horas para el expediente {expediente.codigoExpediente}
-      </p>
 
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
         <div className="md:col-span-4">
           <Card>
             <CardContent className="space-y-4">
-              <h3 className="font-bold text-base" style={{ color: 'var(--color-foreground)' }}>Resumen</h3>
+              <h3 className="font-bold text-base text-foreground">Resumen</h3>
 
               <div>
-                <p className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>Horas validadas</p>
-                <p className="text-3xl font-bold" style={{ color: 'var(--color-primary-600)' }}>
+                <p className="text-xs text-muted-foreground">Horas validadas</p>
+                <p className="text-3xl font-bold text-primary-700 dark:text-primary-400">
                   {horasValidadas}{' '}
-                  <span className="text-sm font-normal" style={{ color: 'var(--color-muted-foreground)' }}>
+                  <span className="text-sm font-normal text-muted-foreground">
                     / {horasRequeridas}
                   </span>
                 </p>
               </div>
 
               <div>
-                <p className="text-xs mb-1.5" style={{ color: 'var(--color-muted-foreground)' }}>Progreso</p>
+                <p className="text-xs text-muted-foreground mb-1.5">Progreso</p>
                 <div className="flex items-center gap-2">
                   <Progress value={progreso} size="md" className="flex-1" />
-                  <span className="text-sm font-semibold" style={{ color: 'var(--color-foreground)' }}>{progreso}%</span>
+                  <span className="text-sm font-semibold text-foreground">{progreso}%</span>
                 </div>
               </div>
 
@@ -220,14 +236,7 @@ export default function RegistroHoras() {
               </Badge>
 
               {!control && (
-                <div
-                  className="rounded-lg p-3 text-sm"
-                  style={{
-                    backgroundColor: 'var(--color-blue-100)',
-                    color: 'var(--color-blue-800)',
-                    border: '1px solid var(--color-blue-200)',
-                  }}
-                >
+                <div className="rounded-lg p-3 text-sm bg-blue-50 text-blue-800 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-200 dark:border-blue-800">
                   El control de horas se crea automáticamente al iniciar la ejecución de tu práctica.
                 </div>
               )}
@@ -238,17 +247,10 @@ export default function RegistroHoras() {
         <div className="md:col-span-8">
           <Card>
             <CardContent>
-              <h3 className="font-bold text-base mb-4" style={{ color: 'var(--color-foreground)' }}>Nuevo registro</h3>
+              <h3 className="font-bold text-base mb-4 text-foreground">Nuevo registro</h3>
 
               {!control && (
-                <div
-                  className="rounded-lg p-3 text-sm mb-4"
-                  style={{
-                    backgroundColor: 'var(--color-blue-100)',
-                    color: 'var(--color-blue-800)',
-                    border: '1px solid var(--color-blue-200)',
-                  }}
-                >
+                <div className="rounded-lg p-3 text-sm mb-4 bg-blue-50 text-blue-800 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-200 dark:border-blue-800">
                   Debe iniciar el control de horas antes de registrar actividades.
                 </div>
               )}
@@ -281,7 +283,7 @@ export default function RegistroHoras() {
                       required
                       {...register('descripcionActividad')}
                       error={errors.descripcionActividad?.message}
-                      style={{ minHeight: '60px' }}
+                      className="min-h-[60px]"
                     />
                   </div>
                   <div className="sm:col-span-12">
@@ -289,7 +291,7 @@ export default function RegistroHoras() {
                       label="Observaciones"
                       {...register('observaciones')}
                       error={errors.observaciones?.message}
-                      style={{ minHeight: '40px' }}
+                      className="min-h-[40px]"
                     />
                   </div>
                 </div>
@@ -308,17 +310,10 @@ export default function RegistroHoras() {
         <div className="md:col-span-12">
           <Card>
             <CardContent>
-              <h3 className="font-bold text-base mb-4" style={{ color: 'var(--color-foreground)' }}>Historial de registros</h3>
+              <h3 className="font-bold text-base mb-4 text-foreground">Historial de registros</h3>
 
               {regList.length === 0 ? (
-                <div
-                  className="rounded-lg p-3 text-sm"
-                  style={{
-                    backgroundColor: 'var(--color-blue-100)',
-                    color: 'var(--color-blue-800)',
-                    border: '1px solid var(--color-blue-200)',
-                  }}
-                >
+                <div className="rounded-lg p-3 text-sm bg-blue-50 text-blue-800 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-200 dark:border-blue-800">
                   No hay registros de horas aún.
                 </div>
               ) : (

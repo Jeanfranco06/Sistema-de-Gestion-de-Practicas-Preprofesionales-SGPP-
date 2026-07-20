@@ -2,14 +2,17 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   FolderOpen, RefreshCw, Search, ChevronRight,
-  FileText, CheckCircle2, XCircle, Clock
+  FileText, CheckCircle2, Clock
 } from 'lucide-react';
 import { useExpedientes } from '../../../hooks/useExpedientes';
 import { ESTADOS_EXPEDIENTE, ESTADOS_FINALIZADOS } from '../../../lib/constants';
 import { Button } from '../../../ui/Button';
 import { Input } from '../../../ui/Input';
 import { Badge } from '../../../ui/Badge';
-import { Table } from '../../../ui/Table';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../ui/Table';
+import { Card, CardContent } from '../../../ui/Card';
+import { Select } from '../../../ui/Select';
+import { cn } from '../../../lib/utils';
 
 const ESTADOS = Object.values(ESTADOS_EXPEDIENTE);
 
@@ -52,113 +55,137 @@ export function GestionExpedientes() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold" style={{ color: 'var(--color-foreground)' }}>Gestión de Expedientes</h1>
-          <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>Listado y control de todos los expedientes de práctica</p>
+      {/* Header */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary-700 to-primary-900 p-6 md:p-8 text-white shadow-lg">
+        <FolderOpen className="absolute -right-10 -top-10 h-48 w-48 opacity-10 hidden md:block" />
+        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <p className="text-xs uppercase tracking-widest font-semibold opacity-80 mb-1">Administración</p>
+            <h1 className="text-2xl md:text-3xl font-extrabold mb-1">Gestión de Expedientes</h1>
+            <p className="text-sm opacity-90">Listado y control de todos los expedientes de práctica</p>
+          </div>
+          <Button variant="secondary" size="sm" onClick={() => refetch()} className="shrink-0 bg-white/10 text-white border-white/20 hover:bg-white/20">
+            <RefreshCw className="h-4 w-4" /> Actualizar
+          </Button>
         </div>
-        <Button variant="outline" size="sm" onClick={() => refetch()}><RefreshCw className="h-4 w-4 mr-1" /> Actualizar</Button>
       </div>
 
+      {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: 'Total Expedientes', value: kpis.total, icon: FolderOpen, color: 'var(--color-primary)' },
-          { label: 'Activos', value: kpis.activos, icon: Clock, color: 'var(--color-info)' },
-          { label: 'En Ejecución', value: kpis.enEjecucion, icon: FileText, color: 'var(--color-warning)' },
-          { label: 'Cerrados', value: kpis.cerrados, icon: CheckCircle2, color: 'var(--color-success)' },
+          { label: 'Total Expedientes', value: kpis.total, icon: FolderOpen, color: 'bg-[#1A3A6E] text-white dark:bg-[#4A6FA5] dark:text-white' },
+          { label: 'Activos', value: kpis.activos, icon: Clock, color: 'bg-emerald-600 text-white dark:bg-emerald-700 dark:text-emerald-50' },
+          { label: 'En Ejecución', value: kpis.enEjecucion, icon: FileText, color: 'bg-amber-500 text-white dark:bg-amber-600 dark:text-white' },
+          { label: 'Cerrados', value: kpis.cerrados, icon: CheckCircle2, color: 'bg-primary-600 text-white dark:bg-primary-700 dark:text-white' },
         ].map((kpi, idx) => (
-          <div key={idx} className="rounded-xl border p-4 flex items-center gap-3" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }}>
-            <div className="p-2 rounded-lg" style={{ backgroundColor: `${kpi.color}15`, color: kpi.color }}><kpi.icon className="h-5 w-5" /></div>
-            <div>
-              <p className="text-2xl font-bold" style={{ color: 'var(--color-foreground)' }}>{kpi.value}</p>
-              <p className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>{kpi.label}</p>
+          <Card key={idx} className="p-4 flex items-center gap-3">
+            <div className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-lg', kpi.color)}>
+              <kpi.icon className="h-5 w-5" />
             </div>
-          </div>
+            <div>
+              <p className="text-2xl font-extrabold text-foreground">{kpi.value}</p>
+              <p className="text-xs font-medium text-muted-foreground">{kpi.label}</p>
+            </div>
+          </Card>
         ))}
       </div>
 
-      <div className="rounded-xl border p-4 flex flex-wrap gap-3 items-center" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }}>
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: 'var(--color-muted-foreground)' }} />
-          <Input
-            placeholder="Buscar por estudiante o código"
-            value={searchTerm}
-            onChange={(e: any) => { setSearchTerm(e.target.value); setPage(0); }}
-            className="pl-9"
+      {/* Filters */}
+      <Card className="p-4">
+        <CardContent className="p-0 flex flex-wrap gap-3 items-center">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por estudiante o código"
+              value={searchTerm}
+              onChange={(e: any) => { setSearchTerm(e.target.value); setPage(0); }}
+              className="pl-9"
+            />
+          </div>
+          <Select
+            label="Tipo"
+            value={filtroTipo}
+            onChange={(e) => { setFiltroTipo(e.target.value); setPage(0); }}
+            options={[
+              { value: 'TODOS', label: 'Todos los tipos' },
+              { value: 'INICIAL', label: 'Inicial' },
+              { value: 'FINAL', label: 'Final' },
+              { value: 'PROFESIONAL', label: 'Profesional' },
+            ]}
+            className="min-w-[160px]"
           />
-        </div>
-        <select
-          value={filtroTipo}
-          onChange={(e) => { setFiltroTipo(e.target.value); setPage(0); }}
-          className="rounded-lg border px-3 py-2 text-sm" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)', color: 'var(--color-foreground)' }}
-        >
-          <option value="TODOS">Todos los tipos</option>
-          <option value="INICIAL">Inicial</option>
-          <option value="FINAL">Final</option>
-          <option value="PROFESIONAL">Profesional</option>
-        </select>
-        <select
-          value={filtroEstado}
-          onChange={(e) => { setFiltroEstado(e.target.value); setPage(0); }}
-          className="rounded-lg border px-3 py-2 text-sm" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)', color: 'var(--color-foreground)' }}
-        >
-          <option value="TODOS">Todos los estados</option>
-          {ESTADOS.map(s => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
-        </select>
-      </div>
+          <Select
+            label="Estado"
+            value={filtroEstado}
+            onChange={(e) => { setFiltroEstado(e.target.value); setPage(0); }}
+            options={[
+              { value: 'TODOS', label: 'Todos los estados' },
+              ...ESTADOS.map(s => ({ value: s, label: s.replace(/_/g, ' ') })),
+            ]}
+            className="min-w-[180px]"
+          />
+        </CardContent>
+      </Card>
 
-      <div className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }}>
+      {/* Table */}
+      <Card className="overflow-hidden">
         {isLoading ? (
-          <div className="flex justify-center py-12"><div className="animate-spin h-6 w-6 border-2 rounded-full" style={{ borderColor: 'var(--color-primary)', borderTopColor: 'transparent' }} /></div>
+          <div className="flex justify-center py-12">
+            <div className="animate-spin h-6 w-6 border-2 rounded-full border-primary-600 border-t-transparent" />
+          </div>
         ) : (
           <>
             <div className="overflow-x-auto">
               <Table>
-                <thead>
-                  <tr style={{ backgroundColor: 'var(--color-muted)' }}>
-                    <th className="text-left p-3 text-sm font-semibold" style={{ color: 'var(--color-muted-foreground)' }}>Código</th>
-                    <th className="text-left p-3 text-sm font-semibold" style={{ color: 'var(--color-muted-foreground)' }}>Estudiante</th>
-                    <th className="text-left p-3 text-sm font-semibold" style={{ color: 'var(--color-muted-foreground)' }}>Tipo</th>
-                    <th className="text-left p-3 text-sm font-semibold" style={{ color: 'var(--color-muted-foreground)' }}>Estado</th>
-                    <th className="text-left p-3 text-sm font-semibold" style={{ color: 'var(--color-muted-foreground)' }}>Asesor / Empresa</th>
-                    <th className="text-left p-3 text-sm font-semibold" style={{ color: 'var(--color-muted-foreground)' }}>Acción</th>
-                  </tr>
-                </thead>
-                <tbody>
+                <TableHeader>
+                  <TableRow className="bg-muted hover:bg-muted">
+                    <TableHead className="font-semibold text-muted-foreground">Código</TableHead>
+                    <TableHead className="font-semibold text-muted-foreground">Estudiante</TableHead>
+                    <TableHead className="font-semibold text-muted-foreground">Tipo</TableHead>
+                    <TableHead className="font-semibold text-muted-foreground">Estado</TableHead>
+                    <TableHead className="font-semibold text-muted-foreground">Asesor / Empresa</TableHead>
+                    <TableHead className="font-semibold text-muted-foreground">Acción</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {paginated.map((e: any) => (
-                    <tr key={e.id} className="hover:opacity-80 transition-opacity border-t" style={{ borderColor: 'var(--color-border)' }}>
-                      <td className="p-3"><span className="font-mono text-xs" style={{ color: 'var(--color-muted-foreground)' }}>{e.codigoExpediente}</span></td>
-                      <td className="p-3"><span className="font-medium text-sm" style={{ color: 'var(--color-foreground)' }}>{e.nombreEstudiante} {e.apellidoEstudiante}</span></td>
-                      <td className="p-3"><Badge variant="outline">{e.nombreTipoPractica}</Badge></td>
-                      <td className="p-3"><Badge variant={getEstadoBadge(e.estado)}>{e.estado?.replace(/_/g, ' ')}</Badge></td>
-                      <td className="p-3">
-                        <span className="text-xs" style={{ color: 'var(--color-foreground)' }}>{e.nombreAsesor || '—'}</span>
-                        {e.nombreEmpresa && <span className="text-xs block" style={{ color: 'var(--color-muted-foreground)' }}>{e.nombreEmpresa}</span>}
-                      </td>
-                      <td className="p-3">
+                    <TableRow key={e.id}>
+                      <TableCell><span className="font-mono text-xs text-muted-foreground">{e.codigoExpediente}</span></TableCell>
+                      <TableCell><span className="font-medium text-sm text-foreground">{e.nombreEstudiante} {e.apellidoEstudiante}</span></TableCell>
+                      <TableCell><Badge variant="outline">{e.nombreTipoPractica}</Badge></TableCell>
+                      <TableCell><Badge variant={getEstadoBadge(e.estado)}>{e.estado?.replace(/_/g, ' ')}</Badge></TableCell>
+                      <TableCell>
+                        <span className="text-xs text-foreground">{e.nombreAsesor || '—'}</span>
+                        {e.nombreEmpresa && <span className="text-xs block text-muted-foreground">{e.nombreEmpresa}</span>}
+                      </TableCell>
+                      <TableCell>
                         <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/expedientes/${e.id}`)}>
                           <ChevronRight className="h-4 w-4" />
                         </Button>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
                   {filtered.length === 0 && (
-                    <tr><td colSpan={6} className="text-center py-8 text-sm" style={{ color: 'var(--color-muted-foreground)' }}>No se encontraron expedientes</td></tr>
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8 text-sm text-muted-foreground">
+                        No se encontraron expedientes
+                      </TableCell>
+                    </TableRow>
                   )}
-                </tbody>
+                </TableBody>
               </Table>
             </div>
-            <div className="flex items-center justify-between px-3 py-2 border-t text-sm" style={{ borderColor: 'var(--color-border)', color: 'var(--color-muted-foreground)' }}>
+            <div className="flex items-center justify-between px-4 py-3 border-t text-sm text-muted-foreground" style={{ borderColor: 'var(--color-border)' }}>
               <span>{filtered.length} expedientes</span>
               <div className="flex gap-2 items-center">
-                <button disabled={page === 0} onClick={() => setPage(p => p - 1)} className="px-2 py-1 rounded border text-xs disabled:opacity-50" style={{ borderColor: 'var(--color-border)' }}>Anterior</button>
-                <span>Pág. {page + 1}</span>
-                <button disabled={(page + 1) * rowsPerPage >= filtered.length} onClick={() => setPage(p => p + 1)} className="px-2 py-1 rounded border text-xs disabled:opacity-50" style={{ borderColor: 'var(--color-border)' }}>Siguiente</button>
+                <Button variant="ghost" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)}>Anterior</Button>
+                <span className="px-2">Pág. {page + 1}</span>
+                <Button variant="ghost" size="sm" disabled={(page + 1) * rowsPerPage >= filtered.length} onClick={() => setPage(p => p + 1)}>Siguiente</Button>
               </div>
             </div>
           </>
         )}
-      </div>
+      </Card>
     </div>
   );
 }

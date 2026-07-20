@@ -1,40 +1,22 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  Download,
-  FileText,
-  User,
-  Building2,
-  BarChart3,
-  ArrowLeft,
+  Download, FileText, User, Building2, BarChart3, ArrowLeft,
 } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { evaluacionesApi } from '../../api/evaluacionesApi';
-import api from '../../api/axios';
-import { useAuth } from '../../auth/AuthContext';
-import Swal from 'sweetalert2';
-import withReactContent from 'sweetalert2-react-content';
+import { evaluacionesApi } from '@/api/evaluacionesApi';
+import api from '@/api/axios';
+import { useAuth } from '@/auth/AuthContext';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useExpedienteById } from '@/hooks/useExpedientes';
 import { useNotasUnidad } from '@/hooks/useNotasUnidad';
-import { EvaluacionComponentesAnexo4 } from './EvaluacionComponentesAnexo4';
+import { EvaluacionComponentesAnexo4 } from '@/modules/evaluacion/EvaluacionComponentesAnexo4';
 import {
-  Button,
-  Input,
-  Badge,
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-  Card,
-  Textarea,
+  Button, Input, Badge, Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
+  Tabs, TabsList, TabsTrigger, TabsContent, Card, CardContent, Textarea,
 } from '@/ui';
+import { cn } from '@/lib/utils';
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
 
 const MySwal = withReactContent(Swal);
 
@@ -54,6 +36,8 @@ interface Expediente {
   codigoEstudiantil: string;
   nombreEmpresa: string;
   documentos?: Documento[];
+  codigoTipoPractica?: string;
+  calificacionFinal?: number;
 }
 
 interface Criterio {
@@ -330,21 +314,24 @@ export const EvaluacionDocenteAsesor = () => {
   const ultimaEvaluacion = evaluaciones.length > 0 ? evaluaciones[evaluaciones.length - 1] : null;
   const notaUnidadPromedio = notasUnidad.find((n: any) => n.promedioFinal != null)?.promedioFinal ?? null;
   const promedioFinal = notaUnidadPromedio ?? ultimaEvaluacion?.promedioFinal ?? expediente?.calificacionFinal ?? 0;
-  const progresoColor =
+
+  const progresoColorClass =
     promedioFinal >= 14
-      ? 'var(--color-success)'
+      ? 'bg-emerald-500 dark:bg-emerald-400'
       : promedioFinal >= 11
-        ? 'var(--color-warning)'
-        : 'var(--color-error)';
+        ? 'bg-amber-500 dark:bg-amber-400'
+        : 'bg-red-500 dark:bg-red-400';
 
   if (!expedienteIdValido) {
     return (
-      <div className="space-y-6">
-        <Card className="p-6">
-          <p className="text-[var(--color-error)]">No se indicó un expediente válido para evaluar.</p>
-          <Button variant="secondary" className="mt-4" onClick={() => navigate('/docente/practicantes')}>
-            Volver a practicantes
-          </Button>
+      <div className="space-y-6 p-4 sm:p-6 lg:p-8">
+        <Card>
+          <CardContent className="p-6">
+            <p className="text-red-600 dark:text-red-400">No se indicó un expediente válido para evaluar.</p>
+            <Button variant="secondary" className="mt-4" onClick={() => navigate('/docente/practicantes')}>
+              Volver a practicantes
+            </Button>
+          </CardContent>
         </Card>
       </div>
     );
@@ -362,128 +349,133 @@ export const EvaluacionDocenteAsesor = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.4 }}
-        className="space-y-6"
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--color-primary)] text-white">
-              <BarChart3 size={20} />
+    <div className="space-y-6 animate-in p-4 sm:p-6 lg:p-8">
+      {/* ── Header Banner ────────────────────────────────────── */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary-700 to-primary-900 text-white p-6 md:p-8">
+        <div className="absolute right-[-20px] top-2 opacity-10 md:right-[-50px] md:top-[-50px]">
+          <BarChart3 className="h-[150px] w-[150px] md:h-[300px] md:w-[300px]" />
+        </div>
+
+        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/15 text-white">
+              <BarChart3 className="h-6 w-6" />
             </div>
             <div>
-              <h2 className="text-2xl font-semibold text-[var(--color-foreground)]">
+              <p className="text-xs uppercase tracking-widest font-semibold opacity-80 mb-1">
+                Sistema de calificación por competencias
+              </p>
+              <h1 className="text-2xl sm:text-3xl font-extrabold leading-tight">
                 Evaluación docente asesor
-              </h2>
-              <p className="text-sm text-[var(--color-muted-foreground)]">
-                Sistema de calificación por competencias UNT
+              </h1>
+              <p className="text-sm opacity-90 mt-1">
+                UNT · Escuela de Ingeniería Industrial
               </p>
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => navigate('/docente/practicantes')}>
-            <ArrowLeft size={16} />
+
+          <Button variant="ghost" size="sm" className="h-9 w-9 bg-white/10 hover:bg-white/20 text-white border-white/20" onClick={() => navigate('/docente/practicantes')} aria-label="Volver">
+            <ArrowLeft className="h-4 w-4" />
           </Button>
         </div>
+      </div>
 
-        {expediente && (
-          <Card className="p-6">
+      {/* ── Expediente Card ──────────────────────────────────── */}
+      {expediente && (
+        <Card>
+          <CardContent className="p-4 sm:p-6">
             <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
               <div className="md:col-span-2">
-                <p className="text-xs text-[var(--color-muted-foreground)]">Expediente del estudiante</p>
-                <h3 className="mb-2 mt-1 text-lg font-semibold text-[var(--color-foreground)]">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider">Expediente del estudiante</p>
+                <h2 className="mb-2 mt-1 text-lg md:text-xl font-bold text-foreground">
                   {expediente.nombreEstudiante} {expediente.apellidoEstudiante}
-                </h3>
+                </h2>
                 <div className="flex flex-wrap gap-2">
-                  <Badge variant="neutral">
-                    <User size={14} className="mr-1" />
+                  <Badge variant="neutral" size="sm">
+                    <User className="h-3.5 w-3.5 mr-1" />
                     {expediente.codigoEstudiantil}
                   </Badge>
-                  <Badge variant="neutral">
-                    <Building2 size={14} className="mr-1" />
+                  <Badge variant="neutral" size="sm">
+                    <Building2 className="h-3.5 w-3.5 mr-1" />
                     {expediente.nombreEmpresa}
                   </Badge>
                 </div>
               </div>
               <div>
-                <p className="text-xs text-[var(--color-muted-foreground)]">Promedio general</p>
-                <div className="text-3xl font-semibold" style={{ color: progresoColor }}>
-                  {promedioFinal}
-                </div>
-                <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-[var(--color-border)]">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider">Promedio general</p>
+                <p className="text-3xl font-bold text-foreground">{promedioFinal}</p>
+                <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-border">
                   <div
-                    className="h-full rounded-full transition-all"
-                    style={{
-                      width: `${(promedioFinal / 20) * 100}%`,
-                      backgroundColor: progresoColor,
-                    }}
+                    className={cn('h-full rounded-full transition-all', progresoColorClass)}
+                    style={{ width: `${(promedioFinal / 20) * 100}%` }}
                   />
                 </div>
               </div>
             </div>
 
             {expediente.documentos && expediente.documentos.length > 0 && (
-              <div className="mt-6 border-t border-[var(--color-border)] pt-4">
-                <p className="mb-3 text-xs text-[var(--color-muted-foreground)]">Documentos de referencia</p>
+              <div className="mt-6 border-t border-border pt-4">
+                <p className="mb-3 text-xs text-muted-foreground uppercase tracking-wider">Documentos de referencia</p>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3">
                   {expediente.documentos.map((doc) => (
                     <div key={doc.id} className="flex items-center gap-2 py-1">
-                      <FileText size={16} className="text-[var(--color-muted-foreground)]" />
-                      <span className="flex-1 truncate text-sm text-[var(--color-foreground)]">
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                      <span className="flex-1 truncate text-sm text-foreground">
                         {doc.tipoDocumento}
                       </span>
                       <Button variant="ghost" size="sm" onClick={() => handleDownloadDocument(doc)}>
-                        <Download size={16} />
+                        <Download className="h-4 w-4" />
                       </Button>
                     </div>
                   ))}
                 </div>
               </div>
             )}
-          </Card>
-        )}
+          </CardContent>
+        </Card>
+      )}
 
-        <Tabs value={componenteActual} onValueChange={handleTabChange}>
-          <TabsList>
-            <TabsTrigger
-              value="DOCENTE"
-              aria-selected={componenteActual === 'DOCENTE'}
-              onClick={() => handleTabChange('DOCENTE')}
-            >
-              1. Seguimiento docente (30%)
-            </TabsTrigger>
-            <TabsTrigger
-              value="INFORME"
-              aria-selected={componenteActual === 'INFORME'}
-              onClick={() => handleTabChange('INFORME')}
-            >
-              2. Informe final (30%)
-            </TabsTrigger>
-            <TabsTrigger
-              value="SUSTENTACION"
-              aria-selected={componenteActual === 'SUSTENTACION'}
-              onClick={() => handleTabChange('SUSTENTACION')}
-            >
-              3. Sustentación (10%)
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value={componenteActual}>
-            <Card className="p-6">
+      {/* ── Tabs ─────────────────────────────────────────────── */}
+      <Tabs value={componenteActual} onValueChange={handleTabChange}>
+        <TabsList className="w-full sm:w-auto">
+          <TabsTrigger
+            value="DOCENTE"
+            aria-selected={componenteActual === 'DOCENTE'}
+            onClick={() => handleTabChange('DOCENTE')}
+          >
+            1. Seguimiento docente (30%)
+          </TabsTrigger>
+          <TabsTrigger
+            value="INFORME"
+            aria-selected={componenteActual === 'INFORME'}
+            onClick={() => handleTabChange('INFORME')}
+          >
+            2. Informe final (30%)
+          </TabsTrigger>
+          <TabsTrigger
+            value="SUSTENTACION"
+            aria-selected={componenteActual === 'SUSTENTACION'}
+            onClick={() => handleTabChange('SUSTENTACION')}
+          >
+            3. Sustentación (10%)
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value={componenteActual}>
+          <Card>
+            <CardContent className="p-4 sm:p-6">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {criterios.map((criterio, index) => (
                   <div
                     key={criterio.id}
-                    className="flex h-full flex-col rounded-xl border border-[var(--color-border)] bg-[var(--color-info)]/10 p-4"
+                    className="flex h-full flex-col rounded-xl border border-border bg-blue-50 dark:bg-blue-950/30 p-4"
                   >
                     <div className="mb-2 flex items-start justify-between gap-2">
-                      <span className="text-sm font-semibold text-[var(--color-foreground)]">
+                      <span className="text-sm font-semibold text-foreground">
                         {criterio.nombre}
                       </span>
-                      <Badge variant="neutral">Peso: {criterio.puntajeMaximo}%</Badge>
+                      <Badge variant="neutral" size="sm">Peso: {criterio.puntajeMaximo}%</Badge>
                     </div>
-                    <p className="mb-3 block text-xs text-[var(--color-muted-foreground)]">
+                    <p className="mb-3 block text-xs text-muted-foreground">
                       {criterio.descripcion}
                     </p>
                     <Input
@@ -510,155 +502,117 @@ export const EvaluacionDocenteAsesor = () => {
                   {crearMutation.isPending ? 'Registrando...' : `Registrar ${componenteActual}`}
                 </Button>
               </div>
-            </Card>
-          </TabsContent>
-        </Tabs>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
-        {expediente?.codigoTipoPractica === 'INICIAL' && (
-          <Card className="p-6">
+      {/* ── Notas por unidades ───────────────────────────────── */}
+      {expediente?.codigoTipoPractica === 'INICIAL' && (
+        <Card>
+          <CardContent className="p-4 sm:p-6">
             <div className="mb-4 flex items-center gap-2">
-              <BarChart3 size={20} className="text-[var(--color-primary)]" />
-              <h3 className="text-base font-semibold text-[var(--color-foreground)]">
+              <BarChart3 className="h-5 w-5 text-primary-700 dark:text-primary-400" />
+              <h3 className="text-base font-bold text-foreground">
                 Notas por unidades (Práctica Inicial)
               </h3>
             </div>
-            <p className="mb-4 text-xs text-[var(--color-muted-foreground)]">
+            <p className="mb-4 text-xs text-muted-foreground">
               Unidad 1: 20% plan de práctica + 80% informe de avance. Unidades 2 y 3: 100% informe de avance.
               El promedio final de las unidades reemplaza el componente DOCENTE.
             </p>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              <div className="rounded-xl border border-[var(--color-border)] p-4">
-                <h4 className="mb-3 text-sm font-semibold text-[var(--color-foreground)]">Unidad 1</h4>
-                <Input
-                  label="Nota plan de práctica (0-20)"
-                  type="number"
-                  min={0}
-                  max={20}
-                  value={notasForm.unidad1.plan}
-                  onChange={(e) => handleNotaUnidadChange('unidad1', 'plan', e.target.value)}
-                  className="mb-3"
-                />
-                <Input
-                  label="Nota informe de avance (0-20)"
-                  type="number"
-                  min={0}
-                  max={20}
-                  value={notasForm.unidad1.informe}
-                  onChange={(e) => handleNotaUnidadChange('unidad1', 'informe', e.target.value)}
-                  className="mb-3"
-                />
-                <Textarea
-                  label="Comentarios"
-                  rows={2}
-                  value={notasForm.unidad1.comentarios}
-                  onChange={(e) => handleNotaUnidadChange('unidad1', 'comentarios', e.target.value)}
-                  className="mb-3"
-                />
-                <Button
-                  className="w-full"
-                  onClick={() => handleGuardarNotaUnidad('unidad1', 1)}
-                  disabled={registrarNotaUnidadMutation.isPending}
-                >
-                  {registrarNotaUnidadMutation.isPending ? 'Guardando...' : 'Guardar Unidad 1'}
-                </Button>
-              </div>
-
-              <div className="rounded-xl border border-[var(--color-border)] p-4">
-                <h4 className="mb-3 text-sm font-semibold text-[var(--color-foreground)]">Unidad 2</h4>
-                <Input
-                  label="Nota informe de avance (0-20)"
-                  type="number"
-                  min={0}
-                  max={20}
-                  value={notasForm.unidad2.informe}
-                  onChange={(e) => handleNotaUnidadChange('unidad2', 'informe', e.target.value)}
-                  className="mb-3"
-                />
-                <Textarea
-                  label="Comentarios"
-                  rows={2}
-                  value={notasForm.unidad2.comentarios}
-                  onChange={(e) => handleNotaUnidadChange('unidad2', 'comentarios', e.target.value)}
-                  className="mb-3"
-                />
-                <Button
-                  className="w-full"
-                  onClick={() => handleGuardarNotaUnidad('unidad2', 2)}
-                  disabled={registrarNotaUnidadMutation.isPending}
-                >
-                  {registrarNotaUnidadMutation.isPending ? 'Guardando...' : 'Guardar Unidad 2'}
-                </Button>
-              </div>
-
-              <div className="rounded-xl border border-[var(--color-border)] p-4">
-                <h4 className="mb-3 text-sm font-semibold text-[var(--color-foreground)]">Unidad 3</h4>
-                <Input
-                  label="Nota informe de avance (0-20)"
-                  type="number"
-                  min={0}
-                  max={20}
-                  value={notasForm.unidad3.informe}
-                  onChange={(e) => handleNotaUnidadChange('unidad3', 'informe', e.target.value)}
-                  className="mb-3"
-                />
-                <Textarea
-                  label="Comentarios"
-                  rows={2}
-                  value={notasForm.unidad3.comentarios}
-                  onChange={(e) => handleNotaUnidadChange('unidad3', 'comentarios', e.target.value)}
-                  className="mb-3"
-                />
-                <Button
-                  className="w-full"
-                  onClick={() => handleGuardarNotaUnidad('unidad3', 3)}
-                  disabled={registrarNotaUnidadMutation.isPending}
-                >
-                  {registrarNotaUnidadMutation.isPending ? 'Guardando...' : 'Guardar Unidad 3'}
-                </Button>
-              </div>
+              {[
+                { key: 'unidad1' as const, label: 'Unidad 1', numero: 1, plan: true },
+                { key: 'unidad2' as const, label: 'Unidad 2', numero: 2, plan: false },
+                { key: 'unidad3' as const, label: 'Unidad 3', numero: 3, plan: false },
+              ].map(({ key, label, numero, plan }) => (
+                <div key={key} className="rounded-xl border border-border bg-card p-4">
+                  <h4 className="mb-3 text-sm font-semibold text-foreground">{label}</h4>
+                  {plan && (
+                    <Input
+                      label="Nota plan de práctica (0-20)"
+                      type="number"
+                      min={0}
+                      max={20}
+                      value={notasForm[key].plan}
+                      onChange={(e) => handleNotaUnidadChange(key, 'plan', e.target.value)}
+                      className="mb-3"
+                    />
+                  )}
+                  <Input
+                    label="Nota informe de avance (0-20)"
+                    type="number"
+                    min={0}
+                    max={20}
+                    value={notasForm[key].informe}
+                    onChange={(e) => handleNotaUnidadChange(key, 'informe', e.target.value)}
+                    className="mb-3"
+                  />
+                  <Textarea
+                    label="Comentarios"
+                    rows={2}
+                    value={notasForm[key].comentarios}
+                    onChange={(e) => handleNotaUnidadChange(key, 'comentarios', e.target.value)}
+                    className="mb-3"
+                  />
+                  <Button
+                    className="w-full"
+                    onClick={() => handleGuardarNotaUnidad(key, numero)}
+                    disabled={registrarNotaUnidadMutation.isPending}
+                  >
+                    {registrarNotaUnidadMutation.isPending ? 'Guardando...' : `Guardar ${label}`}
+                  </Button>
+                </div>
+              ))}
             </div>
-          </Card>
-        )}
+          </CardContent>
+        </Card>
+      )}
 
-        {evaluaciones.length > 0 && (
-          <Card className="p-6">
-            <h3 className="mb-4 text-base font-semibold text-[var(--color-foreground)]">
+      {/* ── Historial ────────────────────────────────────────── */}
+      {evaluaciones.length > 0 && (
+        <Card>
+          <CardContent className="p-4 sm:p-6">
+            <h3 className="mb-4 text-base font-bold text-foreground">
               Historial de registros
             </h3>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Fecha</TableHead>
-                  <TableHead>Componente</TableHead>
-                  <TableHead>Evaluador</TableHead>
-                  <TableHead>Detalles</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {evaluaciones.map((ev) => (
-                  <TableRow key={ev.id}>
-                    <TableCell>{ev.fechaEvaluacion}</TableCell>
-                    <TableCell>
-                      <Badge variant="neutral">{ev.componente}</Badge>
-                    </TableCell>
-                    <TableCell>{ev.tipoEvaluador}</TableCell>
-                    <TableCell>
-                      {ev.detalles?.map((d) => (
-                        <span
-                          key={d.idCriterio}
-                          className="block text-xs text-[var(--color-muted-foreground)]"
-                        >
-                          {d.nombreCriterio}: {d.puntajeObtenido}/20
-                        </span>
-                      ))}
-                    </TableCell>
+            <div className="rounded-xl border border-border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted hover:bg-muted">
+                    <TableHead className="text-foreground">Fecha</TableHead>
+                    <TableHead className="text-foreground">Componente</TableHead>
+                    <TableHead className="text-foreground">Evaluador</TableHead>
+                    <TableHead className="text-foreground">Detalles</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </Card>
-        )}
-      </motion.div>
+                </TableHeader>
+                <TableBody>
+                  {evaluaciones.map((ev) => (
+                    <TableRow key={ev.id}>
+                      <TableCell className="text-foreground">{ev.fechaEvaluacion}</TableCell>
+                      <TableCell>
+                        <Badge variant="neutral" size="sm">{ev.componente}</Badge>
+                      </TableCell>
+                      <TableCell className="text-foreground">{ev.tipoEvaluador}</TableCell>
+                      <TableCell>
+                        {ev.detalles?.map((d) => (
+                          <span
+                            key={d.idCriterio}
+                            className="block text-xs text-muted-foreground"
+                          >
+                            {d.nombreCriterio}: {d.puntajeObtenido}/20
+                          </span>
+                        ))}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

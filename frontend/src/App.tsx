@@ -16,26 +16,26 @@ import AppLayout from './modules/shared/layout/AppLayout';
 import LoginPage from './modules/auth/LoginPage';
 import ForgotPasswordPage from './modules/auth/ForgotPasswordPage';
 import ResetPasswordPage from './modules/auth/ResetPasswordPage';
-import DashboardEstudiante from './modules/estudiante/DashboardEstudiante';
-import DashboardDocente from './modules/docente/pages/DashboardDocente';
 import NoAutorizado from './modules/shared/NoAutorizado';
 import PaginaEnConstruccion from './modules/shared/PaginaEnConstruccion';
-import { CatalogoSedes } from './modules/sedes/pages/CatalogoSedes';
-import { SolicitarPractica } from './modules/estudiante/pages/SolicitarPractica';
-import { GestionSedes } from './modules/sedes/pages/GestionSedes';
-import { GestionEmpresas } from './modules/sedes/pages/GestionEmpresas';
-import { GestionConvenios } from './modules/sedes/pages/GestionConvenios';
-import { ValidarRequisitos } from './modules/secretaria/pages/ValidarRequisitos';
-import { GestionDocumental } from './modules/estudiante/pages/GestionDocumental';
-import { InformesPeriodicos } from './modules/estudiante/pages/InformesPeriodicos';
-import RegistroHoras from './modules/estudiante/pages/RegistroHoras';
-import { PerfilEstudiante } from './modules/estudiante/pages/PerfilEstudiante';
-import MiPractica from './modules/estudiante/pages/MiPractica';
-import { PlanPracticas } from './modules/estudiante/pages/PlanPracticas';
-import { RevisionDocumental } from './modules/shared/pages/RevisionDocumental';
-import { ListaPracticantes } from './modules/evaluacion/ListaPracticantes';
-import AdminDashboardPage from './modules/admin/pages/AdminDashboardPage';
 
+const DashboardEstudiante = React.lazy(() => import('./modules/estudiante/DashboardEstudiante'));
+const DashboardDocente = React.lazy(() => import('./modules/docente/pages/DashboardDocente'));
+const CatalogoSedes = React.lazy(() => import('./modules/sedes/pages/CatalogoSedes'));
+const SolicitarPractica = React.lazy(() => import('./modules/estudiante/pages/SolicitarPractica'));
+const GestionSedes = React.lazy(() => import('./modules/sedes/pages/GestionSedes'));
+const GestionEmpresas = React.lazy(() => import('./modules/sedes/pages/GestionEmpresas'));
+const GestionConvenios = React.lazy(() => import('./modules/sedes/pages/GestionConvenios'));
+const ValidarRequisitos = React.lazy(() => import('./modules/secretaria/pages/ValidarRequisitos'));
+const GestionDocumental = React.lazy(() => import('./modules/estudiante/pages/GestionDocumental'));
+const InformesPeriodicos = React.lazy(() => import('./modules/estudiante/pages/InformesPeriodicos'));
+const RegistroHoras = React.lazy(() => import('./modules/estudiante/pages/RegistroHoras'));
+const PerfilEstudiante = React.lazy(() => import('./modules/estudiante/pages/PerfilEstudiante'));
+const MiPractica = React.lazy(() => import('./modules/estudiante/pages/MiPractica'));
+const PlanPracticas = React.lazy(() => import('./modules/estudiante/pages/PlanPracticas'));
+const RevisionDocumental = React.lazy(() => import('./modules/shared/pages/RevisionDocumental'));
+const ListaPracticantes = React.lazy(() => import('./modules/evaluacion/ListaPracticantes'));
+const AdminDashboardPage = React.lazy(() => import('./modules/admin/pages/AdminDashboardPage'));
 const DashboardTutor = React.lazy(() => import('./modules/tutor/pages/DashboardTutor'));
 const ValidacionHorasTutor = React.lazy(() => import('./modules/tutor/pages/ValidacionHorasTutor'));
 const EvaluacionTutorExterno = React.lazy(() => import('./modules/evaluacion/EvaluacionTutorExterno'));
@@ -68,7 +68,7 @@ export default function App() {
         <ThemeProviderWrapper>
           <AuthProvider>
             <BrowserRouter>
-              <Suspense fallback={<div className="flex h-screen items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-[var(--color-primary)] border-t-transparent" /></div>}>
+              <Suspense fallback={<div className="flex h-screen items-center justify-center bg-[var(--color-background)]"><div className="h-8 w-8 animate-spin rounded-full border-4 border-[var(--color-primary-600)] border-t-transparent" /></div>}>
                 <Routes>
                   {/* Pública */}
                   <Route path="/login" element={<LoginPage />} />

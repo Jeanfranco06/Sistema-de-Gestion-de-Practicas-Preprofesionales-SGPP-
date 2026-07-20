@@ -1,5 +1,6 @@
 import { alpha } from '@mui/material/styles';
 import { palette } from './theme';
+import { ESTADOS_EXPEDIENTE } from '../../lib/constants';
 
 export interface Accent {
   main: string;
@@ -71,13 +72,20 @@ export const statAccentKeys: AccentKey[] = ['yellow', 'blue', 'green', 'amber', 
 export const getStatusAccent = (status: string | null | undefined): Accent => {
   if (!status) return accents.gray;
   const s = String(status).toUpperCase();
-  if (['APROBADO', 'APROBADA', 'CERRADO', 'FINALIZADO', 'CUMPLIDO', 'ACEPTADO', 'COMPLETADO', 'EVALUADO', 'ACTIVO', 'VIGENTE'].includes(s))
+  if (['APROBADO', 'APROBADA', 'FINALIZADO', 'CUMPLIDO', 'ACEPTADO', 'COMPLETADO', 'ACTIVO', 'VIGENTE',
+    ESTADOS_EXPEDIENTE.CERRADO, ESTADOS_EXPEDIENTE.EVALUADO, ESTADOS_EXPEDIENTE.PLAN_APROBADO].includes(s))
     return accents.green;
-  if (['RECHAZADO', 'RECHAZADA', 'CANCELADO', 'ANULADO', 'ERROR', 'VENCIDO', 'DESAPROBADO'].includes(s))
+  if (['RECHAZADO', 'RECHAZADA', 'CANCELADO', 'ANULADO', 'ERROR', 'VENCIDO', 'DESAPROBADO',
+    ESTADOS_EXPEDIENTE.RECHAZADO].includes(s))
     return accents.red;
-  if (['OBSERVADO', 'OBSERVADA', 'PENDIENTE', 'EN_REVISION', 'PROCESO', 'BORRADOR', 'PLAN_OBSERVADO', 'SUBSANADO', 'EXAMEN_APLAZADOS_HABILITADO'].includes(s))
+  if (['OBSERVADA', 'PENDIENTE', 'EN_REVISION', 'PROCESO', 'BORRADOR',
+    ESTADOS_EXPEDIENTE.OBSERVADO, ESTADOS_EXPEDIENTE.PLAN_OBSERVADO, ESTADOS_EXPEDIENTE.SUBSANADO,
+    ESTADOS_EXPEDIENTE.EXAMEN_APLAZADOS_HABILITADO].includes(s))
     return accents.amber;
-  if (['EN_EJECUCION', 'SOLICITADO', 'PLAN_PRESENTADO', 'INFORME_PRESENTADO', 'DICTAMEN_EMITIDO', 'CARTA_PRESENTACION_EMITIDA', 'CARTA_ACEPTACION_PRESENTADA', 'EXAMEN_APLAZADOS_RENDIDO'].includes(s))
+  if (['INFORME_PRESENTADO',
+    ESTADOS_EXPEDIENTE.EN_EJECUCION, ESTADOS_EXPEDIENTE.SOLICITADO, ESTADOS_EXPEDIENTE.PLAN_PRESENTADO,
+    ESTADOS_EXPEDIENTE.DICTAMEN_EMITIDO, ESTADOS_EXPEDIENTE.CARTA_PRESENTACION_EMITIDA,
+    ESTADOS_EXPEDIENTE.CARTA_ACEPTACION_PRESENTADA, ESTADOS_EXPEDIENTE.EXAMEN_APLAZADOS_RENDIDO].includes(s))
     return accents.blue;
   return accents.gray;
 };

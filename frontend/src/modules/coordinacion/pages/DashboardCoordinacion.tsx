@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Users, ClipboardList, ListChecks, AlertTriangle,
   FileEdit, Building2, RefreshCw, ChevronRight,
-  FileText, Eye, Building,
+  FileText, Eye, Building, Loader2,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
@@ -17,48 +17,59 @@ import { useExpedientes } from '../../../hooks/useExpedientes';
 import { coordinacionApi } from '../../../api/coordinacionApi';
 import {
   ESTADOS_EXPEDIENTE,
-  ESTADOS_INFORME_PARCIAL_PRESENTADO,
-  ESTADOS_PARA_EVALUAR,
   ESTADOS_FINALIZADOS,
+  ESTADOS_PARA_EVALUAR,
 } from '../../../lib/constants';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
-import { Button, Badge, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Progress, Tooltip, Input, Select } from '../../../ui';
+import {
+  Button, Badge, Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
+  Progress, Tooltip, Input, Select, Card, CardContent, CardHeader, CardTitle,
+} from '../../../ui';
+import { cn } from '../../../lib/utils';
 
 const MySwal = withReactContent(Swal);
 
 const ESTADOS = Object.values(ESTADOS_EXPEDIENTE);
 
 const ESTADO_COLOR: Record<string, string> = {
-  [ESTADOS_EXPEDIENTE.SOLICITADO]: '#94a3b8',
-  [ESTADOS_EXPEDIENTE.EMPRESA_SEDE_ASIGNADA]: '#3b82f6',
-  [ESTADOS_EXPEDIENTE.VALIDADO_SECRETARIA]: '#10b981',
-  [ESTADOS_EXPEDIENTE.CARTA_PRESENTACION_EMITIDA]: '#6366f1',
-  [ESTADOS_EXPEDIENTE.ASESOR_ASIGNADO]: '#3b82f6',
-  [ESTADOS_EXPEDIENTE.COMITE_ASIGNADO]: '#3b82f6',
-  [ESTADOS_EXPEDIENTE.CARTA_ACEPTACION_PRESENTADA]: '#3b82f6',
-  [ESTADOS_EXPEDIENTE.PLAN_PRESENTADO]: '#eab308',
-  [ESTADOS_EXPEDIENTE.PLAN_EN_REVISION]: '#eab308',
-  [ESTADOS_EXPEDIENTE.PLAN_EN_REVISION_COMITE]: '#eab308',
-  [ESTADOS_EXPEDIENTE.PLAN_APROBADO]: '#22c55e',
-  [ESTADOS_EXPEDIENTE.PLAN_OBSERVADO]: '#ef4444',
-  EN_REVISION: '#eab308',
-  [ESTADOS_EXPEDIENTE.OBSERVADO]: '#ef4444',
-  [ESTADOS_EXPEDIENTE.SUBSANADO]: '#f59e0b',
-  [ESTADOS_EXPEDIENTE.EN_EJECUCION]: '#6366f1',
-  [ESTADOS_EXPEDIENTE.INFORME_PARCIAL_1_PRESENTADO]: '#06b6d4',
-  [ESTADOS_EXPEDIENTE.INFORME_PARCIAL_2_PRESENTADO]: '#06b6d4',
-  [ESTADOS_EXPEDIENTE.INFORME_FINAL_PRESENTADO]: '#06b6d4',
-  [ESTADOS_EXPEDIENTE.INFORME_EN_REVISION]: '#eab308',
-  [ESTADOS_EXPEDIENTE.INFORME_APROBADO]: '#22c55e',
-  [ESTADOS_EXPEDIENTE.EVALUACION_EMPRESA_PENDIENTE]: '#f59e0b',
-  [ESTADOS_EXPEDIENTE.EVALUACION_COMPLETA]: '#22c55e',
-  [ESTADOS_EXPEDIENTE.EVALUADO]: '#22c55e',
-  [ESTADOS_EXPEDIENTE.DICTAMEN_EMITIDO]: '#22c55e',
-  [ESTADOS_EXPEDIENTE.CERRADO]: '#64748b',
+  [ESTADOS_EXPEDIENTE.SOLICITADO]: '#64748B',
+  [ESTADOS_EXPEDIENTE.EMPRESA_SEDE_ASIGNADA]: '#1A3A6E',
+  [ESTADOS_EXPEDIENTE.VALIDADO_SECRETARIA]: '#10B981',
+  [ESTADOS_EXPEDIENTE.CARTA_PRESENTACION_EMITIDA]: '#1A3A6E',
+  [ESTADOS_EXPEDIENTE.ASESOR_ASIGNADO]: '#1A3A6E',
+  [ESTADOS_EXPEDIENTE.COMITE_ASIGNADO]: '#1A3A6E',
+  [ESTADOS_EXPEDIENTE.CARTA_ACEPTACION_PRESENTADA]: '#1A3A6E',
+  [ESTADOS_EXPEDIENTE.PLAN_PRESENTADO]: '#F59E0B',
+  [ESTADOS_EXPEDIENTE.PLAN_EN_REVISION]: '#F59E0B',
+  [ESTADOS_EXPEDIENTE.PLAN_EN_REVISION_COMITE]: '#F59E0B',
+  [ESTADOS_EXPEDIENTE.PLAN_APROBADO]: '#22C55E',
+  [ESTADOS_EXPEDIENTE.PLAN_OBSERVADO]: '#EF4444',
+  EN_REVISION: '#F59E0B',
+  [ESTADOS_EXPEDIENTE.OBSERVADO]: '#EF4444',
+  [ESTADOS_EXPEDIENTE.SUBSANADO]: '#F59E0B',
+  [ESTADOS_EXPEDIENTE.EN_EJECUCION]: '#1A3A6E',
+  [ESTADOS_EXPEDIENTE.INFORME_PARCIAL_1_PRESENTADO]: '#4A6FA5',
+  [ESTADOS_EXPEDIENTE.INFORME_PARCIAL_2_PRESENTADO]: '#4A6FA5',
+  [ESTADOS_EXPEDIENTE.INFORME_FINAL_PRESENTADO]: '#4A6FA5',
+  [ESTADOS_EXPEDIENTE.INFORME_EN_REVISION]: '#F59E0B',
+  [ESTADOS_EXPEDIENTE.INFORME_APROBADO]: '#22C55E',
+  [ESTADOS_EXPEDIENTE.EVALUACION_EMPRESA_PENDIENTE]: '#F59E0B',
+  [ESTADOS_EXPEDIENTE.EVALUACION_COMPLETA]: '#22C55E',
+  [ESTADOS_EXPEDIENTE.EVALUADO]: '#22C55E',
+  [ESTADOS_EXPEDIENTE.DICTAMEN_EMITIDO]: '#22C55E',
+  [ESTADOS_EXPEDIENTE.CERRADO]: '#64748B',
 };
 
-const CHART_COLORS = ['#2563eb', '#0d9488', '#eab308', '#ef4444', '#6366f1', '#ec4899', '#f97316', '#06b6d4'];
+const CHART_COLORS = ['#1A3A6E', '#4A6FA5', '#F5C518', '#EF4444', '#22C55E', '#F59E0B', '#7A9FD5', '#D4A808'];
+
+const ACCENT_COLORS = {
+  blue: 'bg-[#1A3A6E] text-white dark:bg-[#4A6FA5] dark:text-white',
+  yellow: 'bg-primary-600 text-[#1E293B] dark:bg-primary-500 dark:text-[#1E293B]',
+  emerald: 'bg-emerald-600 text-white dark:bg-emerald-700 dark:text-emerald-50',
+  amber: 'bg-amber-500 text-white dark:bg-amber-600 dark:text-white',
+  red: 'bg-red-600 text-white dark:bg-red-700 dark:text-white',
+};
 
 export const DashboardCoordinacion = () => {
   const { user } = useAuth();
@@ -161,21 +172,18 @@ export const DashboardCoordinacion = () => {
   const recientes = useMemo(() => [...expedientes].slice(0, 5), [expedientes]);
 
   const stats = [
-    { label: 'Total', value: kpis.total, icon: <Users className="h-4 w-4" />, accent: 'blue' },
-    { label: 'Activos', value: kpis.activos, icon: <ListChecks className="h-4 w-4" />, accent: 'teal' },
-    { label: 'Pendientes carta', value: kpis.pendientesCarta, icon: <FileText className="h-4 w-4" />, accent: 'violet' },
-    { label: 'Plan pendiente', value: kpis.planPendiente, icon: <ClipboardList className="h-4 w-4" />, accent: 'emerald' },
-    { label: 'Por evaluar', value: kpis.porEvaluar, icon: <FileEdit className="h-4 w-4" />, accent: 'orange' },
+    { label: 'Total', value: kpis.total, icon: Users, accent: ACCENT_COLORS.blue },
+    { label: 'Activos', value: kpis.activos, icon: ListChecks, accent: ACCENT_COLORS.emerald },
+    { label: 'Pendientes carta', value: kpis.pendientesCarta, icon: FileText, accent: ACCENT_COLORS.amber },
+    { label: 'Plan pendiente', value: kpis.planPendiente, icon: ClipboardList, accent: ACCENT_COLORS.yellow },
+    { label: 'Por evaluar', value: kpis.porEvaluar, icon: FileEdit, accent: ACCENT_COLORS.red },
   ];
-
-  const accentColors: Record<string, string> = {
-    blue: '#3b82f6', teal: '#0d9488', violet: '#6366f1', emerald: '#10b981', orange: '#f97316',
-  };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center" style={{ height: '50vh' }}>
-        <div className="animate-spin h-8 w-8 border-4 rounded-full" style={{ borderColor: 'var(--color-border)', borderTopColor: 'var(--color-primary)' }} />
+      <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4" role="status" aria-live="polite">
+        <Loader2 className="h-8 w-8 animate-spin text-primary-600" aria-hidden="true" />
+        <p className="text-sm text-muted-foreground">Cargando expedientes...</p>
       </div>
     );
   }
@@ -194,296 +202,321 @@ export const DashboardCoordinacion = () => {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }} className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <Building className="h-6 w-6" style={{ color: 'var(--color-primary)' }} />
-            <h1 className="text-xl font-bold" style={{ color: 'var(--color-foreground)' }}>
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#1A3A6E] text-white dark:bg-[#4A6FA5]">
+              <Building className="h-5 w-5" aria-hidden="true" />
+            </div>
+            <h1 className="text-xl font-bold text-foreground md:text-2xl">
               Hola, {user?.nombres?.split(' ')[0] || 'Coordinación'}
             </h1>
           </div>
-          <p className="text-sm mt-1" style={{ color: 'var(--color-muted-foreground)' }}>
+          <p className="mt-1 text-sm text-muted-foreground">
             Panel Ejecutivo – Visión general de todos los expedientes de práctica
           </p>
         </div>
-        <Button variant="secondary" size="sm" onClick={() => refetch()} className="gap-1">
-          <RefreshCw className="h-4 w-4" />
+        <Button variant="secondary" size="sm" onClick={() => refetch()} className="w-full gap-1 sm:w-auto">
+          <RefreshCw className="h-4 w-4" aria-hidden="true" />
           Actualizar
         </Button>
       </div>
 
       {(error || isError) && (
-        <div className="flex items-center gap-2 p-4 rounded-xl text-sm" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: 'var(--color-error)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
-          <AlertTriangle className="h-4 w-4 shrink-0" />
+        <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">
+          <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
           <span>{error || 'No se pudieron cargar los expedientes. Verifica la conexión.'}</span>
-          <button className="ml-auto text-sm font-bold leading-none" onClick={() => setError('')} style={{ color: 'var(--color-error)' }}>&times;</button>
+          <button className="ml-auto text-sm font-bold leading-none text-red-800 hover:text-red-900 dark:text-red-200 dark:hover:text-red-100" onClick={() => setError('')} aria-label="Cerrar">
+            &times;
+          </button>
         </div>
       )}
       {!error && !isError && expedientes.length === 0 && (
-        <div className="flex items-center gap-2 p-4 rounded-xl text-sm" style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+        <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-200">
           No hay expedientes registrados en el sistema.
         </div>
       )}
 
-      <h2 className="text-base font-bold" style={{ color: 'var(--color-foreground)' }}>Indicadores Estadísticos</h2>
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        {stats.map(s => (
-          <div key={s.label} className="rounded-xl border p-4 flex flex-col gap-1.5" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }}>
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ backgroundColor: `${accentColors[s.accent]}15` }}>
-              {s.icon}
-            </div>
-            <span className="text-2xl font-bold" style={{ color: 'var(--color-foreground)' }}>{s.value}</span>
-            <span className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>{s.label}</span>
-          </div>
-        ))}
+      <h2 className="text-base font-bold text-foreground md:text-lg">Indicadores Estadísticos</h2>
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
+        {stats.map(s => {
+          const Icon = s.icon;
+          return (
+            <Card key={s.label} className="p-4 flex flex-col gap-1.5">
+              <div className={cn('flex h-9 w-9 items-center justify-center rounded-lg', s.accent)}>
+                <Icon className="h-4 w-4" aria-hidden="true" />
+              </div>
+              <span className="text-2xl font-bold text-foreground">{s.value}</span>
+              <span className="text-xs text-muted-foreground">{s.label}</span>
+            </Card>
+          );
+        })}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <div className="rounded-xl border p-6" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }}>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-semibold" style={{ color: 'var(--color-foreground)' }}>Resumen de Cerrados</span>
-              <Badge variant="info" size="sm">{avancePct}% cerrados</Badge>
-            </div>
-            <Progress value={avancePct} size="md" />
-            <p className="text-xs mt-2" style={{ color: 'var(--color-muted-foreground)' }}>
-              {kpis.cerrados} expedientes cerrados · {kpis.enEjecucion} en ejecución
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <div>
-                <p className="text-xs text-center mb-2" style={{ color: 'var(--color-muted-foreground)' }}>Expedientes por tipo de práctica</p>
-                {tiposChart.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={200}>
-                    <PieChart>
-                      <Pie data={tiposChart} cx="50%" cy="50%" innerRadius={45} outerRadius={75}
-                        dataKey="value" label={({ name, percent }: { name: string; percent: number }) => `${name} ${(percent * 100).toFixed(0)}%`}>
-                        {tiposChart.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
-                      </Pie>
-                      <RechartsTooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <p className="text-sm text-center py-4" style={{ color: 'var(--color-muted-foreground)' }}>Sin datos</p>
-                )}
+          <Card>
+            <CardContent>
+              <div className="mb-3 flex items-center justify-between">
+                <CardTitle className="text-sm font-semibold">Resumen de Cerrados</CardTitle>
+                <Badge variant="info" size="sm">{avancePct}% cerrados</Badge>
               </div>
-              <div>
-                <p className="text-xs text-center mb-2" style={{ color: 'var(--color-muted-foreground)' }}>Distribución por estado</p>
-                {estadosChart.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={200}>
-                    <BarChart data={estadosChart} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                      <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                      <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
-                      <RechartsTooltip />
-                      <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                        {estadosChart.map((entry) => (
-                          <Cell key={entry.name} fill={ESTADO_COLOR[entry.name.replace(/ /g, '_')] || '#94a3b8'} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <p className="text-sm text-center py-4" style={{ color: 'var(--color-muted-foreground)' }}>Sin datos</p>
-                )}
+              <Progress value={avancePct} size="md" />
+              <p className="mt-2 text-xs text-muted-foreground">
+                {kpis.cerrados} expedientes cerrados · {kpis.enEjecucion} en ejecución
+              </p>
+              <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <p className="mb-2 text-center text-xs text-muted-foreground">Expedientes por tipo de práctica</p>
+                  {tiposChart.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={200}>
+                      <PieChart>
+                        <Pie
+                          data={tiposChart}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={45}
+                          outerRadius={75}
+                          dataKey="value"
+                          label={({ name, percent }: { name: string; percent: number }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        >
+                          {tiposChart.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                        </Pie>
+                        <RechartsTooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <p className="py-4 text-center text-sm text-muted-foreground">Sin datos</p>
+                  )}
+                </div>
+                <div>
+                  <p className="mb-2 text-center text-xs text-muted-foreground">Distribución por estado</p>
+                  {estadosChart.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={200}>
+                      <BarChart data={estadosChart} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                        <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                        <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
+                        <RechartsTooltip />
+                        <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                          {estadosChart.map((entry) => (
+                            <Cell key={entry.name} fill={ESTADO_COLOR[entry.name.replace(/ /g, '_')] || '#64748B'} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <p className="py-4 text-center text-sm text-muted-foreground">Sin datos</p>
+                  )}
+                </div>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
 
         <div className="space-y-6">
-          <div className="rounded-xl border p-6" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }}>
-            <p className="text-sm font-semibold mb-3" style={{ color: 'var(--color-foreground)' }}>Accesos rápidos</p>
-            <div className="space-y-2">
-              <Button variant="secondary" className="w-full justify-start gap-2" onClick={() => navigate('/admin/expedientes')}>
-                <ClipboardList className="h-4 w-4" />
-                Ver expedientes
-              </Button>
-              <Button variant="secondary" className="w-full justify-start gap-2" onClick={() => navigate('/admin/sedes')}>
-                <Building2 className="h-4 w-4" />
-                Ver sedes
-              </Button>
-              <Button variant="secondary" className="w-full justify-start gap-2" onClick={() => navigate('/coordinacion/reportes')}>
-                <FileEdit className="h-4 w-4" />
-                Reportes
-              </Button>
-            </div>
-          </div>
-
-          <div className="rounded-xl border p-6" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }}>
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-semibold" style={{ color: 'var(--color-muted-foreground)' }}>Últimos expedientes</p>
-              <Button size="sm" variant="ghost" className="gap-1" onClick={() => navigate('/admin/expedientes')}>
-                Ver todos
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="space-y-1">
-              {recientes.map((e) => (
-                <div key={e.id} className="flex items-center gap-2 py-1.5">
-                  <Users className="h-4 w-4 shrink-0" style={{ color: 'var(--color-primary)' }} />
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium truncate" style={{ color: 'var(--color-foreground)' }}>
-                      {e.nombreEstudiante} {e.apellidoEstudiante}
-                    </p>
-                    <p className="text-xs capitalize truncate" style={{ color: 'var(--color-muted-foreground)' }}>
-                      {e.estado?.replace(/_/g, ' ')}
-                    </p>
-                  </div>
-                </div>
-              ))}
-              {recientes.length === 0 && (
-                <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>No hay expedientes recientes.</p>
-              )}
-            </div>
-          </div>
-
-          <div className="rounded-xl border p-6" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }}>
-            <p className="text-sm font-semibold mb-3" style={{ color: 'var(--color-muted-foreground)' }}>Alertas activas</p>
-            {alertas.length > 0 ? alertas.map((a, i) => (
-              <div key={i} className="flex items-center gap-2 py-2" style={{ borderBottom: i < alertas.length - 1 ? '1px solid var(--color-border)' : 'none' }}>
-                <AlertTriangle className="h-[18px] w-[18px] shrink-0" style={{ color: a.severity === 'error' ? '#ef4444' : '#eab308' }} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate" style={{ color: 'var(--color-foreground)' }}>{a.exp}</p>
-                  <p className="text-xs truncate" style={{ color: 'var(--color-muted-foreground)' }}>{a.estudiante}</p>
-                </div>
-                <Badge variant={a.severity === 'error' ? 'danger' : 'warning'} size="sm">{a.tipo}</Badge>
+          <Card>
+            <CardContent>
+              <CardTitle className="text-sm font-semibold mb-3">Accesos rápidos</CardTitle>
+              <div className="space-y-2">
+                <Button variant="secondary" className="w-full justify-start gap-2" onClick={() => navigate('/admin/expedientes')}>
+                  <ClipboardList className="h-4 w-4" aria-hidden="true" />
+                  Ver expedientes
+                </Button>
+                <Button variant="secondary" className="w-full justify-start gap-2" onClick={() => navigate('/admin/sedes')}>
+                  <Building2 className="h-4 w-4" aria-hidden="true" />
+                  Ver sedes
+                </Button>
+                <Button variant="secondary" className="w-full justify-start gap-2" onClick={() => navigate('/coordinacion/reportes')}>
+                  <FileEdit className="h-4 w-4" aria-hidden="true" />
+                  Reportes
+                </Button>
               </div>
-            )) : (
-              <p className="text-sm py-2" style={{ color: 'var(--color-muted-foreground)' }}>No hay alertas activas</p>
-            )}
-          </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent>
+              <div className="mb-3 flex items-center justify-between">
+                <CardTitle className="text-sm font-semibold text-muted-foreground">Últimos expedientes</CardTitle>
+                <Button size="sm" variant="ghost" className="gap-1" onClick={() => navigate('/admin/expedientes')}>
+                  Ver todos
+                  <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                </Button>
+              </div>
+              <div className="space-y-1">
+                {recientes.map((e) => (
+                  <div key={e.id} className="flex items-center gap-2 py-1.5">
+                    <Users className="h-4 w-4 shrink-0 text-primary-600" aria-hidden="true" />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-foreground">
+                        {e.nombreEstudiante} {e.apellidoEstudiante}
+                      </p>
+                      <p className="truncate text-xs capitalize text-muted-foreground">
+                        {e.estado?.replace(/_/g, ' ')}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+                {recientes.length === 0 && (
+                  <p className="text-sm text-muted-foreground">No hay expedientes recientes.</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent>
+              <CardTitle className="text-sm font-semibold mb-3 text-muted-foreground">Alertas activas</CardTitle>
+              {alertas.length > 0 ? alertas.map((a, i) => (
+                <div
+                  key={i}
+                  className={cn(
+                    'flex items-center gap-2 py-2',
+                    i < alertas.length - 1 && 'border-b border-border'
+                  )}
+                >
+                  <AlertTriangle className={cn('h-[18px] w-[18px] shrink-0', a.severity === 'error' ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400')} aria-hidden="true" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-foreground">{a.exp}</p>
+                    <p className="truncate text-xs text-muted-foreground">{a.estudiante}</p>
+                  </div>
+                  <Badge variant={a.severity === 'error' ? 'danger' : 'warning'} size="sm">{a.tipo}</Badge>
+                </div>
+              )) : (
+                <p className="py-2 text-sm text-muted-foreground">No hay alertas activas</p>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
 
-      <div className="rounded-xl border p-6" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }}>
-        <p className="text-sm font-semibold mb-3" style={{ color: 'var(--color-foreground)' }}>Listado de expedientes</p>
-        {puedeAsignarComite && (
-          <div className="flex items-center gap-2 p-4 rounded-xl text-sm mb-3" style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
-            Para prácticas Final o Profesional, selecciona <strong>Asignar comité</strong> cuando el estado sea Carta de Aceptación presentada.
+      <Card>
+        <CardContent>
+          <CardTitle className="text-sm font-semibold mb-3">Listado de expedientes</CardTitle>
+          {puedeAsignarComite && (
+            <div className="mb-3 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-200">
+              Para prácticas Final o Profesional, selecciona <strong>Asignar comité</strong> cuando el estado sea Carta de Aceptación presentada.
+            </div>
+          )}
+
+          <div className="mb-3 flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card p-4">
+            <Input
+              label="Buscar"
+              placeholder="Estudiante o código"
+              value={searchTerm}
+              onChange={e => { setSearchTerm(e.target.value); setPage(0); }}
+              className="min-w-[260px]"
+            />
+            <Select
+              label="Tipo"
+              value={filtroTipo}
+              onChange={e => setFiltroTipo(e.target.value)}
+              options={tipoOptions}
+              className="min-w-[160px]"
+            />
+            <Select
+              label="Estado"
+              value={filtroEstado}
+              onChange={e => setFiltroEstado(e.target.value)}
+              options={estadoOptions}
+              className="min-w-[190px]"
+            />
           </div>
-        )}
 
-        <div className="p-4 mb-3 flex gap-3 items-center flex-wrap rounded-xl border" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }}>
-          <Input
-            label="Buscar"
-            placeholder="Estudiante o código"
-            value={searchTerm}
-            onChange={e => { setSearchTerm(e.target.value); setPage(0); }}
-            className="min-w-[260px]"
-          />
-          <Select
-            label="Tipo"
-            value={filtroTipo}
-            onChange={e => setFiltroTipo(e.target.value)}
-            options={tipoOptions}
-            className="min-w-[160px]"
-          />
-          <Select
-            label="Estado"
-            value={filtroEstado}
-            onChange={e => setFiltroEstado(e.target.value)}
-            options={estadoOptions}
-            className="min-w-[190px]"
-          />
-        </div>
-
-        <div className="rounded-xl border overflow-hidden" style={{ borderColor: 'var(--color-border)' }}>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="font-semibold">Código</TableHead>
-                <TableHead className="font-semibold">Estudiante</TableHead>
-                <TableHead className="font-semibold">Tipo</TableHead>
-                <TableHead className="font-semibold">Estado</TableHead>
-                <TableHead className="font-semibold">Asesor / Empresa</TableHead>
-                <TableHead className="font-semibold text-center">Acción</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map(e => (
-                <TableRow key={e.id}>
-                  <TableCell className="font-mono text-xs">{e.codigoExpediente}</TableCell>
-                  <TableCell>
-                    <p className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>{e.nombreEstudiante} {e.apellidoEstudiante}</p>
-                  </TableCell>
-                  <TableCell><Badge variant="info" size="sm">{e.nombreTipoPractica}</Badge></TableCell>
-                  <TableCell>
-                    <Badge variant={
-                      [ESTADOS_EXPEDIENTE.OBSERVADO].includes(e.estado) ? 'danger' :
-                      ['EN_REVISION', ESTADOS_EXPEDIENTE.PLAN_PRESENTADO].includes(e.estado) ? 'warning' :
-                      ['APROBADO', ESTADOS_EXPEDIENTE.EVALUADO, ESTADOS_EXPEDIENTE.CERRADO].includes(e.estado) ? 'success' : 'info'
-                    } size="sm">{estadoLabel(e.estado)}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <p className="text-xs" style={{ color: 'var(--color-foreground)' }}>{e.nombreAsesor || '—'}</p>
-                    <p className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>{e.nombreEmpresa || ''}</p>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-1 justify-center">
-                      {puedeEmitirCarta && e.estado === ESTADOS_EXPEDIENTE.VALIDADO_SECRETARIA && (
-                        <Tooltip content="Emitir y firmar Carta de Presentación">
-                          <Button size="sm" variant="primary"
-                            onClick={() => handleEmitirCarta(e.id)}
-                            className="whitespace-nowrap text-xs font-semibold px-2">
-                            Emitir Carta
-                          </Button>
-                        </Tooltip>
-                      )}
-                      {puedeAsignarComite
-                        && ['FINAL', 'PROFESIONAL'].includes(e.codigoTipoPractica)
-                        && e.estado === ESTADOS_EXPEDIENTE.CARTA_ACEPTACION_PRESENTADA && (
-                          <Tooltip content="Seleccionar integrantes activos del comité">
-                            <Button size="sm" variant="primary"
-                              onClick={() => navigate(`/coordinacion/expedientes/${e.id}`)}
-                              className="whitespace-nowrap text-xs font-semibold px-2">
-                              Asignar comité
+          <div className="overflow-hidden rounded-xl border border-border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="font-semibold">Código</TableHead>
+                  <TableHead className="font-semibold">Estudiante</TableHead>
+                  <TableHead className="font-semibold">Tipo</TableHead>
+                  <TableHead className="font-semibold">Estado</TableHead>
+                  <TableHead className="font-semibold">Asesor / Empresa</TableHead>
+                  <TableHead className="text-center font-semibold">Acción</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map(e => (
+                  <TableRow key={e.id}>
+                    <TableCell className="font-mono text-xs">{e.codigoExpediente}</TableCell>
+                    <TableCell>
+                      <p className="text-sm font-medium text-foreground">{e.nombreEstudiante} {e.apellidoEstudiante}</p>
+                    </TableCell>
+                    <TableCell><Badge variant="info" size="sm">{e.nombreTipoPractica}</Badge></TableCell>
+                    <TableCell>
+                      <Badge variant={
+                        [ESTADOS_EXPEDIENTE.OBSERVADO].includes(e.estado) ? 'danger' :
+                        ['EN_REVISION', ESTADOS_EXPEDIENTE.PLAN_PRESENTADO].includes(e.estado) ? 'warning' :
+                        ['APROBADO', ESTADOS_EXPEDIENTE.EVALUADO, ESTADOS_EXPEDIENTE.CERRADO].includes(e.estado) ? 'success' : 'info'
+                      } size="sm">{estadoLabel(e.estado)}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <p className="text-xs text-foreground">{e.nombreAsesor || '—'}</p>
+                      <p className="text-xs text-muted-foreground">{e.nombreEmpresa || ''}</p>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap justify-center gap-1">
+                        {puedeEmitirCarta && e.estado === ESTADOS_EXPEDIENTE.VALIDADO_SECRETARIA && (
+                          <Tooltip content="Emitir y firmar Carta de Presentación">
+                            <Button size="sm" variant="primary" onClick={() => handleEmitirCarta(e.id)} className="whitespace-nowrap text-xs font-semibold">
+                              Emitir Carta
                             </Button>
                           </Tooltip>
                         )}
-                      <Tooltip content="Ver detalle">
-                        <Button size="sm" variant="secondary" onClick={() => navigate(`/coordinacion/expedientes/${e.id}`)}>
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </Tooltip>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {filtered.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-4" style={{ color: 'var(--color-muted-foreground)' }}>
-                    No se encontraron expedientes
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-          <div className="flex items-center justify-between px-4 py-3 border-t" style={{ borderColor: 'var(--color-border)' }}>
-            <div className="flex items-center gap-2">
-              <span className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
-                {filtered.length > 0 ? `${page * rowsPerPage + 1}-${Math.min((page + 1) * rowsPerPage, filtered.length)} de ${filtered.length}` : '0 resultados'}
-              </span>
-              <select
-                value={rowsPerPage}
-                onChange={(e) => { setRowsPerPage(Number(e.target.value)); setPage(0); }}
-                className="text-sm border rounded px-2 py-1"
-                style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-card)', color: 'var(--color-foreground)' }}
-              >
-                {[5, 10, 25].map(n => <option key={n} value={n}>{n}</option>)}
-              </select>
-              <span className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>por página</span>
-            </div>
-            <div className="flex gap-1">
-              <Button size="sm" variant="secondary" disabled={page === 0} onClick={() => setPage(p => Math.max(0, p - 1))}>
-                Anterior
-              </Button>
-              <Button size="sm" variant="secondary" disabled={(page + 1) * rowsPerPage >= filtered.length} onClick={() => setPage(p => p + 1)}>
-                Siguiente
-              </Button>
+                        {puedeAsignarComite
+                          && ['FINAL', 'PROFESIONAL'].includes(e.codigoTipoPractica)
+                          && e.estado === ESTADOS_EXPEDIENTE.CARTA_ACEPTACION_PRESENTADA && (
+                            <Tooltip content="Seleccionar integrantes activos del comité">
+                              <Button size="sm" variant="primary" onClick={() => navigate(`/coordinacion/expedientes/${e.id}`)} className="whitespace-nowrap text-xs font-semibold">
+                                Asignar comité
+                              </Button>
+                            </Tooltip>
+                          )}
+                        <Tooltip content="Ver detalle">
+                          <Button size="sm" variant="secondary" onClick={() => navigate(`/coordinacion/expedientes/${e.id}`)}>
+                            <Eye className="h-4 w-4" aria-hidden="true" />
+                          </Button>
+                        </Tooltip>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {filtered.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="py-4 text-center text-muted-foreground">
+                      No se encontraron expedientes
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+            <div className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">
+                  {filtered.length > 0 ? `${page * rowsPerPage + 1}-${Math.min((page + 1) * rowsPerPage, filtered.length)} de ${filtered.length}` : '0 resultados'}
+                </span>
+                <select
+                  value={rowsPerPage}
+                  onChange={(e) => { setRowsPerPage(Number(e.target.value)); setPage(0); }}
+                  className="rounded border border-border bg-card px-2 py-1 text-sm text-foreground"
+                >
+                  {[5, 10, 25].map(n => <option key={n} value={n}>{n}</option>)}
+                </select>
+                <span className="text-xs text-muted-foreground">por página</span>
+              </div>
+              <div className="flex gap-1">
+                <Button size="sm" variant="secondary" disabled={page === 0} onClick={() => setPage(p => Math.max(0, p - 1))} className="w-full sm:w-auto">
+                  Anterior
+                </Button>
+                <Button size="sm" variant="secondary" disabled={(page + 1) * rowsPerPage >= filtered.length} onClick={() => setPage(p => p + 1)} className="w-full sm:w-auto">
+                  Siguiente
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </motion.div>
   );
 };

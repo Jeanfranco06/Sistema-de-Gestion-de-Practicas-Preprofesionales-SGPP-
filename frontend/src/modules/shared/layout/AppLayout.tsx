@@ -37,6 +37,8 @@ interface NavGroup {
 interface User {
   nombres?: string;
   apellidoPaterno?: string;
+  apellidos?: string;
+  username?: string;
   email?: string;
   roles?: UserRole[];
 }
@@ -208,13 +210,13 @@ function NavItem({
             className={cn(
               'relative w-full flex items-center justify-center h-11 mx-1.5 rounded-xl transition-all duration-200',
               isActive
-                ? 'bg-amber-50 text-blue-900 dark:bg-blue-900/40 dark:text-amber-400 shadow-[inset_0_0_0_1px_rgba(30,58,138,0.15)] dark:shadow-none'
-                : 'text-blue-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800/80 dark:hover:text-slate-200'
+                ? 'bg-primary-100/70 text-[var(--color-unt-blue)] dark:bg-[var(--color-unt-blue)]/20 dark:text-primary-300 shadow-sm'
+                : 'text-[var(--color-unt-blue)] hover:bg-muted dark:text-[var(--color-unt-blue-light)] dark:hover:bg-muted'
             )}
           >
             <span className="[&>svg]:text-[22px] [&>svg]:transition-transform [&>svg]:duration-200">{item.icon}</span>
             {item.badge && (
-              <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500 border-2 border-white dark:border-slate-900" />
+              <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500 border-2 border-[var(--color-card)]" />
             )}
           </button>
         </Tooltip>
@@ -225,8 +227,8 @@ function NavItem({
           className={cn(
             'relative w-full flex items-center gap-3 h-11 mx-1.5 px-3 rounded-xl transition-all duration-200 text-left overflow-hidden',
             isActive
-              ? 'bg-amber-50 text-blue-900 dark:bg-blue-900/40 dark:text-amber-400 font-semibold before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-blue-700 dark:before:bg-amber-400'
-              : 'text-blue-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800/80 dark:hover:text-slate-200 font-medium'
+              ? 'bg-primary-100/70 text-[var(--color-unt-blue)] dark:bg-[var(--color-unt-blue)]/20 dark:text-primary-300 font-semibold before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-[var(--color-unt-blue)] dark:before:bg-primary-300'
+              : 'text-[var(--color-unt-blue)] hover:bg-muted dark:text-[var(--color-unt-blue-light)] dark:hover:bg-muted font-medium'
           )}
         >
           <span className="[&>svg]:text-[22px] [&>svg]:transition-transform [&>svg]:duration-200 shrink-0">{item.icon}</span>
@@ -258,11 +260,11 @@ function NavGroup({
   return (
     <div key={group.group} className="mb-4">
       {!collapsed && (
-        <p className="px-3 mb-1.5 text-[0.65rem] uppercase tracking-wider font-bold text-blue-900/80 dark:text-slate-400 leading-relaxed">
+        <p className="px-3 mb-1.5 text-[0.65rem] uppercase tracking-wider font-bold text-[var(--color-unt-blue)]/80 dark:text-muted-foreground leading-relaxed">
           {group.label}
         </p>
       )}
-      {collapsed && groupIdx > 0 && <hr className="mx-3 my-2 border-border" />}
+      {collapsed && groupIdx > 0 && <hr className="mx-3 my-2 border-[var(--color-border)]" />}
       <ul className="space-y-0.5">
         {group.items.map(item => (
           <NavItem
@@ -296,27 +298,27 @@ function UserProfile({
   onLogout: () => void;
 }) {
   return (
-    <div className={cn('transition-all duration-200 border-t border-border', collapsed ? 'p-2' : 'p-3')}>
+    <div className={cn('transition-all duration-200 border-t border-[var(--color-border)]', collapsed ? 'p-2' : 'p-3')}>
       <button
         onClick={onAnchorClick}
         className={cn(
-          'w-full flex items-center gap-3 rounded-xl transition-colors duration-150 hover:bg-surface-border',
+          'w-full flex items-center gap-3 rounded-xl transition-colors duration-150 hover:bg-muted',
           collapsed ? 'justify-center p-2' : 'justify-start p-2.5'
         )}
       >
         <Avatar
           fallback={getInitials(user?.nombres, user?.apellidoPaterno)}
           size="md"
-          className="bg-blue-900 text-white font-bold hover:bg-blue-800"
+          className="bg-[var(--color-unt-blue)] text-white font-bold hover:bg-[var(--color-unt-blue-light)] dark:bg-[var(--color-unt-blue-light)] dark:hover:bg-[var(--color-unt-blue)]"
         >
           <span className="text-sm tracking-wider">{user?.nombres?.charAt(0) || user?.username?.charAt(0) || 'U'}</span>
         </Avatar>
         {!collapsed && (
           <div className="flex-1 min-w-0 flex flex-col justify-center">
-            <span className="text-sm font-bold text-unt-blue dark:text-slate-100 truncate leading-tight">
+            <span className="text-sm font-bold text-foreground truncate leading-tight">
               {user?.nombres ? `${user.nombres.split(' ')[0]} ${user.apellidos?.split(' ')[0] || ''}` : user?.username}
             </span>
-            <span className="text-xs text-unt-blue/80 dark:text-slate-400 truncate leading-tight capitalize">
+            <span className="text-xs text-muted-foreground truncate leading-tight capitalize">
               {user?.roles?.[0] ? formatRole(user.roles[0]) : 'Usuario'}
             </span>
           </div>
@@ -338,12 +340,13 @@ function UserProfile({
               minWidth: 200,
               boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
               border: '1px solid',
-              borderColor: 'divider',
+              borderColor: 'var(--color-border)',
+              backgroundColor: 'var(--color-card)',
             },
           },
         }}
       >
-        <div className="px-4 py-3 border-b border-border">
+        <div className="px-4 py-3 border-b border-[var(--color-border)]">
           <p className="text-sm font-bold text-foreground">{user?.nombres} {user?.apellidoPaterno}</p>
           <p className="text-xs text-muted-foreground">{user?.email}</p>
         </div>
@@ -351,7 +354,7 @@ function UserProfile({
           <UserCircle size={20} style={{ marginRight: 6 }} />
           <span className="text-sm font-medium text-foreground">Mi perfil</span>
         </MenuItem>
-        <MenuItem onClick={onLogout} sx={{ py: 1.5, color: 'error.main' }}>
+        <MenuItem onClick={onLogout} sx={{ py: 1.5, color: 'var(--color-red-600)' }}>
           <LogOut size={20} style={{ marginRight: 6 }} />
           <span className="text-sm font-medium">Cerrar sesión</span>
         </MenuItem>
@@ -364,19 +367,19 @@ function SidebarHeader({ collapsed }: { collapsed: boolean }) {
   return (
     <div
       className={cn(
-        'flex items-center h-14 md:h-16 border-b border-border shrink-0 transition-all duration-300',
+        'flex items-center h-14 md:h-16 border-b border-[var(--color-border)] shrink-0 transition-all duration-300',
         collapsed ? 'justify-center px-0' : 'justify-start px-5'
       )}
     >
       <div className="flex items-center gap-3 overflow-hidden">
-        <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-900 text-white border-2 border-amber-400 font-extrabold text-sm overflow-hidden">
+        <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--color-unt-blue)] text-white border-2 border-primary-400 font-extrabold text-sm overflow-hidden dark:bg-[var(--color-unt-blue-light)]">
           <span className="relative z-10">SG</span>
           <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
         </div>
         {!collapsed && (
           <div className="overflow-hidden min-w-0">
-            <p className="text-sm font-bold text-blue-900 dark:text-amber-400 leading-tight truncate">SGPP UNT</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium truncate">Ing. Industrial</p>
+            <p className="text-sm font-bold text-[var(--color-unt-blue)] dark:text-primary-300 leading-tight truncate">SGPP UNT</p>
+            <p className="text-xs text-muted-foreground font-medium truncate">Ing. Industrial</p>
           </div>
         )}
       </div>
@@ -410,7 +413,7 @@ function DrawerContent({
   const isActive = useCallback((path: string) => location.pathname === path, [location.pathname]);
 
   return (
-    <div className="flex flex-col h-full bg-card">
+    <div className="flex flex-col h-full bg-[var(--color-card)]">
       <SidebarHeader collapsed={collapsed} />
       <nav className="flex-1 overflow-y-auto overflow-x-hidden py-4 px-2">
         {navGroups.map((group, idx) => (
@@ -442,17 +445,15 @@ function TopBar({
   onMenuClick,
   onThemeToggle,
   mode,
-  drawerWidth,
 }: {
   currentPage: string;
   onMenuClick: () => void;
   onThemeToggle: () => void;
   mode: 'light' | 'dark';
-  drawerWidth: number;
 }) {
   return (
     <header
-      className="fixed top-0 left-0 right-0 z-[1200] flex items-center bg-card/80 backdrop-blur-sm border-b-2 border-primary-600 transition-all duration-300"
+      className="fixed top-0 left-0 right-0 z-[1200] flex items-center bg-[var(--color-card)]/90 backdrop-blur-md border-b-2 border-primary-600 shadow-sm transition-all duration-300"
       style={{ height: TOP_BAR_HEIGHT }}
     >
       <div className="flex items-center gap-2 px-4 sm:px-6 w-full">
@@ -465,7 +466,7 @@ function TopBar({
         >
           <MenuIcon size={22} />
         </Button>
-        <h1 className="flex-1 text-sm sm:text-base font-bold text-unt-blue dark:text-unt-yellow truncate">
+        <h1 className="flex-1 text-sm sm:text-base font-bold text-[var(--color-unt-blue)] dark:text-primary-300 truncate">
           {currentPage}
         </h1>
         <div className="flex items-center gap-1">
@@ -543,14 +544,13 @@ export default function AppLayout() {
   );
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen bg-[var(--color-background)]">
       {/* Top Bar - Full width, fixed at top */}
       <TopBar
         currentPage={currentPage}
         onMenuClick={handleDrawerToggle}
         onThemeToggle={toggleTheme}
         mode={mode}
-        drawerWidth={drawerWidth}
       />
 
       {/* Side Drawer - Starts below TopBar */}
@@ -616,7 +616,7 @@ export default function AppLayout() {
 
       {/* Main Content - Starts below TopBar, beside Drawer */}
       <main
-        className="flex-1 flex flex-col min-h-screen transition-all duration-300"
+        className="flex-1 flex flex-col min-h-screen transition-all duration-300 bg-[var(--color-background)]"
         style={{
           marginTop: TOP_BAR_HEIGHT,
           marginLeft: isMobile ? 0 : drawerWidth,

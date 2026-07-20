@@ -11,28 +11,28 @@ import {
   Award, BookOpen,
 } from 'lucide-react';
 
-const STATUS_MAP: Record<string, { variant: string; label: string; color: string }> = {
-  UNKNOWN: { variant: 'neutral', label: 'Desconocido', color: 'bg-slate-500 text-white dark:bg-slate-700 dark:text-slate-200' },
-  SOLICITADO: { variant: 'neutral', label: 'Solicitud Registrada', color: 'bg-slate-500 text-white dark:bg-slate-700 dark:text-slate-200' },
-  EMPRESA_SEDE_ASIGNADA: { variant: 'info', label: 'Empresa Asignada', color: 'bg-blue-500 text-white dark:bg-blue-700 dark:text-blue-200' },
-  VALIDADO_SECRETARIA: { variant: 'info', label: 'Validado por Secretaría', color: 'bg-blue-500 text-white dark:bg-blue-700 dark:text-blue-200' },
-  CARTA_PRESENTACION_EMITIDA: { variant: 'primary', label: 'Carta de Presentación Emitida', color: 'bg-blue-500 text-white dark:bg-blue-700 dark:text-blue-200' },
-  CARTA_ACEPTACION_PRESENTADA: { variant: 'primary', label: 'Carta de Aceptación Presentada', color: 'bg-blue-500 text-white dark:bg-blue-700 dark:text-blue-200' },
-  ASESOR_ASIGNADO: { variant: 'info', label: 'Asesor Asignado', color: 'bg-blue-500 text-white dark:bg-blue-700 dark:text-blue-200' },
-  COMITE_ASIGNADO: { variant: 'info', label: 'Comité Asignado', color: 'bg-blue-500 text-white dark:bg-blue-700 dark:text-blue-200' },
-  PLAN_PRESENTADO: { variant: 'warning', label: 'Plan Presentado', color: 'bg-amber-500 text-white dark:bg-amber-700 dark:text-amber-200' },
-  PLAN_EN_REVISION: { variant: 'info', label: 'Plan en Revisión', color: 'bg-blue-500 text-white dark:bg-blue-700 dark:text-blue-200' },
-  PLAN_APROBADO: { variant: 'success', label: 'Plan Aprobado', color: 'bg-green-500 text-white dark:bg-green-700 dark:text-green-200' },
-  PLAN_OBSERVADO: { variant: 'danger', label: 'Plan Observado', color: 'bg-red-500 text-white dark:bg-red-700 dark:text-red-200' },
-  EN_EJECUCION: { variant: 'default', label: 'En Ejecución', color: 'bg-purple-500 text-white dark:bg-purple-700 dark:text-purple-200' },
-  INFORME_PARCIAL_1_PRESENTADO: { variant: 'warning', label: 'Informe Parcial 1 Presentado', color: 'bg-amber-500 text-white dark:bg-amber-700 dark:text-amber-200' },
-  INFORME_PARCIAL_2_PRESENTADO: { variant: 'warning', label: 'Informe Parcial 2 Presentado', color: 'bg-amber-500 text-white dark:bg-amber-700 dark:text-amber-200' },
-  INFORME_FINAL_PRESENTADO: { variant: 'warning', label: 'Informe Final Presentado', color: 'bg-amber-500 text-white dark:bg-amber-700 dark:text-amber-200' },
-  INFORME_FINAL_APROBADO: { variant: 'success', label: 'Informe Final Aprobado', color: 'bg-green-500 text-white dark:bg-green-700 dark:text-green-200' },
-  EVALUADO: { variant: 'success', label: 'Evaluado', color: 'bg-green-500 text-white dark:bg-green-700 dark:text-green-200' },
-  DICTAMEN_EMITIDO: { variant: 'success', label: 'Dictamen Emitido', color: 'bg-green-500 text-white dark:bg-green-700 dark:text-green-200' },
-  CERRADO: { variant: 'neutral', label: 'Expediente Cerrado', color: 'bg-slate-500 text-white dark:bg-slate-700 dark:text-slate-200' },
-  CONSTANCIA_EMITIDA: { variant: 'success', label: 'Constancia Emitida', color: 'bg-green-500 text-white dark:bg-green-700 dark:text-green-200' },
+const STATUS_MAP: Record<string, { variant: 'default' | 'success' | 'warning' | 'danger' | 'info' | 'neutral'; label: string }> = {
+  UNKNOWN: { variant: 'neutral', label: 'Desconocido' },
+  SOLICITADO: { variant: 'neutral', label: 'Solicitud Registrada' },
+  EMPRESA_SEDE_ASIGNADA: { variant: 'info', label: 'Empresa Asignada' },
+  VALIDADO_SECRETARIA: { variant: 'info', label: 'Validado por Secretaría' },
+  CARTA_PRESENTACION_EMITIDA: { variant: 'info', label: 'Carta de Presentación Emitida' },
+  CARTA_ACEPTACION_PRESENTADA: { variant: 'info', label: 'Carta de Aceptación Presentada' },
+  ASESOR_ASIGNADO: { variant: 'info', label: 'Asesor Asignado' },
+  COMITE_ASIGNADO: { variant: 'info', label: 'Comité Asignado' },
+  PLAN_PRESENTADO: { variant: 'warning', label: 'Plan Presentado' },
+  PLAN_EN_REVISION: { variant: 'info', label: 'Plan en Revisión' },
+  PLAN_APROBADO: { variant: 'success', label: 'Plan Aprobado' },
+  PLAN_OBSERVADO: { variant: 'danger', label: 'Plan Observado' },
+  EN_EJECUCION: { variant: 'info', label: 'En Ejecución' },
+  INFORME_PARCIAL_1_PRESENTADO: { variant: 'warning', label: 'Informe Parcial 1 Presentado' },
+  INFORME_PARCIAL_2_PRESENTADO: { variant: 'warning', label: 'Informe Parcial 2 Presentado' },
+  INFORME_FINAL_PRESENTADO: { variant: 'warning', label: 'Informe Final Presentado' },
+  INFORME_FINAL_APROBADO: { variant: 'success', label: 'Informe Final Aprobado' },
+  EVALUADO: { variant: 'success', label: 'Evaluado' },
+  DICTAMEN_EMITIDO: { variant: 'success', label: 'Dictamen Emitido' },
+  CERRADO: { variant: 'neutral', label: 'Expediente Cerrado' },
+  CONSTANCIA_EMITIDA: { variant: 'success', label: 'Constancia Emitida' },
 } as const;
 
 const DOC_LABELS: Record<string, string> = {
@@ -149,7 +149,7 @@ function KpiCard({ label, value, icon: Icon, color, trend, trendUp }: KpiCardPro
       </div>
       <p className="text-2xl md:text-3xl font-extrabold text-foreground leading-tight">{value}</p>
       {trend && (
-        <div className={cn('text-xs font-medium flex items-center gap-1', trendUp ? 'text-emerald-600' : 'text-amber-600')}>
+        <div className={cn('text-xs font-medium flex items-center gap-1', trendUp ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400')}>
           <TrendingUp className={cn('h-3 w-3', !trendUp && 'rotate-180')} />
           {trend}
         </div>
@@ -174,20 +174,20 @@ function DocItem({ label, isReady, onClick, canUpload }: DocItemProps) {
         className={cn(
           'w-full flex items-center justify-between gap-2 sm:gap-3 px-2.5 sm:px-3 py-2.5 rounded-lg border text-sm transition-all duration-150 group min-w-0',
           isReady
-            ? 'border-green-500 bg-green-50 dark:border-green-600 dark:bg-green-950/30'
+            ? 'border-emerald-500 bg-emerald-50 dark:border-emerald-600 dark:bg-emerald-950/30'
             : canUpload
-              ? 'border-slate-300 bg-white hover:bg-slate-50 hover:border-blue-400 dark:border-slate-600 dark:bg-slate-800 dark:hover:bg-slate-700 dark:hover:border-blue-500'
-              : 'border-slate-200 bg-slate-100 text-slate-600 cursor-not-allowed dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200'
+              ? 'border-border bg-card hover:bg-muted hover:border-primary-600/50 dark:hover:border-primary-400/50'
+              : 'border-border bg-muted text-muted-foreground cursor-not-allowed'
         )}
       >
         <div className="flex items-center gap-2 sm:gap-2.5 overflow-hidden min-w-0">
           <span className={cn(
             'flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-colors duration-150',
             isReady
-              ? 'bg-green-500 text-white dark:bg-green-700 dark:text-green-200'
+              ? 'bg-emerald-500 text-white dark:bg-emerald-600 dark:text-emerald-100'
               : canUpload
-                ? 'bg-blue-500 text-white group-hover:bg-blue-600 dark:group-hover:bg-blue-500'
-                : 'bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-200'
+                ? 'bg-[#1A3A6E] text-white group-hover:bg-[#4A6FA5] dark:bg-[#4A6FA5] dark:group-hover:bg-[#7A9FD5]'
+                : 'bg-muted text-muted-foreground'
           )}>
             {isReady ? <CheckCircle2 className="h-3.5 w-3.5 text-current" /> : <FileText className="h-3.5 w-3.5 text-current" />}
           </span>
@@ -195,7 +195,7 @@ function DocItem({ label, isReady, onClick, canUpload }: DocItemProps) {
             {label}
           </span>
         </div>
-        <Badge variant={isReady ? 'success' : canUpload ? 'neutral' : 'neutral'} size="sm" className="shrink-0">
+        <Badge variant={isReady ? 'success' : canUpload ? 'warning' : 'neutral'} size="sm" className="shrink-0">
           {isReady ? 'Completado' : canUpload ? 'Pendiente' : 'Bloqueado'}
         </Badge>
       </button>
@@ -210,31 +210,31 @@ interface QuickActionProps {
   route: string;
   onClick: (route: string) => void;
   badge?: string;
-  badgeColor?: string;
+  badgeVariant?: 'default' | 'success' | 'warning' | 'danger' | 'info' | 'neutral';
 }
 
-function QuickAction({ title, subtitle, icon: Icon, route, onClick, badge, badgeColor }: QuickActionProps) {
+function QuickAction({ title, subtitle, icon: Icon, route, onClick, badge, badgeVariant = 'neutral' }: QuickActionProps) {
   return (
     <li className="list-none">
       <button
         onClick={() => onClick(route)}
-        className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-border bg-card hover:bg-surface-border hover:border-primary-600/30 transition-all group"
+        className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-border bg-card hover:bg-muted hover:border-primary-600/30 dark:hover:border-primary-400/30 transition-all group"
       >
         <div className="flex items-center gap-3 overflow-hidden">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-500 dark:bg-blue-600 text-white group-hover:bg-blue-600 dark:group-hover:bg-blue-500 transition-colors">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#1A3A6E] text-white group-hover:bg-[#4A6FA5] dark:bg-[#4A6FA5] dark:group-hover:bg-[#7A9FD5] transition-colors">
             <Icon className="h-5 w-5 text-current" />
           </span>
           <div className="text-left overflow-hidden flex-1">
             <div className="flex items-center gap-2">
               <span className="block text-sm font-bold text-foreground truncate">{title}</span>
               {badge && (
-                <Badge size="sm" className={cn('shrink-0', badgeColor)}>{badge}</Badge>
+                <Badge size="sm" variant={badgeVariant} className="shrink-0">{badge}</Badge>
               )}
             </div>
             <span className="block text-xs text-muted-foreground truncate">{subtitle}</span>
           </div>
         </div>
-        <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary-700 transition-colors shrink-0" />
+        <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary-700 dark:group-hover:text-primary-400 transition-colors shrink-0" />
       </button>
     </li>
   );
@@ -249,31 +249,31 @@ interface TimelineItemProps {
 }
 
 function TimelineItem({ estado, fecha, observacion, isCurrent, isCompleted }: TimelineItemProps) {
-  const statusInfo = STATUS_MAP[estado] || { variant: 'neutral', label: estado, color: 'bg-slate-600 text-white dark:bg-slate-800 dark:text-slate-300' };
-  
+  const statusInfo = STATUS_MAP[estado] || { variant: 'neutral' as const, label: estado };
+
   return (
     <li className="flex gap-3 list-none">
       <span className={cn(
         'mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2',
         isCurrent
-          ? 'bg-blue-500 border-blue-200 dark:bg-blue-600 dark:border-blue-400 ring-4 ring-blue-100 dark:ring-blue-900/30'
+          ? 'bg-primary-600 border-primary-200 dark:bg-primary-700 dark:border-primary-400 ring-4 ring-primary-100 dark:ring-primary-900/30'
           : isCompleted
-            ? 'bg-green-500 border-green-200 dark:bg-green-600 dark:border-green-400'
-            : 'bg-slate-200 border-slate-300 dark:bg-slate-700 dark:border-slate-500'
+            ? 'bg-emerald-500 border-emerald-200 dark:bg-emerald-600 dark:border-emerald-400'
+            : 'bg-muted border-border dark:bg-muted dark:border-border'
       )}>
         {isCompleted && !isCurrent && <CheckCircle2 className="h-4 w-4 text-white" />}
         {isCurrent && <span className="h-2 w-2 rounded-full bg-white animate-pulse" />}
       </span>
       <div className="pt-1 flex-1 min-w-0">
-        <p className={cn('text-sm font-semibold', isCurrent ? 'text-blue-600 dark:text-blue-300' : isCompleted ? 'text-foreground' : 'text-muted-foreground')}>
+        <p className={cn('text-sm font-semibold', isCurrent ? 'text-primary-700 dark:text-primary-400' : isCompleted ? 'text-foreground' : 'text-muted-foreground')}>
           {statusInfo.label}
         </p>
         <p className="text-xs text-muted-foreground mt-0.5 font-medium flex items-center gap-1">
           <Clock className="h-3 w-3" /> {fecha}
         </p>
         {observacion && (
-          <div className="mt-2 px-3 py-2 bg-amber-50 dark:bg-amber-900 rounded-lg border border-amber-500/50 dark:border-amber-600/50">
-            <p className="text-xs text-amber-900 dark:text-amber-50 leading-relaxed font-medium">{observacion}</p>
+          <div className="mt-2 px-3 py-2 bg-amber-50 dark:bg-amber-950/40 rounded-lg border border-amber-500/50 dark:border-amber-600/50">
+            <p className="text-xs text-amber-900 dark:text-amber-100 leading-relaxed font-medium">{observacion}</p>
           </div>
         )}
       </div>
@@ -294,7 +294,7 @@ export default function DashboardEstudiante() {
     return (
       <div className="p-6 text-center">
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
-          <Info className="h-8 w-8 text-red-600" />
+          <Info className="h-8 w-8 text-red-600 dark:text-red-400" />
         </div>
         <h3 className="text-lg font-semibold text-foreground mb-2">Error al cargar el dashboard</h3>
         <p className="text-foreground/70 mb-4">No se pudo obtener la información del expediente.</p>
@@ -315,7 +315,7 @@ export default function DashboardEstudiante() {
   const docsObligatorios = expediente.codigoTipoPractica === 'INICIAL' ? DOCS_INICIAL : expediente.codigoTipoPractica === 'FINAL' ? DOCS_FINAL : DOCS_PROFESIONAL;
   const docsSubidos = expediente.documentos?.map((d: any) => d.tipoDocumento) || [];
   const docsAprobados = docsObligatorios.filter((d) => docsSubidos.includes(d)).length;
-  
+
   // Calcular progreso del expediente basado en estado
   const estadosOrden = [
     ESTADOS_EXPEDIENTE.SOLICITADO,
@@ -343,7 +343,7 @@ export default function DashboardEstudiante() {
   return (
     <div className="space-y-6 animate-in p-4 sm:p-6 lg:p-8">
       {/* ── Header Banner ────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary-600 to-primary-800 text-white p-6 md:p-8">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary-700 to-primary-900 text-white p-6 md:p-8">
         <div className="absolute right-[-20px] top-2 opacity-10 md:right-[-50px] md:top-[-50px]">
           <GraduationCap className="h-[150px] w-[150px] md:h-[300px] md:w-[300px]" />
         </div>
@@ -380,7 +380,7 @@ export default function DashboardEstudiante() {
             <Button variant="ghost" size="sm" className="h-9 w-9 bg-white/10 hover:bg-white/20 text-white border-white/20" onClick={() => refetchExpediente()} aria-label="Actualizar">
               <RefreshCw className="h-4 w-4" />
             </Button>
-            <Badge className={cn('bg-white/15 text-white border border-white/20 px-3 py-1.5 text-xs font-bold whitespace-nowrap', statusInfo.color)}>
+            <Badge variant={statusInfo.variant} className="border border-white/20 px-3 py-1.5 text-xs font-bold whitespace-nowrap text-white bg-white/15">
               {statusInfo.label}
             </Badge>
           </div>
@@ -389,7 +389,7 @@ export default function DashboardEstudiante() {
 
       {/* ── Observaciones alert ──────────────────────────────── */}
       {obsActivas.length > 0 && (
-        <div className="rounded-xl border-2 border-red-200 bg-red-50 dark:bg-red-950/40 dark:border-red-800 p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 animate-in slide-in-from-top-2">
+        <div className="rounded-xl border border-red-200 bg-red-50 dark:bg-red-950/40 dark:border-red-800 p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 animate-in slide-in-from-top-2">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/50">
             <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
           </div>
@@ -411,7 +411,7 @@ export default function DashboardEstudiante() {
           label="Horas Validadas"
           value={`${horasEjecutadas}h`}
           icon={Clock}
-          color="bg-blue-500 text-white dark:bg-blue-700 dark:text-blue-200"
+          color="bg-[#1A3A6E] text-white dark:bg-[#4A6FA5] dark:text-white"
           trend={`de ${horasTotales}h requeridas`}
           trendUp={pct >= 50}
         />
@@ -419,7 +419,7 @@ export default function DashboardEstudiante() {
           label="Documentos"
           value={`${docsAprobados}/${docsObligatorios.length}`}
           icon={FileText}
-          color="bg-green-500 text-white dark:bg-green-700 dark:text-green-200"
+          color="bg-emerald-600 text-white dark:bg-emerald-700 dark:text-emerald-50"
           trend={`${Math.round((docsAprobados / docsObligatorios.length) * 100)}% completado`}
           trendUp={docsAprobados >= docsObligatorios.length / 2}
         />
@@ -427,7 +427,7 @@ export default function DashboardEstudiante() {
           label="Progreso"
           value={`${progresoExpediente}%`}
           icon={TrendingUp}
-          color="bg-blue-500 text-white dark:bg-blue-700 dark:text-blue-200"
+          color="bg-primary-600 text-white dark:bg-primary-700 dark:text-white"
           trend="del expediente"
           trendUp={true}
         />
@@ -435,7 +435,7 @@ export default function DashboardEstudiante() {
           label="Tipo"
           value={expediente.nombreTipoPractica || expediente.codigoTipoPractica}
           icon={GraduationCap}
-          color="bg-amber-500 text-white dark:bg-amber-700 dark:text-amber-200"
+          color="bg-primary-600 text-white dark:bg-primary-700 dark:text-white"
         />
       </div>
 
@@ -473,7 +473,7 @@ export default function DashboardEstudiante() {
             <div className="mt-4">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-sm font-semibold text-foreground">Avance General</p>
-                <Badge variant={pct >= 100 ? 'success' : pct >= 50 ? 'default' : 'neutral'}>
+                <Badge variant={pct >= 100 ? 'success' : pct >= 50 ? 'warning' : 'neutral'}>
                   {pct >= 100 ? 'Completado' : pct >= 50 ? 'En progreso' : 'Inicio'}
                 </Badge>
               </div>
@@ -494,8 +494,8 @@ export default function DashboardEstudiante() {
             </div>
 
             <div className="flex-1 flex flex-col items-center justify-center py-4">
-              <div className={cn('w-24 h-24 rounded-full flex items-center justify-center mb-3', statusInfo.color)}>
-                <span className="text-3xl font-extrabold text-white">{progresoExpediente}%</span>
+              <div className="w-24 h-24 rounded-full flex items-center justify-center mb-3 bg-[#1A3A6E] dark:bg-[#4A6FA5] text-white">
+                <span className="text-3xl font-extrabold">{progresoExpediente}%</span>
               </div>
               <p className="text-sm font-semibold text-foreground text-center mb-1">Progreso del Trámite</p>
               <p className="text-xs text-muted-foreground text-center">{statusInfo.label}</p>
@@ -532,7 +532,7 @@ export default function DashboardEstudiante() {
                 route="/estudiante/documentos"
                 onClick={navigate}
                 badge={docsAprobados < docsObligatorios.length ? `${docsObligatorios.length - docsAprobados} pendientes` : 'Completado'}
-                badgeColor={docsAprobados < docsObligatorios.length ? 'bg-amber-500 text-white dark:bg-amber-600 dark:text-amber-100' : 'bg-green-500 text-white dark:bg-green-600 dark:text-green-100'}
+                badgeVariant={docsAprobados < docsObligatorios.length ? 'warning' : 'success'}
               />
               <QuickAction
                 title="Plan de Prácticas"
@@ -633,7 +633,7 @@ export default function DashboardEstudiante() {
                 (docType.startsWith('INFORME') && expediente.estado === ESTADOS_EXPEDIENTE.EN_EJECUCION) ||
                 (docType === 'CONSTANCIA_EMPRESA' && expediente.estado === ESTADOS_EXPEDIENTE.EN_EJECUCION) ||
                 isReady;
-              
+
               return (
                 <DocItem
                   key={docType}

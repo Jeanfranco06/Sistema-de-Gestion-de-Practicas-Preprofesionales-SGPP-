@@ -4,7 +4,10 @@ import withReactContent from 'sweetalert2-react-content';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { ArrowLeft, CheckCircle2, FileText, Scale, Award, Eye, Users, ClipboardList, ListChecks, FileEdit, Building2, Building } from 'lucide-react';
+import {
+  ArrowLeft, CheckCircle2, FileText, Eye, Users, ClipboardList,
+  ListChecks, FileEdit, Building2, Building, Loader2, Info,
+} from 'lucide-react';
 import { useAuth } from '../../../auth/AuthContext';
 import { useExpedienteById, useIniciarEjecucion } from '../../../hooks/useExpedientes';
 import { expedientesApi } from '../../../api/expedientesApi';
@@ -14,17 +17,13 @@ import { coordinacionApi, horasApi, reportesCoordinacionApi, trazabilidadApi } f
 import { tieneControlHoras } from '../../../shared/utils/controlHoras';
 import { hasAnyRole } from '../../../shared/utils/roleRoutes';
 import { ESTADOS_EXPEDIENTE, ESTADOS_PARA_DICTAMEN } from '../../../lib/constants';
-import { Button, Badge, Progress, Tooltip } from '../../../ui';
-import Alert from '@mui/material/Alert';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
-import Checkbox from '@mui/material/Checkbox';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import LinearProgress from '@mui/material/LinearProgress';
-import CircularProgress from '@mui/material/CircularProgress';
-import Paper from '@mui/material/Paper';
+import {
+  Button, Badge, Progress, Tooltip, Card, CardContent, CardHeader, CardTitle,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+  Tabs, TabsList, TabsTrigger, TabsContent, Table, TableHeader, TableBody,
+  TableRow, TableHead, TableCell, Separator,
+} from '../../../ui';
+import { cn } from '../../../lib/utils';
 
 const MySwal = withReactContent(Swal);
 
@@ -44,9 +43,9 @@ const formatDateTime = (value: string | null | undefined) => {
 
 const getEstadoColor = (estado = '') => {
   const normalized = estado.toUpperCase();
-  if (['CERRADO', 'APROBADO', 'EVALUADO'].includes(normalized)) return 'success' as const;
-  if (['OBSERVADO', 'VENCIDO'].includes(normalized)) return 'warning' as const;
-  if (['RECHAZADO'].includes(normalized)) return 'danger' as const;
+  if ([ESTADOS_EXPEDIENTE.CERRADO, ESTADOS_EXPEDIENTE.PLAN_APROBADO, ESTADOS_EXPEDIENTE.EVALUADO].includes(normalized)) return 'success' as const;
+  if ([ESTADOS_EXPEDIENTE.OBSERVADO, ESTADOS_EXPEDIENTE.PLAN_OBSERVADO, 'VENCIDO'].includes(normalized)) return 'warning' as const;
+  if ([ESTADOS_EXPEDIENTE.RECHAZADO].includes(normalized)) return 'danger' as const;
   return 'info' as const;
 };
 
@@ -56,34 +55,52 @@ interface InfoRow {
 }
 
 const InfoBlock = ({ title, rows }: { title: string; rows: InfoRow[] }) => (
-  <div className="rounded-2xl border p-2.25 h-full" style={{ borderColor: 'var(--color-border)' }}>
-    <div className="text-base font-bold mb-1.5" style={{ color: 'var(--color-foreground)' }}>{title}</div>
-    <div className="grid gap-1.25">
-      {rows.map((row: InfoRow) => (
-        <div key={row.label}>
-          <div className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>{row.label}</div>
-          <div className="text-sm break-words" style={{ color: 'var(--color-foreground)' }}>{row.value || 'No disponible'}</div>
-        </div>
-      ))}
-    </div>
-  </div>
+  <Card className="h-full">
+    <CardContent>
+      <CardTitle className="text-base font-bold mb-3">{title}</CardTitle>
+      <div className="grid gap-2">
+        {rows.map((row: InfoRow) => (
+          <div key={row.label}>
+            <div className="text-xs text-muted-foreground">{row.label}</div>
+            <div className="break-words text-sm text-foreground">{row.value || 'No disponible'}</div>
+          </div>
+        ))}
+      </div>
+    </CardContent>
+  </Card>
 );
 
+const AlertBox = ({ severity, children }: { severity: 'info' | 'warning' | 'error' | 'success'; children: React.ReactNode }) => {
+  const styles = {
+    info: 'bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-950/40 dark:border-blue-900 dark:text-blue-100',
+    warning: 'bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-950/40 dark:border-amber-900 dark:text-amber-100',
+    error: 'bg-red-50 border-red-200 text-red-800 dark:bg-red-950/40 dark:border-red-900 dark:text-red-100',
+    success: 'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-950/40 dark:border-emerald-900 dark:text-emerald-100',
+  };
+  return (
+    <div className={cn('rounded-xl border p-3 text-sm', styles[severity])}>
+      {children}
+    </div>
+  );
+};
+
 const StackWarnings = ({ warnings }: { warnings: string[] }) => (
-  <div className="space-y-2 mb-3">
+  <div className="mb-3 space-y-2">
     {warnings.map((warning, index) => (
-      <Alert key={`${warning}-${index}`} severity="warning">{warning}</Alert>
+      <AlertBox key={`${warning}-${index}`} severity="warning">{warning}</AlertBox>
     ))}
   </div>
 );
 
 const StackList = ({ items }: { items: InfoRow[] }) => (
-  <div className="grid gap-1.25">
+  <div className="grid gap-2">
     {items.map((item: InfoRow) => (
-      <div key={item.label} className="rounded-2xl border p-1.5" style={{ borderColor: 'var(--color-border)' }}>
-        <div className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>{item.label}</div>
-        <div className="text-sm font-semibold" style={{ color: 'var(--color-foreground)' }}>{item.value || 'No disponible'}</div>
-      </div>
+      <Card key={item.label}>
+        <CardContent className="py-2">
+          <div className="text-xs text-muted-foreground">{item.label}</div>
+          <div className="text-sm font-semibold text-foreground">{item.value || 'No disponible'}</div>
+        </CardContent>
+      </Card>
     ))}
   </div>
 );
@@ -457,438 +474,471 @@ export const DetalleExpediente = () => {
 
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="rounded-xl border p-5 text-center" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }}>
-          <CircularProgress />
-          <div className="text-sm mt-2" style={{ color: 'var(--color-muted-foreground)' }}>Cargando expediente...</div>
-        </div>
+      <div className="mx-auto max-w-7xl px-4 py-6">
+        <Card className="p-8 text-center">
+          <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary-600" aria-hidden="true" />
+          <p className="mt-2 text-sm text-muted-foreground">Cargando expediente...</p>
+        </Card>
       </div>
     );
   }
 
   if (error || !expediente) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <Alert severity="error">{error ? 'Error al cargar el expediente.' : 'No se encontró información del expediente.'}</Alert>
+      <div className="mx-auto max-w-7xl px-4 py-6">
+        <AlertBox severity="error">
+          {error ? 'Error al cargar el expediente.' : 'No se encontró información del expediente.'}
+        </AlertBox>
       </div>
     );
   }
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="mx-auto max-w-7xl px-4 py-6">
         <div className="mb-4">
-          <div className="flex flex-wrap justify-between gap-2 mb-1.5">
+          <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h1 className="text-2xl md:text-3xl font-extrabold mb-0.75" style={{ color: 'var(--color-primary)' }}>Detalle de Expediente</h1>
-              <div className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
+              <h1 className="mb-1 text-2xl font-extrabold text-primary-700 dark:text-primary-400 md:text-3xl">
+                Detalle de Expediente
+              </h1>
+              <p className="text-sm text-muted-foreground">
                 {expediente.codigoExpediente} · {expediente.nombreTipoPractica} · Periodo {expediente.periodoAcademico || 'No definido'}
-              </div>
+              </p>
             </div>
-            <div className="flex gap-1 items-center flex-wrap justify-end">
+            <div className="flex flex-wrap items-center justify-end gap-1">
               <Badge variant={getEstadoColor(expediente.estado)} size="sm">{expediente.estado}</Badge>
               {puedeEmitirDocumentosInstitucionales && expediente.estado === ESTADOS_EXPEDIENTE.VALIDADO_SECRETARIA && (
-                <Button size="sm"
-                  disabled={accionEnCurso === 'carta'}
-                  onClick={() => ejecutarAccion('carta')}>
+                <Button size="sm" className="min-h-10 w-full sm:w-auto" disabled={accionEnCurso === 'carta'} onClick={() => ejecutarAccion('carta')}>
                   {accionEnCurso === 'carta' ? 'Emitiendo...' : 'Emitir carta'}
                 </Button>
               )}
               {puedeAsignarComite
                 && ['FINAL', 'PROFESIONAL'].includes(expediente.codigoTipoPractica)
                 && expediente.estado === ESTADOS_EXPEDIENTE.CARTA_ACEPTACION_PRESENTADA && (
-                  <Button size="sm" variant="secondary"
-                    disabled={cargandoComite}
-                    onClick={abrirAsignacionComite}>
+                  <Button size="sm" variant="secondary" className="min-h-10 w-full sm:w-auto" disabled={cargandoComite} onClick={abrirAsignacionComite}>
                     {cargandoComite ? 'Cargando comité...' : 'Asignar comité'}
                   </Button>
                 )}
               {puedeRevisarExpediente && expediente.estado === ESTADOS_EXPEDIENTE.PLAN_PRESENTADO && (
-                <Button size="sm"
-                  disabled={accionEnCurso === 'aprobarPlan'}
-                  onClick={() => ejecutarAccion('aprobarPlan')}>
+                <Button size="sm" className="min-h-10 w-full sm:w-auto" disabled={accionEnCurso === 'aprobarPlan'} onClick={() => ejecutarAccion('aprobarPlan')}>
                   {accionEnCurso === 'aprobarPlan' ? 'Aprobando...' : 'Aprobar plan'}
                 </Button>
               )}
               {puedeRevisarExpediente && expediente.estado === ESTADOS_EXPEDIENTE.PLAN_APROBADO && (
-                <Button size="sm" variant="secondary"
-                  disabled={accionEnCurso === 'iniciarEjecucion'}
-                  onClick={() => ejecutarAccion('iniciarEjecucion')}>
+                <Button size="sm" variant="secondary" className="min-h-10 w-full sm:w-auto" disabled={accionEnCurso === 'iniciarEjecucion'} onClick={() => ejecutarAccion('iniciarEjecucion')}>
                   {accionEnCurso === 'iniciarEjecucion' ? 'Iniciando...' : 'Iniciar ejecución'}
                 </Button>
               )}
               {puedeRevisarExpediente && expediente.estado === ESTADOS_EXPEDIENTE.INFORME_FINAL_PRESENTADO && (
-                <Button size="sm"
-                  disabled={accionEnCurso === 'aprobarInforme'}
-                  onClick={() => ejecutarAccion('aprobarInforme')}>
+                <Button size="sm" className="min-h-10 w-full sm:w-auto" disabled={accionEnCurso === 'aprobarInforme'} onClick={() => ejecutarAccion('aprobarInforme')}>
                   {accionEnCurso === 'aprobarInforme' ? 'Aprobando...' : 'Aprobar informe'}
                 </Button>
               )}
               {puedeRevisarExpediente && ESTADOS_PARA_DICTAMEN.includes(expediente.estado) && (
-                <Button size="sm" variant="secondary"
-                  disabled={accionEnCurso === 'dictamen'}
-                  onClick={() => ejecutarAccion('dictamen')}>
+                <Button size="sm" variant="secondary" className="min-h-10 w-full sm:w-auto" disabled={accionEnCurso === 'dictamen'} onClick={() => ejecutarAccion('dictamen')}>
                   {accionEnCurso === 'dictamen' ? 'Emitiendo...' : 'Emitir dictamen'}
                 </Button>
               )}
               {puedeEmitirDocumentosInstitucionales && ([ESTADOS_EXPEDIENTE.EVALUADO, ESTADOS_EXPEDIENTE.DICTAMEN_EMITIDO].includes(expediente.estado)
                 || (expediente.estado === ESTADOS_EXPEDIENTE.CERRADO && !ultimaConstancia)) ? (
-                  <Button size="sm"
-                    disabled={accionEnCurso === 'constancia'}
-                    onClick={() => ejecutarAccion('constancia')}>
+                  <Button size="sm" className="min-h-10 w-full sm:w-auto" disabled={accionEnCurso === 'constancia'} onClick={() => ejecutarAccion('constancia')}>
                     {accionEnCurso === 'constancia' ? 'Emitiendo...' : 'Emitir constancia'}
                   </Button>
                 ) : null}
               {puedeRevisarExpediente && expediente.codigoTipoPractica === 'INICIAL'
                 && expediente.estado === ESTADOS_EXPEDIENTE.EVALUADO
                 && Number(expediente.calificacionFinal) < 13.5 && (
-                  <Button size="sm" variant="secondary"
-                    disabled={accionEnCurso === 'habilitarExamenAplazados'}
-                    onClick={() => ejecutarAccion('habilitarExamenAplazados')}>
+                  <Button size="sm" variant="secondary" className="min-h-10 w-full sm:w-auto" disabled={accionEnCurso === 'habilitarExamenAplazados'} onClick={() => ejecutarAccion('habilitarExamenAplazados')}>
                     {accionEnCurso === 'habilitarExamenAplazados' ? 'Habilitando...' : 'Habilitar examen aplazados'}
                   </Button>
               )}
               {puedeRevisarExpediente && expediente.estado === ESTADOS_EXPEDIENTE.EXAMEN_APLAZADOS_HABILITADO && (
-                <Button size="sm"
-                  disabled={accionEnCurso === 'registrarExamenAplazados'}
-                  onClick={() => ejecutarAccion('registrarExamenAplazados')}>
+                <Button size="sm" className="min-h-10 w-full sm:w-auto" disabled={accionEnCurso === 'registrarExamenAplazados'} onClick={() => ejecutarAccion('registrarExamenAplazados')}>
                   {accionEnCurso === 'registrarExamenAplazados' ? 'Registrando...' : 'Registrar nota aplazados'}
                 </Button>
               )}
-              <Button size="sm" variant="secondary" onClick={() => navigate(-1)}>
-                <ArrowLeft size={16} /> Volver
+              <Button size="sm" variant="secondary" className="min-h-10 w-full sm:w-auto" onClick={() => navigate(-1)}>
+                <ArrowLeft size={16} aria-hidden="true" /> Volver
               </Button>
             </div>
           </div>
-          <div className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
+          <p className="text-sm text-muted-foreground">
             Vista integral del expediente con información académica, documental, horas, trazabilidad y cierre institucional.
-          </div>
+          </p>
         </div>
 
         {warnings.length > 0 && <StackWarnings warnings={warnings} />}
 
-        <Dialog open={openComiteDialog} onClose={() => !asignandoComite && setOpenComiteDialog(false)} fullWidth maxWidth="sm">
-          <DialogTitle>Asignar comité activo</DialogTitle>
-          <DialogContent dividers>
-            <div className="text-sm mb-1.5" style={{ color: 'var(--color-muted-foreground)' }}>
-              Selecciona entre uno y tres integrantes vigentes. Sus cargos institucionales se conservarán en el expediente.
-            </div>
-            <div className="grid gap-0.5">
+        <Dialog open={openComiteDialog} onOpenChange={(open) => { if (!asignandoComite) setOpenComiteDialog(open); }}>
+          <DialogContent size="sm">
+            <DialogHeader>
+              <DialogTitle>Asignar comité activo</DialogTitle>
+              <DialogDescription>
+                Selecciona entre uno y tres integrantes vigentes. Sus cargos institucionales se conservarán en el expediente.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-2 py-2">
               {integrantesComite.map((integrante) => (
-                <FormControlLabel
+                <label
                   key={integrante.idUsuario}
-                  control={(
-                    <Checkbox
-                      checked={miembrosComiteSeleccionados.includes(integrante.idUsuario)}
-                      onChange={() => alternarMiembroComite(integrante.idUsuario)}
-                      disabled={asignandoComite}
-                    />
-                  )}
-                  label={`${integrante.nombres || ''} ${integrante.apellidos || ''} (${integrante.rolComite || 'MIEMBRO'})`}
-                />
+                  className="flex cursor-pointer items-center gap-3 rounded-lg border border-border bg-card p-3 transition-colors hover:bg-muted"
+                >
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-border text-primary-600 focus:ring-primary-600"
+                    checked={miembrosComiteSeleccionados.includes(integrante.idUsuario)}
+                    onChange={() => alternarMiembroComite(integrante.idUsuario)}
+                    disabled={asignandoComite}
+                  />
+                  <span className="text-sm text-foreground">
+                    {integrante.nombres || ''} {integrante.apellidos || ''} ({integrante.rolComite || 'MIEMBRO'})
+                  </span>
+                </label>
               ))}
             </div>
+            <DialogFooter>
+              <Button variant="secondary" onClick={() => setOpenComiteDialog(false)} disabled={asignandoComite} className="w-full sm:w-auto">
+                Cancelar
+              </Button>
+              <Button variant="primary" onClick={confirmarAsignacionComite} disabled={asignandoComite || !miembrosComiteSeleccionados.length} className="w-full sm:w-auto">
+                {asignandoComite ? 'Asignando...' : 'Confirmar asignación'}
+              </Button>
+            </DialogFooter>
           </DialogContent>
-          <DialogActions>
-            <Button variant="secondary" onClick={() => setOpenComiteDialog(false)} disabled={asignandoComite}>Cancelar</Button>
-            <Button variant="primary" onClick={confirmarAsignacionComite} disabled={asignandoComite || !miembrosComiteSeleccionados.length}>
-              {asignandoComite ? 'Asignando...' : 'Confirmar asignación'}
-            </Button>
-          </DialogActions>
         </Dialog>
 
-        <div className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }}>
-          <div className="flex border-b" style={{ borderColor: 'var(--color-border)' }}>
-            {tabs.map((tab, i) => (
-              <button
-                key={tab}
-                onClick={() => setTabValue(i)}
-                className="px-4 py-3 text-sm font-medium transition-all border-b-2"
-                style={{
-                  color: tabValue === i ? 'var(--color-primary)' : 'var(--color-muted-foreground)',
-                  borderBottomColor: tabValue === i ? 'var(--color-primary)' : 'transparent',
-                  backgroundColor: tabValue === i ? 'var(--color-muted)' : 'transparent',
-                }}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
+        <Card className="overflow-hidden">
+          <Tabs value={tabs[tabValue]} onValueChange={(v) => setTabValue(tabs.indexOf(v))}>
+            <div className="border-b border-border">
+              <TabsList className="w-full justify-start rounded-none bg-transparent p-0">
+                {tabs.map((tab, i) => (
+                  <TabsTrigger
+                    key={tab}
+                    value={tab}
+                    aria-selected={tabValue === i ? 'true' : 'false'}
+                    data-state={tabValue === i ? 'active' : 'inactive'}
+                    onClick={() => setTabValue(i)}
+                    className={cn(
+                      'rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-medium transition-all',
+                      tabValue === i
+                        ? 'border-primary-600 text-primary-700 dark:border-primary-400 dark:text-primary-400'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    {tab}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
 
-          {tabValue === 0 && (
-            <div className="p-3">
-              <div className="grid grid-cols-1 xl:grid-cols-4 gap-2 mb-2">
-                <InfoBlock
-                  title="Estudiante"
-                  rows={[
-                    { label: 'Código', value: expediente.codigoEstudiantil },
-                    { label: 'Nombre', value: `${expediente.nombreEstudiante || ''} ${expediente.apellidoEstudiante || ''}`.trim() },
-                    { label: 'Condición solicitante', value: expediente.condicionSolicitante },
-                    { label: 'Periodo académico', value: expediente.periodoAcademico },
-                  ]}
-                />
-                <InfoBlock
-                  title="Empresa y Sede"
-                  rows={[
-                    { label: 'Empresa', value: expediente.nombreEmpresa || empresaQuery.data?.razonSocial },
-                    { label: 'RUC', value: expediente.rucEmpresa || empresaQuery.data?.ruc },
-                    { label: 'Sede', value: expediente.nombreSede || sedeQuery.data?.nombreSede },
-                    { label: 'Dirección sede', value: sedeQuery.data?.direccion },
-                  ]}
-                />
-                <InfoBlock
-                  title="Asesoría y Comité"
-                  rows={[
-                    { label: 'Docente asesor', value: expediente.nombreAsesor },
-                    { label: 'Resolución', value: expediente.resolucionAsesor },
-                    {
-                      label: 'Comité asignado',
-                      value: expediente.comite?.length
-                        ? expediente.comite.map((item: any) => `${item.nombreUsuario} (${item.rolComite})`).join(', ')
-                        : 'Sin miembros registrados',
-                    },
-                    { label: 'Tutor externo', value: 'No disponible en la API actual del expediente' },
-                  ]}
-                />
-                <InfoBlock
-                  title="Práctica"
-                  rows={[
-                    { label: 'Tipo', value: expediente.nombreTipoPractica },
-                    { label: 'Inicio', value: formatDate(expediente.fechaInicioPractica) },
-                    { label: 'Fin', value: formatDate(expediente.fechaFinPractica) },
-                    { label: 'Duración', value: expediente.duracionSemanas ? `${expediente.duracionSemanas} semanas` : 'No definida' },
-                  ]}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 xl:grid-cols-[1.2fr_0.8fr] gap-2">
-                <div className="rounded-2xl border p-2.25" style={{ borderColor: 'var(--color-border)' }}>
-                  <div className="text-base font-bold mb-1.5">Plan, evaluaciones y dictamen</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {evaluacionResumen.map((item) => (
-                      <div key={item.label} className="rounded-2xl border p-1.75" style={{ borderColor: 'var(--color-border)' }}>
-                        <div className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>{item.label}</div>
-                        <div className="text-base font-semibold">{item.value}</div>
-                      </div>
-                    ))}
-                  </div>
-                  <hr className="my-2" style={{ borderColor: 'var(--color-border)' }} />
-                  <div className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
-                    {expediente.observaciones || 'Sin observaciones generales registradas en el expediente.'}
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border p-2.25" style={{ borderColor: 'var(--color-border)' }}>
-                  <div className="text-base font-bold mb-1.5">Hitos del expediente</div>
-                  <StackList
-                    items={[
-                      { label: 'Fecha de creación', value: formatDateTime(expediente.fechaCreacion) },
-                      { label: 'Presentación del plan', value: formatDateTime(expediente.fechaPresentacionPlan) },
-                      { label: 'Actualización más reciente', value: formatDateTime(expediente.fechaActualizacion) },
-                      { label: 'Número de informes parciales', value: expediente.numeroInformesParciales ?? 'No definido' },
+            <TabsContent value={tabs[0]}>
+              <div className="p-3 md:p-4">
+                <div className="mb-3 grid grid-cols-1 gap-3 xl:grid-cols-4">
+                  <InfoBlock
+                    title="Estudiante"
+                    rows={[
+                      { label: 'Código', value: expediente.codigoEstudiantil },
+                      { label: 'Nombre', value: `${expediente.nombreEstudiante || ''} ${expediente.apellidoEstudiante || ''}`.trim() },
+                      { label: 'Condición solicitante', value: expediente.condicionSolicitante },
+                      { label: 'Periodo académico', value: expediente.periodoAcademico },
                     ]}
                   />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {tabValue === 1 && (
-            <div className="p-3">
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-2">
-                <div className="rounded-2xl border p-2.25" style={{ borderColor: 'var(--color-border)' }}>
-                  <div className="text-base font-bold mb-1.5">Documentos del expediente</div>
-                  {(expediente.documentos || []).length > 0 ? (
-                    <div className="space-y-1.25">
-                      {expediente.documentos.map((doc: any) => (
-                        <div key={doc.id} className="rounded-2xl border p-1.5" style={{ borderColor: 'var(--color-border)' }}>
-                          <div className="text-sm font-bold">{doc.tipoDocumento}</div>
-                          <div className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>{doc.nombreArchivo}</div>
-                          <div className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>Subido: {formatDateTime(doc.fechaSubida)}</div>
-                          {doc.observaciones && (
-                            <div className="text-xs mt-0.5">{doc.observaciones}</div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <Alert severity="info">No hay documentos asociados al expediente.</Alert>
-                  )}
-                </div>
-
-                <div className="rounded-2xl border p-2.25" style={{ borderColor: 'var(--color-border)' }}>
-                  <div className="text-base font-bold mb-1.5">Observaciones y subsanaciones</div>
-                  {(expediente.observacionesList || []).length > 0 ? (
-                    <div className="space-y-1.25">
-                      {expediente.observacionesList.map((obs: any) => (
-                        <div key={obs.id} className="rounded-2xl border p-1.5" style={{ borderColor: 'var(--color-border)' }}>
-                          <div className="flex justify-between gap-1 flex-wrap">
-                            <div className="text-sm font-bold">{obs.tipo}</div>
-                            <Badge variant={obs.subsanado ? 'success' : 'warning'} size="sm">{obs.subsanado ? 'Subsanado' : 'Pendiente'}</Badge>
-                          </div>
-                          <div className="text-sm mt-1">{obs.descripcion}</div>
-                          <div className="text-xs mt-1" style={{ color: 'var(--color-muted-foreground)' }}>
-                            Registrado por {obs.nombreUsuarioOrigen} · {formatDateTime(obs.fechaCreacion)}
-                          </div>
-                          {obs.respuestaSubsanacion && (
-                            <div className="text-xs mt-0.75">Respuesta: {obs.respuestaSubsanacion}</div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <Alert severity="success">No se registran observaciones pendientes o históricas.</Alert>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {tabValue === 2 && (
-            <div className="p-3">
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-2">
-                <div className="rounded-2xl border p-2.25" style={{ borderColor: 'var(--color-border)' }}>
-                  <div className="text-base font-bold mb-1.5">Control de horas</div>
-                  {controlHorasQuery.data ? (
-                    <>
-                      <div className="flex justify-between mb-1">
-                        <div className="text-sm">Avance acumulado</div>
-                        <div className="text-sm font-bold">
-                          {controlHorasQuery.data.horasAcumuladas || 0} / {controlHorasQuery.data.horasRequeridas || 0} horas
-                        </div>
-                      </div>
-                      <Progress value={progresoHoras} size="md" />
-                      <div className="text-xs mt-1.5" style={{ color: 'var(--color-muted-foreground)' }}>
-                        Estado del control: {controlHorasQuery.data.estado} · Inicio {formatDate(controlHorasQuery.data.fechaInicio)} · Fin estimado {formatDate(controlHorasQuery.data.fechaFinEstimada)}
-                      </div>
-
-                      {cumplimientoHorasQuery.data && (
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-1.5 mt-2">
-                          <div className="rounded-2xl border p-1.5" style={{ borderColor: 'var(--color-border)' }}>
-                            <div className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>Cumplimiento</div>
-                            <div className="text-base font-bold">{cumplimientoHorasQuery.data.cumplido ? 'Alcanzado' : 'Pendiente'}</div>
-                          </div>
-                          <div className="rounded-2xl border p-1.5" style={{ borderColor: 'var(--color-border)' }}>
-                            <div className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>Horas pendientes</div>
-                            <div className="text-base font-bold">{cumplimientoHorasQuery.data.horasPendientes ?? 0}</div>
-                          </div>
-                          <div className="rounded-2xl border p-1.5" style={{ borderColor: 'var(--color-border)' }}>
-                            <div className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>Coherencia temporal</div>
-                            <div className="text-base font-bold">{cumplimientoHorasQuery.data.coherenciaTemporalOk ? 'Correcta' : 'Revisar'}</div>
-                          </div>
-                        </div>
-                      )}
-
-                      {(cumplimientoHorasQuery.data?.alertas || []).length > 0 && (
-                        <div className="mt-2">
-                          {(cumplimientoHorasQuery.data.alertas || []).map((alerta: string, index: number) => (
-                            <Alert key={`${alerta}-${index}`} severity="warning" sx={{ mb: 1 }}>{alerta}</Alert>
-                          ))}
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <Alert severity="info">El control de horas no está disponible para este expediente o tu rol actual.</Alert>
-                  )}
-                </div>
-
-                <div className="rounded-2xl border p-2.25" style={{ borderColor: 'var(--color-border)' }}>
-                  <div className="text-base font-bold mb-1.5">Registros de monitoreo y horas</div>
-                  {(registrosHorasQuery.data || []).length > 0 ? (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b" style={{ borderColor: 'var(--color-border)' }}>
-                            <th className="text-left p-2 font-medium" style={{ color: 'var(--color-muted-foreground)' }}>Fecha</th>
-                            <th className="text-left p-2 font-medium" style={{ color: 'var(--color-muted-foreground)' }}>Horas</th>
-                            <th className="text-left p-2 font-medium" style={{ color: 'var(--color-muted-foreground)' }}>Actividad</th>
-                            <th className="text-left p-2 font-medium" style={{ color: 'var(--color-muted-foreground)' }}>Validación</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {(registrosHorasQuery.data || []).map((registro: any) => (
-                            <tr key={registro.id} className="border-b" style={{ borderColor: 'var(--color-border)' }}>
-                              <td className="p-2">{formatDate(registro.fecha)}</td>
-                              <td className="p-2">{registro.horas}</td>
-                              <td className="p-2">{registro.descripcionActividad}</td>
-                              <td className="p-2">
-                                <Badge variant={registro.validadoPorTutor ? 'success' : 'warning'} size="sm">
-                                  {registro.validadoPorTutor ? 'Validado' : 'Pendiente'}
-                                </Badge>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    <Alert severity="info">No hay registros de horas visibles para este expediente.</Alert>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {tabValue === 3 && (
-            <div className="p-3">
-              <div className="grid grid-cols-1 xl:grid-cols-[1.15fr_0.85fr] gap-2">
-                <div className="rounded-2xl border p-2.25" style={{ borderColor: 'var(--color-border)' }}>
-                  <div className="text-base font-bold mb-1.5">Línea de tiempo y trazabilidad</div>
-                  {trazabilidadQuery.data?.lineaTiempo?.length ? (
-                    <div className="grid gap-1.25">
-                      {trazabilidadQuery.data.lineaTiempo.slice().reverse().map((evento: any) => (
-                        <div key={`${evento.origenFuente}-${evento.referenciaId}-${evento.fechaHora}`} className="rounded-2xl border p-1.5" style={{ borderColor: 'var(--color-border)' }}>
-                          <div className="flex justify-between gap-1 flex-wrap">
-                            <Badge variant="info" size="sm">{evento.categoria}</Badge>
-                            <div className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>{formatDateTime(evento.fechaHora)}</div>
-                          </div>
-                          <div className="text-sm font-bold mt-1">{evento.accion}</div>
-                          <div className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>{evento.descripcion || 'Sin descripción adicional'}</div>
-                          {(evento.actor || evento.rolActor) && (
-                            <div className="text-xs mt-0.75">{evento.actor || 'Sistema'} {evento.rolActor ? `· ${evento.rolActor}` : ''}</div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <Alert severity="info">No se encontró trazabilidad reconstruida para este expediente.</Alert>
-                  )}
-                </div>
-
-                <div className="rounded-2xl border p-2.25" style={{ borderColor: 'var(--color-border)' }}>
-                  <div className="text-base font-bold mb-1.5">Dictamen y constancia emitida</div>
-                  <StackList
-                    items={[
-                      { label: 'Estado final', value: expediente.estado },
-                      { label: 'Calificación final', value: expediente.calificacionFinal ?? 'No registrada' },
-                      { label: 'Informe final', value: expediente.informeFinalPresentado ? 'Presentado' : 'Pendiente' },
+                  <InfoBlock
+                    title="Empresa y Sede"
+                    rows={[
+                      { label: 'Empresa', value: expediente.nombreEmpresa || empresaQuery.data?.razonSocial },
+                      { label: 'RUC', value: expediente.rucEmpresa || empresaQuery.data?.ruc },
+                      { label: 'Sede', value: expediente.nombreSede || sedeQuery.data?.nombreSede },
+                      { label: 'Dirección sede', value: sedeQuery.data?.direccion },
+                    ]}
+                  />
+                  <InfoBlock
+                    title="Asesoría y Comité"
+                    rows={[
+                      { label: 'Docente asesor', value: expediente.nombreAsesor },
+                      { label: 'Resolución', value: expediente.resolucionAsesor },
                       {
-                        label: 'Constancia emitida',
-                        value: ultimaConstancia
-                          ? `${ultimaConstancia.nombreArchivo} · ${formatDateTime(ultimaConstancia.fechaGeneracion)}`
-                          : 'No registrada',
+                        label: 'Comité asignado',
+                        value: expediente.comite?.length
+                          ? expediente.comite.map((item: any) => `${item.nombreUsuario} (${item.rolComite})`).join(', ')
+                          : 'Sin miembros registrados',
                       },
+                      { label: 'Tutor externo', value: 'No disponible en la API actual del expediente' },
                     ]}
                   />
-                  <hr className="my-2" style={{ borderColor: 'var(--color-border)' }} />
-                  <div className="text-sm font-bold mb-1">Historial documental</div>
-                  {(historialQuery.data || []).length > 0 ? (
-                    <div className="grid gap-1">
-                      {(historialQuery.data || []).slice(0, 6).map((item: any) => (
-                        <div key={item.id} className="rounded-2xl border p-1.25" style={{ borderColor: 'var(--color-border)' }}>
-                          <div className="text-sm font-bold">{item.tipoDocumento || item.tipoReporte || 'Documento institucional'}</div>
-                          <div className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>{item.nombreArchivo} · {formatDateTime(item.fechaGeneracion)}</div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <Alert severity="info">Aún no existe historial de documentos generados para este expediente.</Alert>
-                  )}
+                  <InfoBlock
+                    title="Práctica"
+                    rows={[
+                      { label: 'Tipo', value: expediente.nombreTipoPractica },
+                      { label: 'Inicio', value: formatDate(expediente.fechaInicioPractica) },
+                      { label: 'Fin', value: formatDate(expediente.fechaFinPractica) },
+                      { label: 'Duración', value: expediente.duracionSemanas ? `${expediente.duracionSemanas} semanas` : 'No definida' },
+                    ]}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.2fr_0.8fr]">
+                  <Card>
+                    <CardContent>
+                      <CardTitle className="text-base font-bold mb-3">Plan, evaluaciones y dictamen</CardTitle>
+                      <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                        {evaluacionResumen.map((item) => (
+                          <Card key={item.label}>
+                            <CardContent className="py-2">
+                              <div className="text-xs text-muted-foreground">{item.label}</div>
+                              <div className="text-base font-semibold text-foreground">{item.value}</div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                      <Separator className="my-3" />
+                      <p className="text-sm text-muted-foreground">
+                        {expediente.observaciones || 'Sin observaciones generales registradas en el expediente.'}
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent>
+                      <CardTitle className="text-base font-bold mb-3">Hitos del expediente</CardTitle>
+                      <StackList
+                        items={[
+                          { label: 'Fecha de creación', value: formatDateTime(expediente.fechaCreacion) },
+                          { label: 'Presentación del plan', value: formatDateTime(expediente.fechaPresentacionPlan) },
+                          { label: 'Actualización más reciente', value: formatDateTime(expediente.fechaActualizacion) },
+                          { label: 'Número de informes parciales', value: expediente.numeroInformesParciales ?? 'No definido' },
+                        ]}
+                      />
+                    </CardContent>
+                  </Card>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
+            </TabsContent>
+
+            <TabsContent value={tabs[1]}>
+              <div className="p-3 md:p-4">
+                <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+                  <Card>
+                    <CardContent>
+                      <CardTitle className="text-base font-bold mb-3">Documentos del expediente</CardTitle>
+                      {(expediente.documentos || []).length > 0 ? (
+                        <div className="space-y-2">
+                          {expediente.documentos.map((doc: any) => (
+                            <Card key={doc.id}>
+                              <CardContent className="py-2">
+                                <div className="text-sm font-bold text-foreground">{doc.tipoDocumento}</div>
+                                <div className="text-sm text-muted-foreground">{doc.nombreArchivo}</div>
+                                <div className="text-xs text-muted-foreground">Subido: {formatDateTime(doc.fechaSubida)}</div>
+                                {doc.observaciones && (
+                                  <div className="mt-1 text-xs text-foreground">{doc.observaciones}</div>
+                                )}
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      ) : (
+                        <AlertBox severity="info">No hay documentos asociados al expediente.</AlertBox>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent>
+                      <CardTitle className="text-base font-bold mb-3">Observaciones y subsanaciones</CardTitle>
+                      {(expediente.observacionesList || []).length > 0 ? (
+                        <div className="space-y-2">
+                          {expediente.observacionesList.map((obs: any) => (
+                            <Card key={obs.id}>
+                              <CardContent className="py-2">
+                                <div className="flex flex-wrap justify-between gap-1">
+                                  <div className="text-sm font-bold text-foreground">{obs.tipo}</div>
+                                  <Badge variant={obs.subsanado ? 'success' : 'warning'} size="sm">{obs.subsanado ? 'Subsanado' : 'Pendiente'}</Badge>
+                                </div>
+                                <div className="mt-1 text-sm text-foreground">{obs.descripcion}</div>
+                                <div className="mt-1 text-xs text-muted-foreground">
+                                  Registrado por {obs.nombreUsuarioOrigen} · {formatDateTime(obs.fechaCreacion)}
+                                </div>
+                                {obs.respuestaSubsanacion && (
+                                  <div className="mt-2 text-xs text-foreground">Respuesta: {obs.respuestaSubsanacion}</div>
+                                )}
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      ) : (
+                        <AlertBox severity="success">No se registran observaciones pendientes o históricas.</AlertBox>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value={tabs[2]}>
+              <div className="p-3 md:p-4">
+                <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+                  <Card>
+                    <CardContent>
+                      <CardTitle className="text-base font-bold mb-3">Control de horas</CardTitle>
+                      {controlHorasQuery.data ? (
+                        <>
+                          <div className="mb-1 flex justify-between">
+                            <div className="text-sm text-foreground">Avance acumulado</div>
+                            <div className="text-sm font-bold text-foreground">
+                              {controlHorasQuery.data.horasAcumuladas || 0} / {controlHorasQuery.data.horasRequeridas || 0} horas
+                            </div>
+                          </div>
+                          <Progress value={progresoHoras} size="md" />
+                          <div className="mt-2 text-xs text-muted-foreground">
+                            Estado del control: {controlHorasQuery.data.estado} · Inicio {formatDate(controlHorasQuery.data.fechaInicio)} · Fin estimado {formatDate(controlHorasQuery.data.fechaFinEstimada)}
+                          </div>
+
+                          {cumplimientoHorasQuery.data && (
+                            <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-3">
+                              <Card>
+                                <CardContent className="py-2">
+                                  <div className="text-xs text-muted-foreground">Cumplimiento</div>
+                                  <div className="text-base font-bold text-foreground">{cumplimientoHorasQuery.data.cumplido ? 'Alcanzado' : 'Pendiente'}</div>
+                                </CardContent>
+                              </Card>
+                              <Card>
+                                <CardContent className="py-2">
+                                  <div className="text-xs text-muted-foreground">Horas pendientes</div>
+                                  <div className="text-base font-bold text-foreground">{cumplimientoHorasQuery.data.horasPendientes ?? 0}</div>
+                                </CardContent>
+                              </Card>
+                              <Card>
+                                <CardContent className="py-2">
+                                  <div className="text-xs text-muted-foreground">Coherencia temporal</div>
+                                  <div className="text-base font-bold text-foreground">{cumplimientoHorasQuery.data.coherenciaTemporalOk ? 'Correcta' : 'Revisar'}</div>
+                                </CardContent>
+                              </Card>
+                            </div>
+                          )}
+
+                          {(cumplimientoHorasQuery.data?.alertas || []).length > 0 && (
+                            <div className="mt-3 space-y-2">
+                              {(cumplimientoHorasQuery.data.alertas || []).map((alerta: string, index: number) => (
+                                <AlertBox key={`${alerta}-${index}`} severity="warning">{alerta}</AlertBox>
+                              ))}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <AlertBox severity="info">El control de horas no está disponible para este expediente o tu rol actual.</AlertBox>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent>
+                      <CardTitle className="text-base font-bold mb-3">Registros de monitoreo y horas</CardTitle>
+                      {(registrosHorasQuery.data || []).length > 0 ? (
+                        <div className="overflow-x-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Fecha</TableHead>
+                                <TableHead>Horas</TableHead>
+                                <TableHead>Actividad</TableHead>
+                                <TableHead>Validación</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {(registrosHorasQuery.data || []).map((registro: any) => (
+                                <TableRow key={registro.id}>
+                                  <TableCell>{formatDate(registro.fecha)}</TableCell>
+                                  <TableCell>{registro.horas}</TableCell>
+                                  <TableCell>{registro.descripcionActividad}</TableCell>
+                                  <TableCell>
+                                    <Badge variant={registro.validadoPorTutor ? 'success' : 'warning'} size="sm">
+                                      {registro.validadoPorTutor ? 'Validado' : 'Pendiente'}
+                                    </Badge>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      ) : (
+                        <AlertBox severity="info">No hay registros de horas visibles para este expediente.</AlertBox>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value={tabs[3]}>
+              <div className="p-3 md:p-4">
+                <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.15fr_0.85fr]">
+                  <Card>
+                    <CardContent>
+                      <CardTitle className="text-base font-bold mb-3">Línea de tiempo y trazabilidad</CardTitle>
+                      {trazabilidadQuery.data?.lineaTiempo?.length ? (
+                        <div className="grid gap-2">
+                          {trazabilidadQuery.data.lineaTiempo.slice().reverse().map((evento: any) => (
+                            <Card key={`${evento.origenFuente}-${evento.referenciaId}-${evento.fechaHora}`}>
+                              <CardContent className="py-2">
+                                <div className="flex flex-wrap justify-between gap-1">
+                                  <Badge variant="info" size="sm">{evento.categoria}</Badge>
+                                  <div className="text-xs text-muted-foreground">{formatDateTime(evento.fechaHora)}</div>
+                                </div>
+                                <div className="mt-1 text-sm font-bold text-foreground">{evento.accion}</div>
+                                <div className="text-sm text-muted-foreground">{evento.descripcion || 'Sin descripción adicional'}</div>
+                                {(evento.actor || evento.rolActor) && (
+                                  <div className="mt-1 text-xs text-foreground">{evento.actor || 'Sistema'} {evento.rolActor ? `· ${evento.rolActor}` : ''}</div>
+                                )}
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      ) : (
+                        <AlertBox severity="info">No se encontró trazabilidad reconstruida para este expediente.</AlertBox>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent>
+                      <CardTitle className="text-base font-bold mb-3">Dictamen y constancia emitida</CardTitle>
+                      <StackList
+                        items={[
+                          { label: 'Estado final', value: expediente.estado },
+                          { label: 'Calificación final', value: expediente.calificacionFinal ?? 'No registrada' },
+                          { label: 'Informe final', value: expediente.informeFinalPresentado ? 'Presentado' : 'Pendiente' },
+                          {
+                            label: 'Constancia emitida',
+                            value: ultimaConstancia
+                              ? `${ultimaConstancia.nombreArchivo} · ${formatDateTime(ultimaConstancia.fechaGeneracion)}`
+                              : 'No registrada',
+                          },
+                        ]}
+                      />
+                      <Separator className="my-3" />
+                      <CardTitle className="text-sm font-bold mb-2">Historial documental</CardTitle>
+                      {(historialQuery.data || []).length > 0 ? (
+                        <div className="grid gap-2">
+                          {(historialQuery.data || []).slice(0, 6).map((item: any) => (
+                            <Card key={item.id}>
+                              <CardContent className="py-2">
+                                <div className="text-sm font-bold text-foreground">{item.tipoDocumento || item.tipoReporte || 'Documento institucional'}</div>
+                                <div className="text-xs text-muted-foreground">{item.nombreArchivo} · {formatDateTime(item.fechaGeneracion)}</div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      ) : (
+                        <AlertBox severity="info">Aún no existe historial de documentos generados para este expediente.</AlertBox>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </Card>
       </div>
     </motion.div>
   );

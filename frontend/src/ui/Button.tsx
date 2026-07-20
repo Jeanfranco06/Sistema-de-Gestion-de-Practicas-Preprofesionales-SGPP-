@@ -7,10 +7,10 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   loading?: boolean;
 }
 
-const baseStyles = 'inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none';
+const baseStyles = 'inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none min-h-10';
 
 const variants = {
-  primary: 'bg-[var(--color-primary-600)] text-white hover:bg-[var(--color-primary-700)] focus-visible:ring-[var(--color-primary-500)] shadow-sm hover:shadow-card',
+  primary: 'bg-[var(--color-primary-600)] text-[#1E293B] hover:bg-[var(--color-primary-700)] hover:text-[#1E293B] focus-visible:ring-[var(--color-primary-500)] shadow-sm hover:shadow-card',
   secondary: 'bg-[var(--color-card)] text-[var(--color-foreground)] border border-[var(--color-border)] hover:bg-[var(--color-border)] focus-visible:ring-[var(--color-border)]',
   ghost: 'bg-transparent text-[var(--color-foreground)] hover:bg-[var(--color-border)] focus-visible:ring-[var(--color-border)]',
   danger: 'bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500',

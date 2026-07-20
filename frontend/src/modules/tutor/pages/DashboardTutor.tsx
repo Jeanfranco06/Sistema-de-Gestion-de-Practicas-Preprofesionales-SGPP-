@@ -1,21 +1,18 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import {
   Users, ListChecks, FileEdit, Building2, Eye,
   ClipboardList, RefreshCw, ChevronRight, Clock4,
+  BarChart3,
 } from 'lucide-react';
 import { useAuth } from '@/auth/AuthContext';
 import { useMisExpedientes } from '@/hooks/useExpedientes';
 import { ESTADOS_EXPEDIENTE } from '@/lib/constants';
-import { Button } from '@/ui/Button';
-import { Badge } from '@/ui/Badge';
-import { Progress } from '@/ui/Progress';
-import { Input } from '@/ui/Input';
-import { Tooltip } from '@/ui/Tooltip';
 import {
+  Button, Card, CardContent, Badge, Progress, Input, Tooltip, Avatar,
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
-} from '@/ui/Table';
+} from '@/ui';
+import { cn } from '@/lib/utils';
 
 interface Expediente {
   id: string;
@@ -33,15 +30,55 @@ interface EstadoItem {
   name: string;
   value: number;
   color: string;
+  darkColor: string;
 }
 
-interface StatItem {
+interface KpiCardProps {
   label: string;
-  value: number;
+  value: string | number;
   icon: React.ElementType;
-  bgColor: string;
   color: string;
-  borderColor: string;
+}
+
+function KpiCard({ label, value, icon: Icon, color }: KpiCardProps) {
+  return (
+    <Card variant="hover" className="p-5 flex flex-col gap-2 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-hover">
+      <div className="flex justify-between items-start">
+        <span className="text-[0.65rem] uppercase tracking-wider font-bold text-muted-foreground">{label}</span>
+        <div className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg', color)}>
+          <Icon className="h-5 w-5" />
+        </div>
+      </div>
+      <p className="text-2xl md:text-3xl font-extrabold text-foreground leading-tight">{value}</p>
+    </Card>
+  );
+}
+
+interface QuickActionProps {
+  title: string;
+  icon: React.ElementType;
+  route: string;
+  onClick: (route: string) => void;
+}
+
+function QuickAction({ title, icon: Icon, route, onClick }: QuickActionProps) {
+  return (
+    <li className="list-none">
+      <button
+        type="button"
+        onClick={() => onClick(route)}
+        className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-border bg-card hover:bg-muted hover:border-primary-600/30 dark:hover:border-primary-400/30 transition-all group"
+      >
+        <div className="flex items-center gap-3 overflow-hidden">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#1A3A6E] text-white group-hover:bg-[#4A6FA5] dark:bg-[#4A6FA5] dark:group-hover:bg-[#7A9FD5] transition-colors">
+            <Icon className="h-5 w-5 text-current" />
+          </span>
+          <span className="block text-sm font-bold text-foreground truncate">{title}</span>
+        </div>
+        <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary-700 dark:group-hover:text-primary-400 transition-colors shrink-0" />
+      </button>
+    </li>
+  );
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -82,21 +119,19 @@ const STATUS_LABELS: Record<string, string> = {
   ACTIVO: 'Activo',
 };
 
-const COLORS = {
-  emerald: '#10b981',
-  amber: '#f59e0b',
-  blue: '#3b82f6',
-  slate: '#94a3b8',
-  border: '#e2e8f0',
-};
-
 function statusVariant(status?: string): 'default' | 'success' | 'warning' | 'danger' | 'info' | 'neutral' {
   if (!status) return 'neutral';
   const s = status.toUpperCase();
-  if (['APROBADO', 'APROBADA', 'CERRADO', 'FINALIZADO', 'CUMPLIDO', 'ACEPTADO', 'COMPLETADO', 'EVALUADO', 'ACTIVO', 'VIGENTE'].includes(s)) return 'success';
-  if (['RECHAZADO', 'RECHAZADA', 'CANCELADO', 'ANULADO', 'ERROR', 'VENCIDO', 'DESAPROBADO'].includes(s)) return 'danger';
-  if (['OBSERVADO', 'OBSERVADA', 'PENDIENTE', 'EN_REVISION', 'PROCESO', 'BORRADOR', 'PLAN_OBSERVADO', 'SUBSANADO'].includes(s)) return 'warning';
-  if (['EN_EJECUCION', 'SOLICITADO', 'PLAN_PRESENTADO', 'INFORME_PRESENTADO', 'DICTAMEN_EMITIDO', 'CARTA_PRESENTACION_EMITIDA', 'CARTA_ACEPTACION_PRESENTADA'].includes(s)) return 'info';
+  if (['APROBADO', 'APROBADA', 'FINALIZADO', 'CUMPLIDO', 'ACEPTADO', 'COMPLETADO', 'ACTIVO', 'VIGENTE',
+    ESTADOS_EXPEDIENTE.CERRADO, ESTADOS_EXPEDIENTE.EVALUADO, ESTADOS_EXPEDIENTE.PLAN_APROBADO].includes(s)) return 'success';
+  if (['RECHAZADO', 'RECHAZADA', 'CANCELADO', 'ANULADO', 'ERROR', 'VENCIDO', 'DESAPROBADO',
+    ESTADOS_EXPEDIENTE.RECHAZADO].includes(s)) return 'danger';
+  if (['OBSERVADA', 'PENDIENTE', 'EN_REVISION', 'PROCESO', 'BORRADOR',
+    ESTADOS_EXPEDIENTE.OBSERVADO, ESTADOS_EXPEDIENTE.PLAN_OBSERVADO, ESTADOS_EXPEDIENTE.SUBSANADO].includes(s)) return 'warning';
+  if (['INFORME_PRESENTADO',
+    ESTADOS_EXPEDIENTE.EN_EJECUCION, ESTADOS_EXPEDIENTE.SOLICITADO, ESTADOS_EXPEDIENTE.PLAN_PRESENTADO,
+    ESTADOS_EXPEDIENTE.DICTAMEN_EMITIDO, ESTADOS_EXPEDIENTE.CARTA_PRESENTACION_EMITIDA,
+    ESTADOS_EXPEDIENTE.CARTA_ACEPTACION_PRESENTADA].includes(s)) return 'info';
   return 'neutral';
 }
 
@@ -133,13 +168,14 @@ export default function DashboardTutor() {
   }), [expedientes]);
 
   const estadoChart: EstadoItem[] = useMemo(() => ([
-    { name: 'En Ejecución', value: kpis.enEjecucion, color: COLORS.emerald },
-    { name: 'Por Evaluar', value: kpis.porEvaluar, color: COLORS.amber },
-    { name: 'Evaluados', value: evaluadosCount, color: COLORS.blue },
+    { name: 'En Ejecución', value: kpis.enEjecucion, color: 'bg-emerald-500', darkColor: 'dark:bg-emerald-400' },
+    { name: 'Por Evaluar', value: kpis.porEvaluar, color: 'bg-amber-500', darkColor: 'dark:bg-amber-400' },
+    { name: 'Evaluados', value: evaluadosCount, color: 'bg-blue-500', darkColor: 'dark:bg-blue-400' },
     {
       name: 'Otros',
       value: kpis.total - kpis.enEjecucion - kpis.porEvaluar - evaluadosCount,
-      color: COLORS.slate,
+      color: 'bg-slate-400',
+      darkColor: 'dark:bg-slate-500',
     },
   ]), [kpis, evaluadosCount]);
 
@@ -159,102 +195,146 @@ export default function DashboardTutor() {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-[50vh]">
-        <div className="animate-spin h-8 w-8 border-4 rounded-full" style={{ borderColor: 'var(--color-border)', borderTopColor: 'var(--color-primary)' }} />
+        <div className="animate-spin h-8 w-8 border-4 rounded-full border-border border-t-primary-600" />
       </div>
     );
   }
 
-  const stats: StatItem[] = [
-    { label: 'Practicantes', value: kpis.total, icon: Users, bgColor: 'rgba(59, 130, 246, 0.1)', color: COLORS.blue, borderColor: 'rgba(59, 130, 246, 0.25)' },
-    { label: 'En Ejecución', value: kpis.enEjecucion, icon: ListChecks, bgColor: 'rgba(16, 185, 129, 0.1)', color: COLORS.emerald, borderColor: 'rgba(16, 185, 129, 0.25)' },
-    { label: 'Por Evaluar', value: kpis.porEvaluar, icon: FileEdit, bgColor: 'rgba(139, 92, 246, 0.1)', color: '#8b5cf6', borderColor: 'rgba(139, 92, 246, 0.25)' },
-    { label: 'Empresas', value: kpis.empresas, icon: Building2, bgColor: 'rgba(245, 158, 11, 0.1)', color: COLORS.amber, borderColor: 'rgba(245, 158, 11, 0.25)' },
-  ];
-
   const paginated = filtered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.6 }}
-      className="space-y-6"
-    >
-      <div className="flex justify-between items-start gap-4 flex-wrap">
-        <div className="flex items-center gap-3">
-          <div style={{ color: 'var(--color-primary)' }}>
-            <Building2 className="h-10 w-10" />
+    <div className="space-y-6 animate-in p-4 sm:p-6 lg:p-8">
+      {/* ── Header Banner ────────────────────────────────────── */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary-700 to-primary-900 text-white p-6 md:p-8">
+        <div className="absolute right-[-20px] top-2 opacity-10 md:right-[-50px] md:top-[-50px]">
+          <Building2 className="h-[150px] w-[150px] md:h-[300px] md:w-[300px]" />
+        </div>
+
+        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="flex items-center gap-4">
+            <Avatar
+              className="h-14 w-14 md:h-16 md:w-16 border-2 border-white/30 bg-white/20 text-white"
+              fallback={user?.nombres?.split(' ').map(n => n[0]).join('').toUpperCase()}
+            />
+            <div>
+              <p className="text-xs uppercase tracking-widest font-semibold opacity-80 mb-1">
+                Panel del Tutor Externo
+              </p>
+              <h1 className="text-2xl sm:text-3xl font-extrabold leading-tight mb-1">
+                Hola, {user?.nombres?.split(' ')[0] || 'Tutor'}
+              </h1>
+              <p className="text-sm opacity-90">
+                Seguimiento de practicantes y evaluaciones
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-3xl font-bold" style={{ color: 'var(--color-primary)' }}>
-              Hola, {user?.nombres?.split(' ')[0] || 'Tutor'}
-            </h1>
-            <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
-              Panel del Tutor Externo · Seguimiento de practicantes y evaluaciones
-            </p>
+
+          <div className="flex items-center gap-2 w-full md:w-auto">
+            <Button variant="ghost" size="sm" className="h-9 w-9 bg-white/10 hover:bg-white/20 text-white border-white/20" onClick={() => refetch()} aria-label="Actualizar">
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="sm" className="h-9 bg-white/10 hover:bg-white/20 text-white border-white/20" onClick={() => navigate('/tutor/evaluaciones')}>
+              <ClipboardList className="h-4 w-4 mr-2" />
+              Evaluaciones
+            </Button>
           </div>
         </div>
-        <Button variant="secondary" size="sm" onClick={() => refetch()}>
-          <RefreshCw className="h-4 w-4" />
-          Actualizar
-        </Button>
       </div>
 
+      {/* ── Alerts ───────────────────────────────────────────── */}
       {error && (
-        <div className="flex items-start gap-3 rounded-xl border p-4" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.2)', color: 'var(--color-error)' }}>
-          <span className="text-sm flex-1">No se pudieron cargar los expedientes.</span>
-          <button className="text-sm font-bold leading-none" onClick={() => refetch()}>&times;</button>
+        <div className="rounded-xl border border-red-200 bg-red-50 dark:bg-red-950/40 dark:border-red-800 p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/50">
+            <RefreshCw className="h-5 w-5 text-red-600 dark:text-red-400" />
+          </div>
+          <div className="flex-1">
+            <p className="font-bold text-sm text-red-900 dark:text-red-200">Error al cargar</p>
+            <p className="text-sm text-red-800 dark:text-red-300 mt-1">
+              No se pudieron cargar los expedientes.
+            </p>
+          </div>
+          <Button variant="danger" size="sm" className="shrink-0" onClick={() => refetch()}>
+            Reintentar
+          </Button>
         </div>
       )}
 
       {pendientesAccion.length > 0 && (
-        <div className="flex items-center gap-3 rounded-xl border p-4" style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)', borderColor: 'rgba(59, 130, 246, 0.2)', color: 'var(--color-info)' }}>
-          <span className="text-sm flex-1">
-            Hay {pendientesAccion.length} evaluación(es) pendiente(s).
-          </span>
-          <Button size="sm" onClick={() => navigate('/tutor/evaluaciones')}>Gestionar</Button>
+        <div className="rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-950/40 dark:border-amber-800 p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/50">
+            <Clock4 className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+          </div>
+          <div className="flex-1">
+            <p className="font-bold text-sm text-amber-900 dark:text-amber-200">Evaluaciones pendientes</p>
+            <p className="text-sm text-amber-800 dark:text-amber-300 mt-1">
+              Hay {pendientesAccion.length} evaluación(es) pendiente(s).
+            </p>
+          </div>
+          <Button size="sm" className="shrink-0" onClick={() => navigate('/tutor/evaluaciones')}>
+            Gestionar
+          </Button>
         </div>
       )}
 
+      {/* ── KPIs ─────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {stats.map((s) => (
-          <div key={s.label} className="rounded-xl border p-4 flex items-center gap-3" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }}>
-            <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: s.bgColor, color: s.color, border: `1px solid ${s.borderColor}` }}>
-              <s.icon className="h-4 w-4" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs uppercase tracking-wide" style={{ color: 'var(--color-muted-foreground)' }}>{s.label}</p>
-              <p className="text-2xl font-bold" style={{ color: 'var(--color-foreground)' }}>{s.value}</p>
-            </div>
-          </div>
-        ))}
+        <KpiCard
+          label="Practicantes"
+          value={kpis.total}
+          icon={Users}
+          color="bg-[#1A3A6E] text-white dark:bg-[#4A6FA5] dark:text-white"
+        />
+        <KpiCard
+          label="En Ejecución"
+          value={kpis.enEjecucion}
+          icon={ListChecks}
+          color="bg-emerald-600 text-white dark:bg-emerald-700 dark:text-emerald-50"
+        />
+        <KpiCard
+          label="Por Evaluar"
+          value={kpis.porEvaluar}
+          icon={FileEdit}
+          color="bg-amber-500 text-white dark:bg-amber-600 dark:text-amber-50"
+        />
+        <KpiCard
+          label="Empresas"
+          value={kpis.empresas}
+          icon={Building2}
+          color="bg-blue-600 text-white dark:bg-blue-700 dark:text-blue-50"
+        />
       </div>
 
+      {/* ── Content grid ─────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <div className="rounded-xl border p-6" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)', borderTopWidth: '3px', borderTopColor: 'var(--color-primary)' }}>
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="font-semibold" style={{ color: 'var(--color-foreground)' }}>Resumen de Evaluaciones</h2>
+        {/* ── Resumen de Evaluaciones ── */}
+        <Card className="flex flex-col lg:col-span-2">
+          <CardContent className="flex flex-col h-full">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+              <div className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5 text-primary-700 dark:text-primary-400" />
+                <h3 className="text-base font-bold text-foreground">Resumen de Evaluaciones</h3>
+              </div>
               <Badge variant="default" size="sm">{avancePct}% en curso</Badge>
             </div>
+
             <Progress value={avancePct} max={100} size="md" />
-            <p className="text-xs mt-2" style={{ color: 'var(--color-muted-foreground)' }}>
+            <p className="text-xs text-muted-foreground mt-2">
               {kpis.enEjecucion + evaluadosCount} practicantes en curso · {kpis.porEvaluar} pendientes de evaluación
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mt-6">
               <div className="md:col-span-5">
-                <p className="text-xs text-center mb-2" style={{ color: 'var(--color-muted-foreground)' }}>Evaluaciones vs Pendientes</p>
+                <p className="text-xs text-center mb-2 text-muted-foreground">Evaluaciones vs Pendientes</p>
                 <div className="h-[210px] grid place-items-center">
                   <div
                     className="w-[148px] h-[148px] rounded-full grid place-items-center"
                     style={{
-                      background: `conic-gradient(${COLORS.emerald} 0 ${kpis.total ? (evaluadosCount / kpis.total) * 100 : 0}%, ${COLORS.amber} 0 ${kpis.total ? ((evaluadosCount + kpis.porEvaluar) / kpis.total) * 100 : 0}%, ${COLORS.border} 0 100%)`,
+                      background: `conic-gradient(var(--color-emerald-500) 0 ${kpis.total ? (evaluadosCount / kpis.total) * 100 : 0}%, var(--color-amber-500) 0 ${kpis.total ? ((evaluadosCount + kpis.porEvaluar) / kpis.total) * 100 : 0}%, var(--color-border) 0 100%)`,
                     }}
                   >
-                    <div className="w-[104px] h-[104px] rounded-full grid place-items-center text-center" style={{ backgroundColor: 'var(--color-card)' }}>
-                      <span className="text-2xl font-bold" style={{ color: 'var(--color-success)' }}>{kpis.enEjecucion + evaluadosCount}</span>
-                      <span className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>de {kpis.total}</span>
+                    <div className="w-[104px] h-[104px] rounded-full grid place-items-center text-center bg-card">
+                      <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{kpis.enEjecucion + evaluadosCount}</span>
+                      <span className="text-xs text-muted-foreground">de {kpis.total}</span>
                     </div>
                   </div>
                 </div>
@@ -265,15 +345,18 @@ export default function DashboardTutor() {
               </div>
 
               <div className="md:col-span-7">
-                <p className="text-xs text-center mb-2" style={{ color: 'var(--color-muted-foreground)' }}>Distribución de Estados</p>
-                <div className="h-[210px] flex items-end justify-center gap-3 px-2 pb-1" style={{ borderBottom: '1px solid var(--color-border)' }}>
+                <p className="text-xs text-center mb-2 text-muted-foreground">Distribución de Estados</p>
+                <div className="h-[210px] flex items-end justify-center gap-3 px-2 pb-1 border-b border-border">
                   {estadoChart.map((item) => {
                     const height = Math.max((item.value / maxEstado) * 160, item.value > 0 ? 16 : 4);
                     return (
                       <div key={item.name} className="w-14 text-center">
-                        <span className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>{item.value}</span>
-                        <div className="mt-1 rounded-t-lg" style={{ height, backgroundColor: item.color }} />
-                        <span className="text-[0.65rem] leading-tight block mt-2" style={{ color: 'var(--color-muted-foreground)' }}>
+                        <span className="text-xs text-muted-foreground">{item.value}</span>
+                        <div
+                          className={cn('mt-1 rounded-t-lg', item.color, item.darkColor)}
+                          style={{ height }}
+                        />
+                        <span className="text-[0.65rem] leading-tight block mt-2 text-muted-foreground">
                           {item.name}
                         </span>
                       </div>
@@ -282,149 +365,155 @@ export default function DashboardTutor() {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
+        {/* ── Sidebar ──────────────────────────────────────────── */}
         <div className="space-y-6">
-          <div className="rounded-xl border p-6" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)', borderTopWidth: '3px', borderTopColor: 'var(--color-primary)' }}>
-            <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--color-primary)' }}>Accesos rápidos</h3>
-            <div className="space-y-2">
-              <Button variant="secondary" className="w-full justify-start" onClick={() => navigate('/tutor/evaluaciones')}>
-                <ClipboardList className="h-4 w-4" />
-                Mis Evaluaciones
-              </Button>
-              <Button variant="secondary" className="w-full justify-start" onClick={() => navigate('/tutor/dashboard')}>
-                <Users className="h-4 w-4" />
-                Ver Practicantes
-              </Button>
-            </div>
-          </div>
+          <Card className="flex flex-col">
+            <CardContent className="flex flex-col h-full">
+              <div className="flex items-center gap-2 mb-4">
+                <ClipboardList className="h-5 w-5 text-primary-700 dark:text-primary-400" />
+                <h3 className="text-base font-bold text-foreground">Accesos rápidos</h3>
+              </div>
+              <ul className="space-y-2 list-none">
+                <QuickAction title="Mis Evaluaciones" icon={ClipboardList} route="/tutor/evaluaciones" onClick={navigate} />
+                <QuickAction title="Ver Practicantes" icon={Users} route="/tutor/dashboard" onClick={navigate} />
+              </ul>
+            </CardContent>
+          </Card>
 
-          <div className="rounded-xl border p-6" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }}>
-            <div className="flex justify-between items-center mb-3">
-              <h3 className="text-sm font-medium" style={{ color: 'var(--color-muted-foreground)' }}>Últimos Practicantes</h3>
-              <Button size="sm" variant="ghost" onClick={() => {}}>
-                Ver todos
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="space-y-2">
-              {recientes.map((e: Expediente) => (
-                <div key={e.id} className="flex items-center gap-2">
-                  <Users className="h-4 w-4 shrink-0" style={{ color: 'var(--color-primary)' }} />
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium truncate" style={{ color: 'var(--color-foreground)' }}>
-                      {e.nombreEstudiante} {e.apellidoEstudiante}
-                    </p>
-                    <p className="text-xs capitalize truncate" style={{ color: 'var(--color-muted-foreground)' }}>
-                      {e.estado?.replace(/_/g, ' ')}
-                    </p>
+          <Card className="flex flex-col">
+            <CardContent className="flex flex-col h-full">
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="text-sm font-medium text-muted-foreground">Últimos Practicantes</h3>
+                <Button size="sm" variant="ghost" onClick={() => navigate('/tutor/practicantes')}>
+                  Ver todos
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {recientes.map((e: Expediente) => (
+                  <div key={e.id} className="flex items-center gap-2">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-100 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400">
+                      <Users className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate text-foreground">
+                        {e.nombreEstudiante} {e.apellidoEstudiante}
+                      </p>
+                      <p className="text-xs capitalize truncate text-muted-foreground">
+                        {e.estado?.replace(/_/g, ' ')}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
-              {recientes.length === 0 && (
-                <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>No hay practicantes recientes.</p>
-              )}
-            </div>
-          </div>
+                ))}
+                {recientes.length === 0 && (
+                  <p className="text-sm text-muted-foreground">No hay practicantes recientes.</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
 
-      <div className="rounded-xl border p-6" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)', borderTopWidth: '3px', borderTopColor: 'var(--color-primary)' }}>
-        <h2 className="text-base font-semibold mb-4" style={{ color: 'var(--color-foreground)' }}>Mis Practicantes Asignados</h2>
+      {/* ── Table ────────────────────────────────────────────── */}
+      <Card>
+        <CardContent className="p-4 sm:p-6">
+          <h2 className="text-base font-bold text-foreground mb-4">Mis Practicantes Asignados</h2>
 
-        <div className="rounded-xl border p-4 flex flex-wrap gap-3 items-center mb-4" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }}>
-          <div className="min-w-[300px] flex-1 max-w-md">
-            <Input
-              placeholder="Buscar practicante (nombre, código o empresa)"
-              value={searchTerm}
-              onChange={(event: React.ChangeEvent<HTMLInputElement>) => { setSearchTerm(event.target.value); setPage(0); }}
-            />
+          <div className="rounded-xl border border-border bg-card p-4 flex flex-wrap gap-3 items-center mb-4">
+            <div className="min-w-[300px] flex-1 max-w-md">
+              <Input
+                placeholder="Buscar practicante (nombre, código o empresa)"
+                value={searchTerm}
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) => { setSearchTerm(event.target.value); setPage(0); }}
+              />
+            </div>
           </div>
-        </div>
 
-        <div className="rounded-xl border overflow-hidden" style={{ borderColor: 'var(--color-border)' }}>
-          <Table>
-            <TableHeader>
-              <TableRow style={{ backgroundColor: 'var(--color-border)' }}>
-                <TableHead style={{ color: 'var(--color-foreground)' }}>Estudiante</TableHead>
-                <TableHead style={{ color: 'var(--color-foreground)' }}>Tipo</TableHead>
-                <TableHead style={{ color: 'var(--color-foreground)' }}>Estado</TableHead>
-                <TableHead style={{ color: 'var(--color-foreground)' }}>Empresa / Sede</TableHead>
-                <TableHead className="text-center" style={{ color: 'var(--color-foreground)' }}>Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginated.map((e: Expediente) => (
-                <TableRow key={e.id}>
-                  <TableCell>
-                    <p className="font-medium text-sm" style={{ color: 'var(--color-foreground)' }}>{e.nombreEstudiante} {e.apellidoEstudiante}</p>
-                    <p className="font-mono text-xs" style={{ color: 'var(--color-muted-foreground)' }}>{e.codigoExpediente}</p>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="info" size="sm">{e.nombreTipoPractica}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={statusVariant(e.estado)} size="sm">{estadoLabel(e.estado)}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-xs block" style={{ color: 'var(--color-foreground)' }}>{e.nombreEmpresa || '—'}</span>
-                    <span className="text-xs block" style={{ color: 'var(--color-muted-foreground)' }}>{e.nombreSede || ''}</span>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <div className="flex gap-2 justify-center">
-                      <Tooltip content="Ver detalle">
-                        <Button size="sm" variant="secondary" onClick={() => navigate(`/coordinacion/expedientes/${e.id}`)}>
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </Tooltip>
-                      <Tooltip content="Validar horas">
-                        <Button size="sm" variant="secondary" onClick={() => navigate(`/tutor/horas/${e.id}`)}>
-                          <Clock4 className="h-4 w-4" />
-                        </Button>
-                      </Tooltip>
-                      {[ESTADOS_EXPEDIENTE.INFORME_FINAL_PRESENTADO, ESTADOS_EXPEDIENTE.INFORME_APROBADO].includes(e.estado) && (
-                        <Tooltip content="Evaluar desempeño">
-                          <Button size="sm" onClick={() => navigate(`/tutor/evaluaciones/${e.id}`)}>
-                            <ClipboardList className="h-4 w-4" />
+          <div className="rounded-xl border border-border overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted hover:bg-muted">
+                  <TableHead className="text-foreground">Estudiante</TableHead>
+                  <TableHead className="text-foreground">Tipo</TableHead>
+                  <TableHead className="text-foreground">Estado</TableHead>
+                  <TableHead className="text-foreground">Empresa / Sede</TableHead>
+                  <TableHead className="text-center text-foreground">Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginated.map((e: Expediente) => (
+                  <TableRow key={e.id}>
+                    <TableCell>
+                      <p className="font-medium text-sm text-foreground">{e.nombreEstudiante} {e.apellidoEstudiante}</p>
+                      <p className="font-mono text-xs text-muted-foreground">{e.codigoExpediente}</p>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="info" size="sm">{e.nombreTipoPractica}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={statusVariant(e.estado)} size="sm">{estadoLabel(e.estado)}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-xs block text-foreground">{e.nombreEmpresa || '—'}</span>
+                      <span className="text-xs block text-muted-foreground">{e.nombreSede || ''}</span>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex gap-2 justify-center">
+                        <Tooltip content="Ver detalle">
+                          <Button size="sm" variant="secondary" onClick={() => navigate(`/coordinacion/expedientes/${e.id}`)}>
+                            <Eye className="h-4 w-4" />
                           </Button>
                         </Tooltip>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {filtered.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
-                    No se encontraron practicantes asignados
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-          <div className="flex items-center justify-between px-4 py-3 border-t text-sm" style={{ borderColor: 'var(--color-border)', color: 'var(--color-muted-foreground)' }}>
-            <div className="flex items-center gap-2">
-              <span>Filas por página:</span>
-              <select
-                value={rowsPerPage}
-                onChange={(event: React.ChangeEvent<HTMLSelectElement>) => { setRowsPerPage(+event.target.value); setPage(0); }}
-                className="rounded border px-2 py-1 text-sm"
-                style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)', color: 'var(--color-foreground)' }}
-              >
-                {[5, 10, 25].map((n) => (
-                  <option key={n} value={n}>{n}</option>
+                        <Tooltip content="Validar horas">
+                          <Button size="sm" variant="secondary" onClick={() => navigate(`/tutor/horas/${e.id}`)}>
+                            <Clock4 className="h-4 w-4" />
+                          </Button>
+                        </Tooltip>
+                        {[ESTADOS_EXPEDIENTE.INFORME_FINAL_PRESENTADO, ESTADOS_EXPEDIENTE.INFORME_APROBADO].includes(e.estado) && (
+                          <Tooltip content="Evaluar desempeño">
+                            <Button size="sm" onClick={() => navigate(`/tutor/evaluaciones/${e.id}`)}>
+                              <ClipboardList className="h-4 w-4" />
+                            </Button>
+                          </Tooltip>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </select>
-            </div>
-            <span>{page * rowsPerPage + 1}-{Math.min((page + 1) * rowsPerPage, filtered.length)} de {filtered.length}</span>
-            <div className="flex gap-2">
-              <Button size="sm" variant="secondary" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>Anterior</Button>
-              <Button size="sm" variant="secondary" disabled={(page + 1) * rowsPerPage >= filtered.length} onClick={() => setPage((p) => p + 1)}>Siguiente</Button>
+                {filtered.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-8 text-sm text-muted-foreground">
+                      No se encontraron practicantes asignados
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-border text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <span>Filas por página:</span>
+                <select
+                  value={rowsPerPage}
+                  onChange={(event: React.ChangeEvent<HTMLSelectElement>) => { setRowsPerPage(+event.target.value); setPage(0); }}
+                  className="rounded-xl border border-border bg-card px-2 py-1 text-sm text-foreground"
+                >
+                  {[5, 10, 25].map((n) => (
+                    <option key={n} value={n}>{n}</option>
+                  ))}
+                </select>
+              </div>
+              <span>{page * rowsPerPage + 1}-{Math.min((page + 1) * rowsPerPage, filtered.length)} de {filtered.length}</span>
+              <div className="flex gap-2">
+                <Button size="sm" variant="secondary" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>Anterior</Button>
+                <Button size="sm" variant="secondary" disabled={(page + 1) * rowsPerPage >= filtered.length} onClick={() => setPage((p) => p + 1)}>Siguiente</Button>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-    </motion.div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

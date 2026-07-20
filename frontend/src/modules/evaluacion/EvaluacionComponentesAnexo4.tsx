@@ -1,10 +1,26 @@
 import { useState } from 'react';
 import { useComponentesEvaluacion, useRegistrarComponenteEvaluacion } from '@/hooks/useComponentesEvaluacion';
 import { useAuth } from '@/auth/AuthContext';
-import { Button, Card, Input, Textarea, Badge, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/ui';
+import {
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Input,
+  Textarea,
+  Badge,
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/ui';
+import { cn } from '@/lib/utils';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
-import { BarChart3, ArrowLeft } from 'lucide-react';
+import { BarChart3, ArrowLeft, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const MySwal = withReactContent(Swal);
@@ -50,8 +66,9 @@ export const EvaluacionComponentesAnexo4 = ({ idExpediente, tipoPractica, rol, o
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[var(--color-primary)] border-t-transparent" />
+      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4" role="status" aria-live="polite">
+        <Loader2 className="h-8 w-8 animate-spin text-primary-600" aria-hidden="true" />
+        <p className="text-sm text-muted-foreground">Cargando componentes de evaluación...</p>
       </div>
     );
   }
@@ -105,132 +122,178 @@ export const EvaluacionComponentesAnexo4 = ({ idExpediente, tipoPractica, rol, o
 
   const total = componentes.reduce((acc, c) => acc + (c.puntajeObtenido ?? 0), 0);
   const vigesimal = componentes.length === 3 ? (total / 100) * 20 : 0;
+  const completo = total >= 100;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
+    <div className="space-y-6 animate-in">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--color-primary)] text-white">
-            <BarChart3 size={20} />
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#1A3A6E] text-white shadow-md dark:bg-[#4A6FA5]">
+            <BarChart3 className="h-5 w-5" />
           </div>
           <div>
-            <h2 className="text-2xl font-semibold text-[var(--color-foreground)]">
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground">
               Evaluación Anexo 4 — {tipoPractica}
             </h2>
-            <p className="text-sm text-[var(--color-muted-foreground)]">
+            <p className="text-sm text-muted-foreground">
               Puntaje sobre 100 puntos convertido a escala vigesimal (0-20)
             </p>
           </div>
         </div>
-        <Button variant="ghost" size="sm" onClick={onVolver ?? (() => navigate(-1))}>
-          <ArrowLeft size={16} />
+        <Button
+          variant="secondary"
+          size="sm"
+          className="self-start"
+          onClick={onVolver ?? (() => navigate(-1))}
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Volver
         </Button>
       </div>
 
-      <Card className="p-6">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <div>
-            <p className="text-xs text-[var(--color-muted-foreground)]">Total acumulado</p>
-            <p className="text-3xl font-semibold text-[var(--color-foreground)]">{total}/100</p>
+      {/* Resumen */}
+      <Card>
+        <CardContent className="p-5 sm:p-6">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="rounded-xl bg-muted/50 p-4">
+              <p className="text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground">
+                Total acumulado
+              </p>
+              <p className="mt-1 text-3xl font-extrabold text-foreground">{total}/100</p>
+            </div>
+            <div className="rounded-xl bg-primary-50 p-4 dark:bg-primary-900/20">
+              <p className="text-[0.65rem] font-semibold uppercase tracking-wider text-primary-700 dark:text-primary-300">
+                Escala vigesimal
+              </p>
+              <p className="mt-1 text-3xl font-extrabold text-primary-700 dark:text-primary-300">
+                {vigesimal.toFixed(2)}
+              </p>
+            </div>
+            <div className="rounded-xl bg-muted/50 p-4">
+              <p className="text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground">Estado</p>
+              <div className="mt-2">
+                <Badge variant={completo ? 'success' : 'warning'} size="md">
+                  {completo ? 'Completo' : 'Pendiente'}
+                </Badge>
+              </div>
+            </div>
           </div>
-          <div>
-            <p className="text-xs text-[var(--color-muted-foreground)]">Escala vigesimal</p>
-            <p className="text-3xl font-semibold text-[var(--color-primary)]">{vigesimal.toFixed(2)}</p>
-          </div>
-          <div>
-            <p className="text-xs text-[var(--color-muted-foreground)]">Estado</p>
-            <Badge variant={total >= 100 ? 'success' : 'warning'}>
-              {total >= 100 ? 'Completo' : 'Pendiente'}
-            </Badge>
-          </div>
-        </div>
+        </CardContent>
       </Card>
 
+      {/* Tarjetas de componentes */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {componentes.map((componente) => {
           const editable = puedeEditar(componente);
           const completado = componente.estado === 'COMPLETADO';
           return (
-            <Card key={componente.id} className="p-5">
-              <div className="mb-3 flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-[var(--color-foreground)]">
-                  {NOMBRES_COMPONENTES[componente.tipoComponente] || componente.tipoComponente}
-                </h3>
-                <Badge variant={completado ? 'success' : 'warning'}>{completado ? 'Completado' : 'Pendiente'}</Badge>
-              </div>
-              <p className="mb-3 text-xs text-[var(--color-muted-foreground)]">
-                Responsable: {RESPONSABLES[componente.tipoComponente] || 'No definido'}
-              </p>
-              {completado ? (
-                <div className="space-y-2">
-                  <p className="text-sm text-[var(--color-foreground)]">
-                    Puntaje: {componente.puntajeObtenido}/{componente.puntajeMaximo}
-                  </p>
-                  {componente.observaciones && (
-                    <p className="text-xs text-[var(--color-muted-foreground)]">{componente.observaciones}</p>
-                  )}
+            <Card key={componente.id} className="flex flex-col">
+              <CardContent className="flex flex-1 flex-col p-5">
+                <div className="mb-3 flex items-start justify-between gap-3">
+                  <h3 className="text-sm font-bold text-foreground">
+                    {NOMBRES_COMPONENTES[componente.tipoComponente] || componente.tipoComponente}
+                  </h3>
+                  <Badge variant={completado ? 'success' : 'warning'} size="sm">
+                    {completado ? 'Completado' : 'Pendiente'}
+                  </Badge>
                 </div>
-              ) : editable ? (
-                <div className="space-y-3">
-                  <Input
-                    label={`Puntaje (0-${componente.puntajeMaximo})`}
-                    type="number"
-                    min={0}
-                    max={componente.puntajeMaximo}
-                    value={puntajes[componente.tipoComponente]?.puntaje ?? ''}
-                    onChange={(e) => handleChange(componente.tipoComponente, 'puntaje', e.target.value)}
-                  />
-                  <Textarea
-                    label="Observaciones"
-                    rows={2}
-                    value={puntajes[componente.tipoComponente]?.observaciones ?? ''}
-                    onChange={(e) => handleChange(componente.tipoComponente, 'observaciones', e.target.value)}
-                  />
-                  <Button
-                    className="w-full"
-                    onClick={() => handleGuardar(componente)}
-                    disabled={registrarMutation.isPending}
-                  >
-                    {registrarMutation.isPending ? 'Guardando...' : 'Guardar'}
-                  </Button>
-                </div>
-              ) : (
-                <p className="text-sm text-[var(--color-muted-foreground)]">
-                  Este componente es evaluado por el tutor externo en su módulo correspondiente.
+                <p className="mb-4 text-xs text-muted-foreground">
+                  Responsable: {RESPONSABLES[componente.tipoComponente] || 'No definido'}
                 </p>
-              )}
+
+                {completado ? (
+                  <div className="mt-auto space-y-2 rounded-xl bg-emerald-50 p-3 dark:bg-emerald-950/30">
+                    <p className="text-sm font-semibold text-foreground">
+                      Puntaje: {componente.puntajeObtenido}/{componente.puntajeMaximo}
+                    </p>
+                    {componente.observaciones && (
+                      <p className="text-xs text-muted-foreground">{componente.observaciones}</p>
+                    )}
+                  </div>
+                ) : editable ? (
+                  <div className="mt-auto space-y-3">
+                    <Input
+                      label={`Puntaje (0-${componente.puntajeMaximo})`}
+                      type="number"
+                      min={0}
+                      max={componente.puntajeMaximo}
+                      value={puntajes[componente.tipoComponente]?.puntaje ?? ''}
+                      onChange={(e) => handleChange(componente.tipoComponente, 'puntaje', e.target.value)}
+                    />
+                    <Textarea
+                      label="Observaciones"
+                      rows={2}
+                      value={puntajes[componente.tipoComponente]?.observaciones ?? ''}
+                      onChange={(e) => handleChange(componente.tipoComponente, 'observaciones', e.target.value)}
+                    />
+                    <Button
+                      className="w-full"
+                      onClick={() => handleGuardar(componente)}
+                      disabled={registrarMutation.isPending}
+                    >
+                      {registrarMutation.isPending ? 'Guardando...' : 'Guardar evaluación'}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="mt-auto rounded-xl bg-muted/60 p-3">
+                    <p className="text-sm text-muted-foreground">
+                      Este componente es evaluado por el tutor externo en su módulo correspondiente.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
             </Card>
           );
         })}
       </div>
 
+      {/* Tabla detalle */}
       {componentes.length > 0 && (
-        <Card className="p-6">
-          <h3 className="mb-4 text-base font-semibold text-[var(--color-foreground)]">Detalle de componentes</h3>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Componente</TableHead>
-                <TableHead>Puntaje</TableHead>
-                <TableHead>%</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead>Evaluador</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {componentes.map((c) => (
-                <TableRow key={c.id}>
-                  <TableCell>{NOMBRES_COMPONENTES[c.tipoComponente] || c.tipoComponente}</TableCell>
-                  <TableCell>{c.puntajeObtenido ?? '-'}/{c.puntajeMaximo}</TableCell>
-                  <TableCell>{c.porcentaje}%</TableCell>
-                  <TableCell>
-                    <Badge variant={c.estado === 'COMPLETADO' ? 'success' : 'warning'}>{c.estado}</Badge>
-                  </TableCell>
-                  <TableCell>{c.tipoEvaluador || '-'}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base font-semibold flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-primary-700 dark:text-primary-400" />
+              Detalle de componentes
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="font-semibold">Componente</TableHead>
+                    <TableHead className="font-semibold">Puntaje</TableHead>
+                    <TableHead className="font-semibold">%</TableHead>
+                    <TableHead className="font-semibold">Estado</TableHead>
+                    <TableHead className="font-semibold">Evaluador</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {componentes.map((c) => (
+                    <TableRow key={c.id}>
+                      <TableCell className="font-medium text-foreground">
+                        {NOMBRES_COMPONENTES[c.tipoComponente] || c.tipoComponente}
+                      </TableCell>
+                      <TableCell>
+                        <span className={cn('font-semibold', c.puntajeObtenido ? 'text-foreground' : 'text-muted-foreground')}>
+                          {c.puntajeObtenido ?? '-'}
+                        </span>
+                        <span className="text-muted-foreground">/{c.puntajeMaximo}</span>
+                      </TableCell>
+                      <TableCell>{c.porcentaje}%</TableCell>
+                      <TableCell>
+                        <Badge variant={c.estado === 'COMPLETADO' ? 'success' : 'warning'} size="sm">
+                          {c.estado}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{c.tipoEvaluador || '-'}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
         </Card>
       )}
     </div>

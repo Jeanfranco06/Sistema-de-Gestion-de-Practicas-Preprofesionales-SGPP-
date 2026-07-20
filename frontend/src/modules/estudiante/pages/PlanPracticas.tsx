@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Plus, Trash2, Send, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Send, Loader2, ClipboardList, FileText, FolderArchive } from 'lucide-react';
 import Swal from 'sweetalert2';
-import { expedientesApi } from '../../../api/expedientesApi';
-import { planesApi } from '../../../api/planesApi';
-import { ESTADOS_PLAN_GENERAL } from '../../../lib/constants';
-import { Button, Input, Textarea, Select, Card, CardContent } from '../../../ui';
+import { expedientesApi } from '@/api/expedientesApi';
+import { planesApi } from '@/api/planesApi';
+import { ESTADOS_PLAN_GENERAL } from '@/lib/constants';
+import { Button, Input, Textarea, Select, Card, CardContent, Badge, type BadgeProps } from '@/ui';
+import { cn } from '@/lib/utils';
 
 interface Caratula {
   institucion: string;
@@ -123,6 +124,14 @@ const mapPlan = (plan: Record<string, unknown>): PlanForm => ({
     }),
   ),
 });
+
+const estadoBadgeVariant: Record<string, BadgeProps['variant']> = {
+  [ESTADOS_PLAN_GENERAL.BORRADOR]: 'neutral',
+  [ESTADOS_PLAN_GENERAL.PRESENTADO]: 'info',
+  [ESTADOS_PLAN_GENERAL.EN_REVISION]: 'warning',
+  [ESTADOS_PLAN_GENERAL.APROBADO]: 'success',
+  [ESTADOS_PLAN_GENERAL.OBSERVADO]: 'danger',
+};
 
 export function PlanPracticas() {
   const [expediente, setExpediente] = useState<Expediente | null>(null);
@@ -323,23 +332,38 @@ export function PlanPracticas() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-[60vh]">
-        <Loader2 className="h-12 w-12 animate-spin" style={{ color: '#1a365d' }} />
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <Loader2 className="h-12 w-12 animate-spin text-primary-600" aria-hidden="true" />
+        <p className="font-medium text-muted-foreground">Cargando información de tu plan...</p>
       </div>
     );
   }
 
   if (!expediente || !plan) {
     return (
-      <div className="px-4 sm:px-6 lg:px-10 py-4 md:py-8 w-full">
-        <div className="rounded-xl border border-blue-300 bg-blue-50 dark:bg-blue-950/40 p-4">
-          <p className="text-sm font-medium text-blue-800 dark:text-blue-200">No tienes un expediente activo.</p>
-        </div>
+      <div className="flex min-h-[60vh] items-center justify-center p-4 animate-in">
+        <Card className="max-w-2xl w-full text-center px-8 py-16 md:px-16 md:py-20">
+          <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900/20">
+            <FolderArchive className="h-12 w-12 text-primary-700 dark:text-primary-300" />
+          </div>
+          <h2 className="text-3xl md:text-4xl font-extrabold text-foreground mb-4 tracking-tight">
+            Sin expediente activo
+          </h2>
+          <p className="text-foreground/70 leading-relaxed mb-8 text-base md:text-lg max-w-lg mx-auto">
+            No tienes una práctica registrada para completar el plan de prácticas.
+          </p>
+        </Card>
       </div>
     );
   }
 
   const editable = !planEstado || planEstado === ESTADOS_PLAN_GENERAL.BORRADOR || planEstado === ESTADOS_PLAN_GENERAL.OBSERVADO;
+
+  const alertClasses = planEstado === ESTADOS_PLAN_GENERAL.APROBADO
+    ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200'
+    : planEstado === ESTADOS_PLAN_GENERAL.OBSERVADO
+      ? 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200'
+      : 'border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-200';
 
   const field = (
     section: 'caratula' | 'datosEmpresa' | 'areaDepartamento',
@@ -358,24 +382,49 @@ export function PlanPracticas() {
   };
 
   return (
-    <div className="px-4 sm:px-6 lg:px-10 py-4 md:py-8 w-full">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold" style={{ color: 'var(--color-foreground)' }}>Plan de Prácticas</h1>
-        <p className="text-sm mt-1" style={{ color: 'var(--color-muted-foreground)' }}>Anexo 1 · {expediente.codigoExpediente}</p>
+    <div className="space-y-6 p-4 sm:p-6 lg:p-8 w-full">
+      {/* Header Banner */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary-700 to-primary-900 text-white p-6 md:p-8">
+        <div className="absolute right-[-20px] top-2 opacity-10 md:right-[-50px] md:top-[-50px]">
+          <ClipboardList className="h-[150px] w-[150px] md:h-[300px] md:w-[300px]" />
+        </div>
+        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center justify-center rounded-full shrink-0 w-14 h-14 bg-white/15">
+              <FileText className="h-7 w-7" />
+            </div>
+            <div>
+              <h1 className="text-2xl md:text-3xl font-extrabold">Plan de Prácticas</h1>
+              <p className="text-sm opacity-90 mt-1">Anexo 1 · {expediente.codigoExpediente}</p>
+            </div>
+          </div>
+          {planEstado && (
+            <Badge
+              variant={estadoBadgeVariant[planEstado] ?? 'neutral'}
+              size="md"
+              className="self-start md:self-auto shrink-0 bg-white/15 text-white border border-white/20 px-3 py-1.5"
+            >
+              {planEstado}
+            </Badge>
+          )}
+        </div>
       </div>
 
       {planEstado && (
-        <div className={`rounded-xl border p-4 mb-6 ${planEstado === ESTADOS_PLAN_GENERAL.APROBADO ? 'border-green-300 bg-green-50 dark:bg-green-950/40' : 'border-blue-300 bg-blue-50 dark:bg-blue-950/40'}`}>
-          <p className="text-sm font-medium" style={{ color: planEstado === ESTADOS_PLAN_GENERAL.APROBADO ? '#166534' : '#1e40af' }}>
-            Estado del Plan: {planEstado}
-          </p>
+        <div className={cn('rounded-xl border p-4', alertClasses)}>
+          <p className="text-sm font-medium">Estado del Plan: {planEstado}</p>
         </div>
       )}
 
       <div className="flex flex-col gap-6">
         <Card>
           <CardContent className="flex flex-col gap-4">
-            <h2 className="text-lg font-bold" style={{ color: 'var(--color-foreground)' }}>1. Del practicante</h2>
+            <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#1A3A6E] text-white dark:bg-[#4A6FA5]">
+                1
+              </span>
+              Del practicante
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
               <div className="md:col-span-6">{field('caratula', 'autor', 'Nombre del practicante', { required: true })}</div>
               <div className="md:col-span-6">
@@ -390,7 +439,12 @@ export function PlanPracticas() {
 
         <Card>
           <CardContent className="flex flex-col gap-4">
-            <h2 className="text-lg font-bold" style={{ color: 'var(--color-foreground)' }}>2. Empresa o institución receptora</h2>
+            <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#1A3A6E] text-white dark:bg-[#4A6FA5]">
+                2
+              </span>
+              Empresa o institución receptora
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
               <div className="md:col-span-6">{field('datosEmpresa', 'razonSocial', 'Razón social', { required: true })}</div>
               <div className="md:col-span-6">{field('datosEmpresa', 'representanteLegal', 'Gerente o representante legal', { required: true })}</div>
@@ -405,7 +459,12 @@ export function PlanPracticas() {
 
         <Card>
           <CardContent className="flex flex-col gap-4">
-            <h2 className="text-lg font-bold" style={{ color: 'var(--color-foreground)' }}>3. Área, objetivos y fundamento</h2>
+            <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#1A3A6E] text-white dark:bg-[#4A6FA5]">
+                3
+              </span>
+              Área, objetivos y fundamento
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
               <div className="md:col-span-6">{field('areaDepartamento', 'areaDepartamento', 'Área, departamento o sección', { required: true })}</div>
               <div className="md:col-span-6">{field('areaDepartamento', 'funcionarioACargo', 'Funcionario a cargo')}</div>
@@ -418,7 +477,12 @@ export function PlanPracticas() {
         <Card>
           <CardContent className="flex flex-col gap-3">
             <div className="flex justify-between items-center mb-1">
-              <h2 className="text-lg font-bold" style={{ color: 'var(--color-foreground)' }}>4. Objetivos o logros previstos</h2>
+              <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#1A3A6E] text-white dark:bg-[#4A6FA5]">
+                  4
+                </span>
+                Objetivos o logros previstos
+              </h2>
               {editable && (
                 <Button variant="secondary" size="sm" onClick={addObjective}>
                   <Plus className="h-4 w-4" /> Agregar objetivo específico
@@ -443,9 +507,15 @@ export function PlanPracticas() {
                     <Input label={`Objetivo ${index + 1}`} value={objective.descripcion} disabled={!editable} required onChange={(e) => updateList('objetivos', index, 'descripcion', e.target.value)} />
                   </div>
                   {editable && index > 2 && (
-                    <button type="button" className="p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 transition-colors mt-6" onClick={() => removeObjective(index)}>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 mt-6"
+                      onClick={() => removeObjective(index)}
+                    >
                       <Trash2 className="h-4 w-4" />
-                    </button>
+                    </Button>
                   )}
                 </div>
               ))}
@@ -456,7 +526,12 @@ export function PlanPracticas() {
         <Card>
           <CardContent className="flex flex-col gap-3">
             <div className="flex justify-between items-center mb-1">
-              <h2 className="text-lg font-bold" style={{ color: 'var(--color-foreground)' }}>5. Principales actividades y cronograma</h2>
+              <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#1A3A6E] text-white dark:bg-[#4A6FA5]">
+                  5
+                </span>
+                Principales actividades y cronograma
+              </h2>
               {editable && (
                 <Button variant="secondary" size="sm" onClick={addActivity}>
                   <Plus className="h-4 w-4" /> Agregar actividad
@@ -465,7 +540,7 @@ export function PlanPracticas() {
             </div>
             <div className="flex flex-col gap-3">
               {plan.cronograma.map((activity, index) => (
-                <div key={index} className="border border-[var(--color-border)] rounded-xl p-4">
+                <div key={index} className="border border-border bg-card rounded-xl p-4 transition-colors">
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
                     <div className="md:col-span-5">
                       <Input label="Actividad" value={activity.actividad} disabled={!editable} required onChange={(e) => updateList('cronograma', index, 'actividad', e.target.value)} />
@@ -481,9 +556,15 @@ export function PlanPracticas() {
                     </div>
                     <div className="md:col-span-1 flex justify-center">
                       {editable && plan.cronograma.length > 1 && (
-                        <button type="button" className="p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 transition-colors" onClick={() => removeActivity(index)}>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30"
+                          onClick={() => removeActivity(index)}
+                        >
                           <Trash2 className="h-4 w-4" />
-                        </button>
+                        </Button>
                       )}
                     </div>
                   </div>
@@ -496,8 +577,8 @@ export function PlanPracticas() {
         {planEstado === ESTADOS_PLAN_GENERAL.OBSERVADO && observacionesPendientes.length > 0 && (
           <Card>
             <CardContent>
-              <h3 className="font-semibold text-[var(--color-foreground)] mb-2">Observaciones pendientes</h3>
-              <ul className="list-disc pl-5 space-y-1 text-sm text-[var(--color-muted-foreground)]">
+              <h3 className="font-semibold text-foreground mb-2">Observaciones pendientes</h3>
+              <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
                 {observacionesPendientes.map((o) => (
                   <li key={o.id}>{o.descripcion}</li>
                 ))}
@@ -508,7 +589,7 @@ export function PlanPracticas() {
 
         {editable && (
           <div className="flex justify-end">
-            <Button size="lg" onClick={submit} disabled={submitting} loading={submitting}>
+            <Button size="lg" onClick={submit} disabled={submitting} loading={submitting} className="w-full sm:w-auto">
               <Send className="h-4 w-4" /> {submitting ? 'Procesando...' : planEstado === ESTADOS_PLAN_GENERAL.OBSERVADO ? 'Subsanar y reenviar Plan' : 'Presentar Plan para revisión'}
             </Button>
           </div>
