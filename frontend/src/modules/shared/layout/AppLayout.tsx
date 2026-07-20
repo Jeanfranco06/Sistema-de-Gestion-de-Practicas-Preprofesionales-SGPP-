@@ -2,12 +2,16 @@ import { useState, useCallback, useMemo } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Box, Drawer, Menu, MenuItem, Tooltip, useTheme, useMediaQuery } from '@mui/material';
 import {
-  Dashboard, Assignment, Description, Assessment,
+  Dashboard, Description, Assessment,
   Business, AccountCircle, Logout, Menu as MenuIcon,
-  School, AccessTime, CheckCircle, BarChart,
+  School, AccessTime, BarChart,
   People, SupervisorAccount, FactCheck, FolderOpen,
   DarkMode, LightMode,
 } from '@mui/icons-material';
+import {
+  FileText, ClipboardList, Upload, Clock, MapPin, Building2,
+  Briefcase, FileCheck,
+} from 'lucide-react';
 import { useAuth } from '../../../auth/AuthContext';
 import { useThemeContext } from '../../../shared/theme/ThemeContext';
 import { NotificationsMenu } from '../components/NotificationsMenu';
@@ -57,16 +61,16 @@ function getNavGroups(roles: UserRole[] = []): NavGroup[] {
     return [
       { group: 'general', label: 'General', items: [{ label: 'Dashboard', icon: <Dashboard />, path: '/estudiante/dashboard' }] },
       { group: 'academic', label: 'Gestión Académica', items: [
-        { label: 'Mi Práctica', icon: <Assignment />, path: '/estudiante/practica' },
-        { label: 'Solicitar Práctica', icon: <Assignment />, path: '/estudiante/solicitar-practica' },
-        { label: 'Plan de Prácticas', icon: <Assignment />, path: '/estudiante/plan-practicas' },
+        { label: 'Mi Práctica', icon: <Briefcase size={22} />, path: '/estudiante/practica' },
+        { label: 'Solicitar Práctica', icon: <FileCheck size={22} />, path: '/estudiante/solicitar-practica' },
+        { label: 'Plan de Prácticas', icon: <ClipboardList size={22} />, path: '/estudiante/plan-practicas' },
         { label: 'Documentos', icon: <Description />, path: '/estudiante/documentos' },
-        { label: 'Registro de Horas', icon: <AccessTime />, path: '/estudiante/horas' },
-        { label: 'Informes', icon: <Assessment />, path: '/estudiante/informes' },
+        { label: 'Registro de Horas', icon: <Clock size={22} />, path: '/estudiante/horas' },
+        { label: 'Informes', icon: <FileText size={22} />, path: '/estudiante/informes' },
       ]},
       { group: 'institutional', label: 'Institucional', items: [
-        { label: 'Evaluación', icon: <CheckCircle />, path: '/estudiante/evaluacion' },
-        { label: 'Centros de Práctica', icon: <Business />, path: '/estudiante/sedes' },
+        { label: 'Centros de Práctica', icon: <MapPin size={22} />, path: '/estudiante/sedes' },
+        { label: 'Empresas Receptoras', icon: <Building2 size={22} />, path: '/estudiante/sedes' },
       ]},
     ];
   }

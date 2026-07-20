@@ -75,9 +75,9 @@ export const getStatusAccent = (status: string | null | undefined): Accent => {
     return accents.green;
   if (['RECHAZADO', 'RECHAZADA', 'CANCELADO', 'ANULADO', 'ERROR', 'VENCIDO', 'DESAPROBADO'].includes(s))
     return accents.red;
-  if (['OBSERVADO', 'OBSERVADA', 'PENDIENTE', 'EN_REVISION', 'PROCESO', 'BORRADOR', 'PLAN_OBSERVADO', 'SUBSANADO'].includes(s))
+  if (['OBSERVADO', 'OBSERVADA', 'PENDIENTE', 'EN_REVISION', 'PROCESO', 'BORRADOR', 'PLAN_OBSERVADO', 'SUBSANADO', 'EXAMEN_APLAZADOS_HABILITADO'].includes(s))
     return accents.amber;
-  if (['EN_EJECUCION', 'SOLICITADO', 'PLAN_PRESENTADO', 'INFORME_PRESENTADO', 'DICTAMEN_EMITIDO', 'CARTA_PRESENTACION_EMITIDA', 'CARTA_ACEPTACION_PRESENTADA'].includes(s))
+  if (['EN_EJECUCION', 'SOLICITADO', 'PLAN_PRESENTADO', 'INFORME_PRESENTADO', 'DICTAMEN_EMITIDO', 'CARTA_PRESENTACION_EMITIDA', 'CARTA_ACEPTACION_PRESENTADA', 'EXAMEN_APLAZADOS_RENDIDO'].includes(s))
     return accents.blue;
   return accents.gray;
 };

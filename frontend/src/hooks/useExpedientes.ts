@@ -189,6 +189,23 @@ export function useEvaluarExpediente() {
   });
 }
 
+export function useHabilitarExamenAplazados() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => expedientesApi.habilitarExamenAplazados(id),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['expedientes'] }); },
+  });
+}
+
+export function useRegistrarExamenAplazados() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: Record<string, unknown> }) =>
+      expedientesApi.registrarExamenAplazados(id, payload),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['expedientes'] }); },
+  });
+}
+
 export function useEliminarDocumento() {
   const qc = useQueryClient();
   return useMutation({

@@ -165,6 +165,51 @@ Una constancia generada se registra con archivo, hash, fecha, usuario solicitant
 - Navegación multirrol: un usuario con `COMITE_PRACTICAS` y `DOCENTE_ASESOR` conserva el menú de Comité e incorpora `Mis Practicantes`, evitando que la prioridad visual del Comité oculte sus expedientes asignados como asesor.
 - RF-16 implementado en interfaz: el estudiante completa el Anexo 1 mediante `/estudiante/plan-practicas`, en lugar de adjuntar solo un PDF. El formulario usa el modelo de Plan General existente, precarga datos disponibles del expediente y exige carátula, empresa, área, situación problemática, objetivos, técnicas/procedimientos y cronograma antes de presentar el Plan.
 
+### 2026-07-19 — Fase 1: Infraestructura y correcciones críticas
+
+- Análisis exhaustivo del sistema documentado en `docs/ANALISIS_SISTEMA_SGPP.md`.
+- Habilitado `@EnableScheduling` en `SgppApplication` y creado `PlazoVencimientoScheduler` para ejecutar diariamente `PlazoService.actualizarEstadosVencidos()` (configurable mediante `sgpp.scheduler.plazos.cron` y `sgpp.scheduler.plazos.enabled`).
+- Agregado endpoint manual `POST /plazos/actualizar-estados` para forzar la actualización de plazos vencidos (ya existía, ahora complementado con el scheduler).
+- Implementado servicio de correo electrónico real (`EmailService` / `EmailServiceImpl`) usando `spring-boot-starter-mail`; `NotificacionEventoServiceImpl` envía correos reales en lugar de logs simulados.
+- Configuradas propiedades SMTP en `application.yml` y `application-local.yml` (variables de entorno `MAIL_HOST`, `MAIL_PORT`, `MAIL_USER`, `MAIL_PASS`, etc.).
+- Creada migración `V54__corregir_modalidad_practicas_finales_profesionales.sql` para ajustar `curricular = FALSE` en `FINAL` y `PROFESIONAL`, conforme a la normativa UNT y el reglamento de la Escuela.
+- Verificaciones ejecutadas: `mvn -pl sgpp-api -am compile -DskipTests`, `npm run lint` y `npm run build`.
+
+### 2026-07-19 — Fase 2: Examen de Aplazados
+
+- Agregados estados `EXAMEN_APLAZADOS_HABILITADO` y `EXAMEN_APLAZADOS_RENDIDO` al flujo de expediente.
+- Creada migración `V55__examen_aplazados_practicas_iniciales.sql` con campos `nota_examen_aplazados` y `fecha_examen_aplazados` en `expediente`.
+- Implementados endpoints `POST /expedientes/{id}/habilitar-examen-aplazados` y `POST /expedientes/{id}/registrar-examen-aplazados` en `ExpedienteController`.
+- Implementada lógica de negocio en `ExpedienteServiceImpl`: solo prácticas iniciales, habilitación desde `EVALUADO` o `INFORME_FINAL_PRESENTADO`, registro de nota 0-20, aprobación con nota >= 13.5 y transición a `EVALUADO`, notificaciones in-app y por correo.
+- Actualizado frontend: `StatusChip`, `designTokens`, `expedientesApi`, `useExpedientes` y `DetalleExpediente` para habilitar/registrar el examen de aplazados desde la vista de coordinación/dirección.
+- Verificaciones ejecutadas: `mvn -pl sgpp-api -am compile -DskipTests`, `npm run lint` y `npm run build`.
+
+### 2026-07-19 — Fase 3: Consolidación del modelo de evaluación
+
+- Ajustado `ComponenteEvaluacionServiceImpl.inicializarComponentes` para no crear componentes Anexo 4 en prácticas `INICIAL` (estas usan evaluación curricular por unidades).
+- Implementada sincronización automática en `ComponenteEvaluacionServiceImpl.registrarEvaluacion`: cuando los tres componentes (PLAN 10 + EMPRESA 50 + INFORME 40) están completos, se calcula el puntaje total sobre 100 y se convierte a escala vigesimal (0-20) para `expediente.calificacion_final`.
+- Modificado `EvaluacionServiceImpl.crearEvaluacion` para replicar la evaluación de empresa (`EMPRESA`) en el componente Anexo 4 correspondiente, evitando duplicidad de cálculo.
+- `EvaluacionServiceImpl.calcularPromedioFinal` prioriza ahora los componentes Anexo 4 cuando existen, para prácticas finales/profesionales.
+- Verificaciones ejecutadas: `mvn -pl sgpp-api -am compile -DskipTests`, `npm run lint` y `npm run build`.
+
+### 2026-07-19 — Fase 4: Mejoras visuales (parcial)
+
+- Reemplazados íconos repetidos del menú estudiante (`Assignment`) por íconos diferenciados de `lucide-react` (`Briefcase`, `FileCheck`, `ClipboardList`, `Clock`, `FileText`, `MapPin`, `Building2`).
+- Ocultada del menú estudiante la opción "Evaluación" que apuntaba a `PaginaEnConstruccion`.
+- Agregados al menú estudiante accesos visuales a "Centros de Práctica" y "Empresas Receptoras".
+- Verificaciones ejecutadas: `npm run lint` y `npm run build`.
+
+### 2026-07-19 — Verificación final de integridad
+
+- Backend: `mvn -pl sgpp-api -am package -DskipTests` finaliza correctamente; JAR ejecutable de `sgpp-api` generado.
+- Frontend: `npm run lint` sin errores y `npm run build` sin errores.
+- Base de datos: migraciones V54 y V55 listas para aplicarse con Flyway en el próximo inicio de la API.
+
 ## Pendientes Técnicos Conocidos
 
+- Completar Fase 2: examen de aplazados, notas por unidades para prácticas iniciales y plantilla de informe final.
+- Completar Fase 3: consolidar modelo de evaluación (`evaluacion` y `componente_evaluacion`).
+- Completar Fase 4: mejoras visuales (menú, estados, tooltips).
+- Completar Fase 5: code-splitting, migración de íconos MUI, tests automatizados y documentación de variables de entorno.
 - Las reglas configurables de plazos, modalidad de evaluación y requisito académico deben mantenerse alineadas con los documentos normativos citados al inicio.
+- Análisis exhaustivo del sistema realizado el 2026-07-19: ver `docs/ANALISIS_SISTEMA_SGPP.md`. Los hallazgos principales incluyen: ausencia de scheduler automático para plazos vencidos (corregido parcialmente con scheduler), falta de notificaciones por correo SMTP (corregido parcialmente con EmailService), examen de aplazados no implementado, doble modelo de evaluación y mejoras visuales pendientes en menús y estados.

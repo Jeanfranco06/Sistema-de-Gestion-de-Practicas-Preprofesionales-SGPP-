@@ -245,6 +245,16 @@ export const DetalleExpediente = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['expedientes', id] }),
   });
 
+  const { mutateAsync: habilitarExamenAplazados } = useMutation({
+    mutationFn: () => expedientesApi.habilitarExamenAplazados(id!),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['expedientes', id] }),
+  });
+
+  const { mutateAsync: registrarExamenAplazados } = useMutation({
+    mutationFn: (nota: string) => expedientesApi.registrarExamenAplazados(id!, { nota: Number(nota), comentarios: '' }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['expedientes', id] }),
+  });
+
   const ejecutarAccion = async (tipo: string) => {
     const acciones: Record<string, { title: string; text: string; confirmButtonText: string; success: string; input?: string; inputLabel?: string; inputValidator?: (v: string) => string | boolean; ejecutar: (value?: any) => Promise<any> }> = {
       carta: {
@@ -284,6 +294,27 @@ export const DetalleExpediente = () => {
         confirmButtonText: 'Emitir constancia',
         success: 'La constancia fue emitida correctamente.',
         ejecutar: () => emitirConstancia(),
+      },
+      habilitarExamenAplazados: {
+        title: 'Habilitar Examen de Aplazados',
+        text: 'Habilita al estudiante para rendir el examen de aplazados (semana 17).',
+        confirmButtonText: 'Habilitar',
+        success: 'Examen de aplazados habilitado.',
+        ejecutar: () => habilitarExamenAplazados(),
+      },
+      registrarExamenAplazados: {
+        title: 'Registrar Nota de Examen de Aplazados',
+        text: 'Ingresa la nota obtenida en el examen de aplazados (escala 0-20).',
+        confirmButtonText: 'Registrar nota',
+        success: 'Nota registrada correctamente.',
+        input: 'number',
+        inputLabel: 'Nota (0-20)',
+        inputValidator: (value: string) => {
+          const n = Number(value);
+          if (Number.isNaN(n) || n < 0 || n > 20) return 'La nota debe estar entre 0 y 20.';
+          return false;
+        },
+        ejecutar: (nota?: string) => registrarExamenAplazados(nota!),
       },
     };
     const accion = acciones[tipo];
@@ -472,6 +503,22 @@ export const DetalleExpediente = () => {
                     {accionEnCurso === 'constancia' ? 'Emitiendo...' : 'Emitir constancia'}
                   </Button>
                 ) : null}
+              {puedeRevisarExpediente && expediente.codigoTipoPractica === 'INICIAL'
+                && expediente.estado === 'EVALUADO'
+                && Number(expediente.calificacionFinal) < 13.5 && (
+                  <Button size="sm" variant="secondary"
+                    disabled={accionEnCurso === 'habilitarExamenAplazados'}
+                    onClick={() => ejecutarAccion('habilitarExamenAplazados')}>
+                    {accionEnCurso === 'habilitarExamenAplazados' ? 'Habilitando...' : 'Habilitar examen aplazados'}
+                  </Button>
+              )}
+              {puedeRevisarExpediente && expediente.estado === 'EXAMEN_APLAZADOS_HABILITADO' && (
+                <Button size="sm"
+                  disabled={accionEnCurso === 'registrarExamenAplazados'}
+                  onClick={() => ejecutarAccion('registrarExamenAplazados')}>
+                  {accionEnCurso === 'registrarExamenAplazados' ? 'Registrando...' : 'Registrar nota aplazados'}
+                </Button>
+              )}
               <Button size="sm" variant="secondary" onClick={() => navigate(-1)}>
                 <ArrowLeft size={16} /> Volver
               </Button>

@@ -1,0 +1,333 @@
+# ANÁLISIS EXHAUSTIVO DEL SISTEMA SGPP
+
+## Sistema de Gestión de Prácticas Preprofesionales — Escuela de Ingeniería Industrial UNT
+
+> **Fecha de análisis:** 2026-07-19  
+> **Fuentes de referencia:** `CONTEXTO_SISTEMA_SGPP.md`, `REQUERIMIENTOS_FUNCIONALES_SGPP.md`, `ESTADO_FUNCIONAL_SGPP.md`, `AGENTS.md`  
+> **Alcance:** Backend (Java 17 / Spring Boot), Frontend (React / TypeScript / Vite), Base de datos (PostgreSQL / Flyway).
+
+---
+
+## 1. Resumen Ejecutivo
+
+El SGPP es una plataforma web con arquitectura limpia (backend modular Maven, frontend React con Design System propio) que **ya implementa la mayor parte del flujo normativo** de prácticas preprofesionales de la Escuela de Ingeniería Industrial de la UNT. Sin embargo, persisten **inconsistencias conceptuales, huecos funcionales y deuda técnica** que deben resolverse para declarar el proyecto funcional, coherente y consistente.
+
+El flujo principal de expediente (solicitud → validación → carta → aceptación → plan → ejecución → informes → evaluación → cierre) está operativo en backend y tiene pantallas asociadas. La compilación (`mvn -pl sgpp-api -am clean compile`), el lint (`npm run lint`) y el build de producción (`npm run build`) **finalizan correctamente** en la fecha de análisis.
+
+Los problemas más críticos detectados son:
+
+1. **Divergencia entre estados documentales y estados de expediente**: el sistema mezcla estados globales del expediente con estados de documentos individuales, generando confusión visual y de negocio.
+2. **Falta de motor de notificaciones por correo SMTP**: solo hay notificaciones in-app, sin envío de e-mail.
+3. **Módulo de informes periódicos incompleto**: la interfaz existe pero no se refleja un modelo robusto de seguimiento por semanas.
+4. **Registro de horas no calcula automáticamente el acumulado en algunos puntos de corte** y la regla de "tres meses" puede bloquear cierres legítimos si no se configura con tolerancia.
+5. **Examen de aplazados (semana 17) no está implementado** para prácticas iniciales.
+6. **No hay cron job real** para bloqueo automático diario de plazos vencidos; el método existe pero no hay schedulers configurados.
+7. **Doble modelo de evaluación**: coexisten `evaluacion` (heredado) y `componente_evaluacion` (normativo), lo que puede producir datos duplicados o inconsistentes.
+
+---
+
+## 2. Estado General por Capa
+
+### 2.1 Backend
+
+| Aspecto | Estado | Observación |
+|---|---|---|
+| Arquitectura | ✅ Sólida | Reactor Maven: `sgpp-shared`, `sgpp-core`, `sgpp-api`. Separación por dominios. |
+| Compilación | ✅ OK | `mvn -pl sgpp-api -am clean compile` exitoso con JDK 17. |
+| Tests | ⚠️ No ejecutados | Se usó `-DskipTests`; se recomienda ejecutar `mvn -pl sgpp-api -am test`. |
+| Seguridad | ⚠️ Parcial | `@PreAuthorize` presente, pero algunos endpoints históricos recibían IDs de usuario desde el cliente (corregido recientemente en horas y documentos). |
+| Auditoría | ✅ Implementada | `EventoAuditoria` con historial inmutable. |
+| Generación de PDF | ✅ Implementada | Carta de presentación, constancia, reporte consolidado, acta de comité. |
+| Exportación CSV/XML | ⚠️ Parcial | CSV implementado; XML no se observa en el reporte consolidado actual. |
+| Notificaciones | ⚠️ In-app únicamente | Modelo `Notificacion` existe, no hay integración SMTP. |
+| Control de plazos | ⚠️ Parcial | Servicio completo (`PlazoServiceImpl`), pero sin scheduler/cron configurado. |
+
+### 2.2 Frontend
+
+| Aspecto | Estado | Observación |
+|---|---|---|
+| Build / Lint | ✅ OK | `npm run lint` y `npm run build` exitosos. |
+| Rutas | ⚠️ Casi completo | Faltan rutas específicas para examen de aplazados y algunas configuraciones. |
+| Design System | ✅ Implementado | Componentes en `src/ui/`, uso de Tailwind + `cn()`. |
+| Dependencias | ⚠️ Actualizables | React 19, MUI 9, Tailwind 4; configuraciones muy recientes, riesgo de incompatibilidades. |
+| Pantallas por rol | ✅ Amplias | Estudiante, docente, tutor, secretaría, comité, coordinación/dirección, admin. |
+| Hooks React Query | ✅ Mayoría | Dominios: expedientes, horas, usuarios, sedes, coordinación, evaluaciones, notificaciones, etc. |
+| Pagina en construcción | ⚠️ Presente | `/estudiante/evaluacion` redirige a `PaginaEnConstruccion`. |
+
+### 2.3 Base de Datos
+
+| Aspecto | Estado | Observación |
+|---|---|---|
+| Migraciones Flyway | ✅ 53 versiones | Esquema evolutivo bien documentado. |
+| Integridad referencial | ✅ OK | Claves foráneas y restricciones adecuadas. |
+| Datos semilla | ✅ OK | Usuarios demo, tipos de práctica, parámetros, sedes. |
+| Inconsistencias históricas | ⚠️ Corregidas vía migraciones | V50-V52 corrigen flujos E2E y reglas duplicadas. |
+| Tablas huérfanas/duplicadas | ⚠️ Riesgo | `evaluacion` y `componente_evaluacion` coexisten; `practica` heredada y `expediente` activa. |
+
+---
+
+## 3. Cumplimiento de Requerimientos Funcionales (RF-01 a RF-48)
+
+### 3.1 Módulo 1 — Autenticación y Gestión de Usuarios
+
+| RF | Descripción | Estado | Detalle |
+|---|---|---|---|
+| RF-01 | Login con correo @unitru.edu.pe, JWT, bloqueo por intentos, registro de IP | ⚠️ Parcial | Login con username/password existe; validación de dominio @unitru no se observa en backend; bloqueo e IP no verificados. |
+| RF-02 | RBAC por rol | ✅ Completo | Roles en `RolSistema`; `@PreAuthorize` en endpoints; menú adaptativo en frontend. |
+| RF-03 | CRUD usuarios y asignación de roles | ✅ Completo | `UsuarioController` con filtros, cambio de estado y roles. |
+| RF-04 | Registro de tutores externos | ✅ Completo | `TutorExternoController` y `GestionTutores`. |
+
+### 3.2 Módulo 2 — Empresas, Sedes y Convenios
+
+| RF | Descripción | Estado | Detalle |
+|---|---|---|---|
+| RF-05 | Registro de empresas | ✅ Completo | CRUD completo con activación/desactivación. |
+| RF-06 | Registro de sedes (PG-016) | ✅ Completo | `GestionSedes` y `SedePracticaController`. |
+| RF-07 | Validación de sedes | ✅ Completo | Estados `PENDIENTE_VALIDACION`, `VALIDADA`, `RECHAZADA`. |
+| RF-08 | Gestión de convenios | ✅ Completo | `GestionConvenios` y `ConvenioController`. |
+| RF-09 | Alertas de convenios por vencer | ⚠️ Parcial | Campos de fechas existen; no hay cron de alertas ni envío de correo. |
+| RF-10 | Catálogo de sedes para estudiante | ✅ Completo | `CatalogoSedes` con filtros. |
+
+### 3.3 Módulo 3 — Expediente de Prácticas
+
+| RF | Descripción | Estado | Detalle |
+|---|---|---|---|
+| RF-11 | Solicitud de inicio de práctica | ✅ Completo | `POST /practicas/solicitar` con validación académica. |
+| RF-12 | Validación de elegibilidad académica | ✅ Completo | `ValidacionAcademicaService` con reglas parametrizables. |
+| RF-13 | Revisión administrativa (Secretaría) | ✅ Completo | `RecepcionAdministrativa` y `PUT /expedientes/{id}/validar`. |
+| RF-14 | Emisión de Carta de Presentación | ✅ Completo | Generación PDF con numeración correlativa. |
+| RF-15 | Carga de Carta de Aceptación | ✅ Completo | Con reemplazo y validación PDF. |
+| RF-16 | Gestión del Plan de Prácticas (Anexo 1) | ✅ Completo | Formulario estructurado en `/estudiante/plan-practicas`. |
+| RF-17 | Revisión/aprobación del plan | ✅ Completo | Asesor o comité según tipo; plazo de 7 días. |
+| RF-18 | Inicio de ejecución | ✅ Completo | `PUT /expedientes/{id}/iniciar-ejecucion` crea control de horas. |
+
+### 3.4 Módulo 4 — Seguimiento y Control de Horas
+
+| RF | Descripción | Estado | Detalle |
+|---|---|---|---|
+| RF-19 | Registro y contador automático de horas | ⚠️ Parcial | Backend calcula acumulado; frontend muestra progreso; la validación de mínimo y distribución temporal puede ser muy rígida. |
+| RF-20 | Registro de asistencia y avance | ⚠️ Parcial | `Monitoreo` existe pero no se observa flujo semanal de asistencia estricto. |
+| RF-21 | Monitoreo/supervisión inopinada | ⚠️ Parcial | Modelo y endpoints existen; uso visual limitado. |
+
+### 3.5 Módulo 5 — Gestión Documental y Motor de Estados
+
+| RF | Descripción | Estado | Detalle |
+|---|---|---|---|
+| RF-22 | Carga de documentos requeridos | ✅ Completo | Checklist dinámico según tipo de práctica. |
+| RF-23 | Motor de estados documentales | ⚠️ Parcial | Estados `PENDIENTE → EN_REVISION → OBSERVADO → APROBADO → ARCHIVADO` implementados, pero mezclados con estados de expediente. |
+| RF-24 | Bloqueo por plazos vencidos | ⚠️ Parcial | Servicio de plazos completo, pero **sin scheduler automático**. |
+| RF-25 | Revisión documental por asesor | ✅ Completo | `RevisionDocumental` con aprobar/observar. |
+| RF-26 | Notificaciones ante cambios de estado | ⚠️ Parcial | In-app sí; correo no. |
+
+### 3.6 Módulo 6 — Informes de Práctica (Iniciales)
+
+| RF | Descripción | Estado | Detalle |
+|---|---|---|---|
+| RF-27 | Informes parciales y final | ⚠️ Parcial | Estados de informes existen, pero la vista `InformesPeriodicos` no refleja tres informes con fechas límite por semana académica. |
+| RF-28 | Validación de formato del informe | ❌ No implementado | No hay parser ni plantilla descargable con formato APA/ Times New Roman. |
+
+### 3.7 Módulo 7 — Evaluación y Calificación
+
+| RF | Descripción | Estado | Detalle |
+|---|---|---|---|
+| RF-29 | Evaluación de empresa (Anexo 2) | ✅ Completo | Escala 1-5, categorías correctas, total 50 pts. |
+| RF-30 | Evaluación del Plan (Anexo 4, 10 pts) | ✅ Completo | `ComponenteEvaluacion` tipo PLAN. |
+| RF-31 | Evaluación del Informe (Anexo 4, 40 pts) | ✅ Completo | `ComponenteEvaluacion` tipo INFORME. |
+| RF-32 | Notas por unidades (prácticas iniciales) | ⚠️ Parcial | Existe `evaluacion` con notas, pero no se observa cálculo de unidades 1, 2 y 3 con ponderaciones 20/80. |
+| RF-33 | Diferenciación vigesimal/cualitativa | ⚠️ Parcial | Campo `tipoCalificacion` existe; lógica de negocio no aplica diferencias visibles. |
+
+### 3.8 Módulo 8 — Comité de Prácticas y Dictamen Final
+
+| RF | Descripción | Estado | Detalle |
+|---|---|---|---|
+| RF-34 | Panel de expedientes en revisión | ✅ Completo | `PanelComite` con filtros. |
+| RF-35 | Dictamen final colegiado | ✅ Completo | `POST /expedientes/{id}/emitir-dictamen`. |
+| RF-36 | Cierre y constancia | ✅ Completo | `PUT /expedientes/{id}/cerrar` + constancia PDF. |
+
+### 3.9 Módulo 9 — Secretaría Académica
+
+| RF | Descripción | Estado | Detalle |
+|---|---|---|---|
+| RF-37 | Bandeja administrativa | ✅ Completo | `DashboardSecretaria` / `RecepcionAdministrativa`. |
+| RF-38 | Gestión de incidencias | ⚠️ Parcial | Modelo `Incidencia` existe; interfaz de seguimiento no prominente. |
+
+### 3.10 Módulo 10 — Notificaciones y Alertas
+
+| RF | Descripción | Estado | Detalle |
+|---|---|---|---|
+| RF-39 | Notificaciones in-app y correo | ⚠️ Parcial | In-app OK; **falta SMTP**. |
+| RF-40 | Bloqueo automático fuera de plazo | ⚠️ Parcial | Lógica lista; **falta scheduler/cron**. |
+
+### 3.11 Módulo 11 — Dashboards del Estudiante
+
+| RF | Descripción | Estado | Detalle |
+|---|---|---|---|
+| RF-41 | Dashboard principal | ✅ Completo | `DashboardEstudiante` con progreso, documentos, notificaciones. |
+| RF-42 | Detalle del expediente | ✅ Completo | `MiPractica` con timeline. |
+| RF-43 | Gestión documental | ✅ Completo | `GestionDocumental`. |
+| RF-44 | Notificaciones del estudiante | ✅ Completo | `NotificationsMenu`. |
+
+### 3.12 Módulo 12 — Reportes y Exportación
+
+| RF | Descripción | Estado | Detalle |
+|---|---|---|---|
+| RF-45 | Reporte consolidado | ⚠️ Parcial | PDF y CSV; XML no confirmado. |
+| RF-46 | KPIs ejecutivos | ✅ Completo | `DashboardKpiService` y gráficos en frontend. |
+
+### 3.13 Módulo 13 — Auditoría y Trazabilidad
+
+| RF | Descripción | Estado | Detalle |
+|---|---|---|---|
+| RF-47 | Historial inmutable | ✅ Completo | `AuditoriaTransaccionalService`. |
+| RF-48 | Integridad documental (hash) | ⚠️ Parcial | Se menciona hash en constancia; no se verifica regeneración con versionado estricto en todos los documentos. |
+
+---
+
+## 4. Fallos, Errores y Riesgos Detectados
+
+### 4.1 Críticos
+
+1. ✅ **Ausencia de scheduler para plazos vencidos (RF-40)** — *Resuelto el 2026-07-19*
+   - Creado `PlazoVencimientoScheduler` con `@Scheduled(cron = "0 0 6 * * ?")` y `@ConditionalOnProperty`.
+   - Endpoint manual `POST /plazos/actualizar-estados` ya existía para forzar la actualización.
+
+2. ✅ **No hay servicio de correo SMTP (RF-39)** — *Resuelto el 2026-07-19*
+   - Agregada dependencia `spring-boot-starter-mail` en `sgpp-core`.
+   - Creado `EmailService`/`EmailServiceImpl` y conectado a `NotificacionEventoServiceImpl`.
+   - Configuración SMTP en `application.yml` y `application-local.yml`.
+
+3. ⚠️ **Doble modelo de evaluación** — *Parcialmente resuelto el 2026-07-19*
+   - Tabla `evaluacion` (heredada, campos fijos) y `componente_evaluacion` (normativa 2025) coexisten.
+   - Se implementó sincronización de la evaluación de empresa (`EMPRESA`) hacia `componente_evaluacion`.
+   - El cálculo de calificación final prioriza `componente_evaluacion` cuando existe.
+   - Pendiente: migrar completamente las vistas de docente/comité a `componente_evaluacion` y deprecar `evaluacion` para finales/profesionales.
+
+4. ✅ **Examen de Aplazados no implementado (RF-32)** — *Resuelto el 2026-07-19*
+   - Estados `EXAMEN_APLAZADOS_HABILITADO` y `EXAMEN_APLAZADOS_RENDIDO` agregados.
+   - Migración V55 con campos `nota_examen_aplazados` y `fecha_examen_aplazados`.
+   - Endpoints y lógica de negocio implementados; UI en `DetalleExpediente`.
+
+### 4.2 Importantes
+
+5. **Página de evaluación del estudiante en construcción**
+   - `/estudiante/evaluacion` muestra `PaginaEnConstruccion`.
+
+6. **Validación de formato de informe (RF-28) ausente**
+   - No hay plantilla descargable ni validación estructural de carátula/índice/capítulos.
+
+7. **Inconsistencia en modalidad curricular/extracurricular**
+   - V41 marca `FINAL` como curricular, pero el contexto normativo dice "extracurricular" para finales/profesionales. La Escuela de Ingeniería Industrial las considera extracurriculares (360 h). Revisar semántica.
+
+8. **Riesgo de chunk grande en frontend**
+   - `npm run build` advierte chunk de ~2 MB. No es error, pero afecta rendimiento.
+
+### 4.3 Menores / Deuda técnica
+
+9. **Uso mixto de MUI y Design System propio**
+   - Se usan íconos `@mui/icons-material` y componentes MUI (Drawer, Menu) junto a `src/ui/`. Alinearse a `lucide-react` y `src/ui/` progresivamente.
+
+10. **Campos de estado redundantes en `Expediente`**
+    - `cartaAceptacionPresentada`, `planTrabajoAprobado`, `informeFinalPresentado` duplican información que ya está en el historial de estados y documentos.
+
+11. **Estado `EVALUADO` vs `DICTAMEN_EMITIDO` vs `CERRADO`**
+    - Transiciones ambiguas; el cierre puede provenir de varios estados, debilitando la máquina de estados.
+
+---
+
+## 5. Inconsistencias Visuales y de Flujo
+
+| Inconsistencia | Ubicación | Recomendación |
+|---|---|---|
+| Estado `EMPRESA_SEDE_ASIGNADA` aparece como paso independiente, pero la solicitud estudiantil lo asigna automáticamente. | Backend/Frontend | Unificar visualmente o eliminar paso intermedio del timeline si no requiere acción humana. |
+| `PLAN_EN_REVISION` y `PLAN_EN_REVISION_COMITE` son estados de expediente, no del plan. | `EstadoExpediente` | Separar máquina de estados del documento/plan de la del expediente. |
+| El estudiante ve "Evaluación" en menú pero es página en construcción. | `AppLayout.tsx` | Ocultar hasta implementar o crear vista de consulta de evaluaciones recibidas. |
+| Íconos repetidos en menú de estudiante (todos `Assignment`). | `AppLayout.tsx` | Usar íconos diferenciados de `lucide-react`. |
+| `StatusChip` capitaliza palabras, pero algunos estados largos quisan truncados. | `StatusChip.tsx` | Agregar tooltip con descripción completa. |
+| Dashboard de docente no muestra acciones contextuales según estado del expediente. | `DashboardDocente.tsx` | Mejorar guía de próxima acción (CTA). |
+
+---
+
+## 6. Mejoras Recomendadas
+
+### 6.1 Funcionales
+
+1. ✅ **Scheduler automático de plazos** — *Implementado*.
+2. ✅ **Servicio SMTP de notificaciones** — *Implementado*.
+3. ✅ **Examen de Aplazados** — *Implementado*.
+4. **Plantilla de informe final**
+   - Endpoint `GET /plantillas/informe-final` que descargue DOCX/PDF con formato predefinido.
+   - Checklist manual en revisión documental.
+5. ⚠️ **Consolidar evaluación** — *Parcialmente implementado*.
+   - Sincronización de evaluación de empresa hacia `componente_evaluacion`.
+   - Cálculo de calificación final prioriza componentes Anexo 4.
+   - Pendiente: migrar vistas de evaluación docente y comité a componentes y deprecar `evaluacion` para finales/profesionales.
+
+### 6.2 Técnicas
+
+6. **Code-splitting frontend**
+   - Usar `React.lazy` + `Suspense` para reducir chunk inicial.
+
+7. ⚠️ **Migración de MUI icons a lucide-react** — *Iniciada en menú estudiante*.
+   - Reemplazar progresivamente `@mui/icons-material` en los demás menús.
+
+8. **Variables de entorno documentadas**
+   - Incluir `JAVA_HOME` y configuración de mail en `GUIA_EJECUCION_LOCAL.md`.
+
+9. **Tests automatizados**
+   - Agregar tests unitarios para `ExpedienteServiceImpl`, `PlazoServiceImpl` y `ComponenteEvaluacionServiceImpl`.
+
+---
+
+## 7. Plan de Implementación Faseado
+
+### Fase 1 — Infraestructura y correcciones críticas ✅
+
+- [x] Configurar scheduler de plazos vencidos.
+- [x] Implementar envío de correo SMTP.
+- [x] Revisar y corregir semántica curricular/extracurricular en `tipo_practica`.
+- [x] Documentar campos de estado redundantes en `Expediente` (no se eliminan por riesgo de ruptura).
+
+### Fase 2 — Completar flujo académico ✅
+
+- [x] Implementar examen de aplazados (semana 17) para prácticas iniciales.
+- [ ] Mejorar registro de notas por unidades (20/80) en prácticas iniciales.
+- [ ] Agregar plantilla descargable de informe final.
+
+### Fase 3 — Consolidar evaluación ⚠️
+
+- [x] Sincronizar `evaluacion` de empresa hacia `componente_evaluacion`.
+- [x] Asegurar cálculo Anexo 4: Plan (10) + Empresa (50) + Informe (40) = 100.
+- [ ] Migrar vistas de evaluación docente y comité a `componente_evaluacion`.
+- [ ] Implementar evaluación cualitativa como alternativa configurable.
+
+### Fase 4 — Mejoras visuales y UX ⚠️
+
+- [x] Ocultar `/estudiante/evaluacion` del menú (sigue existiendo como ruta en construcción).
+- [x] Diferenciar íconos del menú estudiante.
+- [ ] Agregar tooltips a `StatusChip`.
+- [ ] Mejorar dashboard docente con CTAs contextuales.
+
+### Fase 5 — Optimización y calidad
+
+- [ ] Code-splitting y reducción de chunk.
+- [ ] Migrar íconos MUI a `lucide-react` (iniciado en menú estudiante).
+- [ ] Ejecutar suite de tests backend.
+- [ ] Documentar variables de entorno en guías.
+
+---
+
+## 8. Conclusión
+
+El SGPP está **funcionalmente avanzado** y cumple aproximadamente el **75-80 % de los requerimientos** de manera completa, con otro **15-20 % parcialmente implementado**. Los bloques de compilación y build son estables. Para dejar el sistema completamente funcional, coherente y consistente, es prioritario:
+
+1. Activar el control automático de plazos.
+2. Habilitar notificaciones por correo.
+3. Completar el flujo de informes y examen de aplazados para iniciales.
+4. Consolidar el modelo de evaluación.
+5. Pulir la experiencia visual y menús según el Design System.
+
+La implementación faseada propuesta permite abordar los hallazgos de forma ordenada, minimizando riesgos y manteniendo la estabilidad del sistema.
+
+---
+
+*Documento generado durante el análisis exhaustivo del sistema SGPP. Debe actualizarse al finalizar cada fase de implementación.*

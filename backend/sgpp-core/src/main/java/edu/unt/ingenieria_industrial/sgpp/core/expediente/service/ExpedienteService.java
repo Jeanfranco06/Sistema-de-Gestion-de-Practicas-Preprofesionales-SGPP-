@@ -39,4 +39,6 @@ public interface ExpedienteService {
     List<ExpedienteResponse> findByAsesorId(Long asesorId);
     void disable(Long id, Long idUsuario);
     void emitirDictamen(Long idExpediente, String dictamenTexto, Long idUsuario);
+    ExpedienteResponse habilitarExamenAplazados(Long idExpediente, Long idUsuario);
+    ExpedienteResponse registrarExamenAplazados(Long idExpediente, RegistrarExamenAplazadosRequest request, Long idUsuario);
 }

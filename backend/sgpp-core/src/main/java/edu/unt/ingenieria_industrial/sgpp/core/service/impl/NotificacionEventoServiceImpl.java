@@ -1,6 +1,7 @@
 package edu.unt.ingenieria_industrial.sgpp.core.service.impl;
 
 import edu.unt.ingenieria_industrial.sgpp.core.dto.NotificacionDTO;
+import edu.unt.ingenieria_industrial.sgpp.core.notificacion.service.EmailService;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.model.Usuario;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.repository.UsuarioRepository;
 import edu.unt.ingenieria_industrial.sgpp.core.service.NotificacionEventoService;
@@ -16,6 +17,7 @@ public class NotificacionEventoServiceImpl implements NotificacionEventoService 
 
     private final NotificacionService notificacionService;
     private final UsuarioRepository usuarioRepository;
+    private final EmailService emailService;
 
     @Override
     public void notificarPorUsername(String username, String tipoNotificacion, String titulo, String mensaje) {
@@ -31,7 +33,7 @@ public class NotificacionEventoServiceImpl implements NotificacionEventoService 
 
         usuarioRepository.findByUsername(username)
                 .map(Usuario::getEmail)
-                .ifPresent(email -> enviarCorreoSimulado(email, titulo, mensaje));
+                .ifPresent(email -> emailService.enviarCorreo(email, titulo, mensaje));
     }
 
     @Override
@@ -71,10 +73,4 @@ public class NotificacionEventoServiceImpl implements NotificacionEventoService 
                 "El plan de trabajo del expediente " + codigoExpediente + " fue aprobado.");
     }
 
-    private void enviarCorreoSimulado(String email, String titulo, String mensaje) {
-        if (email == null || email.isBlank()) {
-            return;
-        }
-        log.info("[NOTIFICACION-EMAIL] Para: {} | Asunto: {} | Mensaje: {}", email, titulo, mensaje);
-    }
 }

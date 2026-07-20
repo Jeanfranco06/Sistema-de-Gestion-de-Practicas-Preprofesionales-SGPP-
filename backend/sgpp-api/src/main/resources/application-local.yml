@@ -31,6 +31,10 @@ jwt:
 sgpp:
   exportacion:
     directorio: D:/Proyects/SG de Practicas Pre profesionales/backend/data/exportaciones
+  scheduler:
+    plazos:
+      cron: "0 0 6 * * ?"
+      enabled: true
 
 logging:
   level:

@@ -410,4 +410,29 @@ public class ExpedienteController {
         return ResponseEntity.ok(ApiResponse.<Void>builder()
                 .success(true).message("Dictamen final emitido").timestamp(LocalDateTime.now()).build());
     }
+
+    @PostMapping("/{id}/habilitar-examen-aplazados")
+    @Operation(summary = "Habilitar examen de aplazados para práctica inicial")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COORDINADOR', 'DIRECTOR', 'DOCENTE_ASESOR')")
+    public ResponseEntity<ApiResponse<ExpedienteResponse>> habilitarExamenAplazados(
+            @PathVariable Long id,
+            @RequestAttribute(value = "idUsuario", required = false) Long idUsuario) {
+        Long usuarioActual = Objects.requireNonNull(currentUserService.getCurrentUserId(), "Usuario no autenticado");
+        ExpedienteResponse response = expedienteService.habilitarExamenAplazados(id, usuarioActual);
+        return ResponseEntity.ok(ApiResponse.<ExpedienteResponse>builder()
+                .success(true).message("Examen de aplazados habilitado").data(response).timestamp(LocalDateTime.now()).build());
+    }
+
+    @PostMapping("/{id}/registrar-examen-aplazados")
+    @Operation(summary = "Registrar nota del examen de aplazados")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COORDINADOR', 'DIRECTOR', 'DOCENTE_ASESOR')")
+    public ResponseEntity<ApiResponse<ExpedienteResponse>> registrarExamenAplazados(
+            @PathVariable Long id,
+            @Valid @RequestBody RegistrarExamenAplazadosRequest request,
+            @RequestAttribute(value = "idUsuario", required = false) Long idUsuario) {
+        Long usuarioActual = Objects.requireNonNull(currentUserService.getCurrentUserId(), "Usuario no autenticado");
+        ExpedienteResponse response = expedienteService.registrarExamenAplazados(id, request, usuarioActual);
+        return ResponseEntity.ok(ApiResponse.<ExpedienteResponse>builder()
+                .success(true).message("Nota de examen de aplazados registrada").data(response).timestamp(LocalDateTime.now()).build());
+    }
 }

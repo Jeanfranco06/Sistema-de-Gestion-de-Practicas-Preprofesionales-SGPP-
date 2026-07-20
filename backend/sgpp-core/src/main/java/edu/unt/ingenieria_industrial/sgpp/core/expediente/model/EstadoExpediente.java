@@ -59,6 +59,10 @@ public enum EstadoExpediente {
     EVALUACION_COMPLETA("EVALUACION_COMPLETA", "Todas las evaluaciones registradas"),
     DICTAMEN_EMITIDO("DICTAMEN_EMITIDO", "Dictamen final emitido por comité"),
     EVALUADO("EVALUADO", "Expediente evaluado con calificación final"),
+
+    // Estados de examen de aplazados (prácticas iniciales, semana 17)
+    EXAMEN_APLAZADOS_HABILITADO("EXAMEN_APLAZADOS_HABILITADO", "Habilitado examen de aplazados"),
+    EXAMEN_APLAZADOS_RENDIDO("EXAMEN_APLAZADOS_RENDIDO", "Examen de aplazados rendido"),
     
     // Estados de cierre
     CERRADO("CERRADO", "Expediente cerrado y constancia emitida"),
@@ -146,9 +150,13 @@ public enum EstadoExpediente {
             case DICTAMEN_EMITIDO:
                 return estadoAnterior == EVALUACION_COMPLETA;
             case EVALUADO:
-                return estadoAnterior == EVALUACION_COMPLETA || estadoAnterior == DICTAMEN_EMITIDO || estadoAnterior == EVALUACION_EMPRESA_PENDIENTE;
+                return estadoAnterior == EVALUACION_COMPLETA || estadoAnterior == DICTAMEN_EMITIDO || estadoAnterior == EVALUACION_EMPRESA_PENDIENTE || estadoAnterior == EXAMEN_APLAZADOS_RENDIDO;
+            case EXAMEN_APLAZADOS_HABILITADO:
+                return estadoAnterior == EVALUADO || estadoAnterior == INFORME_FINAL_PRESENTADO;
+            case EXAMEN_APLAZADOS_RENDIDO:
+                return estadoAnterior == EXAMEN_APLAZADOS_HABILITADO;
             case CERRADO:
-                return estadoAnterior == EVALUADO || estadoAnterior == DICTAMEN_EMITIDO;
+                return estadoAnterior == EVALUADO || estadoAnterior == DICTAMEN_EMITIDO || estadoAnterior == EXAMEN_APLAZADOS_RENDIDO;
             case OBSERVADO:
                 return estadoAnterior == EN_REVISION || estadoAnterior == PLAN_EN_REVISION || estadoAnterior == PLAN_EN_REVISION_COMITE;
             case SUBSANADO:

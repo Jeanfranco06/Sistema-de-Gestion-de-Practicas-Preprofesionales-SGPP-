@@ -58,6 +58,7 @@ public class ExpedienteServiceImpl implements ExpedienteService {
     private static final String TIPO_PROFESIONAL = "PROFESIONAL";
     private static final String VALIDADO_SECRETARIA = "VALIDADO_SECRETARIA";
     private static final String CARTA_PRESENTACION_EMITIDA = "CARTA_PRESENTACION_EMITIDA";
+    private static final BigDecimal NOTA_MINIMA_APROBATORIA = new BigDecimal("13.50");
 
 private final ExpedienteRepository expedienteRepository;
     private final ExpedienteEstadoRepository estadoRepository;
@@ -840,6 +841,88 @@ private final ExpedienteRepository expedienteRepository;
                     practica.setActivo(false);
                     practica.setHorasRestantes(0);
                 });
+    }
+
+    @Override
+    public ExpedienteResponse habilitarExamenAplazados(Long idExpediente, Long idUsuario) {
+        Expediente expediente = findExpediente(idExpediente);
+        String estadoActual = expediente.getEstado();
+
+        if (!TIPO_INICIAL.equals(expediente.getTipoPractica().getCodigo())) {
+            throw new BusinessException("El examen de aplazados solo aplica a prácticas iniciales");
+        }
+        if (!EstadoExpediente.EVALUADO.getCodigo().equals(estadoActual)
+                && !EstadoExpediente.INFORME_FINAL_PRESENTADO.getCodigo().equals(estadoActual)) {
+            throw new BusinessException("El expediente debe estar evaluado o con informe final presentado para habilitar el examen de aplazados");
+        }
+        if (expediente.getCalificacionFinal() != null
+                && expediente.getCalificacionFinal().compareTo(NOTA_MINIMA_APROBATORIA) >= 0) {
+            throw new BusinessException("El estudiante ya tiene nota aprobatoria; no requiere examen de aplazados");
+        }
+
+        String nuevoEstado = EstadoExpediente.EXAMEN_APLAZADOS_HABILITADO.getCodigo();
+        expediente.setEstado(nuevoEstado);
+        expediente = expedienteRepository.save(expediente);
+        registrarCambioEstado(expediente, estadoActual, nuevoEstado, idUsuario,
+                "Habilitado examen de aplazados (semana 17)", "EXAMEN_APLAZADOS");
+
+        notificacionEventoService.notificarPorUsuarioId(expediente.getEstudiante().getUsuario().getId(), "EXAMEN_APLAZADOS",
+                "Examen de Aplazados Habilitado",
+                "Se habilitó el examen de aplazados para el expediente " + expediente.getCodigoExpediente() + ".");
+
+        return toResponse(expediente);
+    }
+
+    @Override
+    public ExpedienteResponse registrarExamenAplazados(Long idExpediente, RegistrarExamenAplazadosRequest request, Long idUsuario) {
+        Expediente expediente = findExpediente(idExpediente);
+        String estadoActual = expediente.getEstado();
+
+        if (!EstadoExpediente.EXAMEN_APLAZADOS_HABILITADO.getCodigo().equals(estadoActual)) {
+            throw new BusinessException("El expediente no está habilitado para examen de aplazados");
+        }
+        if (!TIPO_INICIAL.equals(expediente.getTipoPractica().getCodigo())) {
+            throw new BusinessException("El examen de aplazados solo aplica a prácticas iniciales");
+        }
+        if (request.getNota() == null || request.getNota().compareTo(BigDecimal.ZERO) < 0
+                || request.getNota().compareTo(new BigDecimal("20")) > 0) {
+            throw new BusinessException("La nota debe estar entre 0 y 20");
+        }
+
+        expediente.setNotaExamenAplazados(request.getNota());
+        expediente.setFechaExamenAplazados(LocalDate.now());
+
+        String nuevoEstado;
+        String mensaje;
+        if (request.getNota().compareTo(NOTA_MINIMA_APROBATORIA) >= 0) {
+            nuevoEstado = EstadoExpediente.EVALUADO.getCodigo();
+            expediente.setCalificacionFinal(request.getNota());
+            mensaje = "Aprobó el examen de aplazados con nota " + request.getNota();
+        } else {
+            nuevoEstado = EstadoExpediente.EXAMEN_APLAZADOS_RENDIDO.getCodigo();
+            mensaje = "Rindió el examen de aplazados con nota " + request.getNota();
+        }
+
+        expediente.setEstado(nuevoEstado);
+        expediente = expedienteRepository.save(expediente);
+        registrarCambioEstado(expediente, estadoActual, nuevoEstado, idUsuario,
+                mensaje + ". " + (request.getComentarios() != null ? request.getComentarios() : ""), "EXAMEN_APLAZADOS");
+
+        auditoriaService.registrar(RegistrarEventoAuditoriaDTO.builder()
+                .tipoEntidad(TipoEntidadAuditable.NOTA)
+                .entidadId(idExpediente)
+                .idExpediente(idExpediente)
+                .accion(AccionAuditoria.REGISTRAR_CALIFICACION)
+                .idUsuario(idUsuario)
+                .valorNuevo(Map.of("notaExamenAplazados", request.getNota(), "estado", nuevoEstado))
+                .motivo("Registro de examen de aplazados")
+                .build());
+
+        notificacionEventoService.notificarPorUsuarioId(expediente.getEstudiante().getUsuario().getId(), "EXAMEN_APLAZADOS",
+                "Resultado de Examen de Aplazados",
+                mensaje + " en el expediente " + expediente.getCodigoExpediente() + ".");
+
+        return toResponse(expediente);
     }
 
     @Override

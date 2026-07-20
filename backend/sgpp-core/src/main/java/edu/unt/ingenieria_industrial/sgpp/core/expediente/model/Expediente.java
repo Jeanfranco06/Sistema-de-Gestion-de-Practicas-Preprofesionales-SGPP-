@@ -132,6 +132,12 @@ public class Expediente extends BaseEntity {
     @Column(name = "calificacion_final", precision = 4, scale = 2)
     private BigDecimal calificacionFinal;
 
+    @Column(name = "nota_examen_aplazados", precision = 4, scale = 2)
+    private BigDecimal notaExamenAplazados;
+
+    @Column(name = "fecha_examen_aplazados")
+    private LocalDate fechaExamenAplazados;
+
     @Column(name = "observaciones", columnDefinition = "TEXT")
     private String observaciones;
 

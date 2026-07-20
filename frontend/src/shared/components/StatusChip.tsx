@@ -24,6 +24,8 @@ const STATUS_LABELS: Record<string, string> = {
   EVALUACION_COMPLETA: 'Evaluación completa',
   DICTAMEN_EMITIDO: 'Dictamen emitido',
   EVALUADO: 'Evaluado',
+  EXAMEN_APLAZADOS_HABILITADO: 'Examen de aplazados habilitado',
+  EXAMEN_APLAZADOS_RENDIDO: 'Examen de aplazados rendido',
   CERRADO: 'Cerrado',
   OBSERVADO: 'Observado',
   SUBSANADO: 'Subsanado',

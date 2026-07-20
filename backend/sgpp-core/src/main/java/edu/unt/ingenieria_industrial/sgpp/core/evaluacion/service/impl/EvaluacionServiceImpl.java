@@ -32,6 +32,7 @@ public class EvaluacionServiceImpl implements EvaluacionService {
     private final RubricaRepository rubricaRepository;
     private final ExpedienteRepository expedienteRepository;
     private final ExpedienteAccesoService expedienteAccesoService;
+    private final edu.unt.ingenieria_industrial.sgpp.core.evaluacion.service.ComponenteEvaluacionService componenteEvaluacionService;
 
     private static final String[] CALIFICACIONES_CUALITATIVAS = {"Deficiente", "Regular", "Bueno", "Muy Bueno", "Excelente"};
 
@@ -80,6 +81,22 @@ public class EvaluacionServiceImpl implements EvaluacionService {
                 .collect(Collectors.toList());
 
         detalleEvaluacionRepository.saveAll(detalles);
+
+        // Sincronizar evaluación de empresa con el componente Anexo 4 correspondiente
+        if ("EMPRESA".equals(request.getComponente()) && !"INICIAL".equals(tipoPractica)) {
+            try {
+                componenteEvaluacionService.registrarEvaluacion(
+                        expediente.getId(),
+                        "EMPRESA",
+                        puntajeTotal,
+                        request.getEvaluadorId(),
+                        request.getTipoEvaluador(),
+                        request.getComentarios());
+            } catch (Exception e) {
+                log.warn("No se pudo sincronizar componente EMPRESA para expediente {}: {}",
+                        expediente.getId(), e.getMessage());
+            }
+        }
 
         BigDecimal promedio = calcularPromedioFinal(expediente.getId());
         String calificacionCualitativa = calcularCalificacionCualitativa(promedio.doubleValue());
@@ -175,6 +192,39 @@ public class EvaluacionServiceImpl implements EvaluacionService {
     }
 
     private BigDecimal calcularPromedioFinal(Long idExpediente) {
+        // Si existen componentes Anexo 4 completados, usarlos como fuente principal
+        // para prácticas finales/profesionales.
+        try {
+            List<edu.unt.ingenieria_industrial.sgpp.core.evaluacion.model.ComponenteEvaluacion> componentes =
+                    componenteEvaluacionService.obtenerComponentesPorExpediente(idExpediente).stream()
+                            .map(dto -> {
+                                edu.unt.ingenieria_industrial.sgpp.core.evaluacion.model.ComponenteEvaluacion c =
+                                        new edu.unt.ingenieria_industrial.sgpp.core.evaluacion.model.ComponenteEvaluacion();
+                                c.setTipoComponente(dto.getTipoComponente());
+                                c.setPuntajeObtenido(dto.getPuntajeObtenido());
+                                c.setPuntajeMaximo(dto.getPuntajeMaximo());
+                                c.setEstado(dto.getEstado());
+                                return c;
+                            }).collect(Collectors.toList());
+
+            boolean hayCompletados = componentes.stream().anyMatch(c -> "COMPLETADO".equals(c.getEstado()));
+            if (hayCompletados) {
+                int totalObtenido = componentes.stream()
+                        .mapToInt(c -> c.getPuntajeObtenido() != null ? c.getPuntajeObtenido() : 0)
+                        .sum();
+                int totalMaximo = componentes.stream()
+                        .mapToInt(c -> c.getPuntajeMaximo() != null ? c.getPuntajeMaximo() : 0)
+                        .sum();
+                if (totalMaximo > 0) {
+                    double promedioVigesimal = (totalObtenido * 20.0) / totalMaximo;
+                    return BigDecimal.valueOf(promedioVigesimal)
+                            .setScale(2, RoundingMode.HALF_UP);
+                }
+            }
+        } catch (Exception e) {
+            log.debug("No se pudieron consultar componentes de evaluación para expediente {}: {}", idExpediente, e.getMessage());
+        }
+
         List<Evaluacion> evaluaciones = evaluacionRepository.findByExpedienteIdAndActivoTrue(idExpediente);
 
         if (evaluaciones.isEmpty()) {

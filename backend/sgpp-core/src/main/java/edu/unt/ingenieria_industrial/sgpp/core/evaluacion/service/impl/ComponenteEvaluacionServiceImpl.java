@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -31,6 +32,13 @@ public class ComponenteEvaluacionServiceImpl implements ComponenteEvaluacionServ
         Expediente expediente = expedienteRepository.findById(expedienteId)
                 .orElseThrow(() -> new ResourceNotFoundException("Expediente", "id", expedienteId));
 
+        // Las prácticas iniciales usan evaluación curricular por unidades (0-20),
+        // no el esquema de componentes Anexo 4.
+        if ("INICIAL".equalsIgnoreCase(tipoPractica)) {
+            log.info("No se inicializan componentes Anexo 4 para práctica INICIAL (expediente {})", expedienteId);
+            return;
+        }
+
         // Verificar que no existan componentes ya inicializados
         List<ComponenteEvaluacion> existentes = componenteRepository.findByExpedienteIdAndActivoTrue(expedienteId);
         if (!existentes.isEmpty()) {
@@ -38,7 +46,7 @@ public class ComponenteEvaluacionServiceImpl implements ComponenteEvaluacionServ
             return;
         }
 
-        // Según normativa UNT 2025:
+        // Según normativa UNT 2025 / Anexo 4:
         // - PLAN: 10 puntos (10%) - Docente Asesor
         // - EMPRESA: 50 puntos (50%) - Tutor Externo
         // - INFORME: 40 puntos (40%) - Comité
@@ -99,7 +107,37 @@ public class ComponenteEvaluacionServiceImpl implements ComponenteEvaluacionServ
         log.info("Evaluación registrada: expediente={}, componente={}, puntaje={}", 
                 expedienteId, tipoComponente, puntaje);
 
+        sincronizarCalificacionFinal(expedienteId);
+
         return toDto(componente);
+    }
+
+    /**
+     * Si todos los componentes Anexo 4 de un expediente están completados,
+     * calcula el puntaje total sobre 100 y lo convierte a escala vigesimal (0-20)
+     * para mantener coherencia con la validación de cierre del expediente.
+     */
+    private void sincronizarCalificacionFinal(Long expedienteId) {
+        List<ComponenteEvaluacion> componentes = componenteRepository.findByExpedienteIdAndActivoTrue(expedienteId);
+        boolean todosCompletados = componentes.stream()
+                .allMatch(c -> "COMPLETADO".equals(c.getEstado()) && c.getPuntajeObtenido() != null);
+        if (!todosCompletados || componentes.isEmpty()) {
+            return;
+        }
+
+        int total = componentes.stream()
+                .mapToInt(c -> c.getPuntajeObtenido() != null ? c.getPuntajeObtenido() : 0)
+                .sum();
+        BigDecimal calificacionVigesimal = BigDecimal.valueOf(total)
+                .multiply(BigDecimal.valueOf(20))
+                .divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
+
+        Expediente expediente = expedienteRepository.findById(expedienteId)
+                .orElseThrow(() -> new ResourceNotFoundException("Expediente", "id", expedienteId));
+        expediente.setCalificacionFinal(calificacionVigesimal);
+        expedienteRepository.save(expediente);
+        log.info("Calificación final sincronizada desde Anexo 4: expediente={}, total={}/100, vigesimal={}",
+                expedienteId, total, calificacionVigesimal);
     }
 
     @Override
