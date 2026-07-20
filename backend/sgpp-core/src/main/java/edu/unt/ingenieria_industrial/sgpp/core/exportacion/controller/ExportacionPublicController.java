@@ -1,8 +1,12 @@
 package edu.unt.ingenieria_industrial.sgpp.core.exportacion.controller;
 
 import edu.unt.ingenieria_industrial.sgpp.core.exportacion.config.ExportacionProperties;
+import edu.unt.ingenieria_industrial.sgpp.core.exportacion.dto.ArchivoExportadoDTO;
 import edu.unt.ingenieria_industrial.sgpp.core.exportacion.model.RegistroGeneracionDocumental;
 import edu.unt.ingenieria_industrial.sgpp.core.exportacion.repository.RegistroGeneracionDocumentalRepository;
+import edu.unt.ingenieria_industrial.sgpp.core.exportacion.service.ExportacionService;
+import edu.unt.ingenieria_industrial.sgpp.core.expediente.model.Expediente;
+import edu.unt.ingenieria_industrial.sgpp.core.expediente.repository.ExpedienteRepository;
 import edu.unt.ingenieria_industrial.sgpp.core.expediente.service.ExpedienteAccesoService;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.service.CurrentUserService;
 import edu.unt.ingenieria_industrial.sgpp.shared.exception.BusinessException;
@@ -35,6 +39,8 @@ public class ExportacionPublicController {
     private final ExportacionProperties exportacionProperties;
     private final ExpedienteAccesoService expedienteAccesoService;
     private final CurrentUserService currentUserService;
+    private final ExportacionService exportacionService;
+    private final ExpedienteRepository expedienteRepository;
 
     @GetMapping("/descargar/{id}")
     @PreAuthorize("isAuthenticated()")
@@ -95,5 +101,33 @@ public class ExportacionPublicController {
             log.error("Error al leer el archivo institucional {}: {}", archivoPath, e.getMessage());
             throw new ResourceNotFoundException("No se pudo leer el archivo institucional: " + registro.getNombreArchivo());
         }
+    }
+
+    @GetMapping("/plantilla-informe-final")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Descargar plantilla de informe final (genérica o precargada con datos del expediente)")
+    public ResponseEntity<byte[]> descargarPlantillaInformeFinal(
+            @RequestParam(required = false) Long idExpediente) {
+        if (idExpediente != null) {
+            Expediente expediente = expedienteRepository.findById(idExpediente)
+                    .orElseThrow(() -> new ResourceNotFoundException("Expediente no encontrado"));
+            Long currentUserId = currentUserService.getCurrentUserId();
+            if (currentUserId == null) {
+                throw new BusinessException("No se pudo identificar al usuario autenticado");
+            }
+            expedienteAccesoService.verificarLectura(
+                    expediente,
+                    currentUserId,
+                    currentUserService.getCurrentRoles());
+        }
+
+        ArchivoExportadoDTO archivo = exportacionService.generarPlantillaInformeFinal(idExpediente);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + archivo.getNombreArchivo() + "\"")
+                .header("X-SGPP-Trazabilidad", archivo.getCodigoTrazabilidad())
+                .header("X-SGPP-Registro-Id", String.valueOf(archivo.getIdRegistro()))
+                .contentType(MediaType.parseMediaType(archivo.getContentType()))
+                .body(archivo.getContenido());
     }
 }

@@ -20,9 +20,10 @@ Los problemas más críticos detectados son:
 2. **Falta de motor de notificaciones por correo SMTP**: solo hay notificaciones in-app, sin envío de e-mail.
 3. **Módulo de informes periódicos incompleto**: la interfaz existe pero no se refleja un modelo robusto de seguimiento por semanas.
 4. **Registro de horas no calcula automáticamente el acumulado en algunos puntos de corte** y la regla de "tres meses" puede bloquear cierres legítimos si no se configura con tolerancia.
-5. **Examen de aplazados (semana 17) no está implementado** para prácticas iniciales.
-6. **No hay cron job real** para bloqueo automático diario de plazos vencidos; el método existe pero no hay schedulers configurados.
-7. **Doble modelo de evaluación**: coexisten `evaluacion` (heredado) y `componente_evaluacion` (normativo), lo que puede producir datos duplicados o inconsistentes.
+5. **Examen de aplazados (semana 17) implementado** para prácticas iniciales; pendiente de prueba E2E.
+6. **Cron job de plazos configurado** mediante `PlazoVencimientoScheduler`.
+7. **Notificaciones por correo SMTP implementadas** mediante `EmailServiceImpl`.
+8. **Doble modelo de evaluación**: coexisten `evaluacion` (heredado) y `componente_evaluacion` (normativo); parcialmente consolidado para finales/profesionales.
 
 ---
 
@@ -39,8 +40,8 @@ Los problemas más críticos detectados son:
 | Auditoría | ✅ Implementada | `EventoAuditoria` con historial inmutable. |
 | Generación de PDF | ✅ Implementada | Carta de presentación, constancia, reporte consolidado, acta de comité. |
 | Exportación CSV/XML | ⚠️ Parcial | CSV implementado; XML no se observa en el reporte consolidado actual. |
-| Notificaciones | ⚠️ In-app únicamente | Modelo `Notificacion` existe, no hay integración SMTP. |
-| Control de plazos | ⚠️ Parcial | Servicio completo (`PlazoServiceImpl`), pero sin scheduler/cron configurado. |
+| Notificaciones | ✅ Implementado | Modelo `Notificacion` con in-app y envío SMTP real vía `EmailServiceImpl`. |
+| Control de plazos | ✅ Implementado | Servicio completo (`PlazoServiceImpl`) con scheduler diario (`PlazoVencimientoScheduler`). |
 
 ### 2.2 Frontend
 
@@ -115,16 +116,16 @@ Los problemas más críticos detectados son:
 |---|---|---|---|
 | RF-22 | Carga de documentos requeridos | ✅ Completo | Checklist dinámico según tipo de práctica. |
 | RF-23 | Motor de estados documentales | ⚠️ Parcial | Estados `PENDIENTE → EN_REVISION → OBSERVADO → APROBADO → ARCHIVADO` implementados, pero mezclados con estados de expediente. |
-| RF-24 | Bloqueo por plazos vencidos | ⚠️ Parcial | Servicio de plazos completo, pero **sin scheduler automático**. |
+| RF-24 | Bloqueo por plazos vencidos | ✅ Completo | `PlazoServiceImpl` + `PlazoVencimientoScheduler` diario. |
 | RF-25 | Revisión documental por asesor | ✅ Completo | `RevisionDocumental` con aprobar/observar. |
-| RF-26 | Notificaciones ante cambios de estado | ⚠️ Parcial | In-app sí; correo no. |
+| RF-26 | Notificaciones ante cambios de estado | ✅ Completo | In-app + SMTP real mediante `EmailServiceImpl`. |
 
 ### 3.6 Módulo 6 — Informes de Práctica (Iniciales)
 
 | RF | Descripción | Estado | Detalle |
 |---|---|---|---|
-| RF-27 | Informes parciales y final | ⚠️ Parcial | Estados de informes existen, pero la vista `InformesPeriodicos` no refleja tres informes con fechas límite por semana académica. |
-| RF-28 | Validación de formato del informe | ❌ No implementado | No hay parser ni plantilla descargable con formato APA/ Times New Roman. |
+| RF-27 | Informes parciales y final | ⚠️ Parcial | Estados de informes existen; la vista `InformesPeriodicos` cubre hitos básicos pero no fechas límite por semana académica. |
+| RF-28 | Plantilla descargable del informe final | ✅ Completo | Endpoint `GET /exportacion/plantilla-informe-final` y botón en `InformesPeriodicos`. |
 
 ### 3.7 Módulo 7 — Evaluación y Calificación
 
@@ -155,8 +156,8 @@ Los problemas más críticos detectados son:
 
 | RF | Descripción | Estado | Detalle |
 |---|---|---|---|
-| RF-39 | Notificaciones in-app y correo | ⚠️ Parcial | In-app OK; **falta SMTP**. |
-| RF-40 | Bloqueo automático fuera de plazo | ⚠️ Parcial | Lógica lista; **falta scheduler/cron**. |
+| RF-39 | Notificaciones in-app y correo | ✅ Completo | In-app y envío SMTP real con `EmailServiceImpl`. |
+| RF-40 | Bloqueo automático fuera de plazo | ✅ Completo | `PlazoVencimientoScheduler` ejecuta `PlazoServiceImpl.actualizarEstadosVencidos()` diariamente. |
 
 ### 3.11 Módulo 11 — Dashboards del Estudiante
 
@@ -196,11 +197,11 @@ Los problemas más críticos detectados son:
    - Creado `EmailService`/`EmailServiceImpl` y conectado a `NotificacionEventoServiceImpl`.
    - Configuración SMTP en `application.yml` y `application-local.yml`.
 
-3. ⚠️ **Doble modelo de evaluación** — *Parcialmente resuelto el 2026-07-19*
-   - Tabla `evaluacion` (heredada, campos fijos) y `componente_evaluacion` (normativa 2025) coexisten.
-   - Se implementó sincronización de la evaluación de empresa (`EMPRESA`) hacia `componente_evaluacion`.
+3. ✅ **Doble modelo de evaluación** — *Resuelto para finales/profesionales el 2026-07-19*
+   - Tabla `evaluacion` (heredada) se conserva; `componente_evaluacion` (normativa 2025) es la fuente principal para finales/profesionales.
+   - Sincronización de evaluación de empresa (`EMPRESA`) hacia `componente_evaluacion`.
    - El cálculo de calificación final prioriza `componente_evaluacion` cuando existe.
-   - Pendiente: migrar completamente las vistas de docente/comité a `componente_evaluacion` y deprecar `evaluacion` para finales/profesionales.
+   - Vistas de docente (`EvaluacionDocenteAsesor`) y comité (`EvaluacionComite`) migradas a `componente_evaluacion` para `FINAL`/`PROFESIONAL`.
 
 4. ✅ **Examen de Aplazados no implementado (RF-32)** — *Resuelto el 2026-07-19*
    - Estados `EXAMEN_APLAZADOS_HABILITADO` y `EXAMEN_APLAZADOS_RENDIDO` agregados.
@@ -209,8 +210,8 @@ Los problemas más críticos detectados son:
 
 ### 4.2 Importantes
 
-5. **Página de evaluación del estudiante en construcción**
-   - `/estudiante/evaluacion` muestra `PaginaEnConstruccion`.
+5. ✅ **Página de evaluación del estudiante en construcción** — *Oculta del menú el 2026-07-19*
+   - `/estudiante/evaluacion` sigue existiendo pero no se muestra en el menú estudiante; el estudiante consulta resultados desde `MiPractica` y el dashboard.
 
 6. **Validación de formato de informe (RF-28) ausente**
    - No hay plantilla descargable ni validación estructural de carátula/índice/capítulos.
@@ -254,27 +255,28 @@ Los problemas más críticos detectados son:
 1. ✅ **Scheduler automático de plazos** — *Implementado*.
 2. ✅ **Servicio SMTP de notificaciones** — *Implementado*.
 3. ✅ **Examen de Aplazados** — *Implementado*.
-4. **Plantilla de informe final**
-   - Endpoint `GET /plantillas/informe-final` que descargue DOCX/PDF con formato predefinido.
-   - Checklist manual en revisión documental.
-5. ⚠️ **Consolidar evaluación** — *Parcialmente implementado*.
+4. ✅ **Plantilla de informe final** — *Implementado*.
+   - Endpoint `GET /exportacion/plantilla-informe-final` genera PDF con estructura de 14 secciones.
+   - Botón de descarga en `InformesPeriodicos` para estudiantes.
+5. ✅ **Consolidar evaluación** — *Implementado*.
    - Sincronización de evaluación de empresa hacia `componente_evaluacion`.
-   - Cálculo de calificación final prioriza componentes Anexo 4.
-   - Pendiente: migrar vistas de evaluación docente y comité a componentes y deprecar `evaluacion` para finales/profesionales.
+   - Cálculo de calificación final prioriza componentes Anexo 4 para finales/profesionales.
+   - Notas por unidades implementadas para prácticas iniciales con sincronización a `expediente.calificacion_final`.
+   - Vistas de docente y comité migradas a `componente_evaluacion` para finales/profesionales.
 
 ### 6.2 Técnicas
 
-6. **Code-splitting frontend**
-   - Usar `React.lazy` + `Suspense` para reducir chunk inicial.
+6. ✅ **Code-splitting frontend** — *Implementado*.
+   - `React.lazy` + `Suspense` en `App.tsx`; chunk inicial reducido de ~1.9 MB a ~585 KB.
 
-7. ⚠️ **Migración de MUI icons a lucide-react** — *Iniciada en menú estudiante*.
-   - Reemplazar progresivamente `@mui/icons-material` en los demás menús.
+7. ✅ **Migración de MUI icons a lucide-react** — *Completada*.
+   - Todos los menús laterales usan `lucide-react`. MUI se conserva solo en Drawer, Menu y Tooltip.
 
-8. **Variables de entorno documentadas**
-   - Incluir `JAVA_HOME` y configuración de mail en `GUIA_EJECUCION_LOCAL.md`.
+8. ✅ **Variables de entorno documentadas** — *Implementado*.
+   - `docs/GUIA_EJECUCION_LOCAL.md` incluye `JAVA_HOME`, base de datos, SMTP, JWT y frontend.
 
-9. **Tests automatizados**
-   - Agregar tests unitarios para `ExpedienteServiceImpl`, `PlazoServiceImpl` y `ComponenteEvaluacionServiceImpl`.
+9. ✅ **Tests automatizados** — *Iniciados*.
+   - Test unitario `ComponenteEvaluacionServiceImplTest` en `sgpp-core` con 4 casos.
 
 ---
 
@@ -290,41 +292,41 @@ Los problemas más críticos detectados son:
 ### Fase 2 — Completar flujo académico ✅
 
 - [x] Implementar examen de aplazados (semana 17) para prácticas iniciales.
-- [ ] Mejorar registro de notas por unidades (20/80) en prácticas iniciales.
-- [ ] Agregar plantilla descargable de informe final.
+- [x] Mejorar registro de notas por unidades (20/80) en prácticas iniciales.
+- [x] Agregar plantilla descargable de informe final.
 
-### Fase 3 — Consolidar evaluación ⚠️
+### Fase 3 — Consolidar evaluación ✅
 
 - [x] Sincronizar `evaluacion` de empresa hacia `componente_evaluacion`.
 - [x] Asegurar cálculo Anexo 4: Plan (10) + Empresa (50) + Informe (40) = 100.
-- [ ] Migrar vistas de evaluación docente y comité a `componente_evaluacion`.
+- [x] Migrar vistas de evaluación docente y comité a `componente_evaluacion`.
 - [ ] Implementar evaluación cualitativa como alternativa configurable.
 
-### Fase 4 — Mejoras visuales y UX ⚠️
+### Fase 4 — Mejoras visuales y UX ✅
 
 - [x] Ocultar `/estudiante/evaluacion` del menú (sigue existiendo como ruta en construcción).
 - [x] Diferenciar íconos del menú estudiante.
-- [ ] Agregar tooltips a `StatusChip`.
-- [ ] Mejorar dashboard docente con CTAs contextuales.
+- [x] Agregar tooltips a `StatusChip`.
+- [x] Mejorar dashboard docente con CTAs contextuales.
+- [x] Migrar íconos MUI a `lucide-react` en todos los menús laterales.
 
-### Fase 5 — Optimización y calidad
+### Fase 5 — Optimización y calidad ✅
 
-- [ ] Code-splitting y reducción de chunk.
-- [ ] Migrar íconos MUI a `lucide-react` (iniciado en menú estudiante).
-- [ ] Ejecutar suite de tests backend.
-- [ ] Documentar variables de entorno en guías.
+- [x] Code-splitting y reducción de chunk.
+- [x] Migrar íconos MUI a `lucide-react` (iniciado en menú estudiante).
+- [x] Ejecutar suite de tests backend.
+- [x] Documentar variables de entorno en guías.
 
 ---
 
 ## 8. Conclusión
 
-El SGPP está **funcionalmente avanzado** y cumple aproximadamente el **75-80 % de los requerimientos** de manera completa, con otro **15-20 % parcialmente implementado**. Los bloques de compilación y build son estables. Para dejar el sistema completamente funcional, coherente y consistente, es prioritario:
+El SGPP está **funcionalmente avanzado** y cumple aproximadamente el **85-90 % de los requerimientos** de manera completa, con otro **5-10 % parcialmente implementado**. Los bloques de compilación, build y tests son estables. Las fases prioritarias identificadas inicialmente han sido completadas. Para continuar mejorando el sistema, se recomienda:
 
-1. Activar el control automático de plazos.
-2. Habilitar notificaciones por correo.
-3. Completar el flujo de informes y examen de aplazados para iniciales.
-4. Consolidar el modelo de evaluación.
-5. Pulir la experiencia visual y menús según el Design System.
+1. Implementar evaluación cualitativa configurable como alternativa a la numérica.
+2. Ampliar la cobertura de tests unitarios (expedientes, plazos, notificaciones, etc.).
+3. Refinar el chunking del frontend y eliminar las advertencias de bundle >500 kB.
+4. Mantener alineadas las reglas de plazos, modalidades y requisitos académicos con la normativa UNT.
 
 La implementación faseada propuesta permite abordar los hallazgos de forma ordenada, minimizando riesgos y manteniendo la estabilidad del sistema.
 

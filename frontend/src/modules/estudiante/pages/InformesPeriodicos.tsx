@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { CloudUpload, Download, Clock, CheckCircle, Lock, FileText, Calendar } from 'lucide-react';
+import { CloudUpload, Download, Clock, CheckCircle, Lock, FileText, Calendar, FileSpreadsheet } from 'lucide-react';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import { expedientesApi } from '../../../api/expedientesApi';
+import { exportacionApi } from '../../../api/exportacionApi';
 import api from '../../../api/axios';
 import { useAuth } from '../../../auth/AuthContext';
 import { Card, CardContent, Badge, Button, Progress, Separator, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../../../ui';
@@ -213,6 +214,25 @@ export const InformesPeriodicos = () => {
     }
   };
 
+  const handleDownloadPlantilla = async () => {
+    if (!expediente) return;
+    try {
+      MySwal.fire({ title: 'Descargando plantilla...', allowOutsideClick: false, didOpen: () => MySwal.showLoading() });
+      const res = await exportacionApi.descargarPlantillaInformeFinal(expediente.id);
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'plantilla_informe_final.pdf');
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      MySwal.close();
+    } catch (error) {
+      console.error('Download template error:', error);
+      MySwal.fire('Error', 'No se pudo descargar la plantilla. Intente de nuevo.', 'error');
+    }
+  };
+
   const getEstadoBadge = (estado: HitoConEstado['estado']): React.ReactNode => {
     switch (estado) {
       case 'APROBADO':
@@ -277,7 +297,12 @@ export const InformesPeriodicos = () => {
             </p>
           </div>
         </div>
-        <Badge variant="info" size="sm">{enviados} de {hitos.length} enviados</Badge>
+        <div className="flex items-center gap-2">
+          <Button variant="secondary" size="sm" onClick={handleDownloadPlantilla}>
+            <FileSpreadsheet className="h-4 w-4" /> Plantilla informe final
+          </Button>
+          <Badge variant="info" size="sm">{enviados} de {hitos.length} enviados</Badge>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">

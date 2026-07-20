@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import React, { Suspense } from 'react';
 import '@fontsource/inter/300.css';
 import '@fontsource/inter/400.css';
 import '@fontsource/inter/500.css';
@@ -17,7 +18,6 @@ import ForgotPasswordPage from './modules/auth/ForgotPasswordPage';
 import ResetPasswordPage from './modules/auth/ResetPasswordPage';
 import DashboardEstudiante from './modules/estudiante/DashboardEstudiante';
 import DashboardDocente from './modules/docente/pages/DashboardDocente';
-import DashboardTutor from './modules/tutor/pages/DashboardTutor';
 import NoAutorizado from './modules/shared/NoAutorizado';
 import PaginaEnConstruccion from './modules/shared/PaginaEnConstruccion';
 import { CatalogoSedes } from './modules/sedes/pages/CatalogoSedes';
@@ -25,8 +25,6 @@ import { SolicitarPractica } from './modules/estudiante/pages/SolicitarPractica'
 import { GestionSedes } from './modules/sedes/pages/GestionSedes';
 import { GestionEmpresas } from './modules/sedes/pages/GestionEmpresas';
 import { GestionConvenios } from './modules/sedes/pages/GestionConvenios';
-import { GestionUsuarios } from './modules/admin/pages/GestionUsuarios';
-import { GestionTutores } from './modules/admin/pages/GestionTutores';
 import { ValidarRequisitos } from './modules/secretaria/pages/ValidarRequisitos';
 import { GestionDocumental } from './modules/estudiante/pages/GestionDocumental';
 import { InformesPeriodicos } from './modules/estudiante/pages/InformesPeriodicos';
@@ -35,17 +33,22 @@ import { PerfilEstudiante } from './modules/estudiante/pages/PerfilEstudiante';
 import MiPractica from './modules/estudiante/pages/MiPractica';
 import { PlanPracticas } from './modules/estudiante/pages/PlanPracticas';
 import { RevisionDocumental } from './modules/shared/pages/RevisionDocumental';
-import { EvaluacionTutorExterno } from './modules/evaluacion/EvaluacionTutorExterno';
-import { EvaluacionDocenteAsesor } from './modules/evaluacion/EvaluacionDocenteAsesor';
 import { ListaPracticantes } from './modules/evaluacion/ListaPracticantes';
-import { PanelComite } from './modules/comite/pages/PanelComite';
-import { RecepcionAdministrativa } from './modules/secretaria/pages/RecepcionAdministrativa';
-import { DashboardCoordinacion } from './modules/coordinacion/pages/DashboardCoordinacion';
-import { ReportesCoordinacion } from './modules/coordinacion/pages/Reportes';
-import { DetalleExpediente } from './modules/coordinacion/pages/DetalleExpediente';
 import AdminDashboardPage from './modules/admin/pages/AdminDashboardPage';
-import AdminReportesPage from './modules/admin/pages/AdminReportesPage';
-import { GestionExpedientes } from './modules/admin/pages/GestionExpedientes';
+
+const DashboardTutor = React.lazy(() => import('./modules/tutor/pages/DashboardTutor'));
+const EvaluacionTutorExterno = React.lazy(() => import('./modules/evaluacion/EvaluacionTutorExterno'));
+const EvaluacionDocenteAsesor = React.lazy(() => import('./modules/evaluacion/EvaluacionDocenteAsesor'));
+const EvaluacionComite = React.lazy(() => import('./modules/evaluacion/EvaluacionComite'));
+const PanelComite = React.lazy(() => import('./modules/comite/pages/PanelComite'));
+const RecepcionAdministrativa = React.lazy(() => import('./modules/secretaria/pages/RecepcionAdministrativa'));
+const DashboardCoordinacion = React.lazy(() => import('./modules/coordinacion/pages/DashboardCoordinacion'));
+const ReportesCoordinacion = React.lazy(() => import('./modules/coordinacion/pages/Reportes'));
+const DetalleExpediente = React.lazy(() => import('./modules/coordinacion/pages/DetalleExpediente'));
+const AdminReportesPage = React.lazy(() => import('./modules/admin/pages/AdminReportesPage'));
+const GestionExpedientes = React.lazy(() => import('./modules/admin/pages/GestionExpedientes'));
+const GestionUsuarios = React.lazy(() => import('./modules/admin/pages/GestionUsuarios'));
+const GestionTutores = React.lazy(() => import('./modules/admin/pages/GestionTutores'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -64,20 +67,21 @@ export default function App() {
         <ThemeProviderWrapper>
           <AuthProvider>
             <BrowserRouter>
-              <Routes>
-                {/* Pública */}
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                <Route path="/reset-password" element={<ResetPasswordPage />} />
-                <Route path="/no-autorizado" element={<NoAutorizado />} />
+              <Suspense fallback={<div className="flex h-screen items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-[var(--color-primary)] border-t-transparent" /></div>}>
+                <Routes>
+                  {/* Pública */}
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                  <Route path="/reset-password" element={<ResetPasswordPage />} />
+                  <Route path="/no-autorizado" element={<NoAutorizado />} />
 
-                {/* Rutas protegidas con layout */}
-                <Route
-                  element={
-                    <ProtectedRoute>
-                      <AppLayout />
-                    </ProtectedRoute>
-                  }
+                  {/* Rutas protegidas con layout */}
+                  <Route
+                    element={
+                      <ProtectedRoute>
+                        <AppLayout />
+                      </ProtectedRoute>
+                    }
                 >
                   {/* Estudiante */}
                   <Route
@@ -250,8 +254,13 @@ export default function App() {
                     }
                   />
                   <Route path="/comite/panel" element={
-                    <ProtectedRoute allowedRoles={['COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR']}>
+                    <ProtectedRoute allowedRoles={['COMITE_PRACTICAS']}>
                       <PanelComite />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/comite/evaluaciones/:id" element={
+                    <ProtectedRoute allowedRoles={['COMITE_PRACTICAS']}>
+                      <EvaluacionComite />
                     </ProtectedRoute>
                   } />
                   <Route path="/secretaria/recepcion" element={
@@ -298,7 +307,8 @@ export default function App() {
                 {/* Raíz → login */}
                 <Route path="/" element={<Navigate to="/login" replace />} />
                 <Route path="*" element={<Navigate to="/login" replace />} />
-              </Routes>
+                </Routes>
+              </Suspense>
             </BrowserRouter>
           </AuthProvider>
         </ThemeProviderWrapper>

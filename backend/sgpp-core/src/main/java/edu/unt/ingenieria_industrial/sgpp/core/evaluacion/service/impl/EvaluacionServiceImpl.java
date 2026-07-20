@@ -33,6 +33,7 @@ public class EvaluacionServiceImpl implements EvaluacionService {
     private final ExpedienteRepository expedienteRepository;
     private final ExpedienteAccesoService expedienteAccesoService;
     private final edu.unt.ingenieria_industrial.sgpp.core.evaluacion.service.ComponenteEvaluacionService componenteEvaluacionService;
+    private final edu.unt.ingenieria_industrial.sgpp.core.evaluacion.repository.NotaUnidadRepository notaUnidadRepository;
 
     private static final String[] CALIFICACIONES_CUALITATIVAS = {"Deficiente", "Regular", "Bueno", "Muy Bueno", "Excelente"};
 
@@ -192,8 +193,22 @@ public class EvaluacionServiceImpl implements EvaluacionService {
     }
 
     private BigDecimal calcularPromedioFinal(Long idExpediente) {
-        // Si existen componentes Anexo 4 completados, usarlos como fuente principal
-        // para prácticas finales/profesionales.
+        // Prioridad 1: notas por unidades para prácticas iniciales (curriculares).
+        try {
+            List<edu.unt.ingenieria_industrial.sgpp.core.evaluacion.model.NotaUnidad> notas =
+                    notaUnidadRepository.findByExpedienteIdAndActivoTrueOrderByNumeroUnidadAsc(idExpediente);
+            if (notas.size() >= 3) {
+                BigDecimal promedio = notas.stream()
+                        .map(n -> n.getNotaFinalUnidad() != null ? n.getNotaFinalUnidad() : BigDecimal.ZERO)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add)
+                        .divide(BigDecimal.valueOf(3), 2, RoundingMode.HALF_UP);
+                return promedio;
+            }
+        } catch (Exception e) {
+            log.debug("No se pudieron consultar notas por unidad para expediente {}: {}", idExpediente, e.getMessage());
+        }
+
+        // Prioridad 2: componentes Anexo 4 para prácticas finales/profesionales.
         try {
             List<edu.unt.ingenieria_industrial.sgpp.core.evaluacion.model.ComponenteEvaluacion> componentes =
                     componenteEvaluacionService.obtenerComponentesPorExpediente(idExpediente).stream()

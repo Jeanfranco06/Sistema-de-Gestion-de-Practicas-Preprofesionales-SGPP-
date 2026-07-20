@@ -205,11 +205,52 @@ Una constancia generada se registra con archivo, hash, fecha, usuario solicitant
 - Frontend: `npm run lint` sin errores y `npm run build` sin errores.
 - Base de datos: migraciones V54 y V55 listas para aplicarse con Flyway en el próximo inicio de la API.
 
+### 2026-07-19 — Notas por unidades (Práctica Inicial)
+
+- Creada migración `V56__notas_unidades_practicas_iniciales.sql` con tabla `nota_unidad` y restricción única por expediente y unidad.
+- Implementada entidad `NotaUnidad`, repositorio, DTOs (`NotaUnidadRequestDTO`, `NotaUnidadResponseDTO`), servicio `NotaUnidadServiceImpl` y `NotaUnidadController` con endpoints:
+  - `POST /evaluaciones/notas-unidad/expediente/{idExpediente}`
+  - `GET /evaluaciones/notas-unidad/expediente/{idExpediente}`
+  - `GET /evaluaciones/notas-unidad/expediente/{idExpediente}/unidad/{numeroUnidad}`
+- Reglas: solo prácticas `INICIAL`; unidades 1 a 3; unidad 1 con 20% plan de práctica y 80% informe de avance; unidades 2 y 3 con 100% informe de avance; escala vigesimal (0-20); nota mínima aprobatoria 13.5.
+- Al completar las tres unidades, `sincronizarCalificacionFinal` actualiza `expediente.calificacion_final` con el promedio de las notas finales de unidad.
+- Frontend: agregados endpoints en `evaluacionesApi`, hook `useNotasUnidad` y sección de notas por unidad en `EvaluacionDocenteAsesor` visible solo para prácticas `INICIAL`. El promedio general mostrado prioriza el promedio de notas por unidad cuando está completo.
+- Verificaciones ejecutadas: `mvn -pl sgpp-api -am package -DskipTests`, `npm run lint` y `npm run build`.
+
+### 2026-07-19 — Plantilla de informe final descargable
+
+- Agregado `PLANTILLA_INFORME_FINAL` a `TipoDocumentoInstitucional`.
+- Implementado `ExportacionService.generarPlantillaInformeFinal(Long idExpediente)` y `ExportacionServiceImpl.construirPdfPlantillaInformeFinal` para generar un PDF con portada, datos del expediente (si se proporciona `idExpediente`) y las 14 secciones estándar del informe final.
+- Endpoint público `GET /exportacion/plantilla-informe-final?idExpediente={id}` accesible para usuarios autenticados; valida lectura del expediente cuando se envía el parámetro.
+- Frontend: creado `frontend/src/api/exportacionApi.js` y agregado botón "Plantilla informe final" en `InformesPeriodicos` para estudiantes.
+- Verificaciones ejecutadas: `mvn -pl sgpp-api -am package -DskipTests`, `npm run lint` y `npm run build`.
+
+### 2026-07-19 — Consolidación de evaluación Anexo 4
+
+- Creado `frontend/src/api/componentesEvaluacionApi.js` y `frontend/src/hooks/useComponentesEvaluacion.ts` para consumir el backend de `componente_evaluacion`.
+- Creado componente reutilizable `frontend/src/modules/evaluacion/EvaluacionComponentesAnexo4.tsx` que muestra los componentes PLAN (10%), EMPRESA (50%, solo lectura) e INFORME (40%), calcula total sobre 100 y escala vigesimal.
+- `EvaluacionDocenteAsesor` ahora redirige a `EvaluacionComponentesAnexo4` con rol `DOCENTE` cuando el expediente es `FINAL` o `PROFESIONAL`; las prácticas `INICIAL` conservan notas por unidades.
+- Creado `frontend/src/modules/evaluacion/EvaluacionComite.tsx` y ruta `/comite/evaluaciones/:id` en `App.tsx` para que el comité evalúe los componentes Anexo 4.
+- Agregado botón de evaluación en el panel de comité (`PanelComite`) para expedientes finales/profesionales.
+- Verificaciones ejecutadas: `mvn -pl sgpp-api -am package -DskipTests`, `npm run lint` y `npm run build`.
+
+### 2026-07-19 — Mejoras visuales y UX
+
+- `StatusChip` ahora muestra un tooltip con la descripción del estado cuando existe una definición documentada.
+- Dashboard del docente asesor incluye un CTA "Ver practicantes" prominente en el resumen de asesoría.
+- Menú lateral migrado de íconos MUI a `lucide-react` en todos los roles (estudiante, admin, secretaría, coordinación/dirección, comité, docente y tutor). Se conservan componentes MUI donde son necesarios (Drawer, Menu, Tooltip).
+- Verificaciones ejecutadas: `npm run lint` y `npm run build`.
+
+### 2026-07-19 — Optimización y calidad
+
+- Code-splitting en `App.tsx`: módulos de coordinación, administración, comité, evaluación, tutor y gestión de usuarios/tutores se cargan mediante `React.lazy` y `Suspense`. El chunk inicial se redujo de ~1.9 MB a ~585 KB.
+- Agregado `spring-boot-starter-test` a `sgpp-core` y creado `ComponenteEvaluacionServiceImplTest` con 4 casos de prueba (inicialización, registro, cálculo total).
+- Creado `docs/GUIA_EJECUCION_LOCAL.md` con las variables de entorno requeridas, pasos de levantamiento y comandos de verificación.
+- Verificaciones ejecutadas: `mvn -pl sgpp-api -am test`, `npm run lint` y `npm run build`.
+
 ## Pendientes Técnicos Conocidos
 
-- Completar Fase 2: examen de aplazados, notas por unidades para prácticas iniciales y plantilla de informe final.
-- Completar Fase 3: consolidar modelo de evaluación (`evaluacion` y `componente_evaluacion`).
-- Completar Fase 4: mejoras visuales (menú, estados, tooltips).
-- Completar Fase 5: code-splitting, migración de íconos MUI, tests automatizados y documentación de variables de entorno.
-- Las reglas configurables de plazos, modalidad de evaluación y requisito académico deben mantenerse alineadas con los documentos normativos citados al inicio.
-- Análisis exhaustivo del sistema realizado el 2026-07-19: ver `docs/ANALISIS_SISTEMA_SGPP.md`. Los hallazgos principales incluyen: ausencia de scheduler automático para plazos vencidos (corregido parcialmente con scheduler), falta de notificaciones por correo SMTP (corregido parcialmente con EmailService), examen de aplazados no implementado, doble modelo de evaluación y mejoras visuales pendientes en menús y estados.
+- Evaluación cualitativa configurable como alternativa a la evaluación numérica.
+- Refinar chunking adicional del frontend para reducir más el bundle principal.
+- Ajustar reglas configurables de plazos y requisitos académicos según evolución normativa.
+- Análisis exhaustivo del sistema realizado el 2026-07-19: ver `docs/ANALISIS_SISTEMA_SGPP.md`. Los hallazgos principales incluyen: scheduler automático, notificaciones SMTP, examen de aplazados, notas por unidades, plantilla de informe final, migración de evaluación a Anexo 4, mejoras visuales e íconos lucide-react implementados.

@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import {
   CheckCircle2, Scale, Eye, AlertTriangle,
   Users, ClipboardList, FileEdit, ListChecks, RefreshCw,
-  ChevronRight, Building2, Search, FileText, X,
+  ChevronRight, Building2, Search, FileText, X, BarChart3,
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
@@ -531,6 +531,18 @@ export const PanelComite = () => {
                               disabled={isMutating}
                             >
                               <CheckCircle2 className="h-4 w-4" />
+                            </Button>
+                          </Tooltip>
+                        )}
+                        {esFinalOProfesional(e) && (
+                          <Tooltip content="Evaluar componentes">
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => navigate(`/comite/evaluaciones/${e.id}`)}
+                              className="px-2"
+                            >
+                              <BarChart3 className="h-4 w-4" />
                             </Button>
                           </Tooltip>
                         )}

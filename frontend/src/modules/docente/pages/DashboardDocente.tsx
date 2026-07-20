@@ -188,7 +188,12 @@ export default function DashboardDocente() {
           <div className="rounded-xl border p-6" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)', borderTopWidth: '3px', borderTopColor: 'var(--color-primary)' }}>
             <div className="flex justify-between items-center mb-4">
               <h2 className="font-semibold" style={{ color: 'var(--color-foreground)' }}>Resumen de asesoría</h2>
-              <Badge variant="default" size="sm">{avancePct}% finalizados</Badge>
+              <div className="flex items-center gap-2">
+                <Badge variant="default" size="sm">{avancePct}% finalizados</Badge>
+                <Button size="sm" onClick={() => navigate('/docente/practicantes')}>
+                  <Users className="h-4 w-4 mr-1" /> Ver practicantes
+                </Button>
+              </div>
             </div>
             <Progress value={avancePct} max={100} size="md" />
             <p className="text-xs mt-2" style={{ color: 'var(--color-muted-foreground)' }}>

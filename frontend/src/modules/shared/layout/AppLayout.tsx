@@ -2,15 +2,11 @@ import { useState, useCallback, useMemo } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Box, Drawer, Menu, MenuItem, Tooltip, useTheme, useMediaQuery } from '@mui/material';
 import {
-  Dashboard, Description, Assessment,
-  Business, AccountCircle, Logout, Menu as MenuIcon,
-  School, AccessTime, BarChart,
-  People, SupervisorAccount, FactCheck, FolderOpen,
-  DarkMode, LightMode,
-} from '@mui/icons-material';
-import {
-  FileText, ClipboardList, Upload, Clock, MapPin, Building2,
-  Briefcase, FileCheck,
+  LayoutDashboard, FileText, BarChart3,
+  Building2, UserCircle, LogOut, Menu as MenuIcon,
+  GraduationCap, Clock, Users,
+  UserCheck, ClipboardCheck, FolderOpen,
+  Moon, Sun, ClipboardList,
 } from 'lucide-react';
 import { useAuth } from '../../../auth/AuthContext';
 import { useThemeContext } from '../../../shared/theme/ThemeContext';
@@ -59,12 +55,12 @@ function getNavGroups(roles: UserRole[] = []): NavGroup[] {
 
   if (isEstudiante) {
     return [
-      { group: 'general', label: 'General', items: [{ label: 'Dashboard', icon: <Dashboard />, path: '/estudiante/dashboard' }] },
+      { group: 'general', label: 'General', items: [{ label: 'Dashboard', icon: <LayoutDashboard size={22} />, path: '/estudiante/dashboard' }] },
       { group: 'academic', label: 'Gestión Académica', items: [
         { label: 'Mi Práctica', icon: <Briefcase size={22} />, path: '/estudiante/practica' },
         { label: 'Solicitar Práctica', icon: <FileCheck size={22} />, path: '/estudiante/solicitar-practica' },
         { label: 'Plan de Prácticas', icon: <ClipboardList size={22} />, path: '/estudiante/plan-practicas' },
-        { label: 'Documentos', icon: <Description />, path: '/estudiante/documentos' },
+        { label: 'Documentos', icon: <FileText size={22} />, path: '/estudiante/documentos' },
         { label: 'Registro de Horas', icon: <Clock size={22} />, path: '/estudiante/horas' },
         { label: 'Informes', icon: <FileText size={22} />, path: '/estudiante/informes' },
       ]},
@@ -77,21 +73,21 @@ function getNavGroups(roles: UserRole[] = []): NavGroup[] {
 
   if (isAdmin) {
     return [
-      { group: 'main', label: 'Principal', items: [{ label: 'Dashboard', icon: <Dashboard />, path: '/admin/dashboard' }] },
+      { group: 'main', label: 'Principal', items: [{ label: 'Dashboard', icon: <LayoutDashboard size={22} />, path: '/admin/dashboard' }] },
       { group: 'operations', label: 'Operaciones', items: [
-        { label: 'Recepción Admin', icon: <FolderOpen />, path: '/secretaria/recepcion' },
-        { label: 'Validar Requisitos', icon: <FactCheck />, path: '/admin/validar-requisitos' },
-        { label: 'Expedientes', icon: <Assignment />, path: '/admin/expedientes' },
+        { label: 'Recepción Admin', icon: <FolderOpen size={22} />, path: '/secretaria/recepcion' },
+        { label: 'Validar Requisitos', icon: <ClipboardCheck size={22} />, path: '/admin/validar-requisitos' },
+        { label: 'Expedientes', icon: <ClipboardList size={22} />, path: '/admin/expedientes' },
       ]},
       { group: 'external', label: 'Entidades Externas', items: [
-        { label: 'Tutores Externos', icon: <SupervisorAccount />, path: '/admin/tutores' },
-        { label: 'Empresas', icon: <Business />, path: '/admin/empresas' },
-        { label: 'Sedes', icon: <Business />, path: '/admin/sedes' },
-        { label: 'Convenios', icon: <Description />, path: '/admin/convenios' },
+        { label: 'Tutores Externos', icon: <UserCheck size={22} />, path: '/admin/tutores' },
+        { label: 'Empresas', icon: <Building2 size={22} />, path: '/admin/empresas' },
+        { label: 'Sedes', icon: <Building2 size={22} />, path: '/admin/sedes' },
+        { label: 'Convenios', icon: <FileText size={22} />, path: '/admin/convenios' },
       ]},
       { group: 'config', label: 'Configuración', items: [
-        { label: 'Usuarios', icon: <People />, path: '/admin/usuarios' },
-        { label: 'Reportes', icon: <BarChart />, path: '/admin/reportes' },
+        { label: 'Usuarios', icon: <Users size={22} />, path: '/admin/usuarios' },
+        { label: 'Reportes', icon: <BarChart3 size={22} />, path: '/admin/reportes' },
       ]},
     ];
   }
@@ -99,17 +95,17 @@ function getNavGroups(roles: UserRole[] = []): NavGroup[] {
   if (isSecretaria) {
     return [
       { group: 'main', label: 'Principal', items: [
-        { label: 'Dashboard Administrativo', icon: <Dashboard />, path: '/admin/dashboard' },
-        { label: 'Reportes Consolidados', icon: <BarChart />, path: '/admin/reportes' },
+        { label: 'Dashboard Administrativo', icon: <LayoutDashboard size={22} />, path: '/admin/dashboard' },
+        { label: 'Reportes Consolidados', icon: <BarChart3 size={22} />, path: '/admin/reportes' },
       ]},
       { group: 'operations', label: 'Operaciones', items: [
-        { label: 'Recepción Admin', icon: <FolderOpen />, path: '/secretaria/recepcion' },
-        { label: 'Validar Requisitos', icon: <FactCheck />, path: '/admin/validar-requisitos' },
-        { label: 'Expedientes', icon: <Assignment />, path: '/admin/expedientes' },
+        { label: 'Recepción Admin', icon: <FolderOpen size={22} />, path: '/secretaria/recepcion' },
+        { label: 'Validar Requisitos', icon: <ClipboardCheck size={22} />, path: '/admin/validar-requisitos' },
+        { label: 'Expedientes', icon: <ClipboardList size={22} />, path: '/admin/expedientes' },
       ]},
       { group: 'external', label: 'Entidades Externas', items: [
-        { label: 'Empresas', icon: <Business />, path: '/admin/empresas' },
-        { label: 'Sedes', icon: <Business />, path: '/admin/sedes' },
+        { label: 'Empresas', icon: <Building2 size={22} />, path: '/admin/empresas' },
+        { label: 'Sedes', icon: <Building2 size={22} />, path: '/admin/sedes' },
       ]},
     ];
   }
@@ -117,14 +113,14 @@ function getNavGroups(roles: UserRole[] = []): NavGroup[] {
   if (isCoordinador) {
     return [
       { group: 'direction', label: 'Dirección', items: [
-        { label: 'Coordinación', icon: <Dashboard />, path: '/coordinacion/dashboard' },
-        { label: 'Reportes Consolidados', icon: <Assessment />, path: '/coordinacion/reportes' },
-        { label: 'Panel Comité', icon: <FactCheck />, path: '/comite/panel' },
+        { label: 'Coordinación', icon: <LayoutDashboard size={22} />, path: '/coordinacion/dashboard' },
+        { label: 'Reportes Consolidados', icon: <BarChart3 size={22} />, path: '/coordinacion/reportes' },
+        { label: 'Panel Comité', icon: <ClipboardCheck size={22} />, path: '/comite/panel' },
       ]},
       { group: 'supervision', label: 'Supervisión', items: [
-        { label: 'Expedientes', icon: <Assignment />, path: '/admin/expedientes' },
-        { label: 'Empresas', icon: <Business />, path: '/admin/empresas' },
-        { label: 'Sedes', icon: <Business />, path: '/admin/sedes' },
+        { label: 'Expedientes', icon: <ClipboardList size={22} />, path: '/admin/expedientes' },
+        { label: 'Empresas', icon: <Building2 size={22} />, path: '/admin/empresas' },
+        { label: 'Sedes', icon: <Building2 size={22} />, path: '/admin/sedes' },
       ]},
     ];
   }
@@ -132,17 +128,17 @@ function getNavGroups(roles: UserRole[] = []): NavGroup[] {
   if (isComite) {
     return [
       { group: 'comite', label: 'Comité', items: [
-        { label: 'Panel Comité', icon: <FactCheck />, path: '/comite/panel' },
+        { label: 'Panel Comité', icon: <ClipboardCheck size={22} />, path: '/comite/panel' },
         ...(roleNames.includes('DOCENTE_ASESOR')
-          ? [{ label: 'Mis Practicantes', icon: <School />, path: '/docente/practicantes' }]
+          ? [{ label: 'Mis Practicantes', icon: <GraduationCap size={22} />, path: '/docente/practicantes' }]
           : []),
-        { label: 'Coordinación', icon: <Dashboard />, path: '/coordinacion/dashboard' },
-        { label: 'Reportes Consolidados', icon: <BarChart />, path: '/coordinacion/reportes' },
+        { label: 'Coordinación', icon: <LayoutDashboard size={22} />, path: '/coordinacion/dashboard' },
+        { label: 'Reportes Consolidados', icon: <BarChart3 size={22} />, path: '/coordinacion/reportes' },
       ]},
       { group: 'queries', label: 'Consultas', items: [
-        { label: 'Expedientes', icon: <Assignment />, path: '/admin/expedientes' },
-        { label: 'Empresas', icon: <Business />, path: '/admin/empresas' },
-        { label: 'Sedes', icon: <Business />, path: '/admin/sedes' },
+        { label: 'Expedientes', icon: <ClipboardList size={22} />, path: '/admin/expedientes' },
+        { label: 'Empresas', icon: <Building2 size={22} />, path: '/admin/empresas' },
+        { label: 'Sedes', icon: <Building2 size={22} />, path: '/admin/sedes' },
       ]},
     ];
   }
@@ -150,8 +146,8 @@ function getNavGroups(roles: UserRole[] = []): NavGroup[] {
   if (isDocente) {
     return [
       { group: 'tracking', label: 'Seguimiento', items: [
-        { label: 'Dashboard', icon: <Dashboard />, path: '/docente/dashboard' },
-        { label: 'Mis Practicantes', icon: <School />, path: '/docente/practicantes' },
+        { label: 'Dashboard', icon: <LayoutDashboard size={22} />, path: '/docente/dashboard' },
+        { label: 'Mis Practicantes', icon: <GraduationCap size={22} />, path: '/docente/practicantes' },
       ]},
     ];
   }
@@ -159,13 +155,13 @@ function getNavGroups(roles: UserRole[] = []): NavGroup[] {
   if (isTutor) {
     return [
       { group: 'supervision', label: 'Supervisión', items: [
-        { label: 'Dashboard', icon: <Dashboard />, path: '/tutor/dashboard' },
-        { label: 'Evaluaciones', icon: <Assessment />, path: '/tutor/evaluaciones' },
+        { label: 'Dashboard', icon: <LayoutDashboard size={22} />, path: '/tutor/dashboard' },
+        { label: 'Evaluaciones', icon: <BarChart3 size={22} />, path: '/tutor/evaluaciones' },
       ]},
     ];
   }
 
-  return [{ group: 'general', label: 'General', items: [{ label: 'Dashboard', icon: <Dashboard />, path: '/admin/dashboard' }] }];
+  return [{ group: 'general', label: 'General', items: [{ label: 'Dashboard', icon: <LayoutDashboard size={22} />, path: '/admin/dashboard' }] }];
 }
 
 function getInitials(nombres = '', apellido = ''): string {
@@ -351,11 +347,11 @@ function UserProfile({
           <p className="text-xs text-muted-foreground">{user?.email}</p>
         </div>
         <MenuItem onClick={() => { onCloseMenu(); onProfileClick(); }} sx={{ py: 1.5 }}>
-          <AccountCircle sx={{ mr: 1.5, fontSize: 20, color: 'text.secondary' }} />
+          <UserCircle size={20} style={{ marginRight: 6 }} />
           <span className="text-sm font-medium text-foreground">Mi perfil</span>
         </MenuItem>
         <MenuItem onClick={onLogout} sx={{ py: 1.5, color: 'error.main' }}>
-          <Logout sx={{ mr: 1.5, fontSize: 20 }} />
+          <LogOut size={20} style={{ marginRight: 6 }} />
           <span className="text-sm font-medium">Cerrar sesión</span>
         </MenuItem>
       </Menu>
@@ -466,7 +462,7 @@ function TopBar({
           aria-label="toggle menu"
           className="h-10 w-10"
         >
-          <MenuIcon />
+          <MenuIcon size={22} />
         </Button>
         <h1 className="flex-1 text-sm sm:text-base font-bold text-unt-blue dark:text-unt-yellow truncate">
           {currentPage}
@@ -479,7 +475,7 @@ function TopBar({
             aria-label={mode === 'light' ? 'Activar modo oscuro' : 'Activar modo claro'}
             className="h-9 w-9"
           >
-            {mode === 'light' ? <DarkMode /> : <LightMode />}
+            {mode === 'light' ? <Moon size={22} /> : <Sun size={22} />}
           </Button>
           <NotificationsMenu />
         </div>

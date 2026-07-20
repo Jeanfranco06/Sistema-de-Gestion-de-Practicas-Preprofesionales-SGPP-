@@ -16,6 +16,8 @@ import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useExpedienteById } from '@/hooks/useExpedientes';
+import { useNotasUnidad } from '@/hooks/useNotasUnidad';
+import { EvaluacionComponentesAnexo4 } from './EvaluacionComponentesAnexo4';
 import {
   Button,
   Input,
@@ -112,6 +114,7 @@ export const EvaluacionDocenteAsesor = () => {
   });
 
   const { data: expediente } = useExpedienteById(idExpedienteParams);
+  const { data: notasUnidad = [] } = useNotasUnidad(idExpedienteParams);
   const { data: criterios = [] } = useQuery<Criterio[]>({
     queryKey: ['evaluaciones', 'criterios', componenteActual],
     queryFn: async () => {
@@ -138,6 +141,25 @@ export const EvaluacionDocenteAsesor = () => {
     },
   });
 
+  const registrarNotaUnidadMutation = useMutation({
+    mutationFn: (payload: { numeroUnidad: number; notaPlan?: number; notaInforme: number; comentarios?: string }) =>
+      evaluacionesApi.registrarNotaUnidad(idExpediente, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notas-unidad', idExpedienteParams] });
+      queryClient.invalidateQueries({ queryKey: ['expedientes', idExpedienteParams] });
+    },
+  });
+
+  const [notasForm, setNotasForm] = useState<{
+    unidad1: { plan: string; informe: string; comentarios: string };
+    unidad2: { informe: string; comentarios: string };
+    unidad3: { informe: string; comentarios: string };
+  }>({
+    unidad1: { plan: '', informe: '', comentarios: '' },
+    unidad2: { informe: '', comentarios: '' },
+    unidad3: { informe: '', comentarios: '' },
+  });
+
   useEffect(() => {
     setEvaluacion((prev) => ({
       ...prev,
@@ -149,6 +171,31 @@ export const EvaluacionDocenteAsesor = () => {
       })),
     }));
   }, [criterios, componenteActual]);
+
+  useEffect(() => {
+    if (!notasUnidad || notasUnidad.length === 0) return;
+    const nextForm = { ...notasForm };
+    notasUnidad.forEach((n: any) => {
+      if (n.numeroUnidad === 1) {
+        nextForm.unidad1 = {
+          plan: n.notaPlan?.toString() ?? '',
+          informe: n.notaInforme?.toString() ?? '',
+          comentarios: n.comentarios ?? '',
+        };
+      } else if (n.numeroUnidad === 2) {
+        nextForm.unidad2 = {
+          informe: n.notaInforme?.toString() ?? '',
+          comentarios: n.comentarios ?? '',
+        };
+      } else if (n.numeroUnidad === 3) {
+        nextForm.unidad3 = {
+          informe: n.notaInforme?.toString() ?? '',
+          comentarios: n.comentarios ?? '',
+        };
+      }
+    });
+    setNotasForm(nextForm);
+  }, [notasUnidad]);
 
   const handleTabChange = (value: string) => {
     setComponenteActual(value as Componente);
@@ -216,6 +263,48 @@ export const EvaluacionDocenteAsesor = () => {
     }
   };
 
+  const handleNotaUnidadChange = (unidad: 'unidad1' | 'unidad2' | 'unidad3', campo: string, value: string) => {
+    setNotasForm((prev) => ({
+      ...prev,
+      [unidad]: { ...prev[unidad], [campo]: value },
+    }));
+  };
+
+  const handleGuardarNotaUnidad = async (unidad: 'unidad1' | 'unidad2' | 'unidad3', numeroUnidad: number) => {
+    const confirm = await MySwal.fire({
+      title: '¿Registrar nota de unidad?',
+      text: `Se guardará la nota de la Unidad ${numeroUnidad}.`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, guardar',
+      cancelButtonText: 'Cancelar',
+    });
+    if (!confirm.isConfirmed) return;
+    const datos = notasForm[unidad];
+    const planValue = numeroUnidad === 1 ? parseInt(datos.plan, 10) : undefined;
+    const informeValue = parseInt(datos.informe, 10);
+    if (Number.isNaN(informeValue) || informeValue < 0 || informeValue > 20) {
+      MySwal.fire('Nota inválida', 'La nota de informe debe estar entre 0 y 20.', 'warning');
+      return;
+    }
+    if (numeroUnidad === 1 && (Number.isNaN(planValue!) || planValue! < 0 || planValue! > 20)) {
+      MySwal.fire('Nota inválida', 'La nota de plan debe estar entre 0 y 20.', 'warning');
+      return;
+    }
+    try {
+      MySwal.fire({ title: 'Guardando...', didOpen: () => MySwal.showLoading() });
+      await registrarNotaUnidadMutation.mutateAsync({
+        numeroUnidad,
+        notaPlan: planValue,
+        notaInforme: informeValue,
+        comentarios: datos.comentarios,
+      });
+      MySwal.fire({ icon: 'success', title: 'Nota guardada', timer: 1500, showConfirmButton: false });
+    } catch {
+      MySwal.fire('Error', 'No se pudo guardar la nota de la unidad.', 'error');
+    }
+  };
+
   const handleDownloadDocument = async (documento: Documento) => {
     try {
       MySwal.fire({ title: 'Descargando...', didOpen: () => MySwal.showLoading() });
@@ -238,7 +327,8 @@ export const EvaluacionDocenteAsesor = () => {
   };
 
   const ultimaEvaluacion = evaluaciones.length > 0 ? evaluaciones[evaluaciones.length - 1] : null;
-  const promedioFinal = ultimaEvaluacion?.promedioFinal ?? 0;
+  const notaUnidadPromedio = notasUnidad.find((n: any) => n.promedioFinal != null)?.promedioFinal ?? null;
+  const promedioFinal = notaUnidadPromedio ?? ultimaEvaluacion?.promedioFinal ?? expediente?.calificacionFinal ?? 0;
   const progresoColor =
     promedioFinal >= 14
       ? 'var(--color-success)'
@@ -256,6 +346,17 @@ export const EvaluacionDocenteAsesor = () => {
           </Button>
         </Card>
       </div>
+    );
+  }
+
+  if (expediente && expediente.codigoTipoPractica !== 'INICIAL') {
+    return (
+      <EvaluacionComponentesAnexo4
+        idExpediente={idExpediente}
+        tipoPractica={expediente.codigoTipoPractica}
+        rol="DOCENTE"
+        onVolver={() => navigate('/docente/practicantes')}
+      />
     );
   }
 
@@ -411,6 +512,112 @@ export const EvaluacionDocenteAsesor = () => {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {expediente?.tipoPractica === 'INICIAL' && (
+          <Card className="p-6">
+            <div className="mb-4 flex items-center gap-2">
+              <BarChart3 size={20} className="text-[var(--color-primary)]" />
+              <h3 className="text-base font-semibold text-[var(--color-foreground)]">
+                Notas por unidades (Práctica Inicial)
+              </h3>
+            </div>
+            <p className="mb-4 text-xs text-[var(--color-muted-foreground)]">
+              Unidad 1: 20% plan de práctica + 80% informe de avance. Unidades 2 y 3: 100% informe de avance.
+              El promedio final de las unidades reemplaza el componente DOCENTE.
+            </p>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <div className="rounded-xl border border-[var(--color-border)] p-4">
+                <h4 className="mb-3 text-sm font-semibold text-[var(--color-foreground)]">Unidad 1</h4>
+                <Input
+                  label="Nota plan de práctica (0-20)"
+                  type="number"
+                  min={0}
+                  max={20}
+                  value={notasForm.unidad1.plan}
+                  onChange={(e) => handleNotaUnidadChange('unidad1', 'plan', e.target.value)}
+                  className="mb-3"
+                />
+                <Input
+                  label="Nota informe de avance (0-20)"
+                  type="number"
+                  min={0}
+                  max={20}
+                  value={notasForm.unidad1.informe}
+                  onChange={(e) => handleNotaUnidadChange('unidad1', 'informe', e.target.value)}
+                  className="mb-3"
+                />
+                <Textarea
+                  label="Comentarios"
+                  rows={2}
+                  value={notasForm.unidad1.comentarios}
+                  onChange={(e) => handleNotaUnidadChange('unidad1', 'comentarios', e.target.value)}
+                  className="mb-3"
+                />
+                <Button
+                  className="w-full"
+                  onClick={() => handleGuardarNotaUnidad('unidad1', 1)}
+                  disabled={registrarNotaUnidadMutation.isPending}
+                >
+                  {registrarNotaUnidadMutation.isPending ? 'Guardando...' : 'Guardar Unidad 1'}
+                </Button>
+              </div>
+
+              <div className="rounded-xl border border-[var(--color-border)] p-4">
+                <h4 className="mb-3 text-sm font-semibold text-[var(--color-foreground)]">Unidad 2</h4>
+                <Input
+                  label="Nota informe de avance (0-20)"
+                  type="number"
+                  min={0}
+                  max={20}
+                  value={notasForm.unidad2.informe}
+                  onChange={(e) => handleNotaUnidadChange('unidad2', 'informe', e.target.value)}
+                  className="mb-3"
+                />
+                <Textarea
+                  label="Comentarios"
+                  rows={2}
+                  value={notasForm.unidad2.comentarios}
+                  onChange={(e) => handleNotaUnidadChange('unidad2', 'comentarios', e.target.value)}
+                  className="mb-3"
+                />
+                <Button
+                  className="w-full"
+                  onClick={() => handleGuardarNotaUnidad('unidad2', 2)}
+                  disabled={registrarNotaUnidadMutation.isPending}
+                >
+                  {registrarNotaUnidadMutation.isPending ? 'Guardando...' : 'Guardar Unidad 2'}
+                </Button>
+              </div>
+
+              <div className="rounded-xl border border-[var(--color-border)] p-4">
+                <h4 className="mb-3 text-sm font-semibold text-[var(--color-foreground)]">Unidad 3</h4>
+                <Input
+                  label="Nota informe de avance (0-20)"
+                  type="number"
+                  min={0}
+                  max={20}
+                  value={notasForm.unidad3.informe}
+                  onChange={(e) => handleNotaUnidadChange('unidad3', 'informe', e.target.value)}
+                  className="mb-3"
+                />
+                <Textarea
+                  label="Comentarios"
+                  rows={2}
+                  value={notasForm.unidad3.comentarios}
+                  onChange={(e) => handleNotaUnidadChange('unidad3', 'comentarios', e.target.value)}
+                  className="mb-3"
+                />
+                <Button
+                  className="w-full"
+                  onClick={() => handleGuardarNotaUnidad('unidad3', 3)}
+                  disabled={registrarNotaUnidadMutation.isPending}
+                >
+                  {registrarNotaUnidadMutation.isPending ? 'Guardando...' : 'Guardar Unidad 3'}
+                </Button>
+              </div>
+            </div>
+          </Card>
+        )}
 
         {evaluaciones.length > 0 && (
           <Card className="p-6">

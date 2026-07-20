@@ -554,4 +554,138 @@ public class ExportacionServiceImpl implements ExportacionService {
             throw new BusinessException("Error generando PDF: " + e.getMessage());
         }
     }
+
+    @Override
+    @Transactional
+    public ArchivoExportadoDTO generarPlantillaInformeFinal(Long idExpediente) {
+        Expediente expediente = null;
+        if (idExpediente != null) {
+            expediente = expedienteRepository.findByIdWithRelations(idExpediente)
+                    .orElseThrow(() -> new BusinessException("Expediente no encontrado"));
+        }
+
+        Usuario solicitante = usuarioHelper.obtenerUsuarioActual();
+        LocalDateTime ahora = LocalDateTime.now();
+        String codigoTrazabilidad = generarCodigoTrazabilidad("PLT");
+        byte[] contenido = construirPdfPlantillaInformeFinal(expediente);
+        String hash = calcularHash(contenido);
+        String nombreArchivo = "plantilla_informe_final"
+                + (expediente != null ? "_" + expediente.getCodigoExpediente() : "")
+                + "_" + ahora.format(SUFIJO_ARCHIVO) + ".pdf";
+        Path ruta = persistirArchivo(nombreArchivo, contenido);
+
+        RegistroGeneracionDocumental registro = RegistroGeneracionDocumental.builder()
+                .tipoDocumento(TipoDocumentoInstitucional.PLANTILLA_INFORME_FINAL.name())
+                .formatoSalida(FormatoExportacion.PDF.name())
+                .nombreArchivo(nombreArchivo)
+                .rutaArchivo(ruta.toString())
+                .usuarioSolicitante(solicitante)
+                .expediente(expediente)
+                .hashContenido(hash)
+                .tamanoBytes((long) contenido.length)
+                .fechaGeneracion(ahora)
+                .observaciones("Plantilla de informe final SGPP - " + codigoTrazabilidad)
+                .build();
+        registro = registroRepository.save(registro);
+
+        auditoriaService.registrar(RegistrarEventoAuditoriaDTO.builder()
+                .tipoEntidad(TipoEntidadAuditable.DOCUMENTO)
+                .entidadId(registro.getId())
+                .idExpediente(expediente != null ? expediente.getId() : null)
+                .accion(AccionAuditoria.GENERAR_DOCUMENTO)
+                .idUsuario(solicitante.getId())
+                .valorNuevo(Map.of(
+                        "nombreArchivo", nombreArchivo,
+                        "formato", FormatoExportacion.PDF.name(),
+                        "tipoDocumento", TipoDocumentoInstitucional.PLANTILLA_INFORME_FINAL.name(),
+                        "hash", hash))
+                .motivo("Generación de plantilla de informe final")
+                .detalleAdicional(codigoTrazabilidad)
+                .build());
+
+        return ArchivoExportadoDTO.builder()
+                .idRegistro(registro.getId())
+                .nombreArchivo(nombreArchivo)
+                .contentType("application/pdf")
+                .formato(FormatoExportacion.PDF)
+                .tipoDocumento(TipoDocumentoInstitucional.PLANTILLA_INFORME_FINAL)
+                .idExpediente(expediente != null ? expediente.getId() : null)
+                .codigoTrazabilidad(codigoTrazabilidad)
+                .tamanoBytes((long) contenido.length)
+                .fechaGeneracion(ahora)
+                .contenido(contenido)
+                .build();
+    }
+
+    private byte[] construirPdfPlantillaInformeFinal(Expediente expediente) {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            Document document = new Document();
+            PdfWriter.getInstance(document, baos);
+            document.open();
+
+            Font font = FontFactory.getFont(FontFactory.HELVETICA, 10);
+            Font fontBold = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10);
+            Font fontTitle = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14);
+            Font fontSubTitle = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12);
+
+            document.add(new Paragraph("UNIVERSIDAD NACIONAL DE TRUJILLO", fontTitle));
+            document.add(new Paragraph("FACULTAD DE INGENIERÍA INDUSTRIAL Y DE SISTEMAS", fontSubTitle));
+            document.add(new Paragraph("PLANTILLA DE INFORME FINAL DE PRÁCTICAS PREPROFESIONALES", fontSubTitle));
+            document.add(new Paragraph(" "));
+
+            if (expediente != null) {
+                PdfPTable table = new PdfPTable(2);
+                table.setWidthPercentage(100);
+                table.setWidths(new float[]{30, 70});
+                table.addCell(new PdfPCell(new Phrase("Expediente", fontBold)));
+                table.addCell(new PdfPCell(new Phrase(expediente.getCodigoExpediente(), font)));
+                table.addCell(new PdfPCell(new Phrase("Estudiante", fontBold)));
+                table.addCell(new PdfPCell(new Phrase(
+                        (expediente.getEstudiante() != null && expediente.getEstudiante().getUsuario() != null
+                                ? expediente.getEstudiante().getUsuario().getNombres() + " " + expediente.getEstudiante().getUsuario().getApellidoPaterno()
+                                : ""), font)));
+                table.addCell(new PdfPCell(new Phrase("Código", fontBold)));
+                table.addCell(new PdfPCell(new Phrase(
+                        (expediente.getEstudiante() != null ? expediente.getEstudiante().getCodigoEstudiantil() : ""), font)));
+                table.addCell(new PdfPCell(new Phrase("Empresa", fontBold)));
+                table.addCell(new PdfPCell(new Phrase(
+                        (expediente.getEmpresa() != null ? expediente.getEmpresa().getRazonSocial() : ""), font)));
+                table.addCell(new PdfPCell(new Phrase("Tipo de práctica", fontBold)));
+                table.addCell(new PdfPCell(new Phrase(expediente.getTipoPractica() != null ? expediente.getTipoPractica().getNombre() : "", font)));
+                document.add(table);
+                document.add(new Paragraph(" "));
+            }
+
+            String[] secciones = {
+                "1. PORTADA",
+                "2. ÍNDICE",
+                "3. RESUMEN EJECUTIVO",
+                "4. INTRODUCCIÓN",
+                "5. OBJETIVOS DE LA PRÁCTICA",
+                "6. MARCO TEÓRICO",
+                "7. DESCRIPCIÓN DE LA EMPRESA O INSTITUCIÓN",
+                "8. ACTIVIDADES DESARROLLADAS",
+                "9. RESULTADOS Y LOGROS OBTENIDOS",
+                "10. ANÁLISIS DE DATOS (si aplica)",
+                "11. CONCLUSIONES",
+                "12. RECOMENDACIONES",
+                "13. ANEXOS (evidencias, constancias, etc.)",
+                "14. REFERENCIAS BIBLIOGRÁFICAS"
+            };
+
+            for (String seccion : secciones) {
+                document.add(new Paragraph(seccion, fontSubTitle));
+                document.add(new Paragraph("[Desarrolle esta sección de manera clara y concisa, siguiendo las indicaciones del asesor y el reglamento de prácticas de la Escuela.]", font));
+                document.add(new Paragraph(" "));
+            }
+
+            document.add(new Paragraph("NOTA: Esta plantilla es un modelo orientativo. El estudiante debe completar cada sección con la información real de su práctica preprofesional y ajustarse a las directrices del asesor o comité evaluador.", font));
+
+            document.close();
+            return baos.toByteArray();
+        } catch (DocumentException | IOException e) {
+            log.error("Error generando plantilla de informe final", e);
+            throw new BusinessException("Error generando plantilla de informe final: " + e.getMessage());
+        }
+    }
 }

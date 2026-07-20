@@ -19,4 +19,6 @@ public interface ExportacionService {
     List<RegistroGeneracionDTO> consultarHistorial(Long idExpediente, Long idUsuario);
 
     byte[] generarPlanGeneralPdf(Long planId);
+
+    ArchivoExportadoDTO generarPlantillaInformeFinal(Long idExpediente);
 }
