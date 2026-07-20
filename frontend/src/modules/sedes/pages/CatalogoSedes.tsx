@@ -25,7 +25,7 @@ import {
 import { sedeApi } from '@/api/sedesApi';
 import { practicaApi } from '@/api/practicasApi';
 import Swal from 'sweetalert2';
-import withReactContent from 'sweetalert2-react-content';
+import { showSuccess, showError } from '@/lib/toast';
 import {
   Button,
   Input,
@@ -37,8 +37,6 @@ import {
 } from '@/ui';
 import { cn } from '@/lib/utils';
 import { SedeDetailsDrawer, type SedeDetalle } from '../components/SedeDetailsDrawer';
-
-const MySwal = withReactContent(Swal);
 
 interface SedeCatalogo {
   id: string;
@@ -215,16 +213,15 @@ export const CatalogoSedes = () => {
 
   const handleSeleccionarSede = async (sede: SedeCatalogo) => {
     if (!sede.esElegible) {
-      await MySwal.fire(
+      showError(
         'Sede no elegible',
         sede.motivoNoElegible ||
-          'La sede no cumple con los requisitos para ser seleccionada.',
-        'warning'
+          'La sede no cumple con los requisitos para ser seleccionada.'
       );
       return;
     }
 
-    const result = await MySwal.fire({
+    const result = await Swal.fire({
       title: '¿Seleccionar esta sede?',
       text: `Confirmas que deseas seleccionar "${sede.nombreSede}" en ${sede.razonSocialEmpresa} para tus prácticas preprofesionales.`,
       icon: 'question',
@@ -239,13 +236,10 @@ export const CatalogoSedes = () => {
 
     seleccionarMutation.mutate(sede.id, {
       onSuccess: () => {
-        MySwal.fire({
-          icon: 'success',
-          title: '¡Sede seleccionada!',
-          text: `Has seleccionado exitosamente "${sede.nombreSede}". Ahora debes completar tu registro de prácticas.`,
-          timer: 3000,
-          showConfirmButton: false,
-        });
+        showSuccess(
+          '¡Sede seleccionada!',
+          `Has seleccionado exitosamente "${sede.nombreSede}". Ahora debes completar tu registro de prácticas.`
+        );
       },
       onError: (err: unknown) => {
         console.error('Error seleccionando sede:', err);
@@ -258,7 +252,7 @@ export const CatalogoSedes = () => {
           axiosErr.response?.data?.message ||
           axiosErr.response?.data?.error ||
           'No se pudo completar la selección. Intenta nuevamente.';
-        MySwal.fire('Error', msg, 'error');
+        showError('Error', msg);
       },
     });
   };
@@ -331,9 +325,8 @@ export const CatalogoSedes = () => {
             <h1 className="text-2xl sm:text-3xl font-bold">
               Catálogo de empresas y sedes
             </h1>
-            <p className="text-white/80 mt-1">
-              Explora empresas e instituciones disponibles para realizar tus
-              prácticas preprofesionales.
+            <p className="text-muted-foreground mt-1 text-sm sm:text-base">
+              Explora las sedes disponibles para tus prácticas preprofesionales
             </p>
           </div>
           <span

@@ -86,8 +86,8 @@ export default function DashboardSecretaria() {
         {[
           { label: 'Total Expedientes', val: kpis.total, icon: FolderOpen, color: 'bg-[#1A3A6E] text-white dark:bg-[#4A6FA5] dark:text-white' },
           { label: 'Trámites Activos', val: kpis.activos, icon: Clock, color: 'bg-emerald-600 text-white dark:bg-emerald-700 dark:text-emerald-50' },
-          { label: 'Cartas Pendientes', val: kpis.pendientesCarta, icon: FileText, color: 'bg-primary-600 text-white dark:bg-primary-700 dark:text-white' },
-          { label: 'Constancias Pendientes', val: kpis.pendientesConstancia, icon: Award, color: 'bg-amber-500 text-white dark:bg-amber-600 dark:text-white' },
+          { label: 'Cartas Pendientes', val: kpis.pendientesCarta, icon: FileText, color: 'bg-primary-600 text-slate-900 dark:bg-primary-700 dark:text-slate-900' },
+          { label: 'Constancias Pendientes', val: kpis.pendientesConstancia, icon: Award, color: 'bg-amber-500 text-slate-900 dark:bg-amber-600 dark:text-slate-900' },
         ].map((kpi, idx) => (
           <Card key={idx} variant="hover" className="p-4 flex flex-col gap-2">
             <div className="flex justify-between items-center">

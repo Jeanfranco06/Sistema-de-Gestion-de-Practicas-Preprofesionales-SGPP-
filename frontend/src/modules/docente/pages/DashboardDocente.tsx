@@ -259,7 +259,7 @@ export default function DashboardDocente() {
           label="Por evaluar"
           value={kpis.porEvaluar}
           icon={FileEdit}
-          color="bg-amber-500 text-white dark:bg-amber-600 dark:text-amber-50"
+          color="bg-amber-500 text-slate-900 dark:bg-amber-600 dark:text-amber-50"
         />
       </div>
 

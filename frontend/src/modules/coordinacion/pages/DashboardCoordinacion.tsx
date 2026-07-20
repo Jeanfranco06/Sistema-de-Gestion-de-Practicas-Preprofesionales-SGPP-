@@ -15,11 +15,8 @@ import { useAuth } from '../../../auth/AuthContext';
 import { hasAnyRole } from '../../../shared/utils/roleRoutes';
 import { useExpedientes } from '../../../hooks/useExpedientes';
 import { coordinacionApi } from '../../../api/coordinacionApi';
-import {
-  ESTADOS_EXPEDIENTE,
-  ESTADOS_FINALIZADOS,
-  ESTADOS_PARA_EVALUAR,
-} from '../../../lib/constants';
+import { ESTADOS_EXPEDIENTE, ESTADOS_FINALIZADOS, ESTADOS_PARA_EVALUAR } from '../../../lib/constants';
+import { showSuccess, showError } from '../../../lib/toast';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import {
@@ -67,7 +64,7 @@ const ACCENT_COLORS = {
   blue: 'bg-[#1A3A6E] text-white dark:bg-[#4A6FA5] dark:text-white',
   yellow: 'bg-primary-600 text-[#1E293B] dark:bg-primary-500 dark:text-[#1E293B]',
   emerald: 'bg-emerald-600 text-white dark:bg-emerald-700 dark:text-emerald-50',
-  amber: 'bg-amber-500 text-white dark:bg-amber-600 dark:text-white',
+  amber: 'bg-amber-500 text-slate-900 dark:bg-amber-600 dark:text-slate-900',
   red: 'bg-red-600 text-white dark:bg-red-700 dark:text-white',
 };
 
@@ -102,10 +99,10 @@ export const DashboardCoordinacion = () => {
       });
       if (res.isConfirmed) {
         await emitirCartaMut(id);
-        MySwal.fire('Éxito', 'Carta de Presentación emitida y firmada electrónicamente.', 'success');
+        showSuccess('Carta de Presentación emitida y firmada electrónicamente.');
       }
     } catch {
-      MySwal.fire('Error', 'No se pudo emitir la Carta de Presentación.', 'error');
+      showError('No se pudo emitir la Carta de Presentación.');
     }
   };
 

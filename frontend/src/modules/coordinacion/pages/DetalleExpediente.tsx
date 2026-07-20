@@ -17,6 +17,7 @@ import { coordinacionApi, horasApi, reportesCoordinacionApi, trazabilidadApi } f
 import { tieneControlHoras } from '../../../shared/utils/controlHoras';
 import { hasAnyRole } from '../../../shared/utils/roleRoutes';
 import { ESTADOS_EXPEDIENTE, ESTADOS_PARA_DICTAMEN } from '../../../lib/constants';
+import { showSuccess, showError, showWarning, showInfo } from '../../../lib/toast';
 import {
   Button, Badge, Progress, Tooltip, Card, CardContent, CardHeader, CardTitle,
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -153,7 +154,6 @@ export const DetalleExpediente = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [tabValue, setTabValue] = useState(0);
   const [warnings, setWarnings] = useState<string[]>([]);
   const [accionEnCurso, setAccionEnCurso] = useState('');
   const [openComiteDialog, setOpenComiteDialog] = useState(false);
@@ -381,10 +381,9 @@ export const DetalleExpediente = () => {
     try {
       setAccionEnCurso(tipo);
       await accion.ejecutar(confirmacion.value);
-      MySwal.fire('Operación completada', accion.success, 'success');
+      showSuccess(accion.success);
     } catch (err: any) {
-      MySwal.fire('No se pudo completar la operación',
-        err.response?.data?.message || 'Verifica que el expediente cumpla los requisitos del flujo.', 'error');
+      showError(err.response?.data?.message || 'Verifica que el expediente cumpla los requisitos del flujo.');
     } finally {
       setAccionEnCurso('');
     }
@@ -396,14 +395,14 @@ export const DetalleExpediente = () => {
       const response = await expedientesApi.getComiteIntegrantesActivos();
       const integrantes: IntegranteComite[] = getPayload(response) || [];
       if (!integrantes.length) {
-        MySwal.fire('Comité no configurado', 'No existen integrantes activos. Regístralos desde la gestión institucional antes de asignarlos.', 'info');
+        showInfo('No existen integrantes activos. Regístralos desde la gestión institucional antes de asignarlos.');
         return;
       }
       setIntegrantesComite(integrantes);
       setMiembrosComiteSeleccionados(integrantes.slice(0, 3).map((integrante) => integrante.idUsuario));
       setOpenComiteDialog(true);
     } catch (err: any) {
-      MySwal.fire('No se pudo cargar el comité', err.response?.data?.message || 'Intenta nuevamente.', 'error');
+      showError(err.response?.data?.message || 'Intenta nuevamente.');
     } finally {
       setCargandoComite(false);
     }
@@ -415,7 +414,7 @@ export const DetalleExpediente = () => {
         return actuales.filter((idActual) => idActual !== idUsuario);
       }
       if (actuales.length >= 3) {
-        MySwal.fire('Máximo alcanzado', 'El comité puede tener hasta tres integrantes.', 'info');
+        showInfo('El comité puede tener hasta tres integrantes.');
         return actuales;
       }
       return [...actuales, idUsuario];
@@ -431,7 +430,7 @@ export const DetalleExpediente = () => {
       }));
 
     if (!miembros.length) {
-      MySwal.fire('Selecciona integrantes', 'Debes asignar al menos un integrante activo.', 'warning');
+      showWarning('Debes asignar al menos un integrante activo.');
       return;
     }
 
@@ -439,9 +438,9 @@ export const DetalleExpediente = () => {
       setAsignandoComite(true);
       await asignarComite({ miembros });
       setOpenComiteDialog(false);
-      MySwal.fire('Comité asignado', 'El expediente avanzó a COMITE_ASIGNADO.', 'success');
+      showSuccess('El expediente avanzó a COMITE_ASIGNADO.');
     } catch (err: any) {
-      MySwal.fire('No se pudo asignar el comité', err.response?.data?.message || 'Verifica el estado del expediente.', 'error');
+      showError(err.response?.data?.message || 'Verifica el estado del expediente.');
     } finally {
       setAsignandoComite(false);
     }
@@ -608,22 +607,20 @@ export const DetalleExpediente = () => {
           </DialogContent>
         </Dialog>
 
-        <Card className="overflow-hidden">
-          <Tabs value={tabs[tabValue]} onValueChange={(v) => setTabValue(tabs.indexOf(v))}>
+        <Card>
+          <Tabs defaultValue={tabs[0]}>
             <div className="border-b border-border">
               <TabsList className="w-full justify-start rounded-none bg-transparent p-0">
-                {tabs.map((tab, i) => (
+                {tabs.map((tab) => (
                   <TabsTrigger
                     key={tab}
                     value={tab}
-                    aria-selected={tabValue === i ? 'true' : 'false'}
-                    data-state={tabValue === i ? 'active' : 'inactive'}
-                    onClick={() => setTabValue(i)}
                     className={cn(
                       'rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-medium transition-all',
-                      tabValue === i
-                        ? 'border-primary-600 text-primary-700 dark:border-primary-400 dark:text-primary-400'
-                        : 'text-muted-foreground hover:text-foreground'
+                      'data-[state=active]:border-primary-600 data-[state=active]:text-primary-700',
+                      'data-[state=active]:dark:border-primary-400 data-[state=active]:dark:text-primary-400',
+                      'data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground',
+                      'data-[state=active]:bg-transparent data-[state=active]:shadow-none',
                     )}
                   >
                     {tab}

@@ -191,7 +191,7 @@ export const PanelComite = () => {
 
   const stats = [
     { label: 'Total expedientes', value: kpis.total, icon: Users, color: 'bg-[#1A3A6E] text-white dark:bg-[#4A6FA5] dark:text-white' },
-    { label: 'Plan por revisar', value: kpis.pendientes, icon: ClipboardList, color: 'bg-amber-500 text-white dark:bg-amber-600 dark:text-white' },
+    { label: 'Plan por revisar', value: kpis.pendientes, icon: ClipboardList, color: 'bg-amber-500 text-slate-900 dark:bg-amber-600 dark:text-slate-900' },
     { label: 'En ejecución', value: kpis.enEjecucion, icon: ListChecks, color: 'bg-emerald-600 text-white dark:bg-emerald-700 dark:text-white' },
     { label: 'Inf. final x aprobar', value: kpis.infFinalPresentado, icon: FileEdit, color: 'bg-violet-600 text-white dark:bg-violet-700 dark:text-white' },
   ];

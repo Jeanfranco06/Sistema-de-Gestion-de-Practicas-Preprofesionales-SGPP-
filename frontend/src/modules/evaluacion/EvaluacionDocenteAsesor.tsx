@@ -16,9 +16,7 @@ import {
 } from '@/ui';
 import { cn } from '@/lib/utils';
 import Swal from 'sweetalert2';
-import withReactContent from 'sweetalert2-react-content';
-
-const MySwal = withReactContent(Swal);
+import { showSuccess, showError, showWarning, showLoading, closeLoading } from '@/lib/toast';
 
 type Componente = 'DOCENTE' | 'INFORME' | 'SUSTENTACION';
 
@@ -212,7 +210,7 @@ export const EvaluacionDocenteAsesor = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const confirmResult = await MySwal.fire({
+    const confirmResult = await Swal.fire({
       title: '¿Confirmar Evaluación?',
       text: `Vas a registrar la evaluación de la sección ${componenteActual}.`,
       icon: 'question',
@@ -225,26 +223,23 @@ export const EvaluacionDocenteAsesor = () => {
     if (!confirmResult.isConfirmed) return;
 
     if (!auth.user?.id) {
-      MySwal.fire('Sesión no disponible', 'Vuelve a iniciar sesión antes de registrar la evaluación.', 'error');
+      showError('Sesión no disponible', 'Vuelve a iniciar sesión antes de registrar la evaluación.');
       return;
     }
 
     try {
-      MySwal.fire({ title: 'Guardando...', didOpen: () => MySwal.showLoading() });
+      showLoading('Guardando...');
       await crearMutation.mutateAsync({
         ...evaluacion,
         idExpediente,
         evaluadorId: auth.user.id,
         tipoEvaluador: 'DOCENTE_ASESOR',
       });
-      MySwal.fire({
-        icon: 'success',
-        title: 'Evaluación Registrada',
-        timer: 2000,
-        showConfirmButton: false,
-      });
+      closeLoading();
+      showSuccess('Evaluación Registrada');
     } catch {
-      MySwal.fire('Error', 'No se pudo guardar la evaluación.', 'error');
+      closeLoading();
+      showError('Error', 'No se pudo guardar la evaluación.');
     }
   };
 
@@ -256,7 +251,7 @@ export const EvaluacionDocenteAsesor = () => {
   };
 
   const handleGuardarNotaUnidad = async (unidad: 'unidad1' | 'unidad2' | 'unidad3', numeroUnidad: number) => {
-    const confirm = await MySwal.fire({
+    const confirm = await Swal.fire({
       title: '¿Registrar nota de unidad?',
       text: `Se guardará la nota de la Unidad ${numeroUnidad}.`,
       icon: 'question',
@@ -269,30 +264,32 @@ export const EvaluacionDocenteAsesor = () => {
     const planValue = numeroUnidad === 1 ? parseFloat(datos.plan) : undefined;
     const informeValue = parseFloat(datos.informe);
     if (Number.isNaN(informeValue) || informeValue < 0 || informeValue > 20) {
-      MySwal.fire('Nota inválida', 'La nota de informe debe estar entre 0 y 20.', 'warning');
+      showWarning('Nota inválida', 'La nota de informe debe estar entre 0 y 20.');
       return;
     }
     if (numeroUnidad === 1 && (Number.isNaN(planValue!) || planValue! < 0 || planValue! > 20)) {
-      MySwal.fire('Nota inválida', 'La nota de plan debe estar entre 0 y 20.', 'warning');
+      showWarning('Nota inválida', 'La nota de plan debe estar entre 0 y 20.');
       return;
     }
     try {
-      MySwal.fire({ title: 'Guardando...', didOpen: () => MySwal.showLoading() });
+      showLoading('Guardando...');
       await registrarNotaUnidadMutation.mutateAsync({
         numeroUnidad,
         notaPlan: planValue,
         notaInforme: informeValue,
         comentarios: datos.comentarios,
       });
-      MySwal.fire({ icon: 'success', title: 'Nota guardada', timer: 1500, showConfirmButton: false });
+      closeLoading();
+      showSuccess('Nota guardada');
     } catch {
-      MySwal.fire('Error', 'No se pudo guardar la nota de la unidad.', 'error');
+      closeLoading();
+      showError('Error', 'No se pudo guardar la nota de la unidad.');
     }
   };
 
   const handleDownloadDocument = async (documento: Documento) => {
     try {
-      MySwal.fire({ title: 'Descargando...', didOpen: () => MySwal.showLoading() });
+      showLoading('Descargando...');
       const isRegistroDoc = documento.rutaArchivo?.startsWith('registro:');
       const urlDescarga = isRegistroDoc
         ? `/exportacion/descargar/${documento.rutaArchivo.replace('registro:', '')}`
@@ -305,9 +302,10 @@ export const EvaluacionDocenteAsesor = () => {
       document.body.appendChild(link);
       link.click();
       link.parentNode?.removeChild(link);
-      MySwal.close();
+      closeLoading();
     } catch {
-      MySwal.fire('Error', 'No se pudo descargar el archivo.', 'error');
+      closeLoading();
+      showError('Error', 'No se pudo descargar el archivo.');
     }
   };
 

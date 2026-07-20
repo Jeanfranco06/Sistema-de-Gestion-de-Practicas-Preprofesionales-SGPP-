@@ -86,6 +86,26 @@
 
   --radius-xl: 12px;
   --radius-2xl: 16px;
+
+  /* Semantic color tokens — light mode defaults (overridden in .dark via @layer base) */
+  --color-background: #F8FAFC;
+  --color-foreground: #0F172A;
+  --color-card: #FFFFFF;
+  --color-card-foreground: #0F172A;
+  --color-border: #E2E8F0;
+  --color-muted: #F8FAFC;
+  --color-muted-foreground: #64748B;
+  --color-input: #E2E8F0;
+  --color-ring: #F5C518;
+  --color-primary: #F5C518;
+  --color-primary-foreground: #0F172A;
+  --color-secondary: #1A3A6E;
+  --color-secondary-foreground: #FFFFFF;
+  --color-destructive: #DC2626;
+  --color-destructive-foreground: #FFFFFF;
+  --color-accent: #FEF3C7;
+  --color-accent-foreground: #0F172A;
+  --radius: 0.5rem;
 }
 
 @layer base {
@@ -94,13 +114,22 @@
     --color-foreground: #0F172A;
     --color-card: var(--color-surface-card);
     --color-card-foreground: #0F172A;
-    --color-border: var(--color-surface-border);
-    --color-muted: var(--color-surface-light);
-    --color-muted-foreground: #64748B;
-    --color-input: var(--color-surface-border);
-    --color-ring: var(--color-primary-600);
-    --color-card-rgb: 255, 255, 255;
-    --color-border-rgb: 226, 232, 240;
+  --color-border: var(--color-surface-border);
+  --color-muted: var(--color-surface-light);
+  --color-muted-foreground: #64748B;
+  --color-input: var(--color-surface-border);
+  --color-ring: var(--color-primary-600);
+  --color-primary: var(--color-primary-600);
+  --color-primary-foreground: #0F172A;
+  --color-secondary: var(--color-unt-blue);
+  --color-secondary-foreground: #FFFFFF;
+  --color-destructive: var(--color-red-600);
+  --color-destructive-foreground: #FFFFFF;
+  --color-accent: var(--color-primary-100);
+  --color-accent-foreground: #0F172A;
+  --color-card-rgb: 255, 255, 255;
+  --color-border-rgb: 226, 232, 240;
+  --radius: 0.5rem;
 
     /* Badge variant tokens (light) */
     --badge-success-bg: #dcfce7;
@@ -122,13 +151,21 @@
     --color-foreground: #F8FAFC;
     --color-card: var(--color-dark-card);
     --color-card-foreground: #F8FAFC;
-    --color-border: var(--color-dark-border);
-    --color-muted: var(--color-dark-surface);
-    --color-muted-foreground: #94A3B8;
-    --color-input: var(--color-dark-border);
-    --color-ring: var(--color-primary-400);
-    --color-card-rgb: 30, 41, 59;
-    --color-border-rgb: 51, 65, 85;
+  --color-border: var(--color-dark-border);
+  --color-muted: var(--color-dark-surface);
+  --color-muted-foreground: #94A3B8;
+  --color-input: var(--color-dark-border);
+  --color-ring: var(--color-primary-400);
+  --color-primary: var(--color-primary-400);
+  --color-primary-foreground: #0F172A;
+  --color-secondary: var(--color-unt-blue-light);
+  --color-secondary-foreground: #FFFFFF;
+  --color-destructive: var(--color-red-500);
+  --color-destructive-foreground: #FFFFFF;
+  --color-accent: var(--color-primary-900);
+  --color-accent-foreground: #F8FAFC;
+  --color-card-rgb: 30, 41, 59;
+  --color-border-rgb: 51, 65, 85;
 
     /* Badge variant tokens (dark) */
     --badge-success-bg: #064e3b;

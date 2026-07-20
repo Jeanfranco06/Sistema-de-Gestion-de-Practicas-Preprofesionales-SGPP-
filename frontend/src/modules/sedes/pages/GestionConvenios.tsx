@@ -7,7 +7,7 @@ import {
   CheckCircle2, XCircle, Clock
 } from 'lucide-react';
 import Swal from 'sweetalert2';
-import withReactContent from 'sweetalert2-react-content';
+import { showSuccess, showError } from '../../../lib/toast';
 import {
   Alert, Dialog, DialogTitle, DialogContent, DialogActions, TextField, CircularProgress, LinearProgress
 } from '@mui/material';
@@ -16,8 +16,6 @@ import {
 } from '../../../ui';
 import { convenioApi } from '../../../api/sedesApi';
 import { useEmpresas } from '../../../hooks/useSedes';
-
-const MySwal = withReactContent(Swal);
 
 interface Empresa {
   id: number;
@@ -201,7 +199,7 @@ export const GestionConvenios = () => {
 
   const handleCloseDialog = async () => {
     if (formData.numeroConvenio || formData.objetivo) {
-      const result = await MySwal.fire({
+      const result = await Swal.fire({
         title: '¿Descartar cambios?',
         text: 'Si cierras ahora perderás los datos ingresados.',
         icon: 'warning',
@@ -238,23 +236,17 @@ export const GestionConvenios = () => {
         await createConvenioMutation.mutateAsync(formData);
       }
       setOpenDialog(false);
-      MySwal.fire({
-        icon: 'success',
-        title: isEditing ? '¡Convenio Actualizado!' : '¡Convenio Registrado!',
-        text: 'El convenio se guardó correctamente.',
-        timer: 2000,
-        showConfirmButton: false
-      });
+      showSuccess(isEditing ? '¡Convenio Actualizado!' : '¡Convenio Registrado!', 'El convenio se guardó correctamente.');
     } catch (error: any) {
       const msg = error.response?.data?.message || error.response?.data?.error || "Error al guardar. Verifica que el número de convenio no esté duplicado.";
-      MySwal.fire('Error al guardar', msg, 'error');
+      showError('Error al guardar', msg);
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleDisable = async (id: number) => {
-    const result = await MySwal.fire({
+    const result = await Swal.fire({
       title: '¿Anular Convenio?',
       text: "Esta acción marcará el convenio como inactivo y no podrá utilizarse.",
       icon: 'warning',
@@ -267,9 +259,9 @@ export const GestionConvenios = () => {
     if (result.isConfirmed) {
       try {
         await disableConvenioMutation.mutateAsync(id);
-        MySwal.fire('¡Anulado!', 'El convenio ha sido anulado correctamente.', 'success');
+        showSuccess('¡Anulado!', 'El convenio ha sido anulado correctamente.');
       } catch {
-        MySwal.fire('Error', 'No se pudo anular el convenio.', 'error');
+        showError('Error', 'No se pudo anular el convenio.');
       }
     }
   };

@@ -109,8 +109,8 @@ export function GestionExpedientes() {
         {[
           { label: 'Total Expedientes', value: kpis.total, icon: FolderOpen, color: 'bg-[#1A3A6E] text-white dark:bg-[#4A6FA5] dark:text-white' },
           { label: 'Activos', value: kpis.activos, icon: Clock, color: 'bg-emerald-600 text-white dark:bg-emerald-700 dark:text-emerald-50' },
-          { label: 'En Ejecución', value: kpis.enEjecucion, icon: FileText, color: 'bg-amber-500 text-white dark:bg-amber-600 dark:text-white' },
-          { label: 'Cerrados', value: kpis.cerrados, icon: CheckCircle2, color: 'bg-primary-600 text-white dark:bg-primary-700 dark:text-white' },
+          { label: 'En Ejecución', value: kpis.enEjecucion, icon: FileText, color: 'bg-amber-500 text-slate-900 dark:bg-amber-600 dark:text-slate-900' },
+          { label: 'Cerrados', value: kpis.cerrados, icon: CheckCircle2, color: 'bg-primary-600 text-slate-900 dark:bg-primary-700 dark:text-slate-900' },
         ].map((kpi, idx) => (
           <Card key={idx} className="p-4 flex items-center gap-3">
             <div className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-lg', kpi.color)}>

@@ -13,9 +13,7 @@ import {
 } from '@/ui';
 import { cn } from '@/lib/utils';
 import Swal from 'sweetalert2';
-import withReactContent from 'sweetalert2-react-content';
-
-const MySwal = withReactContent(Swal);
+import { showSuccess, showError, showWarning, showLoading, closeLoading } from '@/lib/toast';
 
 interface Criterio {
   id: number;
@@ -221,24 +219,24 @@ export const EvaluacionTutorExterno = () => {
 
     const total = calcularTotalGeneral();
     if (!auth.user?.id || !expedienteIdValido) {
-      MySwal.fire('Sesión o expediente no válido', 'Vuelve a la lista de practicantes e inténtalo nuevamente.', 'error');
+      showError('Sesión o expediente no válido', 'Vuelve a la lista de practicantes e inténtalo nuevamente.');
       return;
     }
     if (esCualitativa) {
       const faltantes = criterios.some((criterio) => !detalles[criterio.id]?.calificacionCualitativa);
       if (faltantes) {
-        MySwal.fire('Evaluación incompleta', 'Debe registrar una calificación cualitativa para cada criterio.', 'warning');
+        showWarning('Evaluación incompleta', 'Debe registrar una calificación cualitativa para cada criterio.');
         return;
       }
     } else if (criterios.some((criterio) => !detalles[criterio.id]?.puntajeObtenido)) {
-      MySwal.fire('Evaluación incompleta', 'Debe registrar un puntaje para cada criterio.', 'warning');
+      showWarning('Evaluación incompleta', 'Debe registrar un puntaje para cada criterio.');
       return;
     }
 
     const confirmText = esCualitativa
       ? `Calificación final: ${evaluacion.calificacionCualitativa || '—'}. ¿Estás seguro de registrar la evaluación?`
       : `Puntaje total: ${total} puntos. ¿Estás seguro de registrar la evaluación?`;
-    const confirmResult = await MySwal.fire({
+    const confirmResult = await Swal.fire({
       title: '¿Confirmar Evaluación?',
       text: confirmText,
       icon: 'question',
@@ -250,7 +248,7 @@ export const EvaluacionTutorExterno = () => {
     if (!confirmResult.isConfirmed) return;
 
     try {
-      MySwal.fire({ title: 'Guardando...', didOpen: () => MySwal.showLoading() });
+      showLoading('Guardando...');
 
       let rutaConstancia = evaluacion.rutaConstancia;
       if (file) {
@@ -279,18 +277,17 @@ export const EvaluacionTutorExterno = () => {
       await crearMutation.mutateAsync(payload);
 
       setFile(null);
-      MySwal.fire({
-        icon: 'success',
-        title: 'Evaluación Registrada',
-        text: esCualitativa
+      closeLoading();
+      showSuccess(
+        'Evaluación Registrada',
+        esCualitativa
           ? `Calificación final: ${evaluacion.calificacionCualitativa}`
-          : `Puntaje total: ${total} puntos`,
-        timer: 2000,
-        showConfirmButton: false,
-      });
+          : `Puntaje total: ${total} puntos`
+      );
     } catch (err) {
+      closeLoading();
       const error = err as { response?: { data?: { mensaje?: string } } };
-      MySwal.fire('Error', error.response?.data?.mensaje || 'No se pudo guardar la evaluación.', 'error');
+      showError('Error', error.response?.data?.mensaje || 'No se pudo guardar la evaluación.');
     }
   };
 

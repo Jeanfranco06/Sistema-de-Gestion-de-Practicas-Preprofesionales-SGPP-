@@ -19,11 +19,9 @@ import {
 } from '@/ui';
 import { cn } from '@/lib/utils';
 import Swal from 'sweetalert2';
-import withReactContent from 'sweetalert2-react-content';
+import { showSuccess, showError, showWarning, showLoading, closeLoading } from '@/lib/toast';
 import { BarChart3, ArrowLeft, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
-const MySwal = withReactContent(Swal);
 
 interface Componente {
   id: number;
@@ -90,14 +88,14 @@ export const EvaluacionComponentesAnexo4 = ({ idExpediente, tipoPractica, rol, o
     const datos = puntajes[componente.tipoComponente] || { puntaje: '', observaciones: '' };
     const puntaje = parseInt(datos.puntaje, 10);
     if (Number.isNaN(puntaje) || puntaje < 0 || puntaje > componente.puntajeMaximo) {
-      MySwal.fire('Puntaje inválido', `El puntaje debe estar entre 0 y ${componente.puntajeMaximo}`, 'warning');
+      showWarning('Puntaje inválido', `El puntaje debe estar entre 0 y ${componente.puntajeMaximo}`);
       return;
     }
     if (!auth.user?.id) {
-      MySwal.fire('Sesión no disponible', 'Vuelve a iniciar sesión antes de registrar la evaluación.', 'error');
+      showError('Sesión no disponible', 'Vuelve a iniciar sesión antes de registrar la evaluación.');
       return;
     }
-    const confirm = await MySwal.fire({
+    const confirm = await Swal.fire({
       title: '¿Registrar evaluación?',
       text: `Se guardará el componente ${componente.tipoComponente} con ${puntaje}/${componente.puntajeMaximo} puntos.`,
       icon: 'question',
@@ -107,16 +105,18 @@ export const EvaluacionComponentesAnexo4 = ({ idExpediente, tipoPractica, rol, o
     });
     if (!confirm.isConfirmed) return;
     try {
-      MySwal.fire({ title: 'Guardando...', didOpen: () => MySwal.showLoading() });
+      showLoading('Guardando...');
       await registrarMutation.mutateAsync({
         idExpediente,
         tipoComponente: componente.tipoComponente,
         puntaje,
         observaciones: datos.observaciones,
       });
-      MySwal.fire({ icon: 'success', title: 'Evaluación registrada', timer: 1500, showConfirmButton: false });
+      closeLoading();
+      showSuccess('Evaluación registrada');
     } catch {
-      MySwal.fire('Error', 'No se pudo registrar la evaluación del componente.', 'error');
+      closeLoading();
+      showError('Error', 'No se pudo registrar la evaluación del componente.');
     }
   };
 

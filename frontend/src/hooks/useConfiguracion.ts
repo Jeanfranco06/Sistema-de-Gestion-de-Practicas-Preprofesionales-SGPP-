@@ -6,7 +6,7 @@ export function useParametrosSistema() {
     queryKey: ['parametros-sistema'],
     queryFn: async () => {
       const res = await parametrosApi.getAll();
-      return res.data?.data ?? [];
+      return res.data ?? [];
     },
     staleTime: 2 * 60 * 1000,
   });

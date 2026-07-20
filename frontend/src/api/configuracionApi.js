@@ -1,12 +1,12 @@
 import api from './axios';
 
 export const parametrosApi = {
-    getAll: () => api.get('/parametros-sistema'),
-    getById: (id) => api.get(`/parametros-sistema/${id}`),
-    getByClave: (clave) => api.get(`/parametros-sistema/clave/${clave}`),
-    create: (data) => api.post('/parametros-sistema', data),
-    update: (id, data) => api.put(`/parametros-sistema/${id}`, data),
-    disable: (id) => api.delete(`/parametros-sistema/${id}`)
+    getAll: () => api.get('/parametros'),
+    getById: (id) => api.get(`/parametros/${id}`),
+    getByClave: (clave) => api.get(`/parametros/clave/${clave}`),
+    create: (data) => api.post('/parametros', data),
+    update: (id, data) => api.put(`/parametros/${id}`, data),
+    disable: (id) => api.delete(`/parametros/${id}`)
 };
 
 export const reglasPlazoApi = {

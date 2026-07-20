@@ -13,13 +13,11 @@ import { sedeApi, empresaApi } from '../../../api/sedesApi';
 import { validacionApi } from '../../../api/validacionesApi';
 import { useAuth } from '../../../auth/AuthContext';
 import Swal from 'sweetalert2';
-import withReactContent from 'sweetalert2-react-content';
+import { showSuccess, showError, showWarning, showInfo, showLoading, closeLoading } from '../../../lib/toast';
 import {
     Button, Badge, Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
     Select, Avatar, Tooltip, type BadgeProps
 } from '../../../ui';
-
-const MySwal = withReactContent(Swal);
 
 const getInitials = (name?: string): string => {
     if (!name) return '?';
@@ -289,19 +287,13 @@ export const GestionSedes = () => {
         mutationFn: (data: SedeFormData) => sedeApi.create(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['sedes'] });
-            MySwal.fire({
-                icon: 'success',
-                title: '¡Sede Creada!',
-                text: 'Los datos se guardaron correctamente.',
-                timer: 2000,
-                showConfirmButton: false
-            });
+            showSuccess('¡Sede Creada!', 'Los datos se guardaron correctamente.');
             setOpenDialog(false);
         },
         onError: (error: any) => {
             console.error("Error saving sede:", error);
             const msg = error.response?.data?.message || error.response?.data?.error || "Ya existe una sede con ese nombre en esta empresa o hubo un error en el servidor.";
-            MySwal.fire('Error al guardar', msg, 'error');
+            showError('Error al guardar', msg);
         },
     });
 
@@ -309,19 +301,13 @@ export const GestionSedes = () => {
         mutationFn: ({ id, data }: { id: number; data: SedeFormData }) => sedeApi.update(id, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['sedes'] });
-            MySwal.fire({
-                icon: 'success',
-                title: '¡Sede Actualizada!',
-                text: 'Los datos se guardaron correctamente.',
-                timer: 2000,
-                showConfirmButton: false
-            });
+            showSuccess('¡Sede Actualizada!', 'Los datos se guardaron correctamente.');
             setOpenDialog(false);
         },
         onError: (error: any) => {
             console.error("Error saving sede:", error);
             const msg = error.response?.data?.message || error.response?.data?.error || "Ya existe una sede con ese nombre en esta empresa o hubo un error en el servidor.";
-            MySwal.fire('Error al guardar', msg, 'error');
+            showError('Error al guardar', msg);
         },
     });
 
@@ -329,9 +315,9 @@ export const GestionSedes = () => {
         mutationFn: (id: number) => sedeApi.disable(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['sedes'] });
-            MySwal.fire('¡Deshabilitada!', 'La sede ha sido deshabilitada correctamente.', 'success');
+            showSuccess('¡Deshabilitada!', 'La sede ha sido deshabilitada correctamente.');
         },
-        onError: () => MySwal.fire('Error', 'No se pudo deshabilitar la sede.', 'error'),
+        onError: () => showError('Error', 'No se pudo deshabilitar la sede.'),
     });
 
     const createValidacionMutation = useMutation({
@@ -339,12 +325,12 @@ export const GestionSedes = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['sedes'] });
             queryClient.invalidateQueries({ queryKey: ['validaciones-sede'] });
-            MySwal.fire({ icon: 'success', title: '¡Validación guardada!', timer: 2000, showConfirmButton: false });
+            showSuccess('¡Validación guardada!');
             setValidacionDialogOpen(false);
         },
         onError: (error: any) => {
             console.error("Error guardando validación:", error);
-            MySwal.fire('Error', error.response?.data?.message || 'No se pudo guardar la validación.', 'error');
+            showError('Error', error.response?.data?.message || 'No se pudo guardar la validación.');
         },
     });
 
@@ -353,12 +339,12 @@ export const GestionSedes = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['sedes'] });
             queryClient.invalidateQueries({ queryKey: ['validaciones-sede'] });
-            MySwal.fire({ icon: 'success', title: '¡Validación guardada!', timer: 2000, showConfirmButton: false });
+            showSuccess('¡Validación guardada!');
             setValidacionDialogOpen(false);
         },
         onError: (error: any) => {
             console.error("Error guardando validación:", error);
-            MySwal.fire('Error', error.response?.data?.message || 'No se pudo guardar la validación.', 'error');
+            showError('Error', error.response?.data?.message || 'No se pudo guardar la validación.');
         },
     });
 
@@ -529,7 +515,7 @@ export const GestionSedes = () => {
 
     const handleCloseDialog = async () => {
         if (formData.nombreSede || formData.direccion || formData.distrito) {
-            const result = await MySwal.fire({
+            const result = await Swal.fire({
                 title: '¿Descartar cambios?',
                 text: 'Si cierras ahora perderás los datos ingresados.',
                 icon: 'warning',
@@ -564,7 +550,7 @@ export const GestionSedes = () => {
     };
 
     const handleDisable = async (id: number) => {
-        const result = await MySwal.fire({
+        const result = await Swal.fire({
             title: '¿Deshabilitar Sede?',
             text: "Esta sede ya no estará disponible para futuros convenios.",
             icon: 'warning',
@@ -594,19 +580,11 @@ export const GestionSedes = () => {
     };
 
     const handleVerExpedientes = (sede: SedeCatalogo | SedeDetalle) => {
-        MySwal.fire({
-            title: 'Expedientes de la Sede',
-            text: `Funcionalidad para ver expedientes de ${sede.nombreSede} pendiente de implementar.`,
-            icon: 'info'
-        });
+        showInfo('Expedientes de la Sede', `Funcionalidad para ver expedientes de ${sede.nombreSede} pendiente de implementar.`);
     };
 
     const handleGestionarTutores = (sede: SedeCatalogo | SedeDetalle) => {
-        MySwal.fire({
-            title: 'Gestión de Tutores',
-            text: `Funcionalidad para gestionar tutores de ${sede.nombreSede} pendiente de implementar.`,
-            icon: 'info'
-        });
+        showInfo('Gestión de Tutores', `Funcionalidad para gestionar tutores de ${sede.nombreSede} pendiente de implementar.`);
     };
 
     const handleGestionarValidacion = (sede: SedeCatalogo | SedeDetalle) => {

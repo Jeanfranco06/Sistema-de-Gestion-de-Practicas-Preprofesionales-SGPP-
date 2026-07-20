@@ -427,7 +427,7 @@ export default function DashboardEstudiante() {
           label="Progreso"
           value={`${progresoExpediente}%`}
           icon={TrendingUp}
-          color="bg-primary-600 text-white dark:bg-primary-700 dark:text-white"
+          color="bg-primary-600 text-slate-900 dark:bg-primary-700 dark:text-slate-900"
           trend="del expediente"
           trendUp={true}
         />
@@ -435,7 +435,7 @@ export default function DashboardEstudiante() {
           label="Tipo"
           value={expediente.nombreTipoPractica || expediente.codigoTipoPractica}
           icon={GraduationCap}
-          color="bg-primary-600 text-white dark:bg-primary-700 dark:text-white"
+          color="bg-primary-600 text-slate-900 dark:bg-primary-700 dark:text-slate-900"
         />
       </div>
 

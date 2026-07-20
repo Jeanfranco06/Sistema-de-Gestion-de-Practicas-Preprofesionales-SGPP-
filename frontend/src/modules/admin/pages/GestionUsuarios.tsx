@@ -744,7 +744,7 @@ function GestionUsuarios() {
                 <div
                   className={cn(
                     'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold border-2 transition-colors',
-                    isActive ? 'bg-primary-600 text-white border-primary-600 dark:bg-primary-700 dark:border-primary-700' :
+                    isActive ? 'bg-primary-600 text-slate-900 border-primary-600 dark:bg-primary-700 dark:border-primary-700' :
                     isCompleted ? 'bg-emerald-600 text-white border-emerald-600 dark:bg-emerald-700 dark:border-emerald-700' :
                     'bg-card text-muted-foreground border-border'
                   )}
@@ -1318,7 +1318,7 @@ function GestionUsuarios() {
               {activeStep === 4 && (
                 <div className="flex flex-col gap-3">
                   <div className="text-center mb-2">
-                    <Avatar size="lg" fallback={<CheckCircle2 className="w-6 h-6" />} className="bg-primary-700 text-white mx-auto mb-2" style={{ width: 64, height: 64 }} />
+                    <Avatar size="lg" fallback={<CheckCircle2 className="w-6 h-6" />} className="bg-primary-700 text-slate-900 mx-auto mb-2" style={{ width: 64, height: 64 }} />
                     <h3 className="text-xl font-extrabold text-foreground">Casi listo</h3>
                     <p className="text-sm text-muted-foreground">Por favor, verifica los datos ingresados antes de confirmar la creación del usuario.</p>
                   </div>
@@ -1529,7 +1529,7 @@ function GestionUsuarios() {
                 </div>
                 <div className="flex gap-2">
                   {selectedUsuario.cuentaBloqueada && (
-                    <Button className="flex-1 bg-amber-500 hover:bg-amber-600 text-white border-none" onClick={() => { setDrawerOpen(false); handleUnlock(selectedUsuario.id!); }}>
+                    <Button className="flex-1 bg-amber-500 hover:bg-amber-600 text-slate-900 border-none" onClick={() => { setDrawerOpen(false); handleUnlock(selectedUsuario.id!); }}>
                       <Unlock className="w-4 h-4" /> Desbloquear
                     </Button>
                   )}

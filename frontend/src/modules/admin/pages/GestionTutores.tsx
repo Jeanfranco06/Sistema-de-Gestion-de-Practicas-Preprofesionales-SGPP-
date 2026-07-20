@@ -302,7 +302,7 @@ export const GestionTutores = () => {
     { label: 'Totales', value: tutores.length, icon: <Users size={18} />, color: 'bg-[#1A3A6E] text-white dark:bg-[#4A6FA5] dark:text-white' },
     { label: 'Activos', value: tutores.filter(t => getEstado(t) === 'ACTIVO').length, icon: <CheckCircle2 size={18} />, color: 'bg-emerald-600 text-white dark:bg-emerald-700 dark:text-emerald-50' },
     { label: 'Inactivos', value: tutores.filter(t => getEstado(t) !== 'ACTIVO').length, icon: <XCircle size={18} />, color: 'bg-red-600 text-white dark:bg-red-700 dark:text-white' },
-    { label: 'Empresas', value: new Set(tutores.filter(t => t.idEmpresa).map(t => t.idEmpresa)).size, icon: <Building2 size={18} />, color: 'bg-primary-600 text-white dark:bg-primary-700 dark:text-white' },
+    { label: 'Empresas', value: new Set(tutores.filter(t => t.idEmpresa).map(t => t.idEmpresa)).size, icon: <Building2 size={18} />, color: 'bg-primary-600 text-slate-900 dark:bg-primary-700 dark:text-slate-900' },
   ], [tutores]);
 
   const totalPages = Math.ceil(sortedTutores.length / rowsPerPage);

@@ -319,6 +319,93 @@ Una constancia generada se registra con archivo, hash, fecha, usuario solicitant
 - Frontend: en `GestionExpedientes` se añadió un botón de edición por fila que abre un diálogo para seleccionar el nuevo estado y registrar la observación; utiliza `ESTADOS_EXPEDIENTE` del backend.
 - Verificaciones ejecutadas: `mvn -pl sgpp-api -am test` (4 tests), `npm run lint` y `npm run build`.
 
+### 2026-07-20 (continuación) — Corrección de BeanDefinitionStoreException al ejecutar JAR
+
+- Causa: existía un `ParametroSistemaController` en `sgpp-core` (creado en este mismo ciclo) y otro en `sgpp-api`; al empaquetar el JAR ejecutable ambos quedaban en el classpath con el mismo nombre de bean, provocando `ConflictingBeanDefinitionException`.
+- Solución: eliminado el controlador duplicado de `sgpp-core`; se conserva el existente en `sgpp-api` (`/parametros`).
+- Frontend: actualizada `configuracionApi.js` para consumir `/parametros` y `useConfiguracion.ts` para interpretar la respuesta directa (sin `ApiResponse`).
+- Verificaciones ejecutadas: `mvn clean package -DskipTests`, `java -jar sgpp-api/target/sgpp-api-1.0.0.jar` (inicio OK), `npm run lint` y `npm run build`.
+
+### 2026-07-20 (continuación) — Ajustes de contraste en modo claro y oscuro
+
+- Revisados badges y KPIs que usaban `bg-primary-600 text-white` y `bg-amber-500 text-white`; el contraste entre fondo amarillo/ámbar y texto blanco era insuficiente.
+- Cambiado el texto de esos elementos a `text-slate-900` (oscuro) manteniendo el fondo institucional amarillo/ámbar; variantes dark también actualizadas a `dark:text-slate-900`.
+- Archivos intervenidos: dashboards y gestiones de admin, secretaría, coordinación, comité, docente, tutor y estudiante.
+- Verificaciones ejecutadas: `npm run lint` y `npm run build`.
+
+### 2026-07-20 (continuación) — Corrección de vistas en blanco y errores de React en runtime
+
+- Causa: muchos componentes migrados a `React.lazy` no tienen `export default`; usan `export const` o `export function`. `React.lazy` espera `.default`, por lo que en runtime se recibía un objeto y se producía `TypeError: Cannot convert object to primitive value`, dejando la vista en blanco.
+- Solución: en `App.tsx` se reemplazó `React.lazy(...)` por un helper `lazyNamed` que primero intenta `m.default` y, si no existe, usa el export con nombre (`m[exportName]`). Esto soporta ambos patrones sin modificar cada página.
+- También se corrigió la advertencia de clave duplicada en `AppLayout`: el menú de estudiante tenía dos ítems (`Centros de Práctica` y `Empresas Receptoras`) con el mismo `path`; la `key` del `NavItem` ahora combina grupo, índice y path.
+- Verificaciones ejecutadas: `npm run lint` y `npm run build`.
+
+### 2026-07-20 (continuación) — Eliminación de menú duplicado del estudiante
+
+- Problema reportado: al seleccionar `Centros de Práctica` o `Empresas Receptoras` en el menú del estudiante, ambos ítems se resaltaban como activos porque compartían el mismo `path` (`/estudiante/sedes`).
+- Decisión del usuario: dado que ambas vistas mostraban el mismo catálogo, se eliminó el ítem `Empresas Receptoras` del menú del estudiante.
+- Cambios:
+  - Se eliminó `Empresas Receptoras` del grupo `Institucional` en `AppLayout.tsx`, dejando solo `Centros de Práctica`.
+  - Se eliminó la ruta huérfana `/estudiante/empresas` de `App.tsx`.
+  - Se revirtió el título dinámico en `CatalogoSedes.tsx` para mantener el título fijo "Catálogo de empresas y sedes".
+- Verificaciones ejecutadas: `npm run lint` y `npm run build`.
+
+### 2026-07-20 (continuación) — Corrección de fondo de modales
+
+- Problema reportado: los modales del Design System aparecían con fondo transparente y borroso (`backdrop-blur-sm` sobre `bg-slate-900/50`), dificultando la lectura del contenido detrás y del propio modal.
+- Solución: en `frontend/src/ui/Dialog.tsx` se cambió el backdrop a `bg-black/70` y se eliminó el desenfoque (`backdrop-blur-sm`).
+- Segundo problema reportado: el contenido de los modales seguía transparente mientras que el header no. Causa: la clase `bg-card` usaba `hsl(var(--card))`, pero la variable CSS `--card` no estaba definida en el tema (solo existía `--color-card`).
+- Solución: en `frontend/src/ui/Dialog.tsx` se reemplazó `bg-card` por `bg-[var(--color-card)]` en `DialogContent` y `border-border` por `border-[var(--color-border)]` en `DialogHeader` y `DialogFooter`.
+- Verificaciones ejecutadas: `npm run lint` y `npm run build`.
+
+### 2026-07-20 (continuación) — Corrección de tema CSS y variables de Tailwind
+
+- Problema reportado: inconsistencias visuales en `/coordinacion/expedientes/:id` y otras vistas.
+- Causa de raíz: `tailwind.config.js` definía los colores del sistema usando `hsl(var(--nombre))` (por ejemplo `hsl(var(--card))`), pero en `wow-theme.css` las variables se llamaban `--color-*` y usaban valores hex. Esto hacía que clases como `bg-card`, `bg-background`, `bg-muted`, `text-foreground`, `text-muted-foreground`, `border-border`, etc. no aplicaran color, provocando fondos transparentes y textos con contraste incorrecto en componentes del Design System como `Tabs`, `Dialog`, `Badge` y cualquier otro que usara estas clases.
+- Solución:
+  - En `frontend/src/assets/wow-theme.css` se agregaron las variables faltantes: `--color-primary`, `--color-primary-foreground`, `--color-secondary`, `--color-secondary-foreground`, `--color-destructive`, `--color-destructive-foreground`, `--color-accent`, `--color-accent-foreground` y `--color-radius`, tanto para el tema claro como para el oscuro.
+  - En `frontend/tailwind.config.js` se reemplazaron las definiciones `hsl(var(--...))` por `var(--color-...)` para todos los colores del sistema, de forma que apunten a las variables CSS reales.
+  - En `frontend/src/ui/Dialog.tsx` se volvió a usar `bg-card` y `border-border` (ahora funcionan correctamente) en lugar de los valores explícitos de variable.
+- Impacto: todas las vistas que usan `bg-card`, `bg-background`, `bg-muted`, `text-foreground`, `text-muted-foreground`, `border-border`, `bg-primary`, etc. ahora renderizan con los colores del tema correctamente, incluyendo `/coordinacion/expedientes/:id`.
+- Verificaciones ejecutadas: `npm run lint` y `npm run build`.
+
+### 2026-07-20 (continuación) — Notificaciones tipo toast, doble validación y tooltips
+
+- Se creó `frontend/src/lib/toast.ts` con helpers `showSuccess`, `showError`, `showWarning`, `showInfo`, `showLoading` y `closeLoading`, usando SweetAlert2 en modo `toast` con posición `top-end`, sin botón de confirmar y con timer (mismo estilo que el de `Solicitar Práctica`).
+- Se reemplazaron las notificaciones de éxito/error en los módulos principales para que usen el helper de toast:
+  - `Recepción Administrativa` (validar, asignar asesor, registrar incidencia).
+  - `Validar Requisitos` (carga, validación, edición).
+  - `Gestión de Sedes`, `Gestión de Empresas`, `Gestión de Convenios` (CRUD, validaciones, deshabilitar).
+  - `Evaluación Tutor Externo`, `Evaluación Docente Asesor`, `Evaluación Componentes Anexo 4`.
+  - `Validación de Horas Tutor`.
+  - `Revisión Documental`.
+  - `Catálogo de Sedes`.
+  - Las confirmaciones (sí/no) y diálogos con input se mantuvieron con `Swal.fire` nativo.
+- Se eliminó la doble validación en `Recepción Administrativa`: al hacer clic en `Validar y Marcar Listo para Carta` dentro del diálogo de checklist ya no se muestra un segundo diálogo de confirmación; directamente se ejecuta la validación con un toast de éxito.
+- Se corrigió el bug de tooltips que se quedaban visibles después de quitar el hover: el componente `Tooltip` del Design System (`frontend/src/ui/Tooltip.tsx`) fue reemplazado por un wrapper de `MuiTooltip` que maneja correctamente el posicionamiento, portal, delays y cierre al perder el hover.
+- Verificaciones ejecutadas: `npm run lint` y `npm run build`.
+
+### 2026-07-20 (continuación) — Tokens semánticos registrados en `@theme` de Tailwind v4
+
+- Problema reportado: persistían inconsistencias visuales en `/coordinacion/expedientes/:id` y otras vistas; clases como `bg-muted`, `bg-card`, `bg-background`, `text-foreground`, `text-muted-foreground` y `border-border` no generaban utilidades correctamente.
+- Causa de raíz: en Tailwind CSS v4.3.3, el bloque `@theme` es el registro principal de tokens para la generación de utilidades. Los tokens semánticos (`--color-muted`, `--color-card`, `--color-background`, `--color-foreground`, `--color-border`, `--color-primary`, etc.) solo existían en `@layer base { :root {} }`, no en `@theme`. Aunque `@config` carga `tailwind.config.js` para retrocompatibilidad, Tailwind v4 puede no generar todas las utilidades si los tokens no están en `@theme`.
+- Solución: se agregaron todos los tokens semánticos de color al bloque `@theme` en `frontend/src/assets/wow-theme.css` con sus valores hex en modo claro (light mode defaults). El bloque `@layer base { :root {} }` y `.dark {}` continúan operando para el switching dinámico en runtime. Tailwind v4 ahora genera todas las utilidades de color correctamente (`bg-muted`, `bg-card`, `bg-background`, `text-foreground`, `text-muted-foreground`, `border-border`, `bg-primary`, etc.).
+- Tokens agregados a `@theme`: `--color-background`, `--color-foreground`, `--color-card`, `--color-card-foreground`, `--color-border`, `--color-muted`, `--color-muted-foreground`, `--color-input`, `--color-ring`, `--color-primary`, `--color-primary-foreground`, `--color-secondary`, `--color-secondary-foreground`, `--color-destructive`, `--color-destructive-foreground`, `--color-accent`, `--color-accent-foreground`, `--radius`.
+- Verificaciones ejecutadas: `npm run lint` y `npm run build` sin errores.
+
+### 2026-07-20 (continuación) — Corrección de Tabs: contenido visible y cambio de pestañas
+
+- Problema reportado: los tabs de Resumen General, Documentos y Observaciones, Monitoreo y Horas, Trazabilidad y Cierre no funcionaban — al hacer clic no cambiaba el contenido.
+- Causa raíz: el componente `Tabs` era un simple contenedor `<div>` sin lógica de estado. Los `TabsContent` se renderizaban todos simultáneamente y no existía mecanismo para ocultar/mostrar el panel activo.
+- Solución: se reescribió `frontend/src/ui/Tabs.tsx` con React Context:
+  - `Tabs` provee un `TabsContext` con el `value` actual y el handler `onValueChange`.
+  - `TabsTrigger` lee el contexto para determinar si está activo, aplica `data-state="active"|"inactive"`, y llama a `onValueChange` al hacer clic.
+  - `TabsContent` se renderiza condicionalmente: solo se muestra si su `value` coincide con el `value` del contexto.
+  - Soporta modo controlado (`value`+`onValueChange`) y no controlado (`defaultValue`).
+- En `DetalleExpediente.tsx` se simplificó: se eliminó el state `tabValue` manual, se usa `defaultValue={tabs[0]}`, y el estilo activo se aplica via selectores `data-[state=active]`.
+- Las 3 páginas que usaban modo controlado (`EvaluacionDocenteAsesor`, `GestionDocumental`, `ConfiguracionSistema`) continúan funcionando correctamente.
+- Verificaciones ejecutadas: `npm run lint` y `npm run build` sin errores.
+
 ## Pendientes Técnicos Conocidos
 
-- Revisar visualmente cada rol en modo claro y oscuro para detectar ajustes finos de contraste.
+- (ninguno crítico pendiente; se recomienda prueba visual/manual en navegador para validación final).

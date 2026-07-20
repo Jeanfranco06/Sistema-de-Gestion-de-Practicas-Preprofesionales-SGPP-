@@ -70,7 +70,6 @@ function getNavGroups(roles: UserRole[] = []): NavGroup[] {
       ]},
       { group: 'institutional', label: 'Institucional', items: [
         { label: 'Centros de Práctica', icon: <MapPin size={22} />, path: '/estudiante/sedes' },
-        { label: 'Empresas Receptoras', icon: <Building2 size={22} />, path: '/estudiante/sedes' },
       ]},
     ];
   }
@@ -268,9 +267,9 @@ function NavGroup({
       )}
       {collapsed && groupIdx > 0 && <hr className="mx-3 my-2 border-[var(--color-border)]" />}
       <ul className="space-y-0.5">
-        {group.items.map(item => (
+        {group.items.map((item, idx) => (
           <NavItem
-            key={item.path}
+            key={`${group.group}-${idx}-${item.path}`}
             item={item}
             isActive={isActive(item.path)}
             collapsed={collapsed}

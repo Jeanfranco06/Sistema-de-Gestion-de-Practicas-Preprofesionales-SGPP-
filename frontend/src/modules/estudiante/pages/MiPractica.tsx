@@ -170,8 +170,8 @@ export default function MiPractica() {
   const kpis: KpiItem[] = [
     { label: 'Horas Requeridas', val: `${horasTotales} h`, icon: Clock, color: 'bg-[#1A3A6E] text-white dark:bg-[#4A6FA5] dark:text-white' },
     { label: 'Estado', val: getStatusLabel(statusKey), icon: CheckCircle2, color: 'bg-emerald-600 text-white dark:bg-emerald-700 dark:text-white' },
-    { label: 'Tipo', val: practica.codigoTipoPractica || 'Práctica', icon: FileText, color: 'bg-primary-600 text-white dark:bg-primary-700 dark:text-white' },
-    { label: 'Sede', val: practica.nombreSede ? (practica.nombreSede.length > 12 ? practica.nombreSede.slice(0, 12) + '...' : practica.nombreSede) : 'No asignada', icon: GraduationCap, color: 'bg-amber-500 text-white dark:bg-amber-600 dark:text-white' },
+    { label: 'Tipo', val: practica.codigoTipoPractica || 'Práctica', icon: FileText, color: 'bg-primary-600 text-slate-900 dark:bg-primary-700 dark:text-slate-900' },
+    { label: 'Sede', val: practica.nombreSede ? (practica.nombreSede.length > 12 ? practica.nombreSede.slice(0, 12) + '...' : practica.nombreSede) : 'No asignada', icon: GraduationCap, color: 'bg-amber-500 text-slate-900 dark:bg-amber-600 dark:text-slate-900' },
   ];
 
   const quickActions = [

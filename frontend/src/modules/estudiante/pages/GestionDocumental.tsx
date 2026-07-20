@@ -11,6 +11,7 @@ import { planesApi } from '@/api/planesApi';
 import api from '@/api/axios';
 import { useAuth } from '@/auth/AuthContext';
 import { ESTADOS_EXPEDIENTE } from '@/lib/constants';
+import { showError, showSuccess } from '@/lib/toast';
 import {
   Badge, Button, Card, Input, Progress,
   Dialog, DialogContent, DialogHeader, DialogTitle,
@@ -368,10 +369,11 @@ export const GestionDocumental = () => {
         await expedientesApi.eliminarDocumento(expediente.id, id);
         await fetchExpediente();
       }
-      MySwal.fire({ title: 'Eliminado', icon: 'success', timer: 1500, showConfirmButton: false });
-    } catch (error) {
+      showSuccess('Documento eliminado');
+    } catch (error: any) {
       console.error('Delete error:', error);
-      MySwal.fire('Error', 'No se pudo eliminar el documento.', 'error');
+      const msg = error?.response?.data?.message || 'No se pudo eliminar el documento.';
+      showError(msg);
     }
   };
 
@@ -392,8 +394,8 @@ export const GestionDocumental = () => {
   const pendientes = Math.max(docObligatorios.length - documentosConsolidados.length, 0);
 
   const stats = [
-    { label: 'Documentos cargados', value: documentosConsolidados.length, color: 'bg-primary-600 text-white dark:bg-primary-700 dark:text-white', icon: CloudUpload },
-    { label: 'Pendientes', value: pendientes, color: 'bg-amber-500 text-white dark:bg-amber-600 dark:text-white', icon: FileText },
+    { label: 'Documentos cargados', value: documentosConsolidados.length, color: 'bg-primary-600 text-slate-900 dark:bg-primary-700 dark:text-slate-900', icon: CloudUpload },
+    { label: 'Pendientes', value: pendientes, color: 'bg-amber-500 text-slate-900 dark:bg-amber-600 dark:text-slate-900', icon: FileText },
     { label: 'Anexos subidos', value: anexosList.length, color: 'bg-emerald-500 text-white dark:bg-emerald-600 dark:text-white', icon: Plus },
   ];
 
@@ -541,7 +543,8 @@ export const GestionDocumental = () => {
                               >
                                 <Download className="h-4 w-4" />
                               </Button>
-                              {docCargado.estado !== 'APROBADO' && !docCargado.fileName?.startsWith('registro:') && (
+                              {docCargado.estado !== 'APROBADO' && !docCargado.fileName?.startsWith('registro:')
+                                && (docType.id !== 'CARTA_ACEPTACION' || expediente.estado === ESTADOS_EXPEDIENTE.CARTA_ACEPTACION_PRESENTADA) && (
                                 <Button
                                   variant="ghost"
                                   size="sm"

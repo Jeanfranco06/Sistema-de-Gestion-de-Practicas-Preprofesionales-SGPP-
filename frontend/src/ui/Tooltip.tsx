@@ -1,66 +1,39 @@
 import * as React from 'react';
+import { Tooltip as MuiTooltip, TooltipProps as MuiTooltipProps } from '@mui/material';
 import { cn } from '../lib/utils';
 
-export interface TooltipProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface TooltipProps extends Omit<MuiTooltipProps, 'title' | 'children'> {
   content: React.ReactNode;
+  children: React.ReactElement;
   side?: 'top' | 'right' | 'bottom' | 'left';
-  delayDuration?: number;
+  className?: string;
+}
+
+export function Tooltip({ content, children, side = 'top', className, ...props }: TooltipProps) {
+  return (
+    <MuiTooltip
+      title={content}
+      placement={side}
+      arrow
+      enterDelay={200}
+      enterNextDelay={200}
+      leaveDelay={0}
+      {...props}
+      classes={{
+        tooltip: cn(
+          'px-3 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg shadow-lg',
+          className
+        ),
+      }}
+    >
+      {children}
+    </MuiTooltip>
+  );
 }
 
 export interface TooltipTriggerProps extends React.HTMLAttributes<HTMLDivElement> {}
 
-export interface TooltipContentProps extends React.HTMLAttributes<HTMLDivElement> {}
-
-const Tooltip = ({ children, content, side = 'top', delayDuration = 200, ...props }: TooltipProps) => {
-  const [isOpen, setIsOpen] = React.useState(false);
-  const [timeoutId, setTimeoutId] = React.useState<NodeJS.Timeout | null>(null);
-
-  const open = () => {
-    if (delayDuration > 0) {
-      const id = setTimeout(() => setIsOpen(true), delayDuration);
-      setTimeoutId(id);
-    } else {
-      setIsOpen(true);
-    }
-  };
-
-  const close = () => {
-    if (timeoutId) clearTimeout(timeoutId);
-    setIsOpen(false);
-  };
-
-  return (
-    <div {...props} onMouseEnter={open} onMouseLeave={close} onFocus={open} onBlur={close}>
-      {React.Children.map(children, (child) => {
-        if (React.isValidElement(child)) {
-          return React.cloneElement(child, {
-            onMouseEnter: open,
-            onMouseLeave: close,
-            onFocus: open,
-            onBlur: close,
-          });
-        }
-        return child;
-      })}
-      {isOpen && (
-        <div
-          role="tooltip"
-          className={cn(
-            'fixed z-50 px-3 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg shadow-lg',
-            'animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95'
-          )}
-          style={{
-            // Position will be handled by CSS or portal
-          }}
-        >
-          {content}
-        </div>
-      )}
-    </div>
-  );
-};
-
-const TooltipTrigger = React.forwardRef<HTMLDivElement, TooltipTriggerProps>(
+export const TooltipTrigger = React.forwardRef<HTMLDivElement, TooltipTriggerProps>(
   ({ className, children, ...props }, ref) => {
     return (
       <div ref={ref} className={cn('', className)} {...props}>
@@ -71,14 +44,15 @@ const TooltipTrigger = React.forwardRef<HTMLDivElement, TooltipTriggerProps>(
 );
 TooltipTrigger.displayName = 'TooltipTrigger';
 
-const TooltipContent = React.forwardRef<HTMLDivElement, TooltipContentProps>(
+export interface TooltipContentProps extends React.HTMLAttributes<HTMLDivElement> {}
+
+export const TooltipContent = React.forwardRef<HTMLDivElement, TooltipContentProps>(
   ({ className, children, ...props }, ref) => {
     return (
       <div
         ref={ref}
         className={cn(
-          'fixed z-50 px-3 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg shadow-lg',
-          'animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95',
+          'px-3 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg shadow-lg',
           className
         )}
         {...props}
@@ -90,4 +64,4 @@ const TooltipContent = React.forwardRef<HTMLDivElement, TooltipContentProps>(
 );
 TooltipContent.displayName = 'TooltipContent';
 
-export { Tooltip, TooltipTrigger, TooltipContent };
+export { Tooltip as default };

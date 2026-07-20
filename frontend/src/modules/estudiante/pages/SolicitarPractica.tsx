@@ -267,8 +267,8 @@ export function SolicitarPractica() {
                 <div
                   className={cn(
                     'flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full text-sm md:text-base font-bold shrink-0 transition-colors',
-                    index < activeStep && 'bg-primary-600 text-white dark:bg-primary-700',
-                    index === activeStep && 'bg-primary-600 text-white ring-4 ring-primary-100 dark:ring-primary-900/50',
+                    index < activeStep && 'bg-primary-600 text-slate-900 dark:bg-primary-700',
+                    index === activeStep && 'bg-primary-600 text-slate-900 ring-4 ring-primary-100 dark:ring-primary-900/50',
                     index > activeStep && 'bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground',
                   )}
                   aria-current={index === activeStep ? 'step' : undefined}
@@ -651,7 +651,7 @@ export function SolicitarPractica() {
               <Card className="border-l-4 border-l-primary-600 overflow-hidden">
                 <CardContent className="p-5 md:p-6">
                   <div className="flex items-start gap-4">
-                    <div className="flex items-center justify-center rounded-xl shrink-0 h-14 w-14 bg-primary-600 text-white shadow-md">
+                    <div className="flex items-center justify-center rounded-xl shrink-0 h-14 w-14 bg-primary-600 text-slate-900 shadow-md">
                       {tipoIcons[selectedTipo.codigo] || <GraduationCap className="h-7 w-7" aria-hidden="true" />}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -822,7 +822,7 @@ export function SolicitarPractica() {
             {selectedTipo && (
               <div className="bg-card border border-border rounded-xl p-4">
                 <div className="flex items-center gap-4">
-                  <div className="flex items-center justify-center rounded-xl h-12 w-12 bg-primary-600 text-white shadow-md border-2 border-primary-400/30">
+                  <div className="flex items-center justify-center rounded-xl h-12 w-12 bg-primary-600 text-slate-900 shadow-md border-2 border-primary-400/30">
                     {tipoIcons[selectedTipo.codigo] || <GraduationCap className="h-6 w-6" aria-hidden="true" />}
                   </div>
                   <div className="flex-1 min-w-0">

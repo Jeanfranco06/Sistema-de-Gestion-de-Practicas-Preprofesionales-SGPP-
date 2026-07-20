@@ -19,38 +19,45 @@ import ResetPasswordPage from './modules/auth/ResetPasswordPage';
 import NoAutorizado from './modules/shared/NoAutorizado';
 import PaginaEnConstruccion from './modules/shared/PaginaEnConstruccion';
 
-const DashboardEstudiante = React.lazy(() => import('./modules/estudiante/DashboardEstudiante'));
-const DashboardDocente = React.lazy(() => import('./modules/docente/pages/DashboardDocente'));
-const CatalogoSedes = React.lazy(() => import('./modules/sedes/pages/CatalogoSedes'));
-const SolicitarPractica = React.lazy(() => import('./modules/estudiante/pages/SolicitarPractica'));
-const GestionSedes = React.lazy(() => import('./modules/sedes/pages/GestionSedes'));
-const GestionEmpresas = React.lazy(() => import('./modules/sedes/pages/GestionEmpresas'));
-const GestionConvenios = React.lazy(() => import('./modules/sedes/pages/GestionConvenios'));
-const ValidarRequisitos = React.lazy(() => import('./modules/secretaria/pages/ValidarRequisitos'));
-const GestionDocumental = React.lazy(() => import('./modules/estudiante/pages/GestionDocumental'));
-const InformesPeriodicos = React.lazy(() => import('./modules/estudiante/pages/InformesPeriodicos'));
-const RegistroHoras = React.lazy(() => import('./modules/estudiante/pages/RegistroHoras'));
-const PerfilEstudiante = React.lazy(() => import('./modules/estudiante/pages/PerfilEstudiante'));
-const MiPractica = React.lazy(() => import('./modules/estudiante/pages/MiPractica'));
-const PlanPracticas = React.lazy(() => import('./modules/estudiante/pages/PlanPracticas'));
-const RevisionDocumental = React.lazy(() => import('./modules/shared/pages/RevisionDocumental'));
-const ListaPracticantes = React.lazy(() => import('./modules/evaluacion/ListaPracticantes'));
-const AdminDashboardPage = React.lazy(() => import('./modules/admin/pages/AdminDashboardPage'));
-const DashboardTutor = React.lazy(() => import('./modules/tutor/pages/DashboardTutor'));
-const ValidacionHorasTutor = React.lazy(() => import('./modules/tutor/pages/ValidacionHorasTutor'));
-const EvaluacionTutorExterno = React.lazy(() => import('./modules/evaluacion/EvaluacionTutorExterno'));
-const EvaluacionDocenteAsesor = React.lazy(() => import('./modules/evaluacion/EvaluacionDocenteAsesor'));
-const EvaluacionComite = React.lazy(() => import('./modules/evaluacion/EvaluacionComite'));
-const PanelComite = React.lazy(() => import('./modules/comite/pages/PanelComite'));
-const RecepcionAdministrativa = React.lazy(() => import('./modules/secretaria/pages/RecepcionAdministrativa'));
-const DashboardCoordinacion = React.lazy(() => import('./modules/coordinacion/pages/DashboardCoordinacion'));
-const ReportesCoordinacion = React.lazy(() => import('./modules/coordinacion/pages/Reportes'));
-const DetalleExpediente = React.lazy(() => import('./modules/coordinacion/pages/DetalleExpediente'));
-const AdminReportesPage = React.lazy(() => import('./modules/admin/pages/AdminReportesPage'));
-const GestionExpedientes = React.lazy(() => import('./modules/admin/pages/GestionExpedientes'));
-const GestionUsuarios = React.lazy(() => import('./modules/admin/pages/GestionUsuarios'));
-const GestionTutores = React.lazy(() => import('./modules/admin/pages/GestionTutores'));
-const ConfiguracionSistema = React.lazy(() => import('./modules/admin/pages/ConfiguracionSistema'));
+function lazyNamed<T extends React.ComponentType<any>>(
+  importFn: () => Promise<{ default?: T; [key: string]: any }>,
+  exportName: string
+) {
+  return React.lazy(() => importFn().then(m => ({ default: m.default ?? m[exportName] })));
+}
+
+const DashboardEstudiante = lazyNamed(() => import('./modules/estudiante/DashboardEstudiante'), 'DashboardEstudiante');
+const DashboardDocente = lazyNamed(() => import('./modules/docente/pages/DashboardDocente'), 'DashboardDocente');
+const CatalogoSedes = lazyNamed(() => import('./modules/sedes/pages/CatalogoSedes'), 'CatalogoSedes');
+const SolicitarPractica = lazyNamed(() => import('./modules/estudiante/pages/SolicitarPractica'), 'SolicitarPractica');
+const GestionSedes = lazyNamed(() => import('./modules/sedes/pages/GestionSedes'), 'GestionSedes');
+const GestionEmpresas = lazyNamed(() => import('./modules/sedes/pages/GestionEmpresas'), 'GestionEmpresas');
+const GestionConvenios = lazyNamed(() => import('./modules/sedes/pages/GestionConvenios'), 'GestionConvenios');
+const ValidarRequisitos = lazyNamed(() => import('./modules/secretaria/pages/ValidarRequisitos'), 'ValidarRequisitos');
+const GestionDocumental = lazyNamed(() => import('./modules/estudiante/pages/GestionDocumental'), 'GestionDocumental');
+const InformesPeriodicos = lazyNamed(() => import('./modules/estudiante/pages/InformesPeriodicos'), 'InformesPeriodicos');
+const RegistroHoras = lazyNamed(() => import('./modules/estudiante/pages/RegistroHoras'), 'RegistroHoras');
+const PerfilEstudiante = lazyNamed(() => import('./modules/estudiante/pages/PerfilEstudiante'), 'PerfilEstudiante');
+const MiPractica = lazyNamed(() => import('./modules/estudiante/pages/MiPractica'), 'MiPractica');
+const PlanPracticas = lazyNamed(() => import('./modules/estudiante/pages/PlanPracticas'), 'PlanPracticas');
+const RevisionDocumental = lazyNamed(() => import('./modules/shared/pages/RevisionDocumental'), 'RevisionDocumental');
+const ListaPracticantes = lazyNamed(() => import('./modules/evaluacion/ListaPracticantes'), 'ListaPracticantes');
+const AdminDashboardPage = lazyNamed(() => import('./modules/admin/pages/AdminDashboardPage'), 'AdminDashboardPage');
+const DashboardTutor = lazyNamed(() => import('./modules/tutor/pages/DashboardTutor'), 'DashboardTutor');
+const ValidacionHorasTutor = lazyNamed(() => import('./modules/tutor/pages/ValidacionHorasTutor'), 'ValidacionHorasTutor');
+const EvaluacionTutorExterno = lazyNamed(() => import('./modules/evaluacion/EvaluacionTutorExterno'), 'EvaluacionTutorExterno');
+const EvaluacionDocenteAsesor = lazyNamed(() => import('./modules/evaluacion/EvaluacionDocenteAsesor'), 'EvaluacionDocenteAsesor');
+const EvaluacionComite = lazyNamed(() => import('./modules/evaluacion/EvaluacionComite'), 'EvaluacionComite');
+const PanelComite = lazyNamed(() => import('./modules/comite/pages/PanelComite'), 'PanelComite');
+const RecepcionAdministrativa = lazyNamed(() => import('./modules/secretaria/pages/RecepcionAdministrativa'), 'RecepcionAdministrativa');
+const DashboardCoordinacion = lazyNamed(() => import('./modules/coordinacion/pages/DashboardCoordinacion'), 'DashboardCoordinacion');
+const ReportesCoordinacion = lazyNamed(() => import('./modules/coordinacion/pages/Reportes'), 'ReportesCoordinacion');
+const DetalleExpediente = lazyNamed(() => import('./modules/coordinacion/pages/DetalleExpediente'), 'DetalleExpediente');
+const AdminReportesPage = lazyNamed(() => import('./modules/admin/pages/AdminReportesPage'), 'AdminReportesPage');
+const GestionExpedientes = lazyNamed(() => import('./modules/admin/pages/GestionExpedientes'), 'GestionExpedientes');
+const GestionUsuarios = lazyNamed(() => import('./modules/admin/pages/GestionUsuarios'), 'GestionUsuarios');
+const GestionTutores = lazyNamed(() => import('./modules/admin/pages/GestionTutores'), 'GestionTutores');
+const ConfiguracionSistema = lazyNamed(() => import('./modules/admin/pages/ConfiguracionSistema'), 'ConfiguracionSistema');
 
 const queryClient = new QueryClient({
   defaultOptions: {

@@ -7,7 +7,7 @@ import {
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
-import withReactContent from 'sweetalert2-react-content';
+import { showSuccess, showError } from '../../../lib/toast';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions, TextField, CircularProgress, LinearProgress
 } from '@mui/material';
@@ -15,8 +15,6 @@ import {
   Button, Badge, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Select, Avatar, Tooltip
 } from '../../../ui';
 import { empresaApi } from '../../../api/sedesApi';
-
-const MySwal = withReactContent(Swal);
 
 interface Empresa {
   id: number;
@@ -236,7 +234,7 @@ export const GestionEmpresas = () => {
 
   const handleCloseDialog = async () => {
     if (formData.ruc || formData.razonSocial) {
-      const result = await MySwal.fire({
+      const result = await Swal.fire({
         title: '¿Descartar cambios?',
         text: 'Si cierras ahora perderás los datos ingresados.',
         icon: 'warning',
@@ -336,23 +334,17 @@ export const GestionEmpresas = () => {
         await createEmpresaMutation.mutateAsync(formData);
       }
       setOpenDialog(false);
-      MySwal.fire({
-        icon: 'success',
-        title: isEditing ? '¡Empresa Actualizada!' : '¡Empresa Creada!',
-        text: 'Los datos se guardaron correctamente.',
-        timer: 2000,
-        showConfirmButton: false
-      });
+      showSuccess(isEditing ? '¡Empresa Actualizada!' : '¡Empresa Creada!', 'Los datos se guardaron correctamente.');
     } catch (error: any) {
       const msg = error.response?.data?.message || error.response?.data?.error || "Ya existe una empresa con ese RUC o hubo un error en el servidor.";
-      MySwal.fire('Error al guardar', msg, 'error');
+      showError('Error al guardar', msg);
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleDisable = async (id: number) => {
-    const result = await MySwal.fire({
+    const result = await Swal.fire({
       title: '¿Deshabilitar Empresa?',
       text: "Esta acción evitará que la empresa pueda participar en nuevos convenios.",
       icon: 'warning',
@@ -365,15 +357,15 @@ export const GestionEmpresas = () => {
     if (result.isConfirmed) {
       try {
         await disableEmpresaMutation.mutateAsync(id);
-        MySwal.fire('¡Deshabilitada!', 'La empresa ha sido deshabilitada correctamente.', 'success');
+        showSuccess('¡Deshabilitada!', 'La empresa ha sido deshabilitada correctamente.');
       } catch {
-        MySwal.fire('Error', 'No se pudo deshabilitar la empresa.', 'error');
+        showError('Error', 'No se pudo deshabilitar la empresa.');
       }
     }
   };
 
   const handleValidate = async (id: number) => {
-    const result = await MySwal.fire({
+    const result = await Swal.fire({
       title: '¿Validar Empresa?',
       text: "Al validar esta empresa, confirmas que su perfil es legítimo.",
       icon: 'info',
@@ -386,9 +378,9 @@ export const GestionEmpresas = () => {
     if (result.isConfirmed) {
       try {
         await validateEmpresaMutation.mutateAsync(id);
-        MySwal.fire('¡Validada!', 'La empresa ha sido validada exitosamente.', 'success');
+        showSuccess('¡Validada!', 'La empresa ha sido validada exitosamente.');
       } catch {
-        MySwal.fire('Error', 'No se pudo validar la empresa.', 'error');
+        showError('Error', 'No se pudo validar la empresa.');
       }
     }
   };

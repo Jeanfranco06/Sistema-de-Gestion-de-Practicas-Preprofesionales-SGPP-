@@ -326,7 +326,7 @@ export const InformesPeriodicos = () => {
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
-          { label: 'Disponibles', value: disponibles, color: 'bg-primary-600 text-white dark:bg-primary-700' },
+          { label: 'Disponibles', value: disponibles, color: 'bg-primary-600 text-slate-900 dark:bg-primary-700' },
           { label: 'Enviados', value: enviados, color: 'bg-emerald-600 text-white dark:bg-emerald-700' },
           { label: 'Bloqueados', value: hitos.length - disponibles, color: 'bg-muted text-muted-foreground dark:bg-muted' },
         ].map((item) => (

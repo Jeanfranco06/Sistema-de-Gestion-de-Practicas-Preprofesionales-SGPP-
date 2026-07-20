@@ -6,9 +6,7 @@ import { useExpedienteById } from '@/hooks/useExpedientes';
 import { Card, CardContent, Button, Badge, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/ui';
 import { cn } from '@/lib/utils';
 import Swal from 'sweetalert2';
-import withReactContent from 'sweetalert2-react-content';
-
-const MySwal = withReactContent(Swal);
+import { showSuccess, showError } from '@/lib/toast';
 
 interface RegistroHora {
   id: string;
@@ -31,7 +29,7 @@ function KpiCard({ label, value, icon: Icon, variant = 'default' }: KpiCardProps
   const colorClasses = {
     default: 'bg-[#1A3A6E] text-white dark:bg-[#4A6FA5]',
     success: 'bg-emerald-600 text-white dark:bg-emerald-700',
-    warning: 'bg-amber-500 text-white dark:bg-amber-600',
+    warning: 'bg-amber-500 text-slate-900 dark:bg-amber-600',
     neutral: 'bg-muted text-muted-foreground',
   };
 
@@ -75,7 +73,7 @@ export default function ValidacionHorasTutor() {
   });
 
   const handleValidar = async (registro: RegistroHora, validado: boolean) => {
-    const { value: observaciones } = await MySwal.fire({
+    const { value: observaciones } = await Swal.fire({
       title: validado ? 'Validar registro de horas' : 'Rechazar registro de horas',
       input: 'textarea',
       inputLabel: 'Observaciones (opcional)',
@@ -90,15 +88,10 @@ export default function ValidacionHorasTutor() {
         idRegistro: registro.id,
         payload: { validado, observaciones: observaciones || '' },
       });
-      MySwal.fire({
-        icon: 'success',
-        title: validado ? 'Registro validado' : 'Registro rechazado',
-        timer: 1500,
-        showConfirmButton: false,
-      });
+      showSuccess(validado ? 'Registro validado' : 'Registro rechazado');
     } catch (err) {
       const error = err as { response?: { data?: { mensaje?: string; message?: string } } };
-      MySwal.fire('Error', error.response?.data?.mensaje || error.response?.data?.message || 'No se pudo procesar el registro.', 'error');
+      showError('Error', error.response?.data?.mensaje || error.response?.data?.message || 'No se pudo procesar el registro.');
     }
   };
 

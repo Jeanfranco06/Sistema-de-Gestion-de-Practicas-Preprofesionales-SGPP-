@@ -58,7 +58,7 @@ const Dialog = React.forwardRef<HTMLDivElement, DialogProps>(
         aria-modal="true"
       >
         <div
-          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm"
+          className="fixed inset-0 bg-black/70"
           onClick={() => onOpenChange(false)}
           aria-hidden="true"
         />

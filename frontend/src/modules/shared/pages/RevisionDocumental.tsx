@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Download, Pencil, History, FileText, Info } from 'lucide-react';
 import Swal from 'sweetalert2';
-import withReactContent from 'sweetalert2-react-content';
+import { showSuccess, showError, showLoading, closeLoading } from '../../../lib/toast';
 
 import { expedientesApi } from '../../../api/expedientesApi';
 import api from '../../../api/axios';
@@ -23,8 +23,6 @@ import {
   CardContent,
 } from '../../../ui';
 import { cn } from '../../../lib/utils';
-
-const MySwal = withReactContent(Swal);
 
 const OPCIONES_REVISION: Record<string, Array<{ value: string; label: string }>> = {
   [ESTADOS_REVISION_DOCUMENTAL.PENDIENTE]: [{ value: ESTADOS_REVISION_DOCUMENTAL.EN_REVISION, label: 'Iniciar revisión' }],
@@ -114,7 +112,7 @@ export const RevisionDocumental = () => {
   useEffect(() => {
     if (error) {
       console.error(error);
-      MySwal.fire('Error', 'No se pudo cargar el expediente', 'error');
+      showError('Error', 'No se pudo cargar el expediente');
     }
   }, [error]);
 
@@ -134,16 +132,13 @@ export const RevisionDocumental = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expedientes', id] });
       setReviewDialog(false);
-      MySwal.fire({
-        icon: 'success',
-        title: 'Evaluación Guardada',
-        timer: 1500,
-        showConfirmButton: false,
-      });
+      closeLoading();
+      showSuccess('Evaluación Guardada');
     },
     onError: (err) => {
       console.error(err);
-      MySwal.fire('Error', 'No se pudo guardar la evaluación', 'error');
+      closeLoading();
+      showError('Error', 'No se pudo guardar la evaluación');
     },
   });
 
@@ -157,7 +152,7 @@ export const RevisionDocumental = () => {
 
   const handleSaveReview = () => {
     if (!selectedDoc || !estadoReview) return;
-    MySwal.fire({ title: 'Guardando...', didOpen: () => MySwal.showLoading() });
+    showLoading('Guardando...');
     evaluarMutation.mutate({
       idDocumento: selectedDoc.id,
       estado: estadoReview,
@@ -168,7 +163,7 @@ export const RevisionDocumental = () => {
   const handleDownload = async (doc: Documento) => {
     if (!doc?.id) return;
     try {
-      MySwal.fire({ title: 'Descargando...', didOpen: () => MySwal.showLoading() });
+      showLoading('Descargando...');
       const isRegistroDoc = doc.rutaArchivo?.startsWith('registro:');
       const urlDescarga = isRegistroDoc
         ? `/exportacion/descargar/${doc.rutaArchivo.replace('registro:', '')}`
@@ -181,9 +176,10 @@ export const RevisionDocumental = () => {
       document.body.appendChild(link);
       link.click();
       link.parentNode?.removeChild(link);
-      MySwal.close();
+      closeLoading();
     } catch {
-      MySwal.fire('Error', 'No se pudo descargar el archivo', 'error');
+      closeLoading();
+      showError('Error', 'No se pudo descargar el archivo');
     }
   };
 

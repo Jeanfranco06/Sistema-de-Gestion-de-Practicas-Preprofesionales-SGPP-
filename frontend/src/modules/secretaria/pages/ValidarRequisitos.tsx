@@ -19,8 +19,7 @@ import {
   Tooltip,
 } from '../../../ui';
 import { motion } from 'framer-motion';
-import Swal from 'sweetalert2';
-import withReactContent from 'sweetalert2-react-content';
+import { showSuccess, showError, showWarning } from '../../../lib/toast';
 import {
   ClipboardCheck,
   CheckCircle2,
@@ -58,8 +57,6 @@ import {
   Chip as MuiChip,
   IconButton,
 } from '@mui/material';
-
-const MySwal = withReactContent(Swal);
 
 const TIPO_PRACTICA_OPTS = ['INICIAL', 'FINAL', 'PROFESIONAL'] as const;
 
@@ -177,7 +174,7 @@ export const ValidarRequisitos = () => {
   useEffect(() => {
     if (estudiantesError) {
       console.error('Error loading estudiantes:', estudiantesError);
-      MySwal.fire('Error', 'No se pudieron cargar los estudiantes.', 'error');
+      showError('Error', 'No se pudieron cargar los estudiantes.');
     }
   }, [estudiantesError]);
 
@@ -203,13 +200,11 @@ export const ValidarRequisitos = () => {
           const data: ResultadoValidacion | undefined = res.data?.data;
           setResultadoValidacion(data ?? null);
           if (data) {
-            MySwal.fire({
-              icon: data.apto ? 'success' : 'warning',
-              title: data.apto ? 'ESTUDIANTE HABILITADO' : 'ESTUDIANTE NO HABILITADO',
-              text: data.observacionesGenerales || '',
-              timer: 3000,
-              showConfirmButton: true,
-            });
+            if (data.apto) {
+              showSuccess('ESTUDIANTE HABILITADO', data.observacionesGenerales || '');
+            } else {
+              showWarning('ESTUDIANTE NO HABILITADO', data.observacionesGenerales || '');
+            }
           }
           queryClient.invalidateQueries({ queryKey: ['validacion-academica', 'ultimo'] });
           queryClient.invalidateQueries({ queryKey: ['validacion-academica', 'resultados'] });
@@ -219,7 +214,7 @@ export const ValidarRequisitos = () => {
             error?.response?.data?.message ||
             error?.response?.data?.error ||
             'Error al ejecutar la validación';
-          MySwal.fire('Error', msg, 'error');
+          showError('Error', msg);
         },
       }
     );
@@ -248,19 +243,13 @@ export const ValidarRequisitos = () => {
       { id: selectedEstudiante.id, data: editForm },
       {
         onSuccess: () => {
-          MySwal.fire({
-            icon: 'success',
-            title: 'Datos actualizados',
-            timer: 1500,
-            showConfirmButton: false,
-          });
+          showSuccess('Datos actualizados');
           setOpenEditDialog(false);
         },
         onError: (error: any) => {
-          MySwal.fire(
+          showError(
             'Error',
-            error?.response?.data?.message || 'No se pudo actualizar.',
-            'error'
+            error?.response?.data?.message || 'No se pudo actualizar.'
           );
         },
       }

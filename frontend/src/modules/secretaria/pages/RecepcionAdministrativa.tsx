@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
-import Swal from 'sweetalert2';
-import withReactContent from 'sweetalert2-react-content';
 import { useQueryClient, useMutation } from '@tanstack/react-query';
+import { showSuccess, showError, showWarning, showLoading, closeLoading } from '../../../lib/toast';
 import { Search, RefreshCw, FileText, AlertTriangle, Award, FileSearch, UserPlus } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useExpedientes } from '../../../hooks/useExpedientes';
@@ -13,8 +12,6 @@ import { Card, CardContent } from '../../../ui/Card';
 import { Progress } from '../../../ui/Progress';
 import { Separator } from '../../../ui/Separator';
 import { cn } from '../../../lib/utils';
-
-const MySwal = withReactContent(Swal);
 
 interface Expediente {
   id: string;
@@ -186,33 +183,19 @@ export const RecepcionAdministrativa = () => {
 
     const allChecked = Object.values(validarChecks).every(Boolean);
     if (!allChecked) {
-      MySwal.fire('Incompleto', 'Debe marcar todos los requisitos administrativos antes de validar.', 'warning');
+      showWarning('Incompleto', 'Debe marcar todos los requisitos administrativos antes de validar.');
       return;
     }
 
-    const res = await MySwal.fire({
-      title: '¿Validar expediente?',
-      html: `<div style="text-align:left; font-size:0.9rem;">
-                <p>Se marcará el expediente <b>${exp.codigoExpediente}</b> como <b>listo para emisión de Carta de Presentación</b>.</p>
-                <p style="color:#666; margin-top:8px;">Estudiante: <b>${exp.nombreEstudiante} ${exp.apellidoEstudiante}</b></p>
-                <p style="color:#666;">Empresa: <b>${exp.nombreEmpresa || '—'}</b></p>
-              </div>`,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, validar',
-      cancelButtonText: 'Cancelar',
-      customClass: { confirmButton: 'wow-btn' }
-    });
-
-    if (!res.isConfirmed) return;
-
     try {
-      MySwal.fire({ title: 'Validando...', didOpen: () => MySwal.showLoading() });
+      showLoading('Validando...');
       await validarMutacion(exp.id);
       setValidarDialog({ open: false, expediente: null });
-      MySwal.fire('Validado', 'Expediente marcado como listo para emisión de Carta de Presentación.', 'success');
+      closeLoading();
+      showSuccess('Validado', 'Expediente marcado como listo para emisión de Carta de Presentación.');
     } catch {
-      MySwal.fire('Error', 'No se pudo validar el expediente.', 'error');
+      closeLoading();
+      showError('Error', 'No se pudo validar el expediente.');
     }
   };
 
@@ -227,9 +210,9 @@ export const RecepcionAdministrativa = () => {
     try {
       await registrarIncidenciaMutation({ id: selectedExp.id, incidencia: incidenciaText });
       setOpenDialog(false);
-      MySwal.fire('Éxito', 'Incidencia registrada', 'success');
+      showSuccess('Éxito', 'Incidencia registrada');
     } catch {
-      MySwal.fire('Error', 'No se pudo registrar la incidencia.', 'error');
+      showError('Error', 'No se pudo registrar la incidencia.');
     }
   };
 
@@ -247,10 +230,10 @@ export const RecepcionAdministrativa = () => {
       setAsignandoAsesor(true);
       await asignarAsesorMutation({ id: selectedExp.id, payload: { idAsesor: selectedAsesor.id, resolucion: resolucionAsesor.trim() } });
       setOpenAsesorDialog(false);
-      MySwal.fire('Éxito', 'Asesor asignado correctamente.', 'success');
+      showSuccess('Éxito', 'Asesor asignado correctamente.');
     } catch (error: any) {
       const msg = error.response?.data?.message || 'No se pudo asignar el asesor.';
-      MySwal.fire('Error', msg, 'error');
+      showError('Error', msg);
     } finally {
       setAsignandoAsesor(false);
     }
@@ -275,9 +258,9 @@ export const RecepcionAdministrativa = () => {
 
   const stats = [
     { label: 'Total Trámites', value: kpis.total, icon: <FileSearch size={18} />, color: 'bg-[#1A3A6E] text-white dark:bg-[#4A6FA5] dark:text-white' },
-    { label: 'Listas para Carta', value: kpis.paraCarta, icon: <FileText size={18} />, color: 'bg-primary-600 text-white dark:bg-primary-700 dark:text-white' },
+    { label: 'Listas para Carta', value: kpis.paraCarta, icon: <FileText size={18} />, color: 'bg-primary-600 text-slate-900 dark:bg-primary-700 dark:text-slate-900' },
     { label: 'Expedientes Evaluados', value: kpis.evaluados, icon: <Award size={18} />, color: 'bg-emerald-600 text-white dark:bg-emerald-700 dark:text-emerald-50' },
-    { label: 'Observados / Alertas', value: kpis.observados, icon: <AlertTriangle size={18} />, color: 'bg-amber-500 text-white dark:bg-amber-600 dark:text-white' },
+    { label: 'Observados / Alertas', value: kpis.observados, icon: <AlertTriangle size={18} />, color: 'bg-amber-500 text-slate-900 dark:bg-amber-600 dark:text-slate-900' },
   ];
 
   return (
