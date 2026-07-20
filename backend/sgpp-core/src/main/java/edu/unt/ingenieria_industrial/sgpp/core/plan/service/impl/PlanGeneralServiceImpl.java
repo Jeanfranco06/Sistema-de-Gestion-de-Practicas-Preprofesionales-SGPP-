@@ -114,6 +114,27 @@ public class PlanGeneralServiceImpl implements PlanGeneralService {
     }
 
     @Override
+    public PlanGeneralResponse actualizar(Long idPlan, ActualizarPlanRequest request, Long idUsuario) {
+        PlanGeneral plan = findPlan(idPlan);
+        if (!ESTADO_BORRADOR.equals(plan.getEstado())) {
+            throw new BusinessException("Solo se puede actualizar un plan en estado BORRADOR");
+        }
+
+        actualizarSecciones(plan, request);
+        actualizarObjetivos(plan, request.getObjetivos());
+        actualizarCronograma(plan, request.getObjetivos(), request.getCronograma());
+
+        plan.setFechaActualizacion(LocalDateTime.now());
+        plan = planRepository.save(plan);
+
+        registrarCambioEstado(plan, ESTADO_BORRADOR, ESTADO_BORRADOR, idUsuario,
+                "Plan General actualizado", "ACTUALIZACION");
+
+        log.info("Plan General v{} actualizado para expediente {}", plan.getVersion(), plan.getExpediente().getCodigoExpediente());
+        return toResponse(plan);
+    }
+
+    @Override
     public PlanGeneralResponse presentar(Long idPlan, Long idUsuario) {
         PlanGeneral plan = findPlan(idPlan);
         if (!ESTADO_BORRADOR.equals(plan.getEstado())) {
@@ -616,6 +637,23 @@ public class PlanGeneralServiceImpl implements PlanGeneralService {
     }
 
     private void actualizarSecciones(PlanGeneral plan, SubsanarPlanRequest request) {
+        List<PlanSeccion> existentes = seccionRepository.findByPlanIdAndActivoTrueOrderByOrdenAsc(plan.getId());
+        Map<String, PlanSeccion> seccionMap = existentes.stream()
+                .collect(Collectors.toMap(PlanSeccion::getTipoSeccion, s -> s));
+
+        actualizarOReemplazarSeccion(plan, seccionMap, SECCION_CARATULA, toJson(request.getCaratula()), 1);
+        actualizarOReemplazarSeccion(plan, seccionMap, SECCION_DATOS_EMPRESA, toJson(request.getDatosEmpresa()), 2);
+        if (request.getAreaDepartamento() != null) {
+            actualizarOReemplazarSeccion(plan, seccionMap, SECCION_AREA_DEPARTAMENTO, toJson(request.getAreaDepartamento()), 3);
+        }
+        actualizarOReemplazarSeccion(plan, seccionMap, SECCION_SITUACION_PROBLEMATICA, request.getSituacionProblematica(), 4);
+        actualizarOReemplazarSeccion(plan, seccionMap, SECCION_TECNICAS_PROCEDIMIENTOS, request.getTecnicasProcedimientos(), 5);
+        if (request.getTeoriasTecnicas() != null && !request.getTeoriasTecnicas().isEmpty()) {
+            actualizarOReemplazarSeccion(plan, seccionMap, SECCION_TEORIAS_TECNICAS, toJson(request.getTeoriasTecnicas()), 6);
+        }
+    }
+
+    private void actualizarSecciones(PlanGeneral plan, ActualizarPlanRequest request) {
         List<PlanSeccion> existentes = seccionRepository.findByPlanIdAndActivoTrueOrderByOrdenAsc(plan.getId());
         Map<String, PlanSeccion> seccionMap = existentes.stream()
                 .collect(Collectors.toMap(PlanSeccion::getTipoSeccion, s -> s));

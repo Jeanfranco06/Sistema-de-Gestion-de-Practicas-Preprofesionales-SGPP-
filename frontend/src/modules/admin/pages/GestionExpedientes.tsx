@@ -5,26 +5,21 @@ import {
   FileText, CheckCircle2, XCircle, Clock
 } from 'lucide-react';
 import { useExpedientes } from '../../../hooks/useExpedientes';
+import { ESTADOS_EXPEDIENTE, ESTADOS_FINALIZADOS } from '../../../lib/constants';
 import { Button } from '../../../ui/Button';
 import { Input } from '../../../ui/Input';
 import { Badge } from '../../../ui/Badge';
 import { Table } from '../../../ui/Table';
 
-const ESTADOS = [
-  'SOLICITADO', 'EMPRESA_SEDE_ASIGNADA', 'ASESOR_ASIGNADO', 'COMITE_ASIGNADO',
-  'VALIDADO_SECRETARIA', 'CARTA_PRESENTACION_EMITIDA', 'CARTA_ACEPTACION_PRESENTADA',
-  'PLAN_PRESENTADO', 'PLAN_APROBADO', 'EN_REVISION', 'OBSERVADO', 'SUBSANADO',
-  'EN_EJECUCION', 'INFORME_PARCIAL_PRESENTADO', 'INFORME_FINAL_PRESENTADO',
-  'INFORME_APROBADO', 'EVALUACION_COMPLETA', 'EVALUADO', 'DICTAMEN_EMITIDO', 'CERRADO',
-];
+const ESTADOS = Object.values(ESTADOS_EXPEDIENTE);
 
 function getEstadoBadge(estado: string) {
   const map: Record<string, 'default' | 'success' | 'warning' | 'error' | 'info'> = {
-    OBSERVADO: 'error',
+    [ESTADOS_EXPEDIENTE.OBSERVADO]: 'error',
     APROBADO: 'success',
-    EVALUADO: 'success',
-    CERRADO: 'success',
-    SOLICITADO: 'info',
+    [ESTADOS_EXPEDIENTE.EVALUADO]: 'success',
+    [ESTADOS_EXPEDIENTE.CERRADO]: 'success',
+    [ESTADOS_EXPEDIENTE.SOLICITADO]: 'info',
     EN_REVISION: 'warning',
   };
   return map[estado] || 'default';
@@ -48,9 +43,9 @@ export function GestionExpedientes() {
 
   const kpis = useMemo(() => ({
     total: expedientes.length,
-    activos: expedientes.filter((e: any) => !['EVALUADO', 'CERRADO'].includes(e.estado)).length,
-    enEjecucion: expedientes.filter((e: any) => e.estado === 'EN_EJECUCION').length,
-    cerrados: expedientes.filter((e: any) => e.estado === 'CERRADO').length,
+    activos: expedientes.filter((e: any) => !ESTADOS_FINALIZADOS.includes(e.estado)).length,
+    enEjecucion: expedientes.filter((e: any) => e.estado === ESTADOS_EXPEDIENTE.EN_EJECUCION).length,
+    cerrados: expedientes.filter((e: any) => e.estado === ESTADOS_EXPEDIENTE.CERRADO).length,
   }), [expedientes]);
 
   const paginated = filtered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);

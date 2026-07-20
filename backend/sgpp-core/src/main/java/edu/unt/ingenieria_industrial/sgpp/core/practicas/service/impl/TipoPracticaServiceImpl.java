@@ -48,6 +48,7 @@ public class TipoPracticaServiceImpl implements TipoPracticaService {
                 .cicloMinimo(entity.getCicloMinimo())
                 .creditos(entity.getCreditos())
                 .condicionAcceso(entity.getCondicionAcceso())
+                .tipoCalificacion(entity.getTipoCalificacion())
                 .activo(entity.getActivo())
                 .build();
     }

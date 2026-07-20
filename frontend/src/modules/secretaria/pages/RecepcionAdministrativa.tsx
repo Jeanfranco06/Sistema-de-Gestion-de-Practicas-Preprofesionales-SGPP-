@@ -6,6 +6,7 @@ import { Search, RefreshCw, FileText, AlertTriangle, Award, FileSearch, UserPlus
 import { motion } from 'framer-motion';
 import { useExpedientes } from '../../../hooks/useExpedientes';
 import { expedientesApi } from '../../../api/expedientesApi';
+import { ESTADOS_EXPEDIENTE } from '../../../lib/constants';
 import { secretariaApi, usuariosApi } from '../../../api/usuariosApi';
 import { Button, Input, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Badge, Tooltip, Avatar } from '../../../ui';
 import Dialog from '@mui/material/Dialog';
@@ -249,9 +250,9 @@ export const RecepcionAdministrativa = () => {
   const kpis = useMemo(() => {
     return {
       total: expedientes.length,
-      paraCarta: expedientes.filter((e: Expediente) => e.estado === 'VALIDADO_SECRETARIA').length,
-      evaluados: expedientes.filter((e: Expediente) => e.estado === 'EVALUADO').length,
-      observados: expedientes.filter((e: Expediente) => e.estado === 'OBSERVADO').length,
+      paraCarta: expedientes.filter((e: Expediente) => e.estado === ESTADOS_EXPEDIENTE.VALIDADO_SECRETARIA).length,
+      evaluados: expedientes.filter((e: Expediente) => e.estado === ESTADOS_EXPEDIENTE.EVALUADO).length,
+      observados: expedientes.filter((e: Expediente) => e.estado === ESTADOS_EXPEDIENTE.OBSERVADO).length,
     };
   }, [expedientes]);
 
@@ -351,7 +352,7 @@ export const RecepcionAdministrativa = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-0.5 flex-wrap justify-center">
-                          {exp.estado === 'EMPRESA_SEDE_ASIGNADA' && (
+                          {exp.estado === ESTADOS_EXPEDIENTE.EMPRESA_SEDE_ASIGNADA && (
                             <Tooltip content="Validar requisitos administrativos y marcar como listo para carta">
                               <Button size="sm" variant="primary"
                                 onClick={() => handleOpenValidarDialog(exp)}
@@ -360,7 +361,7 @@ export const RecepcionAdministrativa = () => {
                               </Button>
                             </Tooltip>
                           )}
-                          {exp.estado === 'CARTA_ACEPTACION_PRESENTADA' && exp.codigoTipoPractica === 'INICIAL' && !exp.idAsesor && (
+                          {exp.estado === ESTADOS_EXPEDIENTE.CARTA_ACEPTACION_PRESENTADA && exp.codigoTipoPractica === 'INICIAL' && !exp.idAsesor && (
                             <Tooltip content="Asignar Docente Asesor">
                               <Button size="sm" variant="secondary"
                                 onClick={() => handleOpenAsesorDialog(exp)}

@@ -37,6 +37,7 @@ import { ListaPracticantes } from './modules/evaluacion/ListaPracticantes';
 import AdminDashboardPage from './modules/admin/pages/AdminDashboardPage';
 
 const DashboardTutor = React.lazy(() => import('./modules/tutor/pages/DashboardTutor'));
+const ValidacionHorasTutor = React.lazy(() => import('./modules/tutor/pages/ValidacionHorasTutor'));
 const EvaluacionTutorExterno = React.lazy(() => import('./modules/evaluacion/EvaluacionTutorExterno'));
 const EvaluacionDocenteAsesor = React.lazy(() => import('./modules/evaluacion/EvaluacionDocenteAsesor'));
 const EvaluacionComite = React.lazy(() => import('./modules/evaluacion/EvaluacionComite'));
@@ -169,7 +170,7 @@ export default function App() {
                   <Route
                     path="/admin/usuarios"
                     element={
-                      <ProtectedRoute allowedRoles={['ADMIN_SISTEMA']}>
+                      <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COORDINADOR', 'DIRECTOR']}>
                         <GestionUsuarios />
                       </ProtectedRoute>
                     }
@@ -177,7 +178,7 @@ export default function App() {
                   <Route
                     path="/admin/tutores"
                     element={
-                      <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMINISTRADOR', 'COORDINADOR', 'DIRECTOR']}>
+                      <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR']}>
                         <GestionTutores />
                       </ProtectedRoute>
                     }
@@ -253,6 +254,14 @@ export default function App() {
                       </ProtectedRoute>
                     }
                   />
+                  <Route
+                    path="/admin/expedientes/:id"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR']}>
+                        <DetalleExpediente />
+                      </ProtectedRoute>
+                    }
+                  />
                   <Route path="/comite/panel" element={
                     <ProtectedRoute allowedRoles={['COMITE_PRACTICAS']}>
                       <PanelComite />
@@ -299,6 +308,14 @@ export default function App() {
                     element={
                       <ProtectedRoute allowedRoles={['TUTOR_EXTERNO']}>
                         <EvaluacionTutorExterno />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/tutor/horas/:idExpediente"
+                    element={
+                      <ProtectedRoute allowedRoles={['TUTOR_EXTERNO']}>
+                        <ValidacionHorasTutor />
                       </ProtectedRoute>
                     }
                   />

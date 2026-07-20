@@ -134,8 +134,8 @@ Los problemas más críticos detectados son:
 | RF-29 | Evaluación de empresa (Anexo 2) | ✅ Completo | Escala 1-5, categorías correctas, total 50 pts. |
 | RF-30 | Evaluación del Plan (Anexo 4, 10 pts) | ✅ Completo | `ComponenteEvaluacion` tipo PLAN. |
 | RF-31 | Evaluación del Informe (Anexo 4, 40 pts) | ✅ Completo | `ComponenteEvaluacion` tipo INFORME. |
-| RF-32 | Notas por unidades (prácticas iniciales) | ⚠️ Parcial | Existe `evaluacion` con notas, pero no se observa cálculo de unidades 1, 2 y 3 con ponderaciones 20/80. |
-| RF-33 | Diferenciación vigesimal/cualitativa | ⚠️ Parcial | Campo `tipoCalificacion` existe; lógica de negocio no aplica diferencias visibles. |
+| RF-32 | Notas por unidades (prácticas iniciales) | ✅ Completo | Tabla `nota_unidad` con ponderaciones 20/80 para unidad 1 y 100% informe para unidades 2 y 3; sincronización a `expediente.calificacion_final`. |
+| RF-33 | Diferenciación vigesimal/cualitativa | ✅ Completo | `tipo_practica.tipo_calificacion` (`VIGESIMAL`/`CUALITATIVA`) alimenta `EvaluacionServiceImpl`; `EvaluacionTutorExterno` adapta la interfaz. |
 
 ### 3.8 Módulo 8 — Comité de Prácticas y Dictamen Final
 
@@ -300,7 +300,7 @@ Los problemas más críticos detectados son:
 - [x] Sincronizar `evaluacion` de empresa hacia `componente_evaluacion`.
 - [x] Asegurar cálculo Anexo 4: Plan (10) + Empresa (50) + Informe (40) = 100.
 - [x] Migrar vistas de evaluación docente y comité a `componente_evaluacion`.
-- [ ] Implementar evaluación cualitativa como alternativa configurable.
+- [x] Implementar evaluación cualitativa como alternativa configurable (`tipo_practica.tipo_calificacion`, `evaluacion.calificacion_cualitativa` y `EvaluacionTutorExterno` adaptativo).
 
 ### Fase 4 — Mejoras visuales y UX ✅
 
@@ -317,16 +317,24 @@ Los problemas más críticos detectados son:
 - [x] Ejecutar suite de tests backend.
 - [x] Documentar variables de entorno en guías.
 
+### Fase 6 — Sincronización backend/frontend ✅
+
+- [x] Revisar flujos de autenticación/usuarios, expedientes, plan/documentos/informes, horas, evaluación, comité/dictamen/constancia y administración/reportes.
+- [x] Corregir discrepancias críticas: campos de horas, estados de expediente, roles de rutas, columnas de reportes, validación de evaluación cualitativa y errores de compilación.
+- [x] Crear `frontend/src/lib/constants.ts` con los estados exactos del backend.
+- [x] Alinear validación de reseteo de contraseña y perfil de usuario.
+
 ---
 
 ## 8. Conclusión
 
-El SGPP está **funcionalmente avanzado** y cumple aproximadamente el **85-90 % de los requerimientos** de manera completa, con otro **5-10 % parcialmente implementado**. Los bloques de compilación, build y tests son estables. Las fases prioritarias identificadas inicialmente han sido completadas. Para continuar mejorando el sistema, se recomienda:
+El SGPP está **funcionalmente avanzado** y cumple aproximadamente el **85-90 % de los requerimientos** de manera completa, con otro **5-10 % parcialmente implementado**. Los bloques de compilación, build y tests son estables. Las fases prioritarias identificadas inicialmente han sido completadas, incluida una primera ronda de sincronización backend/frontend que corrige las desincronizaciones más visibles. Para continuar mejorando el sistema, se recomienda:
 
-1. Implementar evaluación cualitativa configurable como alternativa a la numérica.
-2. Ampliar la cobertura de tests unitarios (expedientes, plazos, notificaciones, etc.).
-3. Refinar el chunking del frontend y eliminar las advertencias de bundle >500 kB.
+1. Ampliar la cobertura de tests unitarios (expedientes, plazos, notificaciones, evaluación cualitativa, etc.).
+2. Refinar el chunking del frontend y eliminar las advertencias de bundle >500 kB.
+3. Unificar el flujo de aprobación/observación del plan estructurado (`PlanGeneral`) con el estado del expediente.
 4. Mantener alineadas las reglas de plazos, modalidades y requisitos académicos con la normativa UNT.
+5. Migrar todos los literales de estado dispersos a `frontend/src/lib/constants.ts`.
 
 La implementación faseada propuesta permite abordar los hallazgos de forma ordenada, minimizando riesgos y manteniendo la estabilidad del sistema.
 

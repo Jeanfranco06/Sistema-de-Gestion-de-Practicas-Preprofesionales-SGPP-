@@ -12,6 +12,8 @@ export interface User {
   username?: string;
   email?: string;
   nombres?: string;
+  apellidoPaterno?: string;
+  apellidoMaterno?: string;
   apellidos?: string;
   roles?: (string | UserRole)[];
   [key: string]: unknown;

@@ -133,7 +133,7 @@ export default function MiPractica() {
     tieneControlHoras(practica?.estadoExpediente || practica?.estado || '');
 
   const horasTotales = (hasControlHoras ? cumplimiento?.horasRequeridas : undefined) ?? practica?.horasRequeridas ?? 0;
-  const horasEjecutadas = hasControlHoras ? (cumplimiento?.horasValidadas ?? 0) : 0;
+  const horasEjecutadas = hasControlHoras ? (cumplimiento?.horasAcumuladas ?? cumplimiento?.horasValidadas ?? 0) : 0;
   const pct = horasTotales > 0 ? Math.min(100, Math.round((horasEjecutadas / horasTotales) * 100)) : 0;
   const practicaStatus = getStatusProps(practica?.estado);
 

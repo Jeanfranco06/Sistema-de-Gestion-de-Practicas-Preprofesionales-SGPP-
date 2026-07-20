@@ -194,13 +194,13 @@ export default function LoginPage() {
               <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
                 <div style={{ marginBottom: '1.25rem' }}>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: 'var(--color-foreground)', marginBottom: '0.375rem' }}>
-                    Usuario o correo
+                    Usuario
                   </label>
                   <div style={{ position: 'relative' }}>
                     <Mail size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: errors.username ? '#dc2626' : 'var(--color-muted-foreground)', pointerEvents: 'none' }} />
                     <input
                       {...register('username')}
-                      placeholder="usuario@unitru.edu.pe"
+                      placeholder="usuario"
                       autoComplete="username"
                       style={{
                         width: '100%',

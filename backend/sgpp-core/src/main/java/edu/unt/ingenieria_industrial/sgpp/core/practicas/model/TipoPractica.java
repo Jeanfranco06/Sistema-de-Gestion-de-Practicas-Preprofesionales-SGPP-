@@ -42,6 +42,10 @@ public class TipoPractica extends BaseEntity {
     @Column(name = "condicion_acceso", length = 50)
     private String condicionAcceso;
 
+    @Column(name = "tipo_calificacion", length = 20, nullable = false)
+    @Builder.Default
+    private String tipoCalificacion = "VIGESIMAL";
+
     @Column(name = "activo", nullable = false)
     @Builder.Default
     private Boolean activo = true;

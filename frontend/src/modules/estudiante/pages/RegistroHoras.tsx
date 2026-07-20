@@ -8,6 +8,7 @@ import withReactContent from 'sweetalert2-react-content';
 import { useMisExpedientes } from '../../../hooks/useExpedientes';
 import { useControlHoras, useRegistrosHoras, useCumplimientoHoras, useRegistrarHoras } from '../../../hooks/useHoras';
 import { tieneControlHoras } from '../../../shared/utils/controlHoras';
+import { ESTADOS_EXPEDIENTE } from '../../../lib/constants';
 import { Card, CardContent, Badge, Progress, Button, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../ui';
 import { Input } from '../../../ui/Input';
 import { Select } from '../../../ui/Select';
@@ -42,12 +43,12 @@ interface ExpedienteItem {
 }
 
 interface ControlData {
-  horasValidadas?: number;
+  horasAcumuladas?: number;
 }
 
 interface CumplimientoData {
   horasRequeridas?: number;
-  horasValidadas?: number;
+  horasAcumuladas?: number;
 }
 
 interface RegistroItem {
@@ -56,7 +57,7 @@ interface RegistroItem {
   horas: number;
   descripcionActividad: string;
   tipoRegistro: string;
-  validado: boolean;
+  validadoPorTutor: boolean;
 }
 
 const calcularHoras = (inicio: string, fin: string): number | null => {
@@ -140,17 +141,23 @@ export default function RegistroHoras() {
         await MySwal.fire({ icon: 'warning', title: 'Control no iniciado', text: 'Primero inicie el control de horas.' });
         return;
       }
+      if (expediente.estado !== ESTADOS_EXPEDIENTE.EN_EJECUCION) {
+        await MySwal.fire({ icon: 'warning', title: 'Registro no habilitado', text: 'Solo puedes registrar horas mientras la práctica está en ejecución.' });
+        return;
+      }
       try {
         const payload = { ...data } as unknown as Record<string, unknown>;
+        if (!payload.horaInicio) delete payload.horaInicio;
+        if (!payload.horaFin) delete payload.horaFin;
         await registrarMutation.mutateAsync({ idExpediente: expediente.id, payload });
         reset();
         await MySwal.fire({ icon: 'success', title: 'Horas registradas', timer: 1500, showConfirmButton: false });
       } catch (error: unknown) {
-        const err = error as { response?: { data?: { message?: string } } };
+        const err = error as { response?: { data?: { mensaje?: string; message?: string } } };
         await MySwal.fire({
           icon: 'error',
           title: 'Error',
-          text: err?.response?.data?.message || 'No se pudieron registrar las horas',
+          text: err?.response?.data?.mensaje || err?.response?.data?.message || 'No se pudieron registrar las horas',
         });
       }
     },
@@ -165,7 +172,7 @@ export default function RegistroHoras() {
   const regList = registros as RegistroItem[];
 
   const horasRequeridas = cumplData?.horasRequeridas ?? (expediente.codigoTipoPractica === 'INICIAL' ? 64 : 360);
-  const horasValidadas = cumplData?.horasValidadas ?? ctrlData?.horasValidadas ?? 0;
+  const horasValidadas = cumplData?.horasAcumuladas ?? ctrlData?.horasAcumuladas ?? 0;
   const progreso = Math.min(100, Math.round((horasValidadas / horasRequeridas) * 100));
   const cumplido = horasValidadas >= horasRequeridas;
 
@@ -334,8 +341,8 @@ export default function RegistroHoras() {
                           <TableCell>{r.descripcionActividad}</TableCell>
                           <TableCell>{r.tipoRegistro}</TableCell>
                           <TableCell>
-                            <Badge variant={r.validado ? 'success' : 'neutral'} size="sm">
-                              {r.validado ? 'Validado' : 'Pendiente'}
+                            <Badge variant={r.validadoPorTutor ? 'success' : 'neutral'} size="sm">
+                              {r.validadoPorTutor ? 'Validado' : 'Pendiente'}
                             </Badge>
                           </TableCell>
                         </TableRow>

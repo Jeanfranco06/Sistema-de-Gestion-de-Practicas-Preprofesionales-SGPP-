@@ -59,7 +59,7 @@ public class ControlHoraController {
 
     @GetMapping("/cumplimiento/{idExpediente}")
     @Operation(summary = "Verificar cumplimiento de horas", description = "Verifica el cumplimiento de horas de un expediente")
-    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COORDINADOR', 'DIRECTOR', 'SECRETARIA', 'ESTUDIANTE', 'TUTOR_EXTERNO')")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COORDINADOR', 'DIRECTOR', 'SECRETARIA', 'ESTUDIANTE', 'TUTOR_EXTERNO', 'COMITE_PRACTICAS')")
     public ResponseEntity<ApiResponse<CumplimientoHorasResponse>> verificarCumplimiento(
             @Parameter(description = "ID del expediente") @PathVariable Long idExpediente) {
         return ResponseEntity.ok(controlHoraService.verificarCumplimiento(idExpediente));
@@ -67,7 +67,7 @@ public class ControlHoraController {
 
     @GetMapping("/control/{idExpediente}")
     @Operation(summary = "Obtener control de horas", description = "Obtiene el control de horas de un expediente")
-    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COORDINADOR', 'DIRECTOR', 'SECRETARIA', 'ESTUDIANTE', 'TUTOR_EXTERNO')")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COORDINADOR', 'DIRECTOR', 'SECRETARIA', 'ESTUDIANTE', 'TUTOR_EXTERNO', 'COMITE_PRACTICAS')")
     public ResponseEntity<ApiResponse<ControlHoraResponse>> obtenerControlHora(
             @Parameter(description = "ID del expediente") @PathVariable Long idExpediente) {
         return ResponseEntity.ok(controlHoraService.obtenerControlHora(idExpediente));
@@ -75,7 +75,7 @@ public class ControlHoraController {
 
     @GetMapping("/registros/{idExpediente}")
     @Operation(summary = "Listar registros de horas", description = "Lista todos los registros de horas de un expediente")
-    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COORDINADOR', 'SECRETARIA', 'ESTUDIANTE', 'TUTOR_EXTERNO')")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COORDINADOR', 'DIRECTOR', 'SECRETARIA', 'ESTUDIANTE', 'TUTOR_EXTERNO', 'COMITE_PRACTICAS')")
     public ResponseEntity<ApiResponse<List<RegistroHoraResponse>>> listarRegistros(
             @Parameter(description = "ID del expediente") @PathVariable Long idExpediente) {
         return ResponseEntity.ok(controlHoraService.listarRegistros(idExpediente));
@@ -83,7 +83,7 @@ public class ControlHoraController {
 
     @GetMapping("/registros/{idExpediente}/periodo")
     @Operation(summary = "Listar registros por periodo", description = "Lista los registros de horas de un expediente en un periodo específico")
-    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COORDINADOR', 'SECRETARIA', 'ESTUDIANTE', 'TUTOR_EXTERNO')")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COORDINADOR', 'DIRECTOR', 'SECRETARIA', 'ESTUDIANTE', 'TUTOR_EXTERNO', 'COMITE_PRACTICAS')")
     public ResponseEntity<ApiResponse<List<RegistroHoraResponse>>> listarRegistrosPorPeriodo(
             @Parameter(description = "ID del expediente") @PathVariable Long idExpediente,
             @Parameter(description = "Fecha inicio del periodo") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,

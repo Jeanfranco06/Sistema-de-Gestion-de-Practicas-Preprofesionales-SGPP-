@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { useExpediente, useCumplimiento } from '../../hooks/useDashboardData';
+import { ESTADOS_EXPEDIENTE } from '../../lib/constants';
 import { Card, CardContent, Badge, Progress, Button, Skeleton, Avatar, Separator } from '../../ui';
 import { cn } from '../../lib/utils';
 import {
@@ -306,9 +307,9 @@ export default function DashboardEstudiante() {
   }
   if (!expediente) return <EmptyState />;
 
-  const horas = horasData || { horasRequeridas: expediente.codigoTipoPractica === 'INICIAL' ? 64 : 360, horasValidadas: 0 };
+  const horas = horasData || { horasRequeridas: expediente.codigoTipoPractica === 'INICIAL' ? 64 : 360, horasAcumuladas: 0 };
   const horasTotales = horas.horasRequeridas;
-  const horasEjecutadas = horas.horasValidadas;
+  const horasEjecutadas = horas.horasAcumuladas ?? horas.horasValidadas ?? 0;
   const pct = Math.min(100, Math.round((horasEjecutadas / horasTotales) * 100));
 
   const docsObligatorios = expediente.codigoTipoPractica === 'INICIAL' ? DOCS_INICIAL : expediente.codigoTipoPractica === 'FINAL' ? DOCS_FINAL : DOCS_PROFESIONAL;
@@ -317,12 +318,20 @@ export default function DashboardEstudiante() {
   
   // Calcular progreso del expediente basado en estado
   const estadosOrden = [
-    'SOLICITADO', 'EMPRESA_SEDE_ASIGNADA', 'VALIDADO_SECRETARIA',
-    'CARTA_PRESENTACION_EMITIDA', 'CARTA_ACEPTACION_PRESENTADA',
-    expediente.codigoTipoPractica === 'INICIAL' ? 'ASESOR_ASIGNADO' : 'COMITE_ASIGNADO',
-    'PLAN_PRESENTADO', 'PLAN_APROBADO', 'EN_EJECUCION',
-    expediente.codigoTipoPractica === 'INICIAL' ? 'INFORME_FINAL_PRESENTADO' : 'INFORME_FINAL_PRESENTADO',
-    'EVALUADO', 'DICTAMEN_EMITIDO', 'CERRADO', 'CONSTANCIA_EMITIDA'
+    ESTADOS_EXPEDIENTE.SOLICITADO,
+    ESTADOS_EXPEDIENTE.EMPRESA_SEDE_ASIGNADA,
+    ESTADOS_EXPEDIENTE.VALIDADO_SECRETARIA,
+    ESTADOS_EXPEDIENTE.CARTA_PRESENTACION_EMITIDA,
+    ESTADOS_EXPEDIENTE.CARTA_ACEPTACION_PRESENTADA,
+    expediente.codigoTipoPractica === 'INICIAL' ? ESTADOS_EXPEDIENTE.ASESOR_ASIGNADO : ESTADOS_EXPEDIENTE.COMITE_ASIGNADO,
+    ESTADOS_EXPEDIENTE.PLAN_PRESENTADO,
+    ESTADOS_EXPEDIENTE.PLAN_APROBADO,
+    ESTADOS_EXPEDIENTE.EN_EJECUCION,
+    ESTADOS_EXPEDIENTE.INFORME_FINAL_PRESENTADO,
+    ESTADOS_EXPEDIENTE.EVALUADO,
+    ESTADOS_EXPEDIENTE.DICTAMEN_EMITIDO,
+    ESTADOS_EXPEDIENTE.CERRADO,
+    'CONSTANCIA_EMITIDA',
   ];
   const estadoActualIndex = estadosOrden.indexOf(expediente.estado);
   const progresoExpediente = Math.round((estadoActualIndex / (estadosOrden.length - 1)) * 100);
@@ -618,11 +627,11 @@ export default function DashboardEstudiante() {
           <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 list-none">
             {docsObligatorios.map((docType: string) => {
               const isReady = docsSubidos.includes(docType);
-              const canUpload = 
-                (docType === 'CARTA_ACEPTACION' && expediente.estado === 'CARTA_PRESENTACION_EMITIDA') ||
-                (docType === 'PLAN_PRACTICA' && (expediente.estado === 'CARTA_ACEPTACION_PRESENTADA' || expediente.estado === 'ASESOR_ASIGNADO' || expediente.estado === 'COMITE_ASIGNADO')) ||
-                (docType.startsWith('INFORME') && expediente.estado === 'EN_EJECUCION') ||
-                (docType === 'CONSTANCIA_EMPRESA' && expediente.estado === 'EN_EJECUCION') ||
+              const canUpload =
+                (docType === 'CARTA_ACEPTACION' && expediente.estado === ESTADOS_EXPEDIENTE.CARTA_PRESENTACION_EMITIDA) ||
+                (docType === 'PLAN_PRACTICA' && (expediente.estado === ESTADOS_EXPEDIENTE.CARTA_ACEPTACION_PRESENTADA || expediente.estado === ESTADOS_EXPEDIENTE.ASESOR_ASIGNADO || expediente.estado === ESTADOS_EXPEDIENTE.COMITE_ASIGNADO)) ||
+                (docType.startsWith('INFORME') && expediente.estado === ESTADOS_EXPEDIENTE.EN_EJECUCION) ||
+                (docType === 'CONSTANCIA_EMPRESA' && expediente.estado === ESTADOS_EXPEDIENTE.EN_EJECUCION) ||
                 isReady;
               
               return (

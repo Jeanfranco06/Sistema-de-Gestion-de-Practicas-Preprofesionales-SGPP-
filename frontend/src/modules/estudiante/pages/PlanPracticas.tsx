@@ -3,6 +3,7 @@ import { Plus, Trash2, Send, Loader2 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { expedientesApi } from '../../../api/expedientesApi';
 import { planesApi } from '../../../api/planesApi';
+import { ESTADOS_PLAN_GENERAL } from '../../../lib/constants';
 import { Button, Input, Textarea, Select, Card, CardContent } from '../../../ui';
 
 interface Caratula {
@@ -128,6 +129,7 @@ export function PlanPracticas() {
   const [plan, setPlan] = useState<PlanForm | null>(null);
   const [planEstado, setPlanEstado] = useState<string | null>(null);
   const [existingPlanId, setExistingPlanId] = useState<string | null>(null);
+  const [observacionesPendientes, setObservacionesPendientes] = useState<Array<{ id: string | number; descripcion: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -149,9 +151,11 @@ export function PlanPracticas() {
             setExistingPlanId(existente.id as string);
             const estado = existente.estado as string;
             setPlanEstado(estado);
-            if (estado === 'BORRADOR' && existente.caratula) {
+            const obs = (existente.observaciones as Array<{ id?: string | number; descripcion?: string; subsanado?: boolean }> | undefined) ?? [];
+            setObservacionesPendientes(obs.filter((o) => !o.subsanado && o.id && o.descripcion) as Array<{ id: string | number; descripcion: string }>);
+            if (estado === ESTADOS_PLAN_GENERAL.BORRADOR && existente.caratula) {
               setPlan(mapPlan(existente));
-            } else if (estado === 'BORRADOR' && !existente.caratula) {
+            } else if (estado === ESTADOS_PLAN_GENERAL.BORRADOR && !existente.caratula) {
               setPlan(planInitial(activo));
             } else {
               setPlan(mapPlan(existente));
@@ -240,6 +244,21 @@ export function PlanPracticas() {
     return null;
   };
 
+  const buildPayload = (): Record<string, unknown> => {
+    if (!plan) return {};
+    const { idExpediente, ...rest } = plan;
+    void idExpediente;
+    return {
+      ...rest,
+      objetivos: plan.objetivos.map((item, index) => ({ ...item, orden: index + 1 })),
+      cronograma: plan.cronograma.map((item, index) => ({
+        ...item,
+        orden: index + 1,
+        duracionSemanas: Number(item.duracionSemanas) || null,
+      })),
+    };
+  };
+
   const submit = async () => {
     if (!plan || !expediente) return;
     const error = validate();
@@ -249,36 +268,45 @@ export function PlanPracticas() {
     }
     try {
       setSubmitting(true);
-      const payload: Record<string, unknown> = {
-        ...plan,
-        objetivos: plan.objetivos.map((item, index) => ({ ...item, orden: index + 1 })),
-        cronograma: plan.cronograma.map((item, index) => ({
-          ...item,
-          orden: index + 1,
-          duracionSemanas: Number(item.duracionSemanas) || null,
-        })),
-      };
-      if (existingPlanId && planEstado === 'BORRADOR') {
+      const payload = buildPayload();
+      if (existingPlanId && planEstado === ESTADOS_PLAN_GENERAL.BORRADOR) {
+        await planesApi.actualizar(existingPlanId, payload);
         await planesApi.presentar(existingPlanId);
+        setPlanEstado(ESTADOS_PLAN_GENERAL.PRESENTADO);
+        await Swal.fire({ icon: 'success', title: 'Plan presentado', text: 'El Plan de Prácticas fue enviado para revisión.' });
+      } else if (existingPlanId && planEstado === ESTADOS_PLAN_GENERAL.OBSERVADO) {
+        if (observacionesPendientes.length === 0) {
+          await Swal.fire({ icon: 'warning', title: 'Sin observaciones', text: 'No hay observaciones pendientes para subsanar.' });
+          return;
+        }
+        await planesApi.subsanar(existingPlanId, {
+          ...payload,
+          observacionIds: observacionesPendientes.map((o) => Number(o.id)),
+          respuesta: 'Subsanación de observaciones del plan',
+        });
+        setPlanEstado(ESTADOS_PLAN_GENERAL.PRESENTADO);
+        setObservacionesPendientes([]);
+        await Swal.fire({ icon: 'success', title: 'Plan subsanado', text: 'El Plan de Prácticas fue subsanado y reenviado para revisión.' });
       } else {
-        const created = await planesApi.registrar(payload);
+        const created = await planesApi.registrar({ ...payload, idExpediente: expediente.id });
         const planId = (created.data?.data as { id?: string })?.id;
         if (!planId) throw new Error('No se obtuvo el ID del plan creado');
         await planesApi.presentar(planId);
+        setPlanEstado(ESTADOS_PLAN_GENERAL.PRESENTADO);
+        await Swal.fire({ icon: 'success', title: 'Plan presentado', text: 'El Plan de Prácticas fue enviado para revisión.' });
       }
-      setPlanEstado('PRESENTADO');
-      await Swal.fire({ icon: 'success', title: 'Plan presentado', text: 'El Plan de Prácticas fue enviado para revisión.' });
     } catch (err: unknown) {
-      const apiErr = err as { response?: { data?: { message?: string } } };
-      const message = apiErr.response?.data?.message ?? '';
+      const apiErr = err as { response?: { data?: { message?: string; mensaje?: string } } };
+      const message = apiErr.response?.data?.message ?? apiErr.response?.data?.mensaje ?? '';
       if (message.includes('Ya existe un plan activo')) {
         try {
           const planResponse = await planesApi.getActivoByExpediente(expediente.id);
           const activo = planResponse.data?.data as { estado?: string; id?: string } | undefined;
-          if (activo && activo.estado === 'BORRADOR') {
+          if (activo && activo.estado === ESTADOS_PLAN_GENERAL.BORRADOR) {
+            await planesApi.actualizar(activo.id!, buildPayload());
             await planesApi.presentar(activo.id!);
-            setPlanEstado('PRESENTADO');
-            await Swal.fire({ icon: 'success', title: 'Plan presentado', text: 'El Plan existente fue presentado correctamente.' });
+            setPlanEstado(ESTADOS_PLAN_GENERAL.PRESENTADO);
+            await Swal.fire({ icon: 'success', title: 'Plan presentado', text: 'El Plan existente fue actualizado y presentado correctamente.' });
             return;
           }
         } catch (innerErr: unknown) {
@@ -311,7 +339,7 @@ export function PlanPracticas() {
     );
   }
 
-  const editable = !planEstado || planEstado === 'BORRADOR' || planEstado === 'OBSERVADO';
+  const editable = !planEstado || planEstado === ESTADOS_PLAN_GENERAL.BORRADOR || planEstado === ESTADOS_PLAN_GENERAL.OBSERVADO;
 
   const field = (
     section: 'caratula' | 'datosEmpresa' | 'areaDepartamento',
@@ -337,8 +365,8 @@ export function PlanPracticas() {
       </div>
 
       {planEstado && (
-        <div className={`rounded-xl border p-4 mb-6 ${planEstado === 'APROBADO' ? 'border-green-300 bg-green-50 dark:bg-green-950/40' : 'border-blue-300 bg-blue-50 dark:bg-blue-950/40'}`}>
-          <p className="text-sm font-medium" style={{ color: planEstado === 'APROBADO' ? '#166534' : '#1e40af' }}>
+        <div className={`rounded-xl border p-4 mb-6 ${planEstado === ESTADOS_PLAN_GENERAL.APROBADO ? 'border-green-300 bg-green-50 dark:bg-green-950/40' : 'border-blue-300 bg-blue-50 dark:bg-blue-950/40'}`}>
+          <p className="text-sm font-medium" style={{ color: planEstado === ESTADOS_PLAN_GENERAL.APROBADO ? '#166534' : '#1e40af' }}>
             Estado del Plan: {planEstado}
           </p>
         </div>
@@ -465,10 +493,23 @@ export function PlanPracticas() {
           </CardContent>
         </Card>
 
+        {planEstado === ESTADOS_PLAN_GENERAL.OBSERVADO && observacionesPendientes.length > 0 && (
+          <Card>
+            <CardContent>
+              <h3 className="font-semibold text-[var(--color-foreground)] mb-2">Observaciones pendientes</h3>
+              <ul className="list-disc pl-5 space-y-1 text-sm text-[var(--color-muted-foreground)]">
+                {observacionesPendientes.map((o) => (
+                  <li key={o.id}>{o.descripcion}</li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
+
         {editable && (
           <div className="flex justify-end">
             <Button size="lg" onClick={submit} disabled={submitting} loading={submitting}>
-              <Send className="h-4 w-4" /> {submitting ? 'Presentando...' : 'Presentar Plan para revisión'}
+              <Send className="h-4 w-4" /> {submitting ? 'Procesando...' : planEstado === ESTADOS_PLAN_GENERAL.OBSERVADO ? 'Subsanar y reenviar Plan' : 'Presentar Plan para revisión'}
             </Button>
           </div>
         )}

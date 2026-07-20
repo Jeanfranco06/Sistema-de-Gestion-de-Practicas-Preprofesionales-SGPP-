@@ -7,8 +7,10 @@ import {
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import { expedientesApi } from '../../../api/expedientesApi';
+import { planesApi } from '../../../api/planesApi';
 import api from '../../../api/axios';
 import { useAuth } from '../../../auth/AuthContext';
+import { ESTADOS_EXPEDIENTE } from '../../../lib/constants';
 import {
   Badge, Button, Card, Input, Progress,
   Dialog, DialogContent, DialogHeader, DialogTitle,
@@ -169,14 +171,21 @@ export const GestionDocumental = () => {
     if (tipoDocumento === 'CARTA_PRESENTACION') return false;
     if (['INFORME_PARCIAL_1', 'INFORME_PARCIAL_2', 'INFORME_FINAL', 'INFORME_FINAL_INICIAL'].includes(tipoDocumento)) return false;
     if (tipoDocumento === 'CARTA_ACEPTACION') {
-      return ['CARTA_PRESENTACION_EMITIDA', 'CARTA_ACEPTACION_PRESENTADA'].includes(expediente.estado);
+      return [ESTADOS_EXPEDIENTE.CARTA_PRESENTACION_EMITIDA, ESTADOS_EXPEDIENTE.CARTA_ACEPTACION_PRESENTADA].includes(expediente.estado);
     }
     if (tipoDocumento === 'PLAN_PRACTICA') return false;
     if (tipoDocumento === 'FICHA_EVALUACION') return false;
     if (tipoDocumento === 'CONSTANCIA_EMPRESA') {
-      return ['EN_EJECUCION', 'INFORME_FINAL_PRESENTADO', 'INFORME_APROBADO',
-        'EVALUACION_PENDIENTE', 'EVALUACION_EMPRESA_PENDIENTE', 'EVALUACION_COMPLETA',
-        'DICTAMEN_EMITIDO', 'EVALUADO'].includes(expediente.estado);
+      return [
+        ESTADOS_EXPEDIENTE.EN_EJECUCION,
+        ESTADOS_EXPEDIENTE.INFORME_FINAL_PRESENTADO,
+        ESTADOS_EXPEDIENTE.INFORME_APROBADO,
+        'EVALUACION_PENDIENTE',
+        ESTADOS_EXPEDIENTE.EVALUACION_EMPRESA_PENDIENTE,
+        ESTADOS_EXPEDIENTE.EVALUACION_COMPLETA,
+        ESTADOS_EXPEDIENTE.DICTAMEN_EMITIDO,
+        ESTADOS_EXPEDIENTE.EVALUADO,
+      ].includes(expediente.estado);
     }
     return true;
   };
@@ -271,7 +280,11 @@ export const GestionDocumental = () => {
       }
 
       if (tipoDoc === 'PLAN_PRACTICA') {
-        await expedientesApi.presentarPlan(expediente.id, { fechaPresentacion: new Date().toISOString() });
+        const planRes = await planesApi.getActivoByExpediente(expediente.id);
+        const planId = planRes.data?.data?.id;
+        if (planId) {
+          await planesApi.presentar(planId);
+        }
       }
 
       await fetchExpediente();

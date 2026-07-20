@@ -122,7 +122,10 @@ export function useEmitirCartaCoordinacion() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => coordinacionApi.emitirCartaPresentacion(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['coordinacion'] }); },
+    onSuccess: (_, id) => {
+      qc.invalidateQueries({ queryKey: ['expedientes'] });
+      qc.invalidateQueries({ queryKey: ['expedientes', id] });
+    },
   });
 }
 
@@ -130,6 +133,9 @@ export function useEmitirConstancia() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => coordinacionApi.emitirConstancia(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['coordinacion'] }); },
+    onSuccess: (_, id) => {
+      qc.invalidateQueries({ queryKey: ['expedientes'] });
+      qc.invalidateQueries({ queryKey: ['expedientes', id] });
+    },
   });
 }

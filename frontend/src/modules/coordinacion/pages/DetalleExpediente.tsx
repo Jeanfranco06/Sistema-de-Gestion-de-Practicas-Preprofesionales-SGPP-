@@ -6,12 +6,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { ArrowLeft, CheckCircle2, FileText, Scale, Award, Eye, Users, ClipboardList, ListChecks, FileEdit, Building2, Building } from 'lucide-react';
 import { useAuth } from '../../../auth/AuthContext';
-import { useExpedienteById } from '../../../hooks/useExpedientes';
+import { useExpedienteById, useIniciarEjecucion } from '../../../hooks/useExpedientes';
 import { expedientesApi } from '../../../api/expedientesApi';
+import { planesApi } from '../../../api/planesApi';
 import { empresaApi, sedeApi } from '../../../api/sedesApi';
 import { coordinacionApi, horasApi, reportesCoordinacionApi, trazabilidadApi } from '../../../api/coordinacionApi';
 import { tieneControlHoras } from '../../../shared/utils/controlHoras';
 import { hasAnyRole } from '../../../shared/utils/roleRoutes';
+import { ESTADOS_EXPEDIENTE, ESTADOS_PARA_DICTAMEN } from '../../../lib/constants';
 import { Button, Badge, Progress, Tooltip } from '../../../ui';
 import Alert from '@mui/material/Alert';
 import Dialog from '@mui/material/Dialog';
@@ -221,9 +223,16 @@ export const DetalleExpediente = () => {
   });
 
   const { mutateAsync: aprobarPlan } = useMutation({
-    mutationFn: () => expedientesApi.aprobarPlan(id!),
+    mutationFn: async () => {
+      const planRes = await planesApi.getActivoByExpediente(id!);
+      const planId = (planRes.data?.data as { id?: string } | undefined)?.id;
+      if (!planId) throw new Error('No se encontró un plan activo para este expediente');
+      return planesApi.aprobar(planId);
+    },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['expedientes', id] }),
   });
+
+  const { mutateAsync: iniciarEjecucion } = useIniciarEjecucion();
 
   const { mutateAsync: aprobarInforme } = useMutation({
     mutationFn: () => expedientesApi.aprobarInformeFinal(id!),
@@ -270,6 +279,26 @@ export const DetalleExpediente = () => {
         confirmButtonText: 'Aprobar plan',
         success: 'El Plan de Prácticas fue aprobado correctamente.',
         ejecutar: () => aprobarPlan(),
+      },
+      iniciarEjecucion: {
+        title: 'Iniciar Ejecución de Práctica',
+        text: 'Ingresa la fecha de inicio y la duración en semanas separadas por coma (ej. 2026-08-01, 16).',
+        confirmButtonText: 'Iniciar ejecución',
+        success: 'La ejecución de la práctica fue iniciada correctamente.',
+        input: 'text',
+        inputLabel: 'Fecha de inicio (YYYY-MM-DD) y semanas',
+        inputValidator: (value: string) => {
+          if (!value?.trim()) return 'El dato es obligatorio.';
+          const [fecha, semanasStr] = value.split(',').map((s) => s.trim());
+          if (!fecha || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return 'La fecha debe tener formato YYYY-MM-DD.';
+          const semanas = Number(semanasStr);
+          if (Number.isNaN(semanas) || semanas < 1 || semanas > 52) return 'Las semanas deben estar entre 1 y 52.';
+          return false;
+        },
+        ejecutar: (value?: string) => {
+          const [fecha, semanasStr] = (value || '').split(',').map((s) => s.trim());
+          return iniciarEjecucion({ id: id!, fechaInicio: fecha, duracionSemanas: Number(semanasStr) });
+        },
       },
       aprobarInforme: {
         title: 'Aprobar Informe Final',
@@ -458,7 +487,7 @@ export const DetalleExpediente = () => {
             </div>
             <div className="flex gap-1 items-center flex-wrap justify-end">
               <Badge variant={getEstadoColor(expediente.estado)} size="sm">{expediente.estado}</Badge>
-              {puedeEmitirDocumentosInstitucionales && expediente.estado === 'VALIDADO_SECRETARIA' && (
+              {puedeEmitirDocumentosInstitucionales && expediente.estado === ESTADOS_EXPEDIENTE.VALIDADO_SECRETARIA && (
                 <Button size="sm"
                   disabled={accionEnCurso === 'carta'}
                   onClick={() => ejecutarAccion('carta')}>
@@ -467,36 +496,43 @@ export const DetalleExpediente = () => {
               )}
               {puedeAsignarComite
                 && ['FINAL', 'PROFESIONAL'].includes(expediente.codigoTipoPractica)
-                && expediente.estado === 'CARTA_ACEPTACION_PRESENTADA' && (
+                && expediente.estado === ESTADOS_EXPEDIENTE.CARTA_ACEPTACION_PRESENTADA && (
                   <Button size="sm" variant="secondary"
                     disabled={cargandoComite}
                     onClick={abrirAsignacionComite}>
                     {cargandoComite ? 'Cargando comité...' : 'Asignar comité'}
                   </Button>
                 )}
-              {puedeRevisarExpediente && expediente.estado === 'PLAN_PRESENTADO' && (
+              {puedeRevisarExpediente && expediente.estado === ESTADOS_EXPEDIENTE.PLAN_PRESENTADO && (
                 <Button size="sm"
                   disabled={accionEnCurso === 'aprobarPlan'}
                   onClick={() => ejecutarAccion('aprobarPlan')}>
                   {accionEnCurso === 'aprobarPlan' ? 'Aprobando...' : 'Aprobar plan'}
                 </Button>
               )}
-              {puedeRevisarExpediente && expediente.estado === 'INFORME_FINAL_PRESENTADO' && (
+              {puedeRevisarExpediente && expediente.estado === ESTADOS_EXPEDIENTE.PLAN_APROBADO && (
+                <Button size="sm" variant="secondary"
+                  disabled={accionEnCurso === 'iniciarEjecucion'}
+                  onClick={() => ejecutarAccion('iniciarEjecucion')}>
+                  {accionEnCurso === 'iniciarEjecucion' ? 'Iniciando...' : 'Iniciar ejecución'}
+                </Button>
+              )}
+              {puedeRevisarExpediente && expediente.estado === ESTADOS_EXPEDIENTE.INFORME_FINAL_PRESENTADO && (
                 <Button size="sm"
                   disabled={accionEnCurso === 'aprobarInforme'}
                   onClick={() => ejecutarAccion('aprobarInforme')}>
                   {accionEnCurso === 'aprobarInforme' ? 'Aprobando...' : 'Aprobar informe'}
                 </Button>
               )}
-              {puedeRevisarExpediente && ['INFORME_APROBADO', 'EVALUACION_COMPLETA', 'EVALUADO'].includes(expediente.estado) && (
+              {puedeRevisarExpediente && ESTADOS_PARA_DICTAMEN.includes(expediente.estado) && (
                 <Button size="sm" variant="secondary"
                   disabled={accionEnCurso === 'dictamen'}
                   onClick={() => ejecutarAccion('dictamen')}>
                   {accionEnCurso === 'dictamen' ? 'Emitiendo...' : 'Emitir dictamen'}
                 </Button>
               )}
-              {puedeEmitirDocumentosInstitucionales && (['EVALUADO', 'DICTAMEN_EMITIDO'].includes(expediente.estado)
-                || (expediente.estado === 'CERRADO' && !ultimaConstancia)) ? (
+              {puedeEmitirDocumentosInstitucionales && ([ESTADOS_EXPEDIENTE.EVALUADO, ESTADOS_EXPEDIENTE.DICTAMEN_EMITIDO].includes(expediente.estado)
+                || (expediente.estado === ESTADOS_EXPEDIENTE.CERRADO && !ultimaConstancia)) ? (
                   <Button size="sm"
                     disabled={accionEnCurso === 'constancia'}
                     onClick={() => ejecutarAccion('constancia')}>
@@ -504,7 +540,7 @@ export const DetalleExpediente = () => {
                   </Button>
                 ) : null}
               {puedeRevisarExpediente && expediente.codigoTipoPractica === 'INICIAL'
-                && expediente.estado === 'EVALUADO'
+                && expediente.estado === ESTADOS_EXPEDIENTE.EVALUADO
                 && Number(expediente.calificacionFinal) < 13.5 && (
                   <Button size="sm" variant="secondary"
                     disabled={accionEnCurso === 'habilitarExamenAplazados'}
@@ -512,7 +548,7 @@ export const DetalleExpediente = () => {
                     {accionEnCurso === 'habilitarExamenAplazados' ? 'Habilitando...' : 'Habilitar examen aplazados'}
                   </Button>
               )}
-              {puedeRevisarExpediente && expediente.estado === 'EXAMEN_APLAZADOS_HABILITADO' && (
+              {puedeRevisarExpediente && expediente.estado === ESTADOS_EXPEDIENTE.EXAMEN_APLAZADOS_HABILITADO && (
                 <Button size="sm"
                   disabled={accionEnCurso === 'registrarExamenAplazados'}
                   onClick={() => ejecutarAccion('registrarExamenAplazados')}>

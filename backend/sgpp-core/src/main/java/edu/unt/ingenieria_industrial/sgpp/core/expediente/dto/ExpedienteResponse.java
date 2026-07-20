@@ -24,6 +24,7 @@ public class ExpedienteResponse {
     private Long idTipoPractica;
     private String codigoTipoPractica;
     private String nombreTipoPractica;
+    private String tipoCalificacion;
     private String periodoAcademico;
     private String condicionSolicitante;
     private String estado;

@@ -15,7 +15,12 @@ export function useRegistrarHoras() {
   return useMutation({
     mutationFn: ({ idExpediente, payload }: { idExpediente: string; payload: Record<string, unknown> }) =>
       horasEstudianteApi.registrar(idExpediente, payload),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['horas'] }); },
+    onSuccess: (_, { idExpediente }) => {
+      qc.invalidateQueries({ queryKey: ['horas', 'control', idExpediente] });
+      qc.invalidateQueries({ queryKey: ['horas', 'registros', idExpediente] });
+      qc.invalidateQueries({ queryKey: ['horas', 'cumplimiento', idExpediente] });
+      qc.invalidateQueries({ queryKey: ['cumplimiento', idExpediente] });
+    },
   });
 }
 

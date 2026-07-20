@@ -20,5 +20,6 @@ public class TipoPracticaDTO {
     private Integer cicloMinimo;
     private Integer creditos;
     private String condicionAcceso;
+    private String tipoCalificacion;
     private Boolean activo;
 }

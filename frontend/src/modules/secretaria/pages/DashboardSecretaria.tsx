@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../../auth/AuthContext';
 import { useExpedientes } from '../../../hooks/useExpedientes';
+import { ESTADOS_EXPEDIENTE, ESTADOS_FINALIZADOS } from '../../../lib/constants';
 import { Button } from '../../../ui/Button';
 import { Badge } from '../../../ui/Badge';
 import { Progress } from '../../../ui/Progress';
@@ -19,28 +20,28 @@ export default function DashboardSecretaria() {
 
   const kpis = useMemo(() => {
     const total = expedientes.length;
-    const activos = expedientes.filter((e: any) => !['EVALUADO', 'CERRADO'].includes(e.estado));
+    const activos = expedientes.filter((e: any) => !ESTADOS_FINALIZADOS.includes(e.estado));
     return {
       total,
       activos: activos.length,
       finalizados: total - activos.length,
-      pendientesCarta: expedientes.filter((e: any) => e.estado === 'SOLICITADO' || e.estado === 'EMPRESA_SEDE_ASIGNADA').length,
-      pendientesConstancia: expedientes.filter((e: any) => e.estado === 'EVALUADO').length,
-      observados: expedientes.filter((e: any) => e.estado === 'OBSERVADO').length,
+      pendientesCarta: expedientes.filter((e: any) => e.estado === ESTADOS_EXPEDIENTE.SOLICITADO || e.estado === ESTADOS_EXPEDIENTE.EMPRESA_SEDE_ASIGNADA).length,
+      pendientesConstancia: expedientes.filter((e: any) => e.estado === ESTADOS_EXPEDIENTE.EVALUADO).length,
+      observados: expedientes.filter((e: any) => e.estado === ESTADOS_EXPEDIENTE.OBSERVADO).length,
     };
   }, [expedientes]);
 
   const estadoChart = useMemo(() => [
     { name: 'Trámite Inicial', value: kpis.pendientesCarta, color: '#3b82f6' },
-    { name: 'En Ejecución', value: expedientes.filter((e: any) => e.estado === 'EN_EJECUCION').length, color: '#10b981' },
+    { name: 'En Ejecución', value: expedientes.filter((e: any) => e.estado === ESTADOS_EXPEDIENTE.EN_EJECUCION).length, color: '#10b981' },
     { name: 'Observados', value: kpis.observados, color: '#ef4444' },
     { name: 'Para Constancia', value: kpis.pendientesConstancia, color: '#f59e0b' },
-    { name: 'Otros activos', value: Math.max(kpis.activos - kpis.pendientesCarta - expedientes.filter((e: any) => e.estado === 'EN_EJECUCION').length - kpis.observados - kpis.pendientesConstancia, 0), color: '#94a3b8' },
+    { name: 'Otros activos', value: Math.max(kpis.activos - kpis.pendientesCarta - expedientes.filter((e: any) => e.estado === ESTADOS_EXPEDIENTE.EN_EJECUCION).length - kpis.observados - kpis.pendientesConstancia, 0), color: '#94a3b8' },
   ], [kpis, expedientes]);
 
   const maxEstado = Math.max(...estadoChart.map(i => i.value), 1);
   const avancePct = kpis.total > 0 ? Math.round((kpis.finalizados / kpis.total) * 100) : 0;
-  const pendientesAccion = useMemo(() => expedientes.filter((e: any) => e.estado === 'SOLICITADO' || e.estado === 'EVALUADO'), [expedientes]);
+  const pendientesAccion = useMemo(() => expedientes.filter((e: any) => e.estado === ESTADOS_EXPEDIENTE.SOLICITADO || e.estado === ESTADOS_EXPEDIENTE.EVALUADO), [expedientes]);
   const recientes = useMemo(() => [...expedientes].slice(0, 5), [expedientes]);
 
   if (isLoading) {

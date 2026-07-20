@@ -50,8 +50,7 @@ public class EvaluacionServiceImpl implements EvaluacionService {
                 .mapToInt(DetalleEvaluacionRequestDTO::getPuntajeObtenido)
                 .sum();
 
-        String tipoPractica = expediente.getTipoPractica() != null ? expediente.getTipoPractica().getCodigo() : "FINAL";
-        String tipoCalificacion = "INICIAL".equals(tipoPractica) ? "CUALITATIVA" : "VIGESIMAL";
+        String tipoCalificacion = determinarTipoCalificacion(expediente, request);
 
         Evaluacion evaluacionToSave = Evaluacion.builder()
                 .expediente(expediente)
@@ -63,7 +62,8 @@ public class EvaluacionServiceImpl implements EvaluacionService {
                 .fechaEvaluacion(request.getFechaEvaluacion() != null ? request.getFechaEvaluacion() : LocalDate.now())
                 .horasRegistradas(request.getHorasRegistradas() != null ? request.getHorasRegistradas() : 0)
                 .rutaConstancia(request.getRutaConstancia())
-                .tipoCalificacion(request.getTipoCalificacion() != null ? request.getTipoCalificacion() : tipoCalificacion)
+                .tipoCalificacion(tipoCalificacion)
+                .calificacionCualitativa(request.getCalificacionCualitativa())
                 .activo(true)
                 .build();
 
@@ -83,6 +83,8 @@ public class EvaluacionServiceImpl implements EvaluacionService {
 
         detalleEvaluacionRepository.saveAll(detalles);
 
+        String tipoPractica = expediente.getTipoPractica() == null ? "" : expediente.getTipoPractica().getCodigo();
+
         // Sincronizar evaluación de empresa con el componente Anexo 4 correspondiente
         if ("EMPRESA".equals(request.getComponente()) && !"INICIAL".equals(tipoPractica)) {
             try {
@@ -100,7 +102,7 @@ public class EvaluacionServiceImpl implements EvaluacionService {
         }
 
         BigDecimal promedio = calcularPromedioFinal(expediente.getId());
-        String calificacionCualitativa = calcularCalificacionCualitativa(promedio.doubleValue());
+        String calificacionCualitativa = calcularCalificacionCualitativa(promedio.doubleValue(), evaluacion.getTipoCalificacion());
 
         return toResponse(evaluacion, detalles, promedio, calificacionCualitativa);
     }
@@ -113,7 +115,7 @@ public class EvaluacionServiceImpl implements EvaluacionService {
 
         List<DetalleEvaluacion> detalles = detalleEvaluacionRepository.findByEvaluacionId(id);
         BigDecimal promedio = calcularPromedioFinal(evaluacion.getExpediente().getId());
-        String calificacionCualitativa = calcularCalificacionCualitativa(promedio.doubleValue());
+        String calificacionCualitativa = calcularCalificacionCualitativa(promedio.doubleValue(), evaluacion.getTipoCalificacion());
 
         return toResponse(evaluacion, detalles, promedio, calificacionCualitativa);
     }
@@ -127,7 +129,7 @@ public class EvaluacionServiceImpl implements EvaluacionService {
         return evaluaciones.stream()
                 .map(ev -> {
                     List<DetalleEvaluacion> detalles = detalleEvaluacionRepository.findByEvaluacionId(ev.getId());
-                    String calificacionCualitativa = calcularCalificacionCualitativa(promedio.doubleValue());
+                    String calificacionCualitativa = calcularCalificacionCualitativa(promedio.doubleValue(), ev.getTipoCalificacion());
                     return toResponse(ev, detalles, promedio, calificacionCualitativa);
                 })
                 .collect(Collectors.toList());
@@ -182,7 +184,8 @@ public class EvaluacionServiceImpl implements EvaluacionService {
             if (!criteriosRecibidos.add(criterio.getId())) {
                 throw new BusinessException("No se puede registrar un criterio más de una vez");
             }
-            if (detalle.getPuntajeObtenido() < 1 || detalle.getPuntajeObtenido() > criterio.getPuntajeMaximo()) {
+            boolean esCualitativa = "CUALITATIVA".equals(request.getTipoCalificacion());
+            if (!esCualitativa && (detalle.getPuntajeObtenido() < 1 || detalle.getPuntajeObtenido() > criterio.getPuntajeMaximo())) {
                 throw new BusinessException("Cada criterio de empresa debe tener un puntaje válido");
             }
         }
@@ -266,8 +269,24 @@ public class EvaluacionServiceImpl implements EvaluacionService {
                 .setScale(2, RoundingMode.HALF_UP);
     }
 
-    private String calcularCalificacionCualitativa(double promedio) {
+    private String determinarTipoCalificacion(Expediente expediente, EvaluacionRequestDTO request) {
+        if (request.getTipoCalificacion() != null
+                && (request.getTipoCalificacion().equals("VIGESIMAL") || request.getTipoCalificacion().equals("CUALITATIVA"))) {
+            return request.getTipoCalificacion();
+        }
+        return expediente.getTipoPractica() != null && expediente.getTipoPractica().getTipoCalificacion() != null
+                ? expediente.getTipoPractica().getTipoCalificacion()
+                : "VIGESIMAL";
+    }
+
+    private String calcularCalificacionCualitativa(double promedio, String tipoCalificacion) {
         double porcentaje = (promedio / 20.0) * 100;
+
+        if ("CUALITATIVA".equals(tipoCalificacion)) {
+            if (porcentaje < 40) return "No logrado";
+            if (porcentaje < 70) return "En proceso";
+            return "Logrado";
+        }
 
         if (porcentaje < 40) return CALIFICACIONES_CUALITATIVAS[0];
         if (porcentaje < 60) return CALIFICACIONES_CUALITATIVAS[1];
@@ -287,7 +306,7 @@ public class EvaluacionServiceImpl implements EvaluacionService {
                 .componente(evaluacion.getComponente())
                 .puntajeTotal(evaluacion.getPuntajeTotal())
                 .promedioFinal(promedio)
-                .calificacionCualitativa(calificacionCualitativa)
+                .calificacionCualitativa(evaluacion.getCalificacionCualitativa() != null ? evaluacion.getCalificacionCualitativa() : calificacionCualitativa)
                 .comentarios(evaluacion.getComentarios())
                 .fechaEvaluacion(evaluacion.getFechaEvaluacion())
                 .detalles(detalles.stream()

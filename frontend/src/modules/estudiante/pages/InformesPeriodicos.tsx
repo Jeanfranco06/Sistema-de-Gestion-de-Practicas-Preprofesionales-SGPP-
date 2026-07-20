@@ -5,6 +5,7 @@ import withReactContent from 'sweetalert2-react-content';
 import { expedientesApi } from '../../../api/expedientesApi';
 import { exportacionApi } from '../../../api/exportacionApi';
 import api from '../../../api/axios';
+import { ESTADOS_EXPEDIENTE } from '../../../lib/constants';
 import { useAuth } from '../../../auth/AuthContext';
 import { Card, CardContent, Badge, Button, Progress, Separator, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../../../ui';
 
@@ -53,10 +54,10 @@ const HITOS_FINAL: HitoBase[] = [
 ];
 
 const ESTADOS_EXPEDIENTE_HITO: Record<string, string> = {
-  INFORME_PARCIAL_1: 'INFORME_PARCIAL_1_PRESENTADO',
-  INFORME_PARCIAL_2: 'INFORME_PARCIAL_2_PRESENTADO',
-  INFORME_FINAL_INICIAL: 'INFORME_FINAL_PRESENTADO',
-  INFORME_FINAL: 'INFORME_FINAL_PRESENTADO',
+  INFORME_PARCIAL_1: ESTADOS_EXPEDIENTE.INFORME_PARCIAL_1_PRESENTADO,
+  INFORME_PARCIAL_2: ESTADOS_EXPEDIENTE.INFORME_PARCIAL_2_PRESENTADO,
+  INFORME_FINAL_INICIAL: ESTADOS_EXPEDIENTE.INFORME_FINAL_PRESENTADO,
+  INFORME_FINAL: ESTADOS_EXPEDIENTE.INFORME_FINAL_PRESENTADO,
 };
 
 export const InformesPeriodicos = () => {
@@ -86,8 +87,12 @@ export const InformesPeriodicos = () => {
             estadoHito = doc.estado === 'APROBADO' ? 'APROBADO' : 'EN_REVISION';
           }
           const estadosPosteriores = [
-            'EVALUACION_PENDIENTE', 'EVALUACION_EMPRESA_PENDIENTE', 'EVALUACION_COMPLETA',
-            'DICTAMEN_EMITIDO', 'EVALUADO', 'CERRADO'
+            'EVALUACION_PENDIENTE',
+            ESTADOS_EXPEDIENTE.EVALUACION_EMPRESA_PENDIENTE,
+            ESTADOS_EXPEDIENTE.EVALUACION_COMPLETA,
+            ESTADOS_EXPEDIENTE.DICTAMEN_EMITIDO,
+            ESTADOS_EXPEDIENTE.EVALUADO,
+            ESTADOS_EXPEDIENTE.CERRADO,
           ];
           if (estadoExp === ESTADOS_EXPEDIENTE_HITO[h.tipo]) {
             estadoHito = doc ? estadoHito : 'EN_REVISION';

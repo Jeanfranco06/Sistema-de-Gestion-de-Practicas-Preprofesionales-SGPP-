@@ -206,7 +206,7 @@ export const EvaluacionDocenteAsesor = () => {
       const newDetalles = [...prev.detalles];
       const current = newDetalles[index];
       if (!current) return prev;
-      const numValue = parseInt(value, 10) || 0;
+      const numValue = parseFloat(value) || 0;
       newDetalles[index] = {
         ...current,
         puntajeObtenido: Math.min(Math.max(numValue, 0), 20),
@@ -251,6 +251,7 @@ export const EvaluacionDocenteAsesor = () => {
         ...evaluacion,
         idExpediente,
         evaluadorId: auth.user.id,
+        tipoEvaluador: 'DOCENTE_ASESOR',
       });
       MySwal.fire({
         icon: 'success',
@@ -281,8 +282,8 @@ export const EvaluacionDocenteAsesor = () => {
     });
     if (!confirm.isConfirmed) return;
     const datos = notasForm[unidad];
-    const planValue = numeroUnidad === 1 ? parseInt(datos.plan, 10) : undefined;
-    const informeValue = parseInt(datos.informe, 10);
+    const planValue = numeroUnidad === 1 ? parseFloat(datos.plan) : undefined;
+    const informeValue = parseFloat(datos.informe);
     if (Number.isNaN(informeValue) || informeValue < 0 || informeValue > 20) {
       MySwal.fire('Nota inválida', 'La nota de informe debe estar entre 0 y 20.', 'warning');
       return;
@@ -513,7 +514,7 @@ export const EvaluacionDocenteAsesor = () => {
           </TabsContent>
         </Tabs>
 
-        {expediente?.tipoPractica === 'INICIAL' && (
+        {expediente?.codigoTipoPractica === 'INICIAL' && (
           <Card className="p-6">
             <div className="mb-4 flex items-center gap-2">
               <BarChart3 size={20} className="text-[var(--color-primary)]" />

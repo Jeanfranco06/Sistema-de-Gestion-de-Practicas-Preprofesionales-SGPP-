@@ -12,11 +12,11 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../../auth/AuthContext';
 import {
   useMisExpedientes,
-  useAprobarPlan,
   useAprobarInformeFinal,
   useEmitirDictamen,
-  useAgregarObservacion,
 } from '../../../hooks/useExpedientes';
+import { planesApi } from '../../../api/planesApi';
+import { ESTADOS_EXPEDIENTE, ESTADOS_CON_PLAN_EN_REVISION, ESTADOS_PARA_DICTAMEN } from '../../../lib/constants';
 import {
   Button, Input, Badge, Select, Progress, Tooltip,
   Dialog, Textarea, Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
@@ -38,13 +38,7 @@ interface Expediente {
   nombreEmpresa: string;
 }
 
-const ESTADOS_COMITE = [
-  'SOLICITADO', 'EMPRESA_SEDE_ASIGNADA', 'COMITE_ASIGNADO',
-  'CARTA_ACEPTACION_PRESENTADA', 'PLAN_PRESENTADO', 'EN_REVISION',
-  'OBSERVADO', 'SUBSANADO', 'PLAN_APROBADO', 'EN_EJECUCION',
-  'INFORME_PARCIAL_PRESENTADO', 'INFORME_FINAL_PRESENTADO',
-  'INFORME_APROBADO', 'EVALUACION_COMPLETA', 'EVALUADO', 'DICTAMEN_EMITIDO', 'CERRADO',
-];
+const ESTADOS_COMITE = Object.values(ESTADOS_EXPEDIENTE);
 
 const esFinalOProfesional = (expediente: Expediente) => ['FINAL', 'PROFESIONAL'].includes(expediente.codigoTipoPractica);
 const estadoLabel = (estado: string | undefined) => estado?.replace(/_/g, ' ').toLowerCase() || 'Pendiente';
@@ -69,16 +63,12 @@ export const PanelComite = () => {
   const [dictamenExp, setDictamenExp] = useState<Expediente | null>(null);
   const [dictamenText, setDictamenText] = useState('');
 
-  const aprobarPlanMutation = useAprobarPlan();
   const aprobarInformeMutation = useAprobarInformeFinal();
   const emitirDictamenMutation = useEmitirDictamen();
-  const agregarObservacionMutation = useAgregarObservacion();
 
   const isMutating =
-    aprobarPlanMutation.isPending ||
     aprobarInformeMutation.isPending ||
-    emitirDictamenMutation.isPending ||
-    agregarObservacionMutation.isPending;
+    emitirDictamenMutation.isPending;
 
   const filtered = useMemo(() => expedientes.filter((e: Expediente) => {
     const q = searchTerm.toLowerCase();
@@ -91,11 +81,11 @@ export const PanelComite = () => {
 
   const kpis = useMemo(() => ({
     total: expedientes.length,
-    pendientes: expedientes.filter((e: Expediente) => esFinalOProfesional(e) && ['PLAN_PRESENTADO', 'EN_REVISION'].includes(e.estado)).length,
-    enEjecucion: expedientes.filter((e: Expediente) => e.estado === 'EN_EJECUCION').length,
-    infFinalPresentado: expedientes.filter((e: Expediente) => esFinalOProfesional(e) && e.estado === 'INFORME_FINAL_PRESENTADO').length,
-    observados: expedientes.filter((e: Expediente) => e.estado === 'OBSERVADO').length,
-    cerrados: expedientes.filter((e: Expediente) => e.estado === 'CERRADO').length,
+    pendientes: expedientes.filter((e: Expediente) => esFinalOProfesional(e) && ESTADOS_CON_PLAN_EN_REVISION.includes(e.estado)).length,
+    enEjecucion: expedientes.filter((e: Expediente) => e.estado === ESTADOS_EXPEDIENTE.EN_EJECUCION).length,
+    infFinalPresentado: expedientes.filter((e: Expediente) => esFinalOProfesional(e) && e.estado === ESTADOS_EXPEDIENTE.INFORME_FINAL_PRESENTADO).length,
+    observados: expedientes.filter((e: Expediente) => e.estado === ESTADOS_EXPEDIENTE.OBSERVADO).length,
+    cerrados: expedientes.filter((e: Expediente) => e.estado === ESTADOS_EXPEDIENTE.CERRADO).length,
   }), [expedientes]);
 
   const estadoChart = useMemo(() => [
@@ -122,7 +112,7 @@ export const PanelComite = () => {
 
   const pendientesAccion = useMemo(
     () => expedientes.filter((e: Expediente) =>
-      esFinalOProfesional(e) && (e.estado === 'PLAN_PRESENTADO' || e.estado === 'INFORME_FINAL_PRESENTADO')
+      esFinalOProfesional(e) && (e.estado === ESTADOS_EXPEDIENTE.PLAN_PRESENTADO || e.estado === ESTADOS_EXPEDIENTE.INFORME_FINAL_PRESENTADO)
     ),
     [expedientes],
   );
@@ -132,33 +122,29 @@ export const PanelComite = () => {
   };
 
   const handleAction = async (action: 'aprobarPlan' | 'aprobarInforme', id: string) => {
-    const config = {
-      aprobarPlan: {
-        title: '¿Aprobar plan?',
-        text: 'El plan de trabajo será marcado como aprobado.',
-        mutate: () => aprobarPlanMutation.mutateAsync(id),
-      },
-      aprobarInforme: {
-        title: '¿Aprobar informe final?',
-        text: 'El informe final será aprobado por el comité.',
-        mutate: () => aprobarInformeMutation.mutateAsync(id),
-      },
-    };
-    const c = config[action];
     const result = await MySwal.fire({
-      title: c.title,
-      text: c.text,
+      title: action === 'aprobarPlan' ? '¿Aprobar plan?' : '¿Aprobar informe final?',
+      text: action === 'aprobarPlan'
+        ? 'El plan de trabajo será marcado como aprobado.'
+        : 'El informe final será aprobado por el comité.',
       icon: 'question',
       showCancelButton: true,
       confirmButtonText: 'Sí, confirmar',
     });
     if (!result.isConfirmed) return;
     try {
-      await c.mutate();
+      if (action === 'aprobarPlan') {
+        const planRes = await planesApi.getActivoByExpediente(id);
+        const planId = (planRes.data?.data as { id?: string } | undefined)?.id;
+        if (!planId) throw new Error('No se encontró un plan activo para este expediente');
+        await planesApi.aprobar(planId);
+      } else {
+        await aprobarInformeMutation.mutateAsync(id);
+      }
       MySwal.fire('Operación exitosa', '', 'success');
       handleInvalidate();
-    } catch {
-      MySwal.fire('Error', 'No se pudo completar la operación.', 'error');
+    } catch (err: any) {
+      MySwal.fire('Error', err?.response?.data?.message || err?.message || 'No se pudo completar la operación.', 'error');
     }
   };
 
@@ -189,11 +175,14 @@ export const PanelComite = () => {
     });
     if (!result.isConfirmed) return;
     try {
-      await agregarObservacionMutation.mutateAsync({ id, descripcion: result.value.trim() });
+      const planRes = await planesApi.getActivoByExpediente(id);
+      const planId = (planRes.data?.data as { id?: string } | undefined)?.id;
+      if (!planId) throw new Error('No se encontró un plan activo para este expediente');
+      await planesApi.observar(planId, { descripcion: result.value.trim() });
       MySwal.fire('Plan observado', 'Se notificó la observación al estudiante.', 'success');
       handleInvalidate();
     } catch (error: any) {
-      MySwal.fire('Error', error?.response?.data?.message || 'No se pudo registrar la observación.', 'error');
+      MySwal.fire('Error', error?.response?.data?.message || error?.message || 'No se pudo registrar la observación.', 'error');
     }
   };
 
@@ -495,7 +484,7 @@ export const PanelComite = () => {
                             <Eye className="h-4 w-4" />
                           </Button>
                         </Tooltip>
-                        {esFinalOProfesional(e) && e.estado === 'PLAN_PRESENTADO' && (
+                        {esFinalOProfesional(e) && e.estado === ESTADOS_EXPEDIENTE.PLAN_PRESENTADO && (
                           <Tooltip content="Aprobar plan">
                             <Button
                               size="sm"
@@ -508,7 +497,7 @@ export const PanelComite = () => {
                             </Button>
                           </Tooltip>
                         )}
-                        {esFinalOProfesional(e) && e.estado === 'PLAN_PRESENTADO' && (
+                        {esFinalOProfesional(e) && e.estado === ESTADOS_EXPEDIENTE.PLAN_PRESENTADO && (
                           <Tooltip content="Observar plan">
                             <Button
                               size="sm"
@@ -521,7 +510,7 @@ export const PanelComite = () => {
                             </Button>
                           </Tooltip>
                         )}
-                        {esFinalOProfesional(e) && e.estado === 'INFORME_FINAL_PRESENTADO' && (
+                        {esFinalOProfesional(e) && e.estado === ESTADOS_EXPEDIENTE.INFORME_FINAL_PRESENTADO && (
                           <Tooltip content="Aprobar informe final">
                             <Button
                               size="sm"
@@ -546,7 +535,7 @@ export const PanelComite = () => {
                             </Button>
                           </Tooltip>
                         )}
-                        {esFinalOProfesional(e) && ['INFORME_APROBADO', 'EVALUACION_COMPLETA', 'EVALUADO'].includes(e.estado) && (
+                        {esFinalOProfesional(e) && ESTADOS_PARA_DICTAMEN.includes(e.estado) && (
                           <Tooltip content="Emitir dictamen">
                             <Button
                               size="sm"

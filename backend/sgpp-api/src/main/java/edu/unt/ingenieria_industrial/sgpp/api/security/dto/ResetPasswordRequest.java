@@ -1,6 +1,7 @@
 package edu.unt.ingenieria_industrial.sgpp.api.security.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,6 +18,7 @@ public class ResetPasswordRequest {
     private String token;
 
     @NotBlank(message = "La nueva contraseña es obligatoria")
-    @Size(min = 6, message = "La contraseña debe tener al menos 6 caracteres")
+    @Size(min = 8, message = "La contraseña debe tener al menos 8 caracteres")
+    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).*$", message = "La contraseña debe incluir al menos una mayúscula, una minúscula y un número")
     private String newPassword;
 }

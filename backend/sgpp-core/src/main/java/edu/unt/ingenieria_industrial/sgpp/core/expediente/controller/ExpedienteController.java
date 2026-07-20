@@ -113,20 +113,6 @@ public class ExpedienteController {
                 .success(true).message("Comité asignado").data(response).timestamp(LocalDateTime.now()).build());
     }
 
-    @PutMapping("/{id}/presentar-plan")
-    @Operation(summary = "Presentar plan de trabajo")
-    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'SECRETARIA', 'ESTUDIANTE', 'DOCENTE_ASESOR')")
-    public ResponseEntity<ApiResponse<ExpedienteResponse>> presentarPlan(
-            @PathVariable Long id,
-            @Valid @RequestBody PresentarPlanRequest request,
-            @RequestAttribute(value = "idUsuario", required = false) Long idUsuario) {
-        Long usuarioActual = Objects.requireNonNull(currentUserService.getCurrentUserId(), "Usuario no autenticado");
-        expedienteService.findByIdForUser(id, usuarioActual, currentUserService.getCurrentRoles());
-        ExpedienteResponse response = expedienteService.presentarPlan(id, request, usuarioActual);
-        return ResponseEntity.ok(ApiResponse.<ExpedienteResponse>builder()
-                .success(true).message("Plan de trabajo presentado").data(response).timestamp(LocalDateTime.now()).build());
-    }
-
     @PutMapping("/{id}/aprobar-plan")
     @Operation(summary = "Aprobar plan de trabajo")
     @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR', 'DOCENTE_ASESOR')")
@@ -196,18 +182,6 @@ public class ExpedienteController {
                 .success(true).message("Observación registrada").data(response).timestamp(LocalDateTime.now()).build());
     }
 
-    @PutMapping("/{id}/subsanar")
-    @Operation(summary = "Subsanar observaciones del expediente")
-    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'ESTUDIANTE', 'SECRETARIA')")
-    public ResponseEntity<ApiResponse<ExpedienteResponse>> subsanar(
-            @PathVariable Long id,
-            @Valid @RequestBody SubsanarObservacionesRequest request,
-            @RequestAttribute(value = "idUsuario", required = false) Long idUsuario) {
-        ExpedienteResponse response = expedienteService.subsanarObservaciones(id, request, idUsuario != null ? idUsuario : 1L);
-        return ResponseEntity.ok(ApiResponse.<ExpedienteResponse>builder()
-                .success(true).message("Observaciones subsanadas").data(response).timestamp(LocalDateTime.now()).build());
-    }
-
     @PutMapping("/{id}/iniciar-ejecucion")
     @Operation(summary = "Iniciar ejecución de la práctica")
     @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'SECRETARIA', 'COORDINADOR')")
@@ -261,18 +235,6 @@ public class ExpedienteController {
                 .success(true).message("Informe final aprobado").data(response).timestamp(LocalDateTime.now()).build());
     }
 
-    @PutMapping("/{id}/evaluar")
-    @Operation(summary = "Evaluar expediente y registrar calificación")
-    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR', 'DOCENTE_ASESOR')")
-    public ResponseEntity<ApiResponse<ExpedienteResponse>> evaluar(
-            @PathVariable Long id,
-            @Valid @RequestBody EvaluarExpedienteRequest request,
-            @RequestAttribute(value = "idUsuario", required = false) Long idUsuario) {
-        ExpedienteResponse response = expedienteService.evaluar(id, request, idUsuario != null ? idUsuario : 1L);
-        return ResponseEntity.ok(ApiResponse.<ExpedienteResponse>builder()
-                .success(true).message("Evaluación registrada").data(response).timestamp(LocalDateTime.now()).build());
-    }
-
     @PutMapping("/{id}/cerrar")
     @Operation(summary = "Cerrar expediente")
     @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'SECRETARIA', 'COORDINADOR', 'DIRECTOR')")
@@ -283,18 +245,6 @@ public class ExpedienteController {
         ExpedienteResponse response = expedienteService.cerrar(id, idUsuario != null ? idUsuario : 1L, observacion);
         return ResponseEntity.ok(ApiResponse.<ExpedienteResponse>builder()
                 .success(true).message("Expediente cerrado").data(response).timestamp(LocalDateTime.now()).build());
-    }
-
-    @PutMapping("/{id}/cambiar-estado")
-    @Operation(summary = "Cambiar estado del expediente manualmente")
-    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'COORDINADOR', 'DIRECTOR')")
-    public ResponseEntity<ApiResponse<ExpedienteResponse>> cambiarEstado(
-            @PathVariable Long id,
-            @Valid @RequestBody CambioEstadoRequest request,
-            @RequestAttribute(value = "idUsuario", required = false) Long idUsuario) {
-        ExpedienteResponse response = expedienteService.cambiarEstado(id, request, idUsuario != null ? idUsuario : 1L);
-        return ResponseEntity.ok(ApiResponse.<ExpedienteResponse>builder()
-                .success(true).message("Estado actualizado").data(response).timestamp(LocalDateTime.now()).build());
     }
 
     @GetMapping("/mis-expedientes")

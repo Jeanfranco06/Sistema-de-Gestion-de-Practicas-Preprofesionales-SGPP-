@@ -8,6 +8,8 @@ public interface PlanGeneralService {
 
     PlanGeneralResponse registrar(RegistrarPlanRequest request, Long idUsuario);
 
+    PlanGeneralResponse actualizar(Long idPlan, ActualizarPlanRequest request, Long idUsuario);
+
     PlanGeneralResponse presentar(Long idPlan, Long idUsuario);
 
     PlanGeneralResponse observar(Long idPlan, ObservarPlanRequest request, Long idUsuario);

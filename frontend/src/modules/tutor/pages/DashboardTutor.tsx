@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Users, ListChecks, FileEdit, Building2, Eye,
-  ClipboardList, RefreshCw, ChevronRight,
+  ClipboardList, RefreshCw, ChevronRight, Clock4,
 } from 'lucide-react';
 import { useAuth } from '@/auth/AuthContext';
 import { useMisExpedientes } from '@/hooks/useExpedientes';
+import { ESTADOS_EXPEDIENTE } from '@/lib/constants';
 import { Button } from '@/ui/Button';
 import { Badge } from '@/ui/Badge';
 import { Progress } from '@/ui/Progress';
@@ -120,14 +121,14 @@ export default function DashboardTutor() {
   }), [expedientes, searchTerm]);
 
   const evaluadosCount = useMemo(
-    () => expedientes.filter((e: Expediente) => e.estado === 'EVALUADO').length,
+    () => expedientes.filter((e: Expediente) => e.estado === ESTADOS_EXPEDIENTE.EVALUADO).length,
     [expedientes],
   );
 
   const kpis = useMemo(() => ({
     total: expedientes.length,
-    enEjecucion: expedientes.filter((e: Expediente) => e.estado === 'EN_EJECUCION').length,
-    porEvaluar: expedientes.filter((e: Expediente) => e.estado === 'INFORME_FINAL_PRESENTADO').length,
+    enEjecucion: expedientes.filter((e: Expediente) => e.estado === ESTADOS_EXPEDIENTE.EN_EJECUCION).length,
+    porEvaluar: expedientes.filter((e: Expediente) => e.estado === ESTADOS_EXPEDIENTE.INFORME_FINAL_PRESENTADO).length,
     empresas: new Set(expedientes.map((e: Expediente) => e.idEmpresa).filter(Boolean)).size,
   }), [expedientes]);
 
@@ -151,7 +152,7 @@ export default function DashboardTutor() {
   );
 
   const pendientesAccion = useMemo(
-    () => expedientes.filter((e: Expediente) => e.estado === 'INFORME_FINAL_PRESENTADO'),
+    () => expedientes.filter((e: Expediente) => e.estado === ESTADOS_EXPEDIENTE.INFORME_FINAL_PRESENTADO),
     [expedientes],
   );
 
@@ -377,7 +378,12 @@ export default function DashboardTutor() {
                           <Eye className="h-4 w-4" />
                         </Button>
                       </Tooltip>
-                      {['INFORME_FINAL_PRESENTADO', 'INFORME_APROBADO'].includes(e.estado) && (
+                      <Tooltip content="Validar horas">
+                        <Button size="sm" variant="secondary" onClick={() => navigate(`/tutor/horas/${e.id}`)}>
+                          <Clock4 className="h-4 w-4" />
+                        </Button>
+                      </Tooltip>
+                      {[ESTADOS_EXPEDIENTE.INFORME_FINAL_PRESENTADO, ESTADOS_EXPEDIENTE.INFORME_APROBADO].includes(e.estado) && (
                         <Tooltip content="Evaluar desempeño">
                           <Button size="sm" onClick={() => navigate(`/tutor/evaluaciones/${e.id}`)}>
                             <ClipboardList className="h-4 w-4" />

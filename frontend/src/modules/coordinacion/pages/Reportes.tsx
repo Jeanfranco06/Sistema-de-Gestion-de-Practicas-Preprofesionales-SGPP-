@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Download, Filter, Eye, BarChart3 } from 'lucide-react';
 import { useReportePorTipo, useExportarReporte } from '../../../hooks/useCoordinacion';
 import { useSedes, useEmpresas } from '../../../hooks/useSedes';
+import { ESTADOS_EXPEDIENTE } from '../../../lib/constants';
 import {
   Button,
   Input,
@@ -38,20 +39,20 @@ const TIPOS_PRACTICA = [
 
 const ESTADOS = [
   { value: '', label: 'Todos los estados' },
-  { value: 'SOLICITADO', label: 'Solicitud registrada' },
-  { value: 'VALIDADO_SECRETARIA', label: 'Validado por Secretaría' },
-  { value: 'CARTA_PRESENTACION_EMITIDA', label: 'Carta de Presentación emitida' },
-  { value: 'CARTA_ACEPTACION_PRESENTADA', label: 'Carta de Aceptación presentada' },
-  { value: 'PLAN_PRESENTADO', label: 'Plan presentado' },
-  { value: 'PLAN_APROBADO', label: 'Plan aprobado' },
+  { value: ESTADOS_EXPEDIENTE.SOLICITADO, label: 'Solicitud registrada' },
+  { value: ESTADOS_EXPEDIENTE.VALIDADO_SECRETARIA, label: 'Validado por Secretaría' },
+  { value: ESTADOS_EXPEDIENTE.CARTA_PRESENTACION_EMITIDA, label: 'Carta de Presentación emitida' },
+  { value: ESTADOS_EXPEDIENTE.CARTA_ACEPTACION_PRESENTADA, label: 'Carta de Aceptación presentada' },
+  { value: ESTADOS_EXPEDIENTE.PLAN_PRESENTADO, label: 'Plan presentado' },
+  { value: ESTADOS_EXPEDIENTE.PLAN_APROBADO, label: 'Plan aprobado' },
   { value: 'EN_REVISION', label: 'En revisión' },
-  { value: 'OBSERVADO', label: 'Observado' },
-  { value: 'EN_EJECUCION', label: 'En ejecución' },
-  { value: 'INFORME_FINAL_PRESENTADO', label: 'Informe final presentado' },
-  { value: 'INFORME_APROBADO', label: 'Informe aprobado' },
-  { value: 'EVALUADO', label: 'Evaluado' },
-  { value: 'DICTAMEN_EMITIDO', label: 'Dictamen emitido' },
-  { value: 'CERRADO', label: 'Cerrado' },
+  { value: ESTADOS_EXPEDIENTE.OBSERVADO, label: 'Observado' },
+  { value: ESTADOS_EXPEDIENTE.EN_EJECUCION, label: 'En ejecución' },
+  { value: ESTADOS_EXPEDIENTE.INFORME_FINAL_PRESENTADO, label: 'Informe final presentado' },
+  { value: ESTADOS_EXPEDIENTE.INFORME_APROBADO, label: 'Informe aprobado' },
+  { value: ESTADOS_EXPEDIENTE.EVALUADO, label: 'Evaluado' },
+  { value: ESTADOS_EXPEDIENTE.DICTAMEN_EMITIDO, label: 'Dictamen emitido' },
+  { value: ESTADOS_EXPEDIENTE.CERRADO, label: 'Cerrado' },
 ];
 
 const REPORT_COLUMNS: Record<string, { key: string; label: string }[]> = {
@@ -84,22 +85,22 @@ const REPORT_COLUMNS: Record<string, { key: string; label: string }[]> = {
     { key: 'razonSocial', label: 'Empresa' },
     { key: 'ruc', label: 'RUC' },
     { key: 'totalExpedientes', label: 'Expedientes' },
-    { key: 'sedesActivas', label: 'Sedes' },
+    { key: 'sedesValidadasVigentes', label: 'Sedes' },
     { key: 'conveniosVigentes', label: 'Convenios vigentes' },
   ],
   SEDES_VALIDADAS: [
     { key: 'nombreSede', label: 'Sede' },
     { key: 'razonSocialEmpresa', label: 'Empresa' },
-    { key: 'departamento', label: 'Departamento' },
-    { key: 'totalExpedientes', label: 'Expedientes' },
-    { key: 'validadaVigente', label: 'Validación' },
+    { key: 'direccion', label: 'Dirección' },
+    { key: 'expedientesVinculados', label: 'Expedientes' },
+    { key: 'vigente', label: 'Vigente' },
   ],
   CONVENIOS_VIGENTES: [
     { key: 'numeroConvenio', label: 'Convenio' },
     { key: 'razonSocialEmpresa', label: 'Empresa' },
     { key: 'fechaInicio', label: 'Inicio' },
     { key: 'fechaFin', label: 'Fin' },
-    { key: 'expedientesRelacionados', label: 'Expedientes' },
+    { key: 'totalExpedientesAsociados', label: 'Expedientes' },
   ],
   SUBSANACIONES_PENDIENTES: [
     { key: 'codigoExpediente', label: 'Código' },

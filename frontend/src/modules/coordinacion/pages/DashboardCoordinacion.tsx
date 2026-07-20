@@ -15,29 +15,47 @@ import { useAuth } from '../../../auth/AuthContext';
 import { hasAnyRole } from '../../../shared/utils/roleRoutes';
 import { useExpedientes } from '../../../hooks/useExpedientes';
 import { coordinacionApi } from '../../../api/coordinacionApi';
+import {
+  ESTADOS_EXPEDIENTE,
+  ESTADOS_INFORME_PARCIAL_PRESENTADO,
+  ESTADOS_PARA_EVALUAR,
+  ESTADOS_FINALIZADOS,
+} from '../../../lib/constants';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import { Button, Badge, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Progress, Tooltip, Input, Select } from '../../../ui';
 
 const MySwal = withReactContent(Swal);
 
-const ESTADOS = [
-  'SOLICITADO', 'EMPRESA_SEDE_ASIGNADA', 'VALIDADO_SECRETARIA', 'CARTA_PRESENTACION_EMITIDA',
-  'ASESOR_ASIGNADO', 'COMITE_ASIGNADO',
-  'CARTA_ACEPTACION_PRESENTADA', 'PLAN_PRESENTADO', 'EN_REVISION', 'OBSERVADO',
-  'SUBSANADO', 'APROBADO', 'EN_EJECUCION', 'INFORME_PARCIAL_PRESENTADO',
-  'INFORME_FINAL_PRESENTADO', 'EVALUADO', 'CERRADO',
-];
+const ESTADOS = Object.values(ESTADOS_EXPEDIENTE);
 
 const ESTADO_COLOR: Record<string, string> = {
-  SOLICITADO: '#94a3b8', EMPRESA_SEDE_ASIGNADA: '#3b82f6',
-  VALIDADO_SECRETARIA: '#10b981', CARTA_PRESENTACION_EMITIDA: '#6366f1',
-  ASESOR_ASIGNADO: '#3b82f6', COMITE_ASIGNADO: '#3b82f6',
-  CARTA_ACEPTACION_PRESENTADA: '#3b82f6', PLAN_PRESENTADO: '#eab308',
-  EN_REVISION: '#eab308', OBSERVADO: '#ef4444', SUBSANADO: '#f59e0b',
-  APROBADO: '#22c55e', EN_EJECUCION: '#6366f1',
-  INFORME_PARCIAL_PRESENTADO: '#06b6d4', INFORME_FINAL_PRESENTADO: '#06b6d4',
-  EVALUADO: '#22c55e', CERRADO: '#64748b',
+  [ESTADOS_EXPEDIENTE.SOLICITADO]: '#94a3b8',
+  [ESTADOS_EXPEDIENTE.EMPRESA_SEDE_ASIGNADA]: '#3b82f6',
+  [ESTADOS_EXPEDIENTE.VALIDADO_SECRETARIA]: '#10b981',
+  [ESTADOS_EXPEDIENTE.CARTA_PRESENTACION_EMITIDA]: '#6366f1',
+  [ESTADOS_EXPEDIENTE.ASESOR_ASIGNADO]: '#3b82f6',
+  [ESTADOS_EXPEDIENTE.COMITE_ASIGNADO]: '#3b82f6',
+  [ESTADOS_EXPEDIENTE.CARTA_ACEPTACION_PRESENTADA]: '#3b82f6',
+  [ESTADOS_EXPEDIENTE.PLAN_PRESENTADO]: '#eab308',
+  [ESTADOS_EXPEDIENTE.PLAN_EN_REVISION]: '#eab308',
+  [ESTADOS_EXPEDIENTE.PLAN_EN_REVISION_COMITE]: '#eab308',
+  [ESTADOS_EXPEDIENTE.PLAN_APROBADO]: '#22c55e',
+  [ESTADOS_EXPEDIENTE.PLAN_OBSERVADO]: '#ef4444',
+  EN_REVISION: '#eab308',
+  [ESTADOS_EXPEDIENTE.OBSERVADO]: '#ef4444',
+  [ESTADOS_EXPEDIENTE.SUBSANADO]: '#f59e0b',
+  [ESTADOS_EXPEDIENTE.EN_EJECUCION]: '#6366f1',
+  [ESTADOS_EXPEDIENTE.INFORME_PARCIAL_1_PRESENTADO]: '#06b6d4',
+  [ESTADOS_EXPEDIENTE.INFORME_PARCIAL_2_PRESENTADO]: '#06b6d4',
+  [ESTADOS_EXPEDIENTE.INFORME_FINAL_PRESENTADO]: '#06b6d4',
+  [ESTADOS_EXPEDIENTE.INFORME_EN_REVISION]: '#eab308',
+  [ESTADOS_EXPEDIENTE.INFORME_APROBADO]: '#22c55e',
+  [ESTADOS_EXPEDIENTE.EVALUACION_EMPRESA_PENDIENTE]: '#f59e0b',
+  [ESTADOS_EXPEDIENTE.EVALUACION_COMPLETA]: '#22c55e',
+  [ESTADOS_EXPEDIENTE.EVALUADO]: '#22c55e',
+  [ESTADOS_EXPEDIENTE.DICTAMEN_EMITIDO]: '#22c55e',
+  [ESTADOS_EXPEDIENTE.CERRADO]: '#64748b',
 };
 
 const CHART_COLORS = ['#2563eb', '#0d9488', '#eab308', '#ef4444', '#6366f1', '#ec4899', '#f97316', '#06b6d4'];
@@ -89,13 +107,17 @@ export const DashboardCoordinacion = () => {
 
   const kpis = useMemo(() => ({
     total: expedientes.length,
-    activos: expedientes.filter(e => !['EVALUADO', 'CERRADO'].includes(e.estado)).length,
-    cerrados: expedientes.filter(e => e.estado === 'CERRADO').length,
-    enEjecucion: expedientes.filter(e => e.estado === 'EN_EJECUCION').length,
-    observados: expedientes.filter(e => e.estado === 'OBSERVADO').length,
-    pendientesCarta: expedientes.filter(e => e.estado === 'VALIDADO_SECRETARIA').length,
-    planPendiente: expedientes.filter(e => ['ASESOR_ASIGNADO', 'COMITE_ASIGNADO', 'CARTA_ACEPTACION_PRESENTADA'].includes(e.estado)).length,
-    porEvaluar: expedientes.filter(e => ['INFORME_PARCIAL_PRESENTADO', 'INFORME_FINAL_PRESENTADO'].includes(e.estado)).length,
+    activos: expedientes.filter(e => !ESTADOS_FINALIZADOS.includes(e.estado)).length,
+    cerrados: expedientes.filter(e => e.estado === ESTADOS_EXPEDIENTE.CERRADO).length,
+    enEjecucion: expedientes.filter(e => e.estado === ESTADOS_EXPEDIENTE.EN_EJECUCION).length,
+    observados: expedientes.filter(e => e.estado === ESTADOS_EXPEDIENTE.OBSERVADO).length,
+    pendientesCarta: expedientes.filter(e => e.estado === ESTADOS_EXPEDIENTE.VALIDADO_SECRETARIA).length,
+    planPendiente: expedientes.filter(e => [
+      ESTADOS_EXPEDIENTE.ASESOR_ASIGNADO,
+      ESTADOS_EXPEDIENTE.COMITE_ASIGNADO,
+      ESTADOS_EXPEDIENTE.CARTA_ACEPTACION_PRESENTADA,
+    ].includes(e.estado)).length,
+    porEvaluar: expedientes.filter(e => ESTADOS_PARA_EVALUAR.includes(e.estado)).length,
   }), [expedientes]);
 
   const tiposChart = useMemo(() => {
@@ -105,7 +127,18 @@ export const DashboardCoordinacion = () => {
   }, [expedientes]);
 
   const estadosChart = useMemo(() => {
-    const order = ['SOLICITADO', 'PLAN_PRESENTADO', 'EN_REVISION', 'OBSERVADO', 'APROBADO', 'EN_EJECUCION', 'INFORME_FINAL_PRESENTADO', 'EVALUADO', 'CERRADO'];
+    const order = [
+      ESTADOS_EXPEDIENTE.SOLICITADO,
+      ESTADOS_EXPEDIENTE.PLAN_PRESENTADO,
+      ESTADOS_EXPEDIENTE.PLAN_EN_REVISION,
+      ESTADOS_EXPEDIENTE.PLAN_OBSERVADO,
+      ESTADOS_EXPEDIENTE.PLAN_APROBADO,
+      ESTADOS_EXPEDIENTE.EN_EJECUCION,
+      ESTADOS_EXPEDIENTE.INFORME_FINAL_PRESENTADO,
+      ESTADOS_EXPEDIENTE.INFORME_APROBADO,
+      ESTADOS_EXPEDIENTE.EVALUADO,
+      ESTADOS_EXPEDIENTE.CERRADO,
+    ];
     const map: Record<string, number> = {};
     order.forEach(s => map[s] = 0);
     expedientes.forEach(e => { if (map[e.estado] !== undefined) map[e.estado]++; });
@@ -114,7 +147,7 @@ export const DashboardCoordinacion = () => {
 
   const alertas = useMemo(() => {
     const items: { tipo: string; exp: string; estudiante: string; severity: 'error' | 'warning' }[] = [];
-    expedientes.filter(e => e.estado === 'OBSERVADO').forEach(e => {
+    expedientes.filter(e => e.estado === ESTADOS_EXPEDIENTE.OBSERVADO).forEach(e => {
       items.push({ tipo: 'Observado', exp: e.codigoExpediente, estudiante: `${e.nombreEstudiante} ${e.apellidoEstudiante}`, severity: 'error' });
     });
     expedientes.filter(e => e.estado === 'EN_REVISION').forEach(e => {
@@ -376,9 +409,9 @@ export const DashboardCoordinacion = () => {
                   <TableCell><Badge variant="info" size="sm">{e.nombreTipoPractica}</Badge></TableCell>
                   <TableCell>
                     <Badge variant={
-                      ['OBSERVADO'].includes(e.estado) ? 'danger' :
-                      ['EN_REVISION', 'PLAN_PRESENTADO'].includes(e.estado) ? 'warning' :
-                      ['APROBADO', 'EVALUADO', 'CERRADO'].includes(e.estado) ? 'success' : 'info'
+                      [ESTADOS_EXPEDIENTE.OBSERVADO].includes(e.estado) ? 'danger' :
+                      ['EN_REVISION', ESTADOS_EXPEDIENTE.PLAN_PRESENTADO].includes(e.estado) ? 'warning' :
+                      ['APROBADO', ESTADOS_EXPEDIENTE.EVALUADO, ESTADOS_EXPEDIENTE.CERRADO].includes(e.estado) ? 'success' : 'info'
                     } size="sm">{estadoLabel(e.estado)}</Badge>
                   </TableCell>
                   <TableCell>
@@ -387,7 +420,7 @@ export const DashboardCoordinacion = () => {
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1 justify-center">
-                      {puedeEmitirCarta && e.estado === 'VALIDADO_SECRETARIA' && (
+                      {puedeEmitirCarta && e.estado === ESTADOS_EXPEDIENTE.VALIDADO_SECRETARIA && (
                         <Tooltip content="Emitir y firmar Carta de Presentación">
                           <Button size="sm" variant="primary"
                             onClick={() => handleEmitirCarta(e.id)}
@@ -398,7 +431,7 @@ export const DashboardCoordinacion = () => {
                       )}
                       {puedeAsignarComite
                         && ['FINAL', 'PROFESIONAL'].includes(e.codigoTipoPractica)
-                        && e.estado === 'CARTA_ACEPTACION_PRESENTADA' && (
+                        && e.estado === ESTADOS_EXPEDIENTE.CARTA_ACEPTACION_PRESENTADA && (
                           <Tooltip content="Seleccionar integrantes activos del comité">
                             <Button size="sm" variant="primary"
                               onClick={() => navigate(`/coordinacion/expedientes/${e.id}`)}

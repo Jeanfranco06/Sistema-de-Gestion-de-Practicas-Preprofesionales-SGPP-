@@ -29,7 +29,7 @@ export function useCumplimiento(expediente: { id: string; codigoTipoPractica?: s
         horasRequeridas:
           data.horasRequeridas ||
           (expediente.codigoTipoPractica === 'INICIAL' ? 64 : 360),
-        horasValidadas: data.horasValidadas || 0,
+        horasAcumuladas: data.horasAcumuladas ?? data.horasValidadas ?? 0,
       };
     },
     enabled: shouldFetch,
@@ -39,7 +39,7 @@ export function useCumplimiento(expediente: { id: string; codigoTipoPractica?: s
     placeholderData: {
       horasRequeridas:
         expediente?.codigoTipoPractica === 'INICIAL' ? 64 : 360,
-      horasValidadas: 0,
+      horasAcumuladas: 0,
     },
   });
 }

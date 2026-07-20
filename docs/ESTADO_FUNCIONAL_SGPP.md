@@ -248,9 +248,47 @@ Una constancia generada se registra con archivo, hash, fecha, usuario solicitant
 - Creado `docs/GUIA_EJECUCION_LOCAL.md` con las variables de entorno requeridas, pasos de levantamiento y comandos de verificación.
 - Verificaciones ejecutadas: `mvn -pl sgpp-api -am test`, `npm run lint` y `npm run build`.
 
+### 2026-07-19 — Evaluación cualitativa configurable
+
+- Agregada columna `tipo_calificacion` (`VIGESIMAL`/`CUALITATIVA`) en `tipo_practica` mediante migración `V57__tipo_calificacion_configurable.sql`; `INICIAL` queda `VIGESIMAL` y `FINAL`/`PROFESIONAL` quedan `CUALITATIVA` según la normativa actual.
+- Agregada columna `calificacion_cualitativa` en `evaluacion` mediante migración `V58__calificacion_cualitativa_evaluacion.sql`.
+- Actualizado `TipoPractica` y DTOs (`TipoPracticaResponse`, `TipoPracticaRequest`) para exponer `tipoCalificacion`.
+- Modificado `EvaluacionServiceImpl` para usar el tipo de calificación del tipo de práctica y soportar la escala `Logrado`/`En proceso`/`No logrado`.
+- `ExpedienteResponse` expone `tipoCalificacion` para que el frontend adapte la interfaz sin consultas adicionales.
+- Frontend: `EvaluacionTutorExterno` detecta `tipoCalificacion` y muestra una evaluación cualitativa por criterio y un selector de calificación final cuando corresponde; el modo numérico sigue disponible para prácticas `VIGESIMAL`.
+- Verificaciones ejecutadas: `mvn -pl sgpp-api -am test`, `npm run lint` y `npm run build`.
+
+### 2026-07-20 — Revisión de sincronización backend/frontend
+
+- Auditados los flujos de autenticación/usuarios, expedientes, plan/documentos/informes, horas, evaluación, comité/dictamen/constancia y administración/reportes.
+- Corregido error de compilación en `EvaluacionServiceImpl` (uso de variable `tipoPractica` no declarada).
+- Ajustado `EvaluacionServiceImpl.validarEvaluacionEmpresa` para permitir evaluación cualitativa sin exigir puntaje numérico.
+- Frontend: `EvaluacionDocenteAsesor` ahora envía `tipoEvaluador`, usa `codigoTipoPractica` para mostrar notas por unidades y acepta decimales en las notas.
+- Frontend: `EvaluacionTutorExterno` adapta su payload al modo cualitativo (`tipoCalificacion`, `calificacionCualitativa`).
+- Horas: corregido mapeo de `horasAcumuladas` (antes `horasValidadas`) y `validadoPorTutor` (antes `validado`); se evita enviar horas de inicio/fin vacías; se restringe el registro a expedientes en `EN_EJECUCION`; se invalidan las query keys correctas en `useHoras`.
+- Roles y rutas: `/admin/usuarios` y `/admin/tutores` ahora permiten los roles autorizados por el backend; agregada ruta `/admin/expedientes/:id`; `ADMINISTRADOR` aparece en `ROLES_DISPONIBLES`.
+- Estados: creado `frontend/src/lib/constants.ts` con los códigos exactos del backend; actualizados filtros y KPIs en `DashboardDocente`, `ListaPracticantes`, `GestionExpedientes`, `DashboardCoordinacion` y `PanelComite` para usar `INFORME_PARCIAL_1_PRESENTADO`, `INFORME_PARCIAL_2_PRESENTADO`, `PLAN_EN_REVISION`, `PLAN_EN_REVISION_COMITE`, etc.
+- Reportes: corregidas las columnas de `EMPRESAS_RECEPTORAS`, `SEDES_VALIDADAS` y `CONVENIOS_VIGENTES` para coincidir con los DTOs del backend.
+- Catálogos empresariales: `useSedes.ts` ahora soporta tanto respuestas envueltas en `ApiResponse.data` como respuestas directas (usadas por `EmpresaController`, `SedePracticaController`, `ConvenioController`).
+- UI/UX: corregidos imports faltantes en `AppLayout.tsx`; actualizado `AuthContext.tsx` con `apellidoPaterno`/`apellidoMaterno`; etiqueta de login cambiada a "Usuario".
+- Seguridad: alineada validación de contraseña en `ResetPasswordRequest` (8 caracteres, mayúscula, minúscula, número) con el schema del frontend.
+- Verificaciones ejecutadas: `mvn -pl sgpp-api -am test` (4 tests), `npm run lint` y `npm run build`.
+
+### 2026-07-20 (continuación) — Unificación del plan, validación de horas tutor, acceso comité y limpieza de endpoints
+
+- Backend: creado `ActualizarPlanRequest` y endpoint `PUT /planes/{id}` para actualizar un plan en borrador; `PlanGeneralServiceImpl` permite editar el contenido del Anexo 1 mientras el estado sea `BORRADOR` u `OBSERVADO`.
+- Frontend: `PlanPracticas` ahora guarda el borrador con `actualizar` antes de presentar y subsana observaciones mediante `planesApi.subsanar`; `PanelComite` y `DetalleExpediente` aprueban/observan el plan a través de `planesApi`.
+- Frontend: creada la pantalla `ValidacionHorasTutor` (`/tutor/horas/:idExpediente`) con tabla de registros, botones de validación/rechazo y resumen de cumplimiento; agregado acceso desde `DashboardTutor`.
+- Backend: agregado `COMITE_PRACTICAS` (y `DIRECTOR` en listados de registros) a los endpoints de lectura de horas (`/horas/cumplimiento`, `/horas/control`, `/horas/registros`, `/horas/registros/{id}/periodo`) para que el comité pueda revisar horas desde `DetalleExpediente`.
+- Backend: eliminados endpoints huérfanos de expediente (`PUT /expedientes/{id}/presentar-plan`, `/subsanar`, `/evaluar`, `/cambiar-estado`) y sus DTOs/métodos de servicio asociados. Se conserva `/iniciar-ejecucion` y se conecta en `DetalleExpediente` con diálogo de fecha de inicio y duración en semanas.
+- Frontend: `GestionDocumental` migra la presentación del plan de `expedientesApi.presentarPlan` a `planesApi.presentar`; eliminados métodos y hooks huérfanos `presentarPlan`/`evaluar` de `expedientesApi.js` y `useExpedientes.ts`; agregado `useIniciarEjecucion`.
+- Frontend: ampliado `frontend/src/lib/constants.ts` con `ESTADOS_PARA_EVALUAR`, `ESTADOS_PARA_DICTAMEN` y `ESTADOS_FINALIZADOS`; refactorizados múltiples componentes para usar las constantes compartidas en lugar de literales dispersos.
+- Verificaciones ejecutadas: `mvn -pl sgpp-api -am test` (4 tests), `npm run lint` y `npm run build`.
+
 ## Pendientes Técnicos Conocidos
 
-- Evaluación cualitativa configurable como alternativa a la evaluación numérica.
 - Refinar chunking adicional del frontend para reducir más el bundle principal.
 - Ajustar reglas configurables de plazos y requisitos académicos según evolución normativa.
-- Análisis exhaustivo del sistema realizado el 2026-07-19: ver `docs/ANALISIS_SISTEMA_SGPP.md`. Los hallazgos principales incluyen: scheduler automático, notificaciones SMTP, examen de aplazados, notas por unidades, plantilla de informe final, migración de evaluación a Anexo 4, mejoras visuales e íconos lucide-react implementados.
+- Revisar reglas de integridad y notificaciones en los nuevos flujos de plan estructurado.
+- Evaluar si se requiere una UI de cambio manual de estado para administradores, tras eliminar `PUT /expedientes/{id}/cambiar-estado`.
+- Continuar migrando literales de estado restantes a `frontend/src/lib/constants.ts`.

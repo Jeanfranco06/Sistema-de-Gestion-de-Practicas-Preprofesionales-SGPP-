@@ -37,6 +37,19 @@ public class PlanGeneralController {
                         .data(response).timestamp(LocalDateTime.now()).build());
     }
 
+    @PutMapping("/{id}")
+    @Operation(summary = "Actualizar un Plan General en borrador")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'SECRETARIA', 'ESTUDIANTE')")
+    public ResponseEntity<ApiResponse<PlanGeneralResponse>> actualizar(
+            @PathVariable Long id,
+            @Valid @RequestBody ActualizarPlanRequest request,
+            @RequestAttribute(value = "idUsuario", required = false) Long idUsuario) {
+        PlanGeneralResponse response = planService.actualizar(id, request, idUsuario != null ? idUsuario : 1L);
+        return ResponseEntity.ok(ApiResponse.<PlanGeneralResponse>builder()
+                .success(true).message("Plan General actualizado").data(response)
+                .timestamp(LocalDateTime.now()).build());
+    }
+
     @PutMapping("/{id}/presentar")
     @Operation(summary = "Presentar el Plan General para revisión")
     @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'SECRETARIA', 'ESTUDIANTE')")

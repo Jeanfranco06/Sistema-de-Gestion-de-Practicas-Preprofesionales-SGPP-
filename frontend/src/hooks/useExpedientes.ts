@@ -129,6 +129,15 @@ export function useAprobarPlan() {
   });
 }
 
+export function useIniciarEjecucion() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, fechaInicio, duracionSemanas }: { id: string; fechaInicio: string; duracionSemanas: number }) =>
+      expedientesApi.iniciarEjecucion(id, fechaInicio, duracionSemanas),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['expedientes'] }); },
+  });
+}
+
 export function useAprobarInformeFinal() {
   const qc = useQueryClient();
   return useMutation({
@@ -155,15 +164,6 @@ export function useCerrarExpediente() {
   });
 }
 
-export function usePresentarPlan() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: Record<string, unknown> }) =>
-      expedientesApi.presentarPlan(id, payload),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['expedientes'] }); },
-  });
-}
-
 export function usePresentarInformeParcial() {
   const qc = useQueryClient();
   return useMutation({
@@ -176,15 +176,6 @@ export function usePresentarInformeFinal() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => expedientesApi.presentarInformeFinal(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['expedientes'] }); },
-  });
-}
-
-export function useEvaluarExpediente() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: Record<string, unknown> }) =>
-      expedientesApi.evaluar(id, payload),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['expedientes'] }); },
   });
 }

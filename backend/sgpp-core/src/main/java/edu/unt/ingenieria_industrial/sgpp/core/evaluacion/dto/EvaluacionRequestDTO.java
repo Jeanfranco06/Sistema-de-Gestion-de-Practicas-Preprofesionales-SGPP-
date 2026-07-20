@@ -38,5 +38,6 @@ public class EvaluacionRequestDTO {
     private Integer horasRegistradas;
     private String rutaConstancia;
     private String tipoCalificacion; // VIGESIMAL, CUALITATIVA
+    private String calificacionCualitativa; // Logrado, En proceso, No logrado
 }
 

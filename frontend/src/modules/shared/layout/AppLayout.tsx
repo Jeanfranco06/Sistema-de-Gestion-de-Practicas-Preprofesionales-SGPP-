@@ -7,6 +7,7 @@ import {
   GraduationCap, Clock, Users,
   UserCheck, ClipboardCheck, FolderOpen,
   Moon, Sun, ClipboardList,
+  Briefcase, FileCheck, MapPin,
 } from 'lucide-react';
 import { useAuth } from '../../../auth/AuthContext';
 import { useThemeContext } from '../../../shared/theme/ThemeContext';

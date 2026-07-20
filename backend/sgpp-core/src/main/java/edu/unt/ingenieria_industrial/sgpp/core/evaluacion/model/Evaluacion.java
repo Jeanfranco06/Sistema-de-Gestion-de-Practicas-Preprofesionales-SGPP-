@@ -65,6 +65,9 @@ public class Evaluacion extends BaseEntity {
     @Builder.Default
     private String tipoCalificacion = "VIGESIMAL"; // VIGESIMAL, CUALITATIVA
 
+    @Column(name = "calificacion_cualitativa", length = 50)
+    private String calificacionCualitativa;
+
     @Column(name = "activo", nullable = false)
     @Builder.Default
     private Boolean activo = true;

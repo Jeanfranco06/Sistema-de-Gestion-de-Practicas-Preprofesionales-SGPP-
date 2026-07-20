@@ -7,6 +7,12 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/auth/AuthContext';
 import { useMisExpedientes } from '@/hooks/useExpedientes';
+import {
+  ESTADOS_EXPEDIENTE,
+  ESTADOS_INFORME_PARCIAL_PRESENTADO,
+  ESTADOS_PARA_EVALUAR,
+  ESTADOS_FINALIZADOS,
+} from '@/lib/constants';
 import { Button } from '@/ui/Button';
 import { Badge } from '@/ui/Badge';
 import { Progress } from '@/ui/Progress';
@@ -56,19 +62,17 @@ export default function DashboardDocente() {
   const { data: expedientes = [], isLoading, error, refetch } = useMisExpedientes();
 
   const kpis = useMemo(() => {
-    const activos = expedientes.filter((e: Expediente) => !['EVALUADO', 'CERRADO'].includes(e.estado));
+    const activos = expedientes.filter((e: Expediente) => !ESTADOS_FINALIZADOS.includes(e.estado));
     const finalizados = expedientes.length - activos.length;
     return {
       total: expedientes.length,
       activos: activos.length,
       finalizados,
-      enEjecucion: expedientes.filter((e: Expediente) => e.estado === 'EN_EJECUCION').length,
-      porEvaluar: expedientes.filter((e: Expediente) =>
-        ['INFORME_PARCIAL_PRESENTADO', 'INFORME_FINAL_PRESENTADO'].includes(e.estado)
-      ).length,
-      observados: expedientes.filter((e: Expediente) => e.estado === 'OBSERVADO').length,
+      enEjecucion: expedientes.filter((e: Expediente) => e.estado === ESTADOS_EXPEDIENTE.EN_EJECUCION).length,
+      porEvaluar: expedientes.filter((e: Expediente) => ESTADOS_PARA_EVALUAR.includes(e.estado)).length,
+      observados: expedientes.filter((e: Expediente) => e.estado === ESTADOS_EXPEDIENTE.OBSERVADO).length,
       planPendiente: expedientes.filter((e: Expediente) =>
-        e.estado === 'ASESOR_ASIGNADO' || e.estado === 'PLAN_PRESENTADO'
+        e.estado === ESTADOS_EXPEDIENTE.ASESOR_ASIGNADO || e.estado === ESTADOS_EXPEDIENTE.PLAN_PRESENTADO
       ).length,
     };
   }, [expedientes]);
@@ -104,9 +108,9 @@ export default function DashboardDocente() {
 
   const pendientesAccion = useMemo(
     () => expedientes.filter((e: Expediente) =>
-      e.estado === 'OBSERVADO'
-      || e.estado === 'PLAN_PRESENTADO'
-      || ['INFORME_PARCIAL_PRESENTADO', 'INFORME_FINAL_PRESENTADO'].includes(e.estado)
+      e.estado === ESTADOS_EXPEDIENTE.OBSERVADO
+      || e.estado === ESTADOS_EXPEDIENTE.PLAN_PRESENTADO
+      || ESTADOS_PARA_EVALUAR.includes(e.estado)
     ),
     [expedientes],
   );

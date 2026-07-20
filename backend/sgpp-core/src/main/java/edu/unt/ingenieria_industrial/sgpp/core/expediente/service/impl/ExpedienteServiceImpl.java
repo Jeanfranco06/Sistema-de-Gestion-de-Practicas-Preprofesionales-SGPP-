@@ -370,34 +370,6 @@ private final ExpedienteRepository expedienteRepository;
     }
 
     @Override
-    public ExpedienteResponse presentarPlan(Long idExpediente, PresentarPlanRequest request, Long idUsuario) {
-        Expediente expediente = findExpediente(idExpediente);
-        String tipoCodigo = expediente.getTipoPractica().getCodigo();
-
-        String estadoAsignacion = TIPO_INICIAL.equals(tipoCodigo) ? "ASESOR_ASIGNADO" : "COMITE_ASIGNADO";
-        Set<String> estadosPermitidos = Set.of(
-                estadoAsignacion,
-                EstadoExpediente.PLAN_OBSERVADO.getCodigo(),
-                EstadoExpediente.SUBSANADO.getCodigo());
-        if (!estadosPermitidos.contains(expediente.getEstado())) {
-            throw new BusinessException("Estado inválido: " + expediente.getEstado()
-                    + ". Se requiere " + estadoAsignacion + ", PLAN_OBSERVADO o SUBSANADO para presentar el plan");
-        }
-
-        String estadoAnterior = expediente.getEstado();
-        expediente.setFechaPresentacionPlan(request.getFechaPresentacion());
-        expediente.setEstado("PLAN_PRESENTADO");
-        if (request.getObservaciones() != null) {
-            expediente.setObservaciones(request.getObservaciones());
-        }
-        expediente = expedienteRepository.save(expediente);
-        registrarCambioEstado(expediente, estadoAnterior, "PLAN_PRESENTADO", idUsuario,
-                "Plan de trabajo presentado el " + request.getFechaPresentacion().toLocalDate(), "PRESENTACION_PLAN");
-
-        return toResponse(expediente);
-    }
-
-    @Override
     public ExpedienteResponse agregarDocumento(Long idExpediente, String tipoDocumento, String nombreDoc, String fileName, Long idUsuario) {
         Expediente expediente = findExpediente(idExpediente);
         
@@ -538,54 +510,6 @@ private final ExpedienteRepository expedienteRepository;
         plazoService.iniciarPlazo(expediente.getId(), "SUBSANACION_DOCUMENTO",
                 LocalDate.now(), null, null,
                 "Plazo para subsanar observaciones de documentos del expediente");
-
-        return toResponse(expediente);
-    }
-
-    @Override
-    public ExpedienteResponse subsanarObservaciones(Long idExpediente, SubsanarObservacionesRequest request, Long idUsuario) {
-        Expediente expediente = findExpediente(idExpediente);
-        String estadoActual = expediente.getEstado();
-        String estadoEsperado = EstadoExpediente.PLAN_OBSERVADO.getCodigo();
-        if (!estadoEsperado.equals(estadoActual) && !EstadoExpediente.OBSERVADO.getCodigo().equals(estadoActual)) {
-            throw new BusinessException("Estado inválido: " + estadoActual + ". Se requiere " + estadoEsperado + " para subsanar");
-        }
-
-        reglasIntegridadService.validarSubsanacionPermitida(expediente, idUsuario);
-
-        Usuario usuario = usuarioRepository.getReferenceById(idUsuario);
-
-        for (Long obsId : request.getObservacionIds()) {
-            ExpedienteObservacion obs = observacionRepository.findById(obsId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Observación no encontrada: " + obsId));
-            if (!obs.getExpediente().getId().equals(idExpediente)) {
-                throw new BusinessException("La observación " + obsId + " no pertenece a este expediente");
-            }
-            obs.setSubsanado(true);
-            obs.setFechaSubsanacion(LocalDateTime.now());
-            obs.setUsuarioSubsana(usuario);
-            obs.setRespuestaSubsanacion(request.getRespuesta());
-            observacionRepository.save(obs);
-        }
-
-        String nuevoEstado = EstadoExpediente.SUBSANADO.getCodigo();
-        expediente.setEstado(nuevoEstado);
-        expediente = expedienteRepository.save(expediente);
-        registrarCambioEstado(expediente, estadoActual, nuevoEstado, idUsuario,
-                "Subsanación de " + request.getObservacionIds().size() + " observaciones", "SUBSANACION");
-
-        plazoService.registrarCumplimiento(expediente.getId(), "SUBSANACION_DOCUMENTO", LocalDate.now());
-
-        auditoriaService.registrar(RegistrarEventoAuditoriaDTO.builder()
-                .tipoEntidad(TipoEntidadAuditable.SUBSANACION)
-                .entidadId(idExpediente)
-                .idExpediente(idExpediente)
-                .accion(AccionAuditoria.SUBSANAR)
-                .idUsuario(idUsuario)
-                .valorNuevo(Map.of("observacionesSubsanadas", request.getObservacionIds().size()))
-                .motivo(request.getRespuesta())
-                .cumplimientoPlazo(true)
-                .build());
 
         return toResponse(expediente);
     }
@@ -736,62 +660,6 @@ private final ExpedienteRepository expedienteRepository;
     }
 
     @Override
-    public ExpedienteResponse evaluar(Long idExpediente, EvaluarExpedienteRequest request, Long idUsuario) {
-        Expediente expediente = findExpediente(idExpediente);
-        String tipoCodigo = expediente.getTipoPractica().getCodigo();
-        String estadoActual = expediente.getEstado();
-
-        Set<String> estadosPermitidos = Set.of(
-                EstadoExpediente.INFORME_PARCIAL_2_PRESENTADO.getCodigo(),
-                EstadoExpediente.INFORME_FINAL_PRESENTADO.getCodigo(),
-                EstadoExpediente.INFORME_APROBADO.getCodigo(),
-                EstadoExpediente.EVALUACION_PENDIENTE.getCodigo(),
-                EstadoExpediente.EVALUACION_EMPRESA_PENDIENTE.getCodigo(),
-                EstadoExpediente.EVALUACION_COMPLETA.getCodigo());
-
-        if (TIPO_INICIAL.equals(tipoCodigo)) {
-            Set<String> estadosInicial = Set.of(
-                    EstadoExpediente.INFORME_PARCIAL_2_PRESENTADO.getCodigo(),
-                    EstadoExpediente.INFORME_FINAL_PRESENTADO.getCodigo(),
-                    EstadoExpediente.INFORME_APROBADO.getCodigo());
-            if (!estadosInicial.contains(estadoActual)) {
-                throw new BusinessException("El expediente debe tener informes presentados para ser evaluado");
-            }
-        } else {
-            if (!estadosPermitidos.contains(estadoActual)) {
-                throw new BusinessException("El expediente debe tener informe final aprobado o evaluaciones completas para ser evaluado");
-            }
-        }
-
-        reglasIntegridadService.validarRegistroCalificacion(expediente, request.getCalificacionFinal());
-
-        expediente.setCalificacionFinal(request.getCalificacionFinal());
-        if (request.getObservaciones() != null) {
-            expediente.setObservaciones(request.getObservaciones());
-        }
-
-        String nuevoEstado = Boolean.TRUE.equals(request.getCerrarExpediente())
-                ? EstadoExpediente.CERRADO.getCodigo()
-                : EstadoExpediente.EVALUADO.getCodigo();
-        expediente.setEstado(nuevoEstado);
-        expediente = expedienteRepository.save(expediente);
-        registrarCambioEstado(expediente, estadoActual, nuevoEstado, idUsuario,
-                "Evaluación: calificación " + request.getCalificacionFinal(), "EVALUACION");
-
-        auditoriaService.registrar(RegistrarEventoAuditoriaDTO.builder()
-                .tipoEntidad(TipoEntidadAuditable.NOTA)
-                .entidadId(idExpediente)
-                .idExpediente(idExpediente)
-                .accion(AccionAuditoria.REGISTRAR_CALIFICACION)
-                .idUsuario(idUsuario)
-                .valorNuevo(Map.of("calificacionFinal", request.getCalificacionFinal()))
-                .motivo("Registro de calificación final de práctica")
-                .build());
-
-        return toResponse(expediente);
-    }
-
-    @Override
     public ExpedienteResponse cerrar(Long idExpediente, Long idUsuario, String observacion) {
         Expediente expediente = findExpediente(idExpediente);
         String estadoActual = expediente.getEstado();
@@ -921,21 +789,6 @@ private final ExpedienteRepository expedienteRepository;
         notificacionEventoService.notificarPorUsuarioId(expediente.getEstudiante().getUsuario().getId(), "EXAMEN_APLAZADOS",
                 "Resultado de Examen de Aplazados",
                 mensaje + " en el expediente " + expediente.getCodigoExpediente() + ".");
-
-        return toResponse(expediente);
-    }
-
-    @Override
-    public ExpedienteResponse cambiarEstado(Long idExpediente, CambioEstadoRequest request, Long idUsuario) {
-        Expediente expediente = findExpediente(idExpediente);
-        String estadoAnterior = expediente.getEstado();
-
-        validarTransicionManual(estadoAnterior, request.getEstado(), expediente.getTipoPractica().getCodigo());
-
-        expediente.setEstado(request.getEstado());
-        expediente = expedienteRepository.save(expediente);
-        registrarCambioEstado(expediente, estadoAnterior, request.getEstado(), idUsuario,
-                request.getObservacion(), request.getTipoCambio() != null ? request.getTipoCambio() : "CAMBIO_MANUAL");
 
         return toResponse(expediente);
     }
@@ -1129,47 +982,6 @@ private final ExpedienteRepository expedienteRepository;
                 " para transicionar a " + destino);
     }
 
-    private void validarTransicionManual(String actual, String destino, String tipoCodigo) {
-        try {
-            EstadoExpediente estadoActual = EstadoExpediente.fromCodigo(actual);
-            EstadoExpediente estadoDestino = EstadoExpediente.fromCodigo(destino);
-            
-            if (!estadoDestino.esTransicionValidaDesde(estadoActual)) {
-                throw new BusinessException(
-                    "Transición manual no válida de " + actual + " a " + destino + 
-                    ". Consulte el flujo normativo para transiciones válidas.");
-            }
-        } catch (IllegalArgumentException e) {
-            // Si los estados no están en el enum, usar validación legacy para compatibilidad
-            log.warn("Usando validación legacy para estados: {} -> {}", actual, destino);
-            validarTransicionManualLegacy(actual, destino);
-        }
-    }
-
-    private void validarTransicionManualLegacy(String actual, String destino) {
-        Map<String, Set<String>> transiciones = new HashMap<>();
-        Set<String> estadosInicial = Set.of("SOLICITADO", "EMPRESA_SEDE_ASIGNADA",
-                VALIDADO_SECRETARIA, CARTA_PRESENTACION_EMITIDA,
-                "ASESOR_ASIGNADO", "COMITE_ASIGNADO", "PLAN_PRESENTADO", "EN_REVISION",
-                "OBSERVADO", "SUBSANADO", "APROBADO", "EN_EJECUCION",
-                "INFORME_PARCIAL_PRESENTADO", "INFORME_FINAL_PRESENTADO",
-                "EVALUADO", "CARTA_ACEPTACION_PRESENTADA");
-
-        transiciones.put("SOLICITADO", estadosInicial);
-        transiciones.put("EMPRESA_SEDE_ASIGNADA", estadosInicial);
-        transiciones.put(VALIDADO_SECRETARIA, estadosInicial);
-        transiciones.put(CARTA_PRESENTACION_EMITIDA, estadosInicial);
-        transiciones.put("CARTA_ACEPTACION_PRESENTADA", estadosInicial);
-        transiciones.put("ASESOR_ASIGNADO", estadosInicial);
-        transiciones.put("COMITE_ASIGNADO", estadosInicial);
-
-        Set<String> compartido = transiciones.get("SOLICITADO");
-
-        if (!compartido.contains(destino)) {
-            throw new BusinessException("Transición manual no válida de " + actual + " a " + destino);
-        }
-    }
-
     private void registrarCambioEstado(Expediente expediente, String anterior, String nuevo,
                                         Long idUsuario, String observacion, String tipoCambio) {
         ExpedienteEstado estado = ExpedienteEstado.builder()
@@ -1229,6 +1041,7 @@ private final ExpedienteRepository expedienteRepository;
                 .idTipoPractica(e.getTipoPractica().getId())
                 .codigoTipoPractica(e.getTipoPractica().getCodigo())
                 .nombreTipoPractica(e.getTipoPractica().getNombre())
+                .tipoCalificacion(e.getTipoPractica().getTipoCalificacion())
                 .periodoAcademico(e.getPeriodoAcademico())
                 .condicionSolicitante(e.getCondicionSolicitante())
                 .estado(e.getEstado())

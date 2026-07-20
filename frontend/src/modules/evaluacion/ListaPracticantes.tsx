@@ -8,6 +8,12 @@ import {
 import { useAuth } from '../../auth/AuthContext';
 import { useMisExpedientes } from '../../hooks/useExpedientes';
 import { hasAnyRole } from '../../shared/utils/roleRoutes';
+import {
+  ESTADOS_EXPEDIENTE,
+  ESTADOS_INFORME_PARCIAL_PRESENTADO,
+  ESTADOS_PARA_EVALUAR,
+  ESTADOS_FINALIZADOS,
+} from '../../lib/constants';
 import StatusChip from '../../shared/components/StatusChip';
 import {
   Button, Input, Badge, Select, Tooltip, Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
@@ -27,8 +33,15 @@ interface Practicante {
 }
 
 const ESTADOS_FILTRO = [
-  'TODOS', 'EN_EJECUCION', 'PLAN_PRESENTADO', 'OBSERVADO',
-  'INFORME_PARCIAL_PRESENTADO', 'INFORME_FINAL_PRESENTADO', 'EVALUADO', 'CERRADO',
+  'TODOS',
+  ESTADOS_EXPEDIENTE.EN_EJECUCION,
+  ESTADOS_EXPEDIENTE.PLAN_PRESENTADO,
+  ESTADOS_EXPEDIENTE.OBSERVADO,
+  ESTADOS_EXPEDIENTE.INFORME_PARCIAL_1_PRESENTADO,
+  ESTADOS_EXPEDIENTE.INFORME_PARCIAL_2_PRESENTADO,
+  ESTADOS_EXPEDIENTE.INFORME_FINAL_PRESENTADO,
+  ESTADOS_EXPEDIENTE.EVALUADO,
+  ESTADOS_EXPEDIENTE.CERRADO,
 ];
 
 const estadoLabel = (estado: string | undefined) => estado?.replace(/_/g, ' ').toLowerCase() || 'Pendiente';
@@ -68,9 +81,9 @@ export const ListaPracticantes = () => {
 
   const stats = useMemo(() => ({
     total: practicantes.length,
-    activos: practicantes.filter((p: Practicante) => !['EVALUADO', 'CERRADO'].includes(p.estado)).length,
-    enEjecucion: practicantes.filter((p: Practicante) => p.estado === 'EN_EJECUCION').length,
-    porEvaluar: practicantes.filter((p: Practicante) => ['INFORME_PARCIAL_PRESENTADO', 'INFORME_FINAL_PRESENTADO'].includes(p.estado)).length,
+    activos: practicantes.filter((p: Practicante) => !ESTADOS_FINALIZADOS.includes(p.estado)).length,
+    enEjecucion: practicantes.filter((p: Practicante) => p.estado === ESTADOS_EXPEDIENTE.EN_EJECUCION).length,
+    porEvaluar: practicantes.filter((p: Practicante) => ESTADOS_PARA_EVALUAR.includes(p.estado)).length,
   }), [practicantes]);
 
   const handleEvaluar = (id: string) => {

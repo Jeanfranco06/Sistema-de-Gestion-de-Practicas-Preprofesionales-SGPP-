@@ -9,9 +9,11 @@ import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useExpedienteById } from '@/hooks/useExpedientes';
+import { useTiposPractica } from '@/hooks/usePracticas';
 import {
   Button,
   Input,
+  Select,
   Badge,
   Table,
   TableHeader,
@@ -36,6 +38,7 @@ interface Criterio {
 
 interface Detalle {
   puntajeObtenido: number;
+  calificacionCualitativa: string;
   comentarios: string;
 }
 
@@ -51,6 +54,8 @@ interface Expediente {
   apellidoEstudiante: string;
   numeroDocumento?: string;
   nombreEmpresa?: string;
+  codigoTipoPractica?: string;
+  tipoCalificacion?: string;
 }
 
 interface Evaluacion {
@@ -74,6 +79,7 @@ interface EvaluacionForm {
   comentarios: string;
   horasRegistradas: number;
   rutaConstancia: string;
+  calificacionCualitativa: string;
 }
 
 interface EvaluacionPayload {
@@ -81,10 +87,12 @@ interface EvaluacionPayload {
   tipoEvaluador: string;
   evaluadorId: number | string;
   componente: string;
-  detalles: Array<{ idCriterio: number; puntajeObtenido: number; comentarios: string }>;
+  detalles: Array<{ idCriterio: number; puntajeObtenido: number; calificacionCualitativa: string; comentarios: string }>;
   comentarios: string;
   horasRegistradas: number;
   rutaConstancia: string;
+  tipoCalificacion: string;
+  calificacionCualitativa: string;
 }
 
 const agruparCriterios = (criterios: Criterio[]): Grupo[] => {
@@ -114,10 +122,18 @@ export const EvaluacionTutorExterno = () => {
     comentarios: '',
     horasRegistradas: 0,
     rutaConstancia: '',
+    calificacionCualitativa: '',
   });
   const [file, setFile] = useState<File | null>(null);
 
   const { data: expediente } = useExpedienteById(idExpedienteParams);
+  const { data: tiposPractica = [] } = useTiposPractica();
+
+  const tipoCalificacionExpediente = expediente?.tipoCalificacion
+    || tiposPractica.find((tp: { codigo?: string; tipoCalificacion?: string }) => tp.codigo === expediente?.codigoTipoPractica)?.tipoCalificacion
+    || 'VIGESIMAL';
+  const esCualitativa = tipoCalificacionExpediente === 'CUALITATIVA';
+
   const { data: criterios = [] } = useQuery<Criterio[]>({
     queryKey: ['evaluaciones', 'criterios', 'EMPRESA'],
     queryFn: async () => {
@@ -155,7 +171,7 @@ export const EvaluacionTutorExterno = () => {
   useEffect(() => {
     const initial: Record<number, Detalle> = {};
     criterios.forEach((c) => {
-      initial[c.id] = { puntajeObtenido: 0, comentarios: '' };
+      initial[c.id] = { puntajeObtenido: 0, calificacionCualitativa: '', comentarios: '' };
     });
     setDetalles(initial);
   }, [criterios]);
@@ -169,6 +185,13 @@ export const EvaluacionTutorExterno = () => {
         ...prev[idCriterio],
         puntajeObtenido: Math.min(Math.max(numValue, 0), max),
       },
+    }));
+  };
+
+  const handleCalificacionCualitativaChange = (idCriterio: number, value: string) => {
+    setDetalles((prev) => ({
+      ...prev,
+      [idCriterio]: { ...prev[idCriterio], calificacionCualitativa: value },
     }));
   };
 
@@ -205,14 +228,23 @@ export const EvaluacionTutorExterno = () => {
       MySwal.fire('Sesión o expediente no válido', 'Vuelve a la lista de practicantes e inténtalo nuevamente.', 'error');
       return;
     }
-    if (criterios.some((criterio) => !detalles[criterio.id]?.puntajeObtenido)) {
+    if (esCualitativa) {
+      const faltantes = criterios.some((criterio) => !detalles[criterio.id]?.calificacionCualitativa);
+      if (faltantes) {
+        MySwal.fire('Evaluación incompleta', 'Debe registrar una calificación cualitativa para cada criterio.', 'warning');
+        return;
+      }
+    } else if (criterios.some((criterio) => !detalles[criterio.id]?.puntajeObtenido)) {
       MySwal.fire('Evaluación incompleta', 'Debe registrar un puntaje para cada criterio.', 'warning');
       return;
     }
 
+    const confirmText = esCualitativa
+      ? `Calificación final: ${evaluacion.calificacionCualitativa || '—'}. ¿Estás seguro de registrar la evaluación?`
+      : `Puntaje total: ${total} puntos. ¿Estás seguro de registrar la evaluación?`;
     const confirmResult = await MySwal.fire({
       title: '¿Confirmar Evaluación?',
-      text: `Puntaje total: ${total} puntos. ¿Estás seguro de registrar la evaluación?`,
+      text: confirmText,
       icon: 'question',
       showCancelButton: true,
       confirmButtonText: 'Sí, registrar',
@@ -238,9 +270,12 @@ export const EvaluacionTutorExterno = () => {
         evaluadorId: auth.user.id,
         componente: 'EMPRESA',
         rutaConstancia,
+        tipoCalificacion: esCualitativa ? 'CUALITATIVA' : 'VIGESIMAL',
+        calificacionCualitativa: esCualitativa ? evaluacion.calificacionCualitativa : '',
         detalles: criterios.map((c) => ({
           idCriterio: c.id,
           puntajeObtenido: detalles[c.id]?.puntajeObtenido || 0,
+          calificacionCualitativa: detalles[c.id]?.calificacionCualitativa || '',
           comentarios: detalles[c.id]?.comentarios || '',
         })),
       };
@@ -251,7 +286,9 @@ export const EvaluacionTutorExterno = () => {
       MySwal.fire({
         icon: 'success',
         title: 'Evaluación Registrada',
-        text: `Puntaje total: ${total} puntos`,
+        text: esCualitativa
+          ? `Calificación final: ${evaluacion.calificacionCualitativa}`
+          : `Puntaje total: ${total} puntos`,
         timer: 2000,
         showConfirmButton: false,
       });
@@ -336,17 +373,28 @@ export const EvaluacionTutorExterno = () => {
                 </div>
               </div>
               <div>
-                <p className="text-xs text-[var(--color-muted-foreground)]">Puntaje Total</p>
-                <div className="text-3xl font-semibold" style={{ color: colorVar }}>
-                  {totalGeneral}{' '}
-                  <span className="text-sm text-[var(--color-muted-foreground)]">/ {totalMaximo}</span>
-                </div>
-                <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-[var(--color-border)]">
-                  <div
-                    className="h-full rounded-full transition-all"
-                    style={{ width: `${porcentaje}%`, backgroundColor: colorVar }}
-                  />
-                </div>
+                {esCualitativa ? (
+                  <>
+                    <p className="text-xs text-[var(--color-muted-foreground)]">Calificación final</p>
+                    <div className="text-xl font-semibold text-[var(--color-foreground)]">
+                      {evaluacion.calificacionCualitativa || '—'}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-xs text-[var(--color-muted-foreground)]">Puntaje Total</p>
+                    <div className="text-3xl font-semibold" style={{ color: colorVar }}>
+                      {totalGeneral}{' '}
+                      <span className="text-sm text-[var(--color-muted-foreground)]">/ {totalMaximo}</span>
+                    </div>
+                    <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-[var(--color-border)]">
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{ width: `${porcentaje}%`, backgroundColor: colorVar }}
+                      />
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </Card>
@@ -355,20 +403,22 @@ export const EvaluacionTutorExterno = () => {
         <Card className="p-6">
           <h3 className="mb-4 text-base font-semibold text-[var(--color-foreground)]">4. EVALUACIÓN</h3>
           <p className="mb-4 block text-xs text-[var(--color-muted-foreground)]">
-            (En la columna de puntaje, para cada criterio, sírvase marcar un número de 1 a 5 según corresponda al
-            practicante que está evaluando. El número 1 corresponde al peor desempeño y el número 5 corresponde al
-            mejor desempeño)
+            {esCualitativa
+              ? 'Para cada criterio, seleccione la calificación cualitativa que corresponde al desempeño del practicante.'
+              : '(En la columna de puntaje, para cada criterio, sírvase marcar un número de 1 a 5 según corresponda al practicante que está evaluando. El número 1 corresponde al peor desempeño y el número 5 corresponde al mejor desempeño)'}
           </p>
 
           {grupos.map((cat, catIndex) => (
             <div key={cat.categoria} className="mb-6">
               <div className="mb-3 flex items-center justify-between">
                 <h4 className="text-sm font-bold text-[var(--color-foreground)]">{cat.categoria}</h4>
-                <Badge
-                  variant={calcularTotalCategoria(cat) >= cat.puntajeMaximo * 0.7 ? 'success' : 'neutral'}
-                >
-                  {calcularTotalCategoria(cat)} / {cat.puntajeMaximo} pts
-                </Badge>
+                {!esCualitativa && (
+                  <Badge
+                    variant={calcularTotalCategoria(cat) >= cat.puntajeMaximo * 0.7 ? 'success' : 'neutral'}
+                  >
+                    {calcularTotalCategoria(cat)} / {cat.puntajeMaximo} pts
+                  </Badge>
+                )}
               </div>
 
               <Table>
@@ -376,12 +426,10 @@ export const EvaluacionTutorExterno = () => {
                   <TableRow>
                     <TableHead className="w-1/2">Criterio de Evaluación</TableHead>
                     <TableHead className="w-1/4 text-center">
-                      Puntaje (
-                      {Math.max(
+                      {esCualitativa ? 'Calificación' : `Puntaje (${Math.max(
                         ...cat.criterios.map((c) => c.puntajeMaximo || 5),
                         5,
-                      )}
-                      )
+                      )})`}
                     </TableHead>
                     <TableHead className="w-1/4 text-center">Observaciones</TableHead>
                   </TableRow>
@@ -396,16 +444,30 @@ export const EvaluacionTutorExterno = () => {
                         )}
                       </TableCell>
                       <TableCell className="text-center">
-                        <Input
-                          type="number"
-                          min={0}
-                          max={criterio.puntajeMaximo || 5}
-                          value={detalles[criterio.id]?.puntajeObtenido || ''}
-                          onChange={(e) =>
-                            handlePuntajeChange(criterio.id, e.target.value, criterio.puntajeMaximo || 5)
-                          }
-                          className="mx-auto w-20 text-center"
-                        />
+                        {esCualitativa ? (
+                          <Select
+                            options={[
+                              { value: 'Logrado', label: 'Logrado' },
+                              { value: 'En proceso', label: 'En proceso' },
+                              { value: 'No logrado', label: 'No logrado' },
+                            ]}
+                            placeholder="Seleccionar"
+                            value={detalles[criterio.id]?.calificacionCualitativa || ''}
+                            onChange={(e) => handleCalificacionCualitativaChange(criterio.id, e.target.value)}
+                            className="mx-auto w-32"
+                          />
+                        ) : (
+                          <Input
+                            type="number"
+                            min={0}
+                            max={criterio.puntajeMaximo || 5}
+                            value={detalles[criterio.id]?.puntajeObtenido || ''}
+                            onChange={(e) =>
+                              handlePuntajeChange(criterio.id, e.target.value, criterio.puntajeMaximo || 5)
+                            }
+                            className="mx-auto w-20 text-center"
+                          />
+                        )}
                       </TableCell>
                       <TableCell>
                         <Input
@@ -448,12 +510,28 @@ export const EvaluacionTutorExterno = () => {
                   onChange={handleFileUpload}
                 />
               </div>
-              <div className="py-2 text-center">
-                <p className="text-xs text-[var(--color-muted-foreground)]">Puntaje Total Obtenido</p>
-                <div className="text-xl font-bold" style={{ color: colorVar }}>
-                  {totalGeneral} / {totalMaximo}
+              {esCualitativa ? (
+                <Select
+                  label="Calificación final"
+                  placeholder="Seleccionar calificación final"
+                  options={[
+                    { value: 'Logrado', label: 'Logrado' },
+                    { value: 'En proceso', label: 'En proceso' },
+                    { value: 'No logrado', label: 'No logrado' },
+                  ]}
+                  value={evaluacion.calificacionCualitativa}
+                  onChange={(e) =>
+                    setEvaluacion((prev) => ({ ...prev, calificacionCualitativa: e.target.value }))
+                  }
+                />
+              ) : (
+                <div className="py-2 text-center">
+                  <p className="text-xs text-[var(--color-muted-foreground)]">Puntaje Total Obtenido</p>
+                  <div className="text-xl font-bold" style={{ color: colorVar }}>
+                    {totalGeneral} / {totalMaximo}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
             <div className="mt-4">
               <Textarea

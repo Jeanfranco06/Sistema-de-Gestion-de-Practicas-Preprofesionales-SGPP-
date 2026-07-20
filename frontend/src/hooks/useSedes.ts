@@ -1,12 +1,20 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { empresaApi, sedeApi, convenioApi } from '../api/sedesApi';
 
+function unwrap<T>(res: { data?: T | { data?: T } }): T | undefined {
+  const d = res.data;
+  if (d && typeof d === 'object' && 'data' in d) {
+    return (d as { data?: T }).data;
+  }
+  return d as T | undefined;
+}
+
 export function useEmpresas() {
   return useQuery({
     queryKey: ['empresas'],
     queryFn: async () => {
       const res = await empresaApi.getAll();
-      return res.data?.data ?? [];
+      return unwrap(res as { data?: unknown[] }) ?? [];
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -17,7 +25,7 @@ export function useEmpresaById(id: string | undefined) {
     queryKey: ['empresas', id],
     queryFn: async () => {
       const res = await empresaApi.getById(id!);
-      return res.data?.data ?? null;
+      return unwrap(res as { data?: unknown }) ?? null;
     },
     enabled: !!id,
   });
@@ -61,7 +69,7 @@ export function useSedes() {
     queryKey: ['sedes'],
     queryFn: async () => {
       const res = await sedeApi.getAllActive();
-      return res.data?.data ?? [];
+      return unwrap(res as { data?: unknown[] }) ?? [];
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -72,7 +80,7 @@ export function useSedesByEmpresa(empresaId: string | undefined) {
     queryKey: ['sedes', 'empresa', empresaId],
     queryFn: async () => {
       const res = await sedeApi.getByEmpresa(empresaId!);
-      return res.data?.data ?? [];
+      return unwrap(res as { data?: unknown[] }) ?? [];
     },
     enabled: !!empresaId,
   });
@@ -83,7 +91,7 @@ export function useSedeById(id: string | undefined) {
     queryKey: ['sedes', id],
     queryFn: async () => {
       const res = await sedeApi.getById(id!);
-      return res.data?.data ?? null;
+      return unwrap(res as { data?: unknown }) ?? null;
     },
     enabled: !!id,
   });
@@ -105,7 +113,7 @@ export function useSedeDetalle(id: string | undefined) {
     queryKey: ['sedes', 'detalle', id],
     queryFn: async () => {
       const res = await sedeApi.getDetalle(id!);
-      return res.data?.data ?? null;
+      return unwrap(res as { data?: unknown }) ?? null;
     },
     enabled: !!id,
   });
@@ -141,7 +149,7 @@ export function useConvenios() {
     queryKey: ['convenios'],
     queryFn: async () => {
       const res = await convenioApi.getAllActive();
-      return res.data?.data ?? [];
+      return unwrap(res as { data?: unknown[] }) ?? [];
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -152,7 +160,7 @@ export function useConveniosByEmpresa(empresaId: string | undefined) {
     queryKey: ['convenios', 'empresa', empresaId],
     queryFn: async () => {
       const res = await convenioApi.getByEmpresa(empresaId!);
-      return res.data?.data ?? [];
+      return unwrap(res as { data?: unknown[] }) ?? [];
     },
     enabled: !!empresaId,
   });
@@ -163,7 +171,7 @@ export function useConvenioById(id: string | undefined) {
     queryKey: ['convenios', id],
     queryFn: async () => {
       const res = await convenioApi.getById(id!);
-      return res.data?.data ?? null;
+      return unwrap(res as { data?: unknown }) ?? null;
     },
     enabled: !!id,
   });
@@ -174,7 +182,7 @@ export function useConveniosPorVencer(dias = 30) {
     queryKey: ['convenios', 'por-vencer', dias],
     queryFn: async () => {
       const res = await convenioApi.getExpiring(dias);
-      return res.data?.data ?? [];
+      return unwrap(res as { data?: unknown[] }) ?? [];
     },
     staleTime: 5 * 60 * 1000,
   });
