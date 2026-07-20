@@ -34,7 +34,7 @@ export function useTiposPractica() {
     queryKey: ['tipo-practica'],
     queryFn: async () => {
       const res = await tipoPracticaApi.listar();
-      return res.data?.data ?? [];
+      return res.data ?? [];
     },
     staleTime: 10 * 60 * 1000,
   });

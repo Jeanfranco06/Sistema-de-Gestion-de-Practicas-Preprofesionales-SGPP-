@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@config "../../tailwind.config.js";
 
 @theme {
   --color-primary-50: #eff6ff;
@@ -100,6 +101,20 @@
     --color-ring: var(--color-primary-600);
     --color-card-rgb: 255, 255, 255;
     --color-border-rgb: 226, 232, 240;
+
+    /* Badge variant tokens (light) */
+    --badge-success-bg: #dcfce7;
+    --badge-success-color: #166534;
+    --badge-warning-bg: #fef3c7;
+    --badge-warning-color: #92400e;
+    --badge-danger-bg: #fee2e2;
+    --badge-danger-color: #991b1b;
+    --badge-info-bg: #dbeafe;
+    --badge-info-color: #1e40af;
+    --badge-neutral-bg: var(--color-surface-border);
+    --badge-neutral-color: #64748B;
+    --badge-primary-bg: #dbeafe;
+    --badge-primary-color: #1e40af;
   }
 
   .dark {
@@ -114,6 +129,20 @@
     --color-ring: var(--color-primary-400);
     --color-card-rgb: 30, 41, 59;
     --color-border-rgb: 51, 65, 85;
+
+    /* Badge variant tokens (dark) */
+    --badge-success-bg: #064e3b;
+    --badge-success-color: #6ee7b7;
+    --badge-warning-bg: #78350f;
+    --badge-warning-color: #fcd34d;
+    --badge-danger-bg: #7f1d1d;
+    --badge-danger-color: #fca5a5;
+    --badge-info-bg: #1e3a5f;
+    --badge-info-color: #93c5fd;
+    --badge-neutral-bg: var(--color-dark-border);
+    --badge-neutral-color: #94A3B8;
+    --badge-primary-bg: #1e3a5f;
+    --badge-primary-color: #93c5fd;
   }
 
   * {

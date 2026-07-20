@@ -159,3 +159,12 @@ export function useRegistrarIncidencia() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['expedientes'] }); },
   });
 }
+
+export function useUpdateDatosAcademicos() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Record<string, unknown> }) =>
+      secretariaApi.updateDatosAcademicos(id, data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['secretaria', 'estudiantes'] }); },
+  });
+}

@@ -3,7 +3,12 @@
 ## Layout
 
 - `backend/` is a Java 17 Maven reactor: `sgpp-api` boots Spring Boot and owns configuration/Flyway resources; `sgpp-core` contains domain code and REST controllers; `sgpp-shared` contains common types, exceptions, and enums.
-- `frontend/src/App.jsx` is the central route map; use `frontend/src/api/axios.js` for API calls.
+- `frontend/src/App.tsx` is the central route map; use `frontend/src/api/axios.js` for API calls. All frontend page and component files are TypeScript (`.tsx`).
+- `frontend/src/ui/` is the Design System (Button, Card, Input, Badge, Dialog, Table, Select, Avatar, etc.). Prefer it over ad-hoc MUI components; keep MUI only for Drawer, Menu, DataGrid, and DatePicker where accessibility (focus trap, aria) matters.
+- `frontend/src/hooks/` contains React Query v5 hooks for each domain. Use these instead of manual `useEffect`/`useState` API calls.
+- `frontend/src/lib/validations/schemas.ts` holds Zod schemas; `frontend/src/lib/validations/form-helpers.ts` holds React Hook Form helpers.
+- `frontend/src/lib/utils.ts` exports `cn(...)` for Tailwind class merging.
+- Use `lucide-react` for icons instead of `@mui/icons-material` on new/migrated pages.
 - Add database migrations under `backend/sgpp-api/src/main/resources/db/migration/` as new versioned SQL files. Do not edit applied migrations.
 
 ## Commands

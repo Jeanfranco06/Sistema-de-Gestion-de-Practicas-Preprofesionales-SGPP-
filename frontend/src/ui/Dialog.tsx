@@ -53,16 +53,20 @@ const Dialog = React.forwardRef<HTMLDivElement, DialogProps>(
     return (
       <div
         ref={ref}
-        className="fixed inset-0 z-50 flex items-center justify-center"
+        className="fixed inset-0 z-[2000] flex items-center justify-center"
         role="dialog"
         aria-modal="true"
       >
         <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm"
           onClick={() => onOpenChange(false)}
           aria-hidden="true"
         />
-        <div className="relative w-full max-h-[90vh] overflow-hidden">{children}</div>
+        <div className="relative w-full max-h-[90vh] overflow-hidden flex justify-center items-center pointer-events-none">
+          <div className="pointer-events-auto w-full flex justify-center">
+            {children}
+          </div>
+        </div>
       </div>
     );
   }

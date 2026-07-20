@@ -55,6 +55,7 @@ public class SecurityConfig {
                         .requestMatchers("/planes/**").hasAnyRole("ADMIN_SISTEMA", "ADMINISTRADOR", "SECRETARIA", "COMITE_PRACTICAS", "COORDINADOR", "DIRECTOR", "DOCENTE_ASESOR", "ESTUDIANTE")
                         .requestMatchers("/plazos/**").hasAnyRole("ADMIN_SISTEMA", "ADMINISTRADOR", "SECRETARIA", "COMITE_PRACTICAS", "COORDINADOR", "DIRECTOR", "DOCENTE_ASESOR")
                         .requestMatchers("/sedes/catalogo", "/sedes/*/detalle").authenticated()
+                        .requestMatchers("/tipo-practica").authenticated()
                         .requestMatchers("/empresas/**", "/sedes/**", "/convenios/**").authenticated()
                         .requestMatchers("/usuarios/**").hasAnyRole("ADMIN_SISTEMA", "ADMINISTRADOR", "SECRETARIA", "COORDINADOR", "DIRECTOR")
                         .requestMatchers("/notificaciones/**").authenticated()

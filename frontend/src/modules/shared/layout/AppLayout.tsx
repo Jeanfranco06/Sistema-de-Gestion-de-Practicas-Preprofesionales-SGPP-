@@ -207,13 +207,13 @@ function NavItem({
             className={cn(
               'relative w-full flex items-center justify-center h-11 mx-1.5 rounded-xl transition-all duration-200',
               isActive
-                ? 'bg-unt-yellow/15 text-unt-blue dark:text-unt-yellow shadow-[0_0_0_1px_rgba(245,197,24,0.3)]'
-                : 'text-muted-foreground hover:bg-surface-border hover:text-foreground'
+                ? 'bg-amber-50 text-blue-900 dark:bg-blue-900/40 dark:text-amber-400 shadow-[inset_0_0_0_1px_rgba(30,58,138,0.15)] dark:shadow-none'
+                : 'text-blue-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800/80 dark:hover:text-slate-200'
             )}
           >
             <span className="[&>svg]:text-[22px] [&>svg]:transition-transform [&>svg]:duration-200">{item.icon}</span>
             {item.badge && (
-              <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500 border-2 border-card" />
+              <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500 border-2 border-white dark:border-slate-900" />
             )}
           </button>
         </Tooltip>
@@ -222,10 +222,10 @@ function NavItem({
           onClick={() => onClick(item.path)}
           aria-current={isActive ? 'page' : undefined}
           className={cn(
-            'relative w-full flex items-center gap-3 h-11 mx-1.5 px-4 rounded-xl transition-all duration-200 text-left',
+            'relative w-full flex items-center gap-3 h-11 mx-1.5 px-3 rounded-xl transition-all duration-200 text-left overflow-hidden',
             isActive
-              ? 'bg-unt-yellow/15 text-unt-blue dark:text-unt-yellow font-semibold shadow-[0_0_0_1px_rgba(245,197,24,0.3)] before:absolute before:left-[-14px] before:top-1/2 before:-translate-y-1/2 before:h-[60%] before:w-1 before:rounded-r before:bg-primary-600'
-              : 'text-muted-foreground hover:bg-surface-border hover:text-foreground font-medium'
+              ? 'bg-amber-50 text-blue-900 dark:bg-blue-900/40 dark:text-amber-400 font-semibold before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-blue-700 dark:before:bg-amber-400'
+              : 'text-blue-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800/80 dark:hover:text-slate-200 font-medium'
           )}
         >
           <span className="[&>svg]:text-[22px] [&>svg]:transition-transform [&>svg]:duration-200 shrink-0">{item.icon}</span>
@@ -257,7 +257,7 @@ function NavGroup({
   return (
     <div key={group.group} className="mb-4">
       {!collapsed && (
-        <p className="px-3 mb-1.5 text-[0.65rem] uppercase tracking-wider font-bold text-muted-foreground leading-relaxed">
+        <p className="px-3 mb-1.5 text-[0.65rem] uppercase tracking-wider font-bold text-blue-900/80 dark:text-slate-400 leading-relaxed">
           {group.label}
         </p>
       )}
@@ -306,16 +306,18 @@ function UserProfile({
         <Avatar
           fallback={getInitials(user?.nombres, user?.apellidoPaterno)}
           size="md"
-          className="bg-unt-yellow text-unt-blue font-bold"
-        />
+          className="bg-blue-900 text-white font-bold hover:bg-blue-800"
+        >
+          <span className="text-sm tracking-wider">{user?.nombres?.charAt(0) || user?.username?.charAt(0) || 'U'}</span>
+        </Avatar>
         {!collapsed && (
-          <div className="overflow-hidden flex-1 text-left">
-            <p className="text-sm font-semibold text-foreground truncate">
-              {user?.nombres?.split(' ')[0]} {user?.apellidoPaterno}
-            </p>
-            <p className="text-xs text-muted-foreground truncate capitalize leading-tight">
-              {formatRole(user?.roles?.[0])}
-            </p>
+          <div className="flex-1 min-w-0 flex flex-col justify-center">
+            <span className="text-sm font-bold text-unt-blue dark:text-slate-100 truncate leading-tight">
+              {user?.nombres ? `${user.nombres.split(' ')[0]} ${user.apellidos?.split(' ')[0] || ''}` : user?.username}
+            </span>
+            <span className="text-xs text-unt-blue/80 dark:text-slate-400 truncate leading-tight capitalize">
+              {user?.roles?.[0] ? formatRole(user.roles[0]) : 'Usuario'}
+            </span>
           </div>
         )}
       </button>
@@ -366,14 +368,14 @@ function SidebarHeader({ collapsed }: { collapsed: boolean }) {
       )}
     >
       <div className="flex items-center gap-3 overflow-hidden">
-        <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-600 text-white border-2 border-unt-yellow font-extrabold text-sm overflow-hidden">
+        <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-900 text-white border-2 border-amber-400 font-extrabold text-sm overflow-hidden">
           <span className="relative z-10">SG</span>
-          <div className="absolute inset-0 bg-gradient-to-br from-unt-yellow/20 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
         </div>
         {!collapsed && (
           <div className="overflow-hidden min-w-0">
-            <p className="text-sm font-bold text-foreground leading-tight truncate">SGPP UNT</p>
-            <p className="text-xs text-muted-foreground font-medium truncate">Ing. Industrial</p>
+            <p className="text-sm font-bold text-blue-900 dark:text-amber-400 leading-tight truncate">SGPP UNT</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium truncate">Ing. Industrial</p>
           </div>
         )}
       </div>

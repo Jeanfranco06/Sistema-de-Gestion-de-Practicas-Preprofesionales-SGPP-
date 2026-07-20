@@ -94,7 +94,7 @@ export function useCatalogoSedes() {
     queryKey: ['sedes', 'catalogo'],
     queryFn: async () => {
       const res = await sedeApi.getCatalogo();
-      return res.data?.data ?? [];
+      return res.data ?? [];
     },
     staleTime: 5 * 60 * 1000,
   });

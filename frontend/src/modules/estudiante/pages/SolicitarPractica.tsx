@@ -1,27 +1,30 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import {
   GraduationCap, Building2, CheckCircle, ArrowLeft, ArrowRight,
-  FileText, Star, Trophy, XCircle, Loader2, AlertCircle,
+  FileText, Star, Trophy, XCircle, Loader2, Info, ChevronDown, ChevronUp, Filter,
 } from 'lucide-react';
 import { useTiposPractica, useSolicitarPractica } from '../../../hooks/usePracticas';
 import { useCatalogoSedes } from '../../../hooks/useSedes';
 import {
-  Button, Card, CardContent, Badge, Avatar,
-  Dialog, DialogContent, DialogTitle, DialogFooter,
-  Tooltip,
+  Button, Card, CardContent, CardHeader, CardTitle, Badge,
+  Dialog, DialogContent, DialogFooter,
 } from '../../../ui';
 import { cn } from '../../../lib/utils';
 
 const MySwal = withReactContent(Swal);
 
-const STEPS = ['Tipo de Práctica', 'Empresa y Sede', 'Confirmación'];
+const STEPS = [
+  { id: 'tipo', label: 'Tipo de Práctica', description: 'Selecciona el tipo de práctica' },
+  { id: 'sede', label: 'Empresa y Sede', description: 'Elige la empresa y sede' },
+  { id: 'confirmacion', label: 'Confirmación', description: 'Revisa y confirma' },
+];
 
 interface TipoPractica {
-  id: string;
+  id: string | number;
   codigo: string;
   nombre: string;
   descripcion?: string;
@@ -48,10 +51,18 @@ const tipoIcons: Record<string, React.ReactNode> = {
   PROFESIONAL: <Trophy className="h-12 w-12" />,
 };
 
-const tipoColors: Record<string, { bg: string; border: string; icon: string }> = {
-  INICIAL: { bg: '#e3f2fd', border: '#1976d2', icon: '#1976d2' },
-  FINAL: { bg: '#e8f5e9', border: '#2e7d32', icon: '#2e7d32' },
-  PROFESIONAL: { bg: '#f3e5f5', border: '#7b1fa2', icon: '#7b1fa2' },
+const tipoColors: Record<string, { icon: string }> = {
+  INICIAL: { icon: 'text-blue-600 dark:text-blue-400' },
+  FINAL: { icon: 'text-green-600 dark:text-green-400' },
+  PROFESIONAL: { icon: 'text-purple-600 dark:text-purple-400' },
+};
+
+const getTipoColorClasses = (codigo: string) => {
+  const defaultColor = tipoColors.INICIAL;
+  const colors = tipoColors[codigo] || defaultColor;
+  return {
+    icon: colors?.icon || defaultColor?.icon || 'text-blue-600',
+  };
 };
 
 export function SolicitarPractica() {
@@ -63,21 +74,45 @@ export function SolicitarPractica() {
 
   const { data: tipos = [], isLoading: loadingTipos } = useTiposPractica();
   const { data: sedes = [], isLoading: loadingSedes } = useCatalogoSedes();
+
+  // Filters state
+  const [filterElegible, setFilterElegible] = useState(true);
+  const [filterSearch, setFilterSearch] = useState('');
+  const [filterDepartamento, setFilterDepartamento] = useState('');
+  const [filterEmpresa, setFilterEmpresa] = useState('');
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
+
   const solicitarMutation = useSolicitarPractica();
 
   const loading = loadingTipos || loadingSedes;
 
-  const handleSelectTipo = (tipo: TipoPractica) => {
+  const handleSelectTipo = useCallback((tipo: TipoPractica) => {
     setSelectedTipo(tipo);
-  };
+  }, []);
 
-  const handleNext = () => {
+  const handleSelectSede = useCallback((sede: SedeCatalogo) => {
+    if (sede.esElegible) {
+      setSelectedSede(sede);
+    }
+  }, []);
+
+  const handleNext = useCallback(() => {
     if (activeStep === 0 && !selectedTipo) {
-      MySwal.fire('Selecciona un tipo', 'Debes seleccionar un tipo de práctica para continuar.', 'warning');
+      MySwal.fire({
+        icon: 'warning',
+        title: 'Selecciona un tipo',
+        text: 'Debes seleccionar un tipo de práctica para continuar.',
+        confirmButtonColor: '#0ea5e9',
+      });
       return;
     }
     if (activeStep === 1 && !selectedSede) {
-      MySwal.fire('Selecciona una sede', 'Debes seleccionar una empresa y sede para continuar.', 'warning');
+      MySwal.fire({
+        icon: 'warning',
+        title: 'Selecciona una sede',
+        text: 'Debes seleccionar una empresa y sede para continuar.',
+        confirmButtonColor: '#0ea5e9',
+      });
       return;
     }
     if (activeStep === STEPS.length - 1) {
@@ -85,23 +120,25 @@ export function SolicitarPractica() {
       return;
     }
     setActiveStep((prev) => Math.min(prev + 1, STEPS.length - 1));
-  };
+  }, [activeStep, selectedTipo, selectedSede]);
 
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     setActiveStep((prev) => Math.max(prev - 1, 0));
-  };
+  }, []);
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     if (!selectedSede || !selectedTipo) return;
     try {
       setConfirmOpen(false);
-      await solicitarMutation.mutateAsync({ sedeId: selectedSede.id, tipoPracticaId: selectedTipo.id });
+      await solicitarMutation.mutateAsync({ sedeId: selectedSede.id, tipoPracticaId: String(selectedTipo.id) });
       await MySwal.fire({
         icon: 'success',
         title: '¡Práctica solicitada!',
         text: `Has solicitado exitosamente tu práctica ${selectedTipo.nombre} en ${selectedSede.nombreSede} de ${selectedSede.razonSocialEmpresa}.`,
         timer: 4000,
         showConfirmButton: false,
+        toast: true,
+        position: 'top-end',
       });
       navigate('/estudiante/practica');
     } catch (err: unknown) {
@@ -137,14 +174,19 @@ export function SolicitarPractica() {
           confirmButtonColor: '#f59e0b',
         });
       } else {
-        MySwal.fire('Error', msg, 'error');
+        MySwal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: msg,
+          confirmButtonColor: '#dc2626',
+        });
       }
     }
-  };
+  }, [selectedSede, selectedTipo, solicitarMutation, navigate]);
 
   const getEmpresasUnicas = (): SedeCatalogo[] => {
     const seen = new Set<string>();
-    return sedes.filter((s) => {
+    return sedes.filter((s: SedeCatalogo) => {
       const key = s.razonSocialEmpresa;
       if (seen.has(key)) return false;
       seen.add(key);
@@ -153,240 +195,450 @@ export function SolicitarPractica() {
   };
 
   const getSedesPorEmpresa = (razonSocial: string): SedeCatalogo[] => {
-    return sedes.filter((s) => s.razonSocialEmpresa === razonSocial);
+    return filteredSedes.filter((s: SedeCatalogo) => s.razonSocialEmpresa === razonSocial);
+  };
+
+  // Filter logic
+  const filteredSedes = sedes.filter((sede: SedeCatalogo) => {
+    // Filter by elegibility
+    if (filterElegible && !sede.esElegible) return false;
+
+    // Filter by search text
+    if (filterSearch) {
+      const searchLower = filterSearch.toLowerCase();
+      const matchesSearch =
+        sede.nombreSede.toLowerCase().includes(searchLower) ||
+        sede.razonSocialEmpresa.toLowerCase().includes(searchLower) ||
+        sede.direccion.toLowerCase().includes(searchLower) ||
+        sede.departamento.toLowerCase().includes(searchLower) ||
+        sede.provincia.toLowerCase().includes(searchLower) ||
+        sede.distrito.toLowerCase().includes(searchLower);
+      if (!matchesSearch) return false;
+    }
+
+    // Filter by departamento
+    if (filterDepartamento && sede.departamento !== filterDepartamento) return false;
+
+    // Filter by empresa
+    if (filterEmpresa && sede.razonSocialEmpresa !== filterEmpresa) return false;
+
+    return true;
+  });
+
+  // Get unique departamentos for filter
+  const departamentosUnicos = Array.from(new Set(sedes.map((s: SedeCatalogo) => s.departamento)))
+    .filter((d): d is string => typeof d === 'string')
+    .sort();
+
+  // Get unique empresas for filter
+  const empresasUnicas = Array.from(new Set(sedes.map((s: SedeCatalogo) => s.razonSocialEmpresa)))
+    .filter((e): e is string => typeof e === 'string')
+    .sort();
+
+  // Clear filters
+  const clearFilters = () => {
+    setFilterElegible(true);
+    setFilterSearch('');
+    setFilterDepartamento('');
+    setFilterEmpresa('');
   };
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-[50vh]">
-        <Loader2 className="h-8 w-8 animate-spin" style={{ color: '#1a365d' }} />
+      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4" role="status" aria-live="polite">
+        <Loader2 className="h-8 w-8 animate-spin text-primary-600" aria-hidden="true" />
+        <p className="text-sm text-muted-foreground">Cargando información...</p>
       </div>
     );
   }
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
+    <motion.div 
+      initial={{ opacity: 0 }} 
+      animate={{ opacity: 1 }} 
+      transition={{ duration: 0.3 }}
+      className="space-y-6"
+    >
       {/* Banner */}
-      <div
-        className="rounded-2xl p-6 mb-6 flex items-center gap-3"
-        style={{ backgroundColor: '#1a365d', color: 'white' }}
-      >
-        <div
-          className="flex items-center justify-center rounded-full shrink-0"
-          style={{ width: 56, height: 56, backgroundColor: 'rgba(255,255,255,0.15)' }}
-        >
-          <FileText className="h-6 w-6" />
+      <div className="bg-gradient-to-r from-blue-900 to-blue-800 rounded-2xl p-6 mb-6 flex items-center gap-4 text-white shadow-lg">
+        <div className="flex items-center justify-center rounded-full shrink-0 w-14 h-14 bg-white/15">
+          <FileText className="h-6 w-6" aria-hidden="true" />
         </div>
         <div>
           <h2 className="text-xl font-bold">Solicitar Práctica Preprofesional</h2>
-          <p className="text-sm opacity-85 mt-1">
+          <p className="text-sm opacity-90 mt-1">
             Completa los pasos para solicitar tu práctica en una empresa o institución.
           </p>
         </div>
       </div>
 
       {/* Custom Stepper */}
-      <div className="flex items-center justify-center gap-2 mb-6">
-        {STEPS.map((label, index) => (
-          <div key={label} className="flex items-center">
-            <div className="flex items-center gap-2">
-              <div
-                className={cn(
-                  'flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold shrink-0',
-                  index < activeStep && 'bg-green-500 text-white',
-                  index === activeStep && 'bg-blue-600 text-white',
-                  index > activeStep && 'bg-gray-200 text-gray-500',
-                )}
-              >
-                {index < activeStep ? <CheckCircle className="h-4 w-4" /> : index + 1}
+      <nav aria-label="Progreso de solicitud" className="mb-6">
+        <ol className="flex items-center justify-center gap-2" role="list">
+          {STEPS.map((step, index) => (
+            <li key={step.id} className="flex items-center">
+              <div className="flex items-center gap-2">
+                <div
+                  className={cn(
+                    'flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold shrink-0 transition-colors',
+                    index < activeStep && 'bg-green-500 text-white dark:bg-green-600',
+                    index === activeStep && 'bg-blue-600 text-white ring-4 ring-blue-100 dark:ring-blue-900/50',
+                    index > activeStep && 'bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400',
+                  )}
+                  aria-current={index === activeStep ? 'step' : undefined}
+                >
+                  {index < activeStep ? (
+                    <CheckCircle className="h-4 w-4" aria-hidden="true" />
+                  ) : (
+                    <span className="sr-only">Paso {index + 1}:</span>
+                  )}
+                  {index >= activeStep && index + 1}
+                </div>
+                <span
+                  className={cn(
+                    'text-sm hidden sm:inline transition-colors',
+                    index === activeStep && 'font-semibold text-foreground',
+                    index < activeStep && 'text-slate-600 dark:text-slate-300',
+                    index > activeStep && 'text-slate-400 dark:text-slate-500',
+                  )}
+                >
+                  {step.label}
+                </span>
               </div>
-              <span
-                className={cn(
-                  'text-sm hidden sm:inline',
-                  index === activeStep && 'font-semibold text-gray-900',
-                  index < activeStep && 'text-gray-500',
-                  index > activeStep && 'text-gray-400',
-                )}
-              >
-                {label}
-              </span>
-            </div>
-            {index < STEPS.length - 1 && (
-              <div
-                className={cn('h-px w-8 sm:w-16 mx-2', index < activeStep ? 'bg-green-500' : 'bg-gray-200')}
-              />
-            )}
-          </div>
-        ))}
-      </div>
+              {index < STEPS.length - 1 && (
+                <div
+                  className={cn(
+                    'h-px w-8 sm:w-16 mx-2 transition-colors',
+                    index < activeStep ? 'bg-green-500 dark:bg-green-600' : 'bg-slate-200 dark:bg-slate-700'
+                  )}
+                  aria-hidden="true"
+                />
+              )}
+            </li>
+          ))}
+        </ol>
+      </nav>
 
       {/* Step 1: Tipo de Práctica */}
       {activeStep === 0 && (
-        <div>
-          <h3 className="text-lg font-semibold mb-1" style={{ color: 'var(--color-foreground)' }}>
-            Selecciona el tipo de práctica que deseas solicitar
-          </h3>
-          <p className="text-sm mb-4" style={{ color: 'var(--color-muted-foreground)' }}>
-            Cada tipo de práctica tiene un requisito de horas mínimo. Elige según tu avance académico.
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {tipos.map((tipo) => {
-              const colors = tipoColors[tipo.codigo] || { bg: '#f5f5f5', border: '#9e9e9e', icon: '#757575' };
+        <section aria-labelledby="step1-heading" className="space-y-4">
+          <div>
+            <h3 id="step1-heading" className="text-lg font-semibold mb-1 text-foreground">
+              Selecciona el tipo de práctica que deseas solicitar
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Cada tipo de práctica tiene un requisito de horas mínimo. Elige según tu avance académico.
+            </p>
+          </div>
+          <div 
+            className="space-y-3" 
+            role="radiogroup"
+            aria-labelledby="step1-heading"
+          >
+            {tipos.map((tipo: TipoPractica) => {
               const selected = selectedTipo?.id === tipo.id;
+              const colors = getTipoColorClasses(tipo.codigo);
               return (
-                <Card
+                <label
                   key={tipo.id}
-                  onClick={() => handleSelectTipo(tipo)}
                   className={cn(
-                    'cursor-pointer transition-all duration-200 hover:-translate-y-0.5',
-                    selected && 'ring-2',
+                    'relative flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200',
+                    'hover:border-blue-300 hover:bg-blue-50/50 dark:hover:border-blue-700 dark:hover:bg-blue-900/20',
+                    'focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2',
+                    selected ? 'border-blue-500 bg-blue-50 dark:border-blue-600 dark:bg-blue-900/30' : 'border-border bg-card',
                   )}
-                  style={{
-                    borderColor: selected ? colors.border : undefined,
-                    backgroundColor: selected ? colors.bg : undefined,
-                    borderWidth: selected ? '2px' : undefined,
-                  } as React.CSSProperties}
                 >
-                  <CardContent className="text-center py-6 px-4">
-                    <div style={{ color: colors.icon }} className="mb-3 flex justify-center">
-                      {tipoIcons[tipo.codigo] || <GraduationCap className="h-12 w-12" />}
+                  <input
+                    type="radio"
+                    name="tipo-practica"
+                    value={tipo.id}
+                    checked={selected}
+                    onChange={() => handleSelectTipo(tipo)}
+                    className="sr-only"
+                  />
+                  <div className={cn(
+                    'flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center mt-1 transition-colors',
+                    selected ? 'border-blue-600 bg-blue-600 dark:border-blue-500 dark:bg-blue-500' : 'border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-800'
+                  )}>
+                    {selected && (
+                      <div className="w-3 h-3 rounded-full bg-white" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 mb-1">
+                      <div className={cn('flex items-center justify-center w-12 h-12 rounded-lg', colors.icon, selected ? 'bg-blue-100 dark:bg-blue-900/50' : 'bg-slate-100 dark:bg-slate-800')}>
+                        {tipoIcons[tipo.codigo] || <GraduationCap className="h-6 w-6" aria-hidden="true" />}
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-foreground text-base">{tipo.nombre}</h4>
+                        <Badge variant={selected ? 'info' : 'neutral'} size="sm" className="mt-1">
+                          {tipo.horasRequeridas} horas
+                        </Badge>
+                      </div>
                     </div>
-                    <h4 className="text-xl font-bold mb-1">{tipo.nombre}</h4>
-                    <p
-                      className="text-sm mb-3"
-                      style={{ color: 'var(--color-muted-foreground)', minHeight: '2.5rem' }}
-                    >
+                    <p className="text-sm text-muted-foreground leading-relaxed">
                       {tipo.descripcion || `Práctica ${tipo.nombre.toLowerCase()}`}
                     </p>
-                    <Badge variant={selected ? 'info' : 'neutral'} size="sm">
-                      {tipo.horasRequeridas} horas requeridas
-                    </Badge>
-                    {selected && (
-                      <div className="mt-3">
-                        <CheckCircle className="h-7 w-7 mx-auto" style={{ color: '#2e7d32' }} />
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                  </div>
+                  {selected && (
+                    <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-1" aria-hidden="true" />
+                  )}
+                </label>
               );
             })}
           </div>
-        </div>
+        </section>
       )}
 
       {/* Step 2: Empresa y Sede */}
       {activeStep === 1 && (
-        <div>
-          <h3 className="text-lg font-semibold mb-1" style={{ color: 'var(--color-foreground)' }}>
-            Selecciona la empresa y sede para tu práctica
-          </h3>
-          <div className="mb-4">
-            <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
-              Las sedes marcadas con{' '}
-              <Badge variant="success" size="sm">
-                <CheckCircle className="h-3 w-3 mr-0.5" /> Elegible
-              </Badge>{' '}
-              cumplen todos los requisitos y pueden ser seleccionadas.
-            </p>
+        <section aria-labelledby="step2-heading" className="space-y-4">
+          <div>
+            <h3 id="step2-heading" className="text-lg font-semibold mb-1 text-foreground">
+              Selecciona la empresa y sede para tu práctica
+            </h3>
+            <div className="mb-4">
+              <p className="text-sm text-muted-foreground">
+                Las sedes marcadas con{' '}
+                <Badge variant="success" size="sm">
+                  <CheckCircle className="h-3 w-3 mr-0.5" aria-hidden="true" /> Elegible
+                </Badge>{' '}
+                cumplen todos los requisitos y pueden ser seleccionadas.
+              </p>
+            </div>
+          </div>
+
+          {/* Filters */}
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-900 border border-blue-200 dark:border-blue-900 rounded-xl overflow-hidden">
+            {/* Filter Header */}
+            <button
+              onClick={() => setFiltersExpanded(!filtersExpanded)}
+              className="w-full px-4 py-3 flex items-center justify-between hover:bg-blue-100/50 dark:hover:bg-slate-700/50 transition-colors"
+              aria-expanded={filtersExpanded}
+              aria-controls="filters-content"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-600 dark:bg-blue-700">
+                  <Filter className="h-4 w-4 text-white" aria-hidden="true" />
+                </div>
+                <div className="flex flex-col items-start">
+                  <h4 className="font-semibold text-foreground text-sm">Filtros de búsqueda</h4>
+                  <span className="text-xs text-muted-foreground">
+                    {filteredSedes.length} de {sedes.length} sedes encontradas
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {(filterSearch || filterDepartamento || filterEmpresa || !filterElegible) && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      clearFilters();
+                    }}
+                    className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium px-2 py-1 rounded-md hover:bg-blue-100 dark:hover:bg-slate-700 transition-colors"
+                  >
+                    Limpiar
+                  </button>
+                )}
+                {filtersExpanded ? (
+                  <ChevronUp className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+                ) : (
+                  <ChevronDown className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+                )}
+              </div>
+            </button>
+
+            {/* Filter Content */}
+            {filtersExpanded && (
+              <div id="filters-content" className="px-4 pb-4 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {/* Search */}
+                  <div className="md:col-span-2 lg:col-span-3">
+                    <label htmlFor="search-sedes" className="block text-xs font-semibold text-foreground mb-1.5">
+                      <Building2 className="h-3 w-3 inline mr-1" aria-hidden="true" />
+                      Buscar por nombre, empresa o dirección
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="search-sedes"
+                        type="text"
+                        value={filterSearch}
+                        onChange={(e) => setFilterSearch(e.target.value)}
+                        placeholder="Ej: Empresa XYZ, Av. Principal..."
+                        className="w-full px-3 py-2.5 pl-10 text-sm border border-blue-200 dark:border-blue-900 rounded-lg bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
+                      />
+                      <Building2 className="h-4 w-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
+                    </div>
+                  </div>
+
+                  {/* Empresa */}
+                  <div>
+                    <label htmlFor="filter-empresa" className="block text-xs font-semibold text-foreground mb-1.5">
+                      Empresa
+                    </label>
+                    <select
+                      id="filter-empresa"
+                      value={filterEmpresa}
+                      onChange={(e) => setFilterEmpresa(e.target.value)}
+                      className="w-full px-3 py-2.5 text-sm border border-blue-200 dark:border-blue-900 rounded-lg bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
+                    >
+                      <option value="">Todas las empresas</option>
+                      {empresasUnicas.map((empresa) => (
+                        <option key={empresa} value={empresa}>{empresa}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Departamento */}
+                  <div>
+                    <label htmlFor="filter-departamento" className="block text-xs font-semibold text-foreground mb-1.5">
+                      Departamento
+                    </label>
+                    <select
+                      id="filter-departamento"
+                      value={filterDepartamento}
+                      onChange={(e) => setFilterDepartamento(e.target.value)}
+                      className="w-full px-3 py-2.5 text-sm border border-blue-200 dark:border-blue-900 rounded-lg bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
+                    >
+                      <option value="">Todos los departamentos</option>
+                      {departamentosUnicos.map((dept) => (
+                        <option key={dept} value={dept}>{dept}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Elegible toggle */}
+                <div className="flex items-center justify-between pt-2 border-t border-blue-200 dark:border-blue-900">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <div className="relative">
+                      <input
+                        type="checkbox"
+                        checked={filterElegible}
+                        onChange={(e) => setFilterElegible(e.target.checked)}
+                        className="sr-only"
+                      />
+                      <div className={cn(
+                        'w-5 h-5 rounded border-2 flex items-center justify-center transition-colors',
+                        filterElegible ? 'bg-blue-600 border-blue-600' : 'border-gray-300 bg-white dark:border-slate-600 dark:bg-slate-800'
+                      )}>
+                        {filterElegible && (
+                          <CheckCircle className="h-3.5 w-3.5 text-white" aria-hidden="true" />
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium text-foreground">
+                        Solo sedes elegibles
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        Sedes que cumplen todos los requisitos
+                      </span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            )}
           </div>
 
           {sedes.length === 0 ? (
-            <div className="text-center py-12">
-              <Building2 className="h-16 w-16 mx-auto mb-3" style={{ color: 'var(--color-muted-foreground)' }} />
-              <h4 className="text-lg font-bold mb-1" style={{ color: 'var(--color-foreground)' }}>
+            <div className="text-center py-12" role="status">
+              <Building2 className="h-16 w-16 mx-auto mb-3 text-muted-foreground" aria-hidden="true" />
+              <h4 className="text-lg font-bold mb-1 text-foreground">
                 No hay sedes registradas
               </h4>
-              <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
+              <p className="text-sm text-muted-foreground">
                 Actualmente no hay sedes disponibles en el sistema.
               </p>
             </div>
           ) : (
-            <div className="flex flex-col gap-4">
+            <div 
+              className="flex flex-col gap-4"
+              role="radiogroup"
+              aria-labelledby="step2-heading"
+            >
               {getEmpresasUnicas().map((empresa) => {
                 const sedesEmpresa = getSedesPorEmpresa(empresa.razonSocialEmpresa);
                 const tieneElegible = sedesEmpresa.some((s) => s.esElegible);
                 return (
-                  <div key={empresa.razonSocialEmpresa}>
-                    <div className="flex items-center gap-2 mb-3">
-                      <Avatar
-                        size="sm"
-                        fallback={<Building2 className="h-4 w-4 text-white" /> as unknown as string}
-                        className="bg-blue-600"
-                      />
-                      <h4 className="font-semibold">{empresa.razonSocialEmpresa}</h4>
+                  <div key={empresa.razonSocialEmpresa} className="space-y-3">
+                    <div className="flex items-center gap-2 px-1">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-600">
+                        <Building2 className="h-4 w-4 text-white" aria-hidden="true" />
+                      </div>
+                      <h4 className="font-semibold text-foreground text-base">{empresa.razonSocialEmpresa}</h4>
                       {!tieneElegible && (
                         <Badge variant="warning" size="sm">Sin sedes elegibles</Badge>
                       )}
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="space-y-2 pl-10">
                       {sedesEmpresa.map((sede) => {
                         const selected = selectedSede?.id === sede.id;
                         const elegible = sede.esElegible;
                         return (
-                          <Tooltip
+                          <label
                             key={sede.id}
-                            content={elegible ? 'Haz clic para seleccionar' : sede.motivoNoElegible || 'No disponible'}
+                            className={cn(
+                              'relative flex items-start gap-4 p-4 rounded-xl border cursor-pointer transition-all duration-200',
+                              elegible ? 'hover:border-blue-300 hover:bg-blue-50/50 dark:hover:border-blue-700 dark:hover:bg-blue-900/20' : 'cursor-not-allowed opacity-75',
+                              'focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2',
+                              selected ? 'border-blue-500 bg-blue-50 dark:border-blue-600 dark:bg-blue-900/30' : 'border-border bg-card',
+                              !elegible && 'border-red-200 bg-red-50 dark:border-red-800/50 dark:bg-red-950/20',
+                            )}
                           >
-                            <Card
-                              onClick={() => elegible && setSelectedSede(sede)}
-                              className={cn(
-                                'transition-all duration-200',
-                                elegible ? 'cursor-pointer' : 'cursor-not-allowed',
-                                selected && 'ring-2 ring-blue-500',
-                                elegible && !selected && 'hover:-translate-y-0.5',
+                            <input
+                              type="radio"
+                              name="sede-practica"
+                              value={sede.id}
+                              checked={selected}
+                              onChange={() => elegible && handleSelectSede(sede)}
+                              disabled={!elegible}
+                              className="sr-only"
+                            />
+                            <div className={cn(
+                              'flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center mt-1 transition-colors',
+                              selected ? 'border-blue-600 bg-blue-600 dark:border-blue-500 dark:bg-blue-500' : 'border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-800',
+                              !elegible && 'border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-900/30'
+                            )}>
+                              {selected && (
+                                <div className="w-3 h-3 rounded-full bg-white" />
                               )}
-                              style={{
-                                borderWidth: '1px',
-                                borderStyle: 'solid',
-                                borderColor: selected
-                                  ? '#1976d2'
-                                  : elegible
-                                    ? '#86efac'
-                                    : '#fca5a5',
-                                backgroundColor: selected
-                                  ? '#e3f2fd'
-                                  : elegible
-                                    ? '#f0fdf4'
-                                    : '#fef2f2',
-                                opacity: elegible ? 1 : 0.75,
-                              } as React.CSSProperties}
-                            >
-                              <CardContent className="py-3 px-3">
-                                <div className="flex justify-between items-start gap-2">
-                                  <div className="flex-1 min-w-0">
-                                    <p className="font-semibold text-sm">{sede.nombreSede}</p>
-                                    <p className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
-                                      {sede.direccion}
-                                    </p>
-                                    <span className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
-                                      {sede.departamento}, {sede.provincia}, {sede.distrito}
-                                    </span>
-                                  </div>
-                                  {elegible ? (
-                                    <CheckCircle className="h-5 w-5 shrink-0" style={{ color: '#16a34a' }} />
-                                  ) : (
-                                    <XCircle className="h-5 w-5 shrink-0" style={{ color: '#dc2626' }} />
-                                  )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start justify-between gap-2 mb-2">
+                                <div className="flex-1 min-w-0">
+                                  <h5 className="font-semibold text-foreground text-base">{sede.nombreSede}</h5>
+                                  <p className="text-sm text-muted-foreground mt-1">{sede.direccion}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {sede.departamento}, {sede.provincia}, {sede.distrito}
+                                  </p>
                                 </div>
-                                <div className="flex flex-wrap gap-1 mt-2">
-                                  <Badge variant="neutral" size="sm">{sede.tipoEntidad}</Badge>
-                                  {sede.vacantesDisponibles > 0 && (
-                                    <Badge variant="success" size="sm">
-                                      {sede.vacantesDisponibles} vacantes
-                                    </Badge>
-                                  )}
-                                </div>
-                                {!elegible && sede.motivoNoElegible && (
-                                  <div
-                                    className="mt-2 rounded-md py-1 px-2 text-xs font-medium"
-                                    style={{ backgroundColor: '#fef3cd', color: '#92400e' }}
-                                  >
-                                    {sede.motivoNoElegible}
-                                  </div>
+                                {elegible ? (
+                                  <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-1" aria-hidden="true" />
+                                ) : (
+                                  <XCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-1" aria-hidden="true" />
                                 )}
-                              </CardContent>
-                            </Card>
-                          </Tooltip>
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                <Badge variant="neutral" size="sm">{sede.tipoEntidad}</Badge>
+                                {sede.vacantesDisponibles > 0 && (
+                                  <Badge variant="success" size="sm">
+                                    {sede.vacantesDisponibles} vacantes
+                                  </Badge>
+                                )}
+                                {elegible && (
+                                  <Badge variant="success" size="sm">
+                                    <CheckCircle className="h-3 w-3 mr-0.5" aria-hidden="true" /> Elegible
+                                  </Badge>
+                                )}
+                              </div>
+                              {!elegible && sede.motivoNoElegible && (
+                                <div className="mt-2 rounded-md py-1.5 px-2 text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">
+                                  {sede.motivoNoElegible}
+                                </div>
+                              )}
+                            </div>
+                          </label>
                         );
                       })}
                     </div>
@@ -395,135 +647,262 @@ export function SolicitarPractica() {
               })}
             </div>
           )}
-        </div>
+        </section>
       )}
 
       {/* Step 3: Confirmación */}
       {activeStep === 2 && (
-        <div>
-          <h3 className="text-lg font-semibold mb-1" style={{ color: 'var(--color-foreground)' }}>
-            Confirma tu solicitud de práctica
-          </h3>
-          <p className="text-sm mb-4" style={{ color: 'var(--color-muted-foreground)' }}>
-            Revisa los datos antes de enviar tu solicitud.
-          </p>
+        <section aria-labelledby="step3-heading" className="space-y-6">
+          <div>
+            <h3 id="step3-heading" className="text-xl font-bold mb-2 text-foreground">
+              Confirma tu solicitud de práctica
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Revisa los detalles de tu solicitud antes de enviarla.
+            </p>
+          </div>
 
-          {selectedTipo && (
-            <div
-              className="rounded-xl p-4 mb-3 border"
-              style={{ backgroundColor: '#f8fafc', borderColor: 'var(--color-border)' }}
-            >
-              <p className="text-xs font-semibold mb-2" style={{ color: 'var(--color-muted-foreground)' }}>
-                Tipo de Práctica
-              </p>
-              <div className="flex items-center gap-3">
-                <div
-                  className="flex items-center justify-center rounded-full shrink-0 h-10 w-10"
-                  style={{ backgroundColor: tipoColors[selectedTipo.codigo]?.icon || '#1976d2' }}
-                >
-                  <div className="text-white">
-                    {tipoIcons[selectedTipo.codigo] || <GraduationCap className="h-5 w-5" />}
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Tipo de Práctica Card */}
+            {selectedTipo && (
+              <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-200 dark:border-blue-900 overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-100 dark:bg-blue-900/20 rounded-full -translate-y-1/2 translate-x-1/2 opacity-50" />
+                <CardContent className="p-6 relative">
+                  <div className="flex items-start gap-4">
+                    <div className="flex items-center justify-center rounded-xl shrink-0 h-14 w-14 bg-gradient-to-br from-blue-600 to-indigo-600 shadow-lg">
+                      <div className="text-white">
+                        {tipoIcons[selectedTipo.codigo] || <GraduationCap className="h-7 w-7" aria-hidden="true" />}
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 mb-1">
+                        Tipo de Práctica
+                      </p>
+                      <h4 className="font-bold text-lg text-foreground mb-1">{selectedTipo.nombre}</h4>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="info" size="sm" className="bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
+                          {selectedTipo.horasRequeridas} horas
+                        </Badge>
+                        {selectedTipo.descripcion && (
+                          <p className="text-xs text-muted-foreground line-clamp-1">
+                            {selectedTipo.descripcion}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Empresa y Sede Card */}
+            {selectedSede && (
+              <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-green-200 dark:border-green-900 overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-green-100 dark:bg-green-900/20 rounded-full -translate-y-1/2 translate-x-1/2 opacity-50" />
+                <CardContent className="p-6 relative">
+                  <div className="flex items-start gap-4">
+                    <div className="flex items-center justify-center rounded-xl shrink-0 h-14 w-14 bg-gradient-to-br from-green-600 to-emerald-600 shadow-lg">
+                      <Building2 className="h-7 w-7 text-white" aria-hidden="true" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold uppercase tracking-wider text-green-600 dark:text-green-400 mb-1">
+                        Empresa y Sede
+                      </p>
+                      <h4 className="font-bold text-lg text-foreground mb-1">{selectedSede.razonSocialEmpresa}</h4>
+                      <p className="text-sm font-medium text-foreground mb-1">{selectedSede.nombreSede}</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge variant="success" size="sm" className="bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300">
+                          <CheckCircle className="h-3 w-3 mr-1" aria-hidden="true" /> Elegible
+                        </Badge>
+                        <Badge variant="neutral" size="sm">{selectedSede.tipoEntidad}</Badge>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {/* Detailed Information */}
+          <Card className="border border-border bg-card">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" aria-hidden="true" />
+                Detalles de la Sede
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Dirección</p>
+                  <p className="text-sm text-foreground">{selectedSede?.direccion}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Ubicación</p>
+                  <p className="text-sm text-foreground">
+                    {selectedSede?.distrito}, {selectedSede?.provincia}, {selectedSede?.departamento}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Vacantes Disponibles</p>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="success" size="sm">
+                      {selectedSede?.vacantesDisponibles} vacantes
+                    </Badge>
                   </div>
                 </div>
-                <div>
-                  <p className="font-semibold text-lg">{selectedTipo.nombre}</p>
-                  <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
-                    {selectedTipo.horasRequeridas} horas requeridas
-                  </p>
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tipo de Entidad</p>
+                  <p className="text-sm text-foreground">{selectedSede?.tipoEntidad}</p>
                 </div>
               </div>
-            </div>
-          )}
+            </CardContent>
+          </Card>
 
-          {selectedSede && (
-            <div
-              className="rounded-xl p-4 mb-3 border"
-              style={{ backgroundColor: '#f8fafc', borderColor: 'var(--color-border)' }}
-            >
-              <p className="text-xs font-semibold mb-2" style={{ color: 'var(--color-muted-foreground)' }}>
-                Empresa y Sede
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center rounded-full shrink-0 h-10 w-10 bg-blue-600">
-                  <Building2 className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <p className="font-semibold text-lg">{selectedSede.razonSocialEmpresa}</p>
-                  <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
-                    {selectedSede.nombreSede}
-                  </p>
-                  <span className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
-                    {selectedSede.direccion} - {selectedSede.distrito}, {selectedSede.departamento}
-                  </span>
-                </div>
+          {/* Important Notice */}
+          <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border border-amber-200 dark:border-amber-900 rounded-xl p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex items-center justify-center rounded-full shrink-0 h-10 w-10 bg-amber-100 dark:bg-amber-900/50">
+                <Info className="h-5 w-5 text-amber-600 dark:text-amber-400" aria-hidden="true" />
+              </div>
+              <div className="flex-1 space-y-2">
+                <h4 className="font-semibold text-foreground text-sm">Información Importante</h4>
+                <ul className="text-sm text-muted-foreground space-y-1.5">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400 shrink-0 mt-0.5" aria-hidden="true" />
+                    <span>Al confirmar, se registrará tu solicitud con estado "REGISTRADA"</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400 shrink-0 mt-0.5" aria-hidden="true" />
+                    <span>Posteriormente deberás completar los documentos requeridos</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400 shrink-0 mt-0.5" aria-hidden="true" />
+                    <span>Recibirás notificaciones sobre el estado de tu solicitud</span>
+                  </li>
+                </ul>
               </div>
             </div>
-          )}
-
-          <div
-            className="mt-3 rounded-lg p-3 text-sm flex items-start gap-2"
-            style={{ backgroundColor: '#e0f2fe', color: '#0c4a6e' }}
-          >
-            <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-            <span>
-              Al confirmar, se registrará tu solicitud de práctica con estado "REGISTRADA".
-              Posteriormente deberás completar los documentos requeridos.
-            </span>
           </div>
-        </div>
+        </section>
       )}
 
       {/* Navigation Buttons */}
-      <div className="flex justify-between mt-6">
+      <div className="flex justify-between mt-6 gap-4">
         <Button
           variant="secondary"
           onClick={activeStep === 0 ? () => navigate('/estudiante/sedes') : handleBack}
           disabled={solicitarMutation.isPending}
+          className="flex-1 sm:flex-none"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           {activeStep === 0 ? 'Ir a Catálogo' : 'Anterior'}
         </Button>
         <Button
           variant="primary"
           onClick={handleNext}
           disabled={solicitarMutation.isPending}
+          className="flex-1 sm:flex-none"
         >
           {activeStep === STEPS.length - 1 ? 'Solicitar Práctica' : 'Siguiente'}
-          {activeStep < STEPS.length - 1 && <ArrowRight className="h-4 w-4" />}
+          {activeStep < STEPS.length - 1 && <ArrowRight className="h-4 w-4" aria-hidden="true" />}
         </Button>
       </div>
 
       {/* Confirm Dialog */}
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <DialogContent size="sm">
-          <div
-            className="rounded-t-2xl px-6 py-4 flex items-center gap-2"
-            style={{ backgroundColor: '#1a365d', color: 'white' }}
-          >
-            <FileText className="h-5 w-5" />
-            <h2 className="text-lg font-semibold">Confirmar solicitud</h2>
+        <DialogContent size="md" aria-labelledby="dialog-title" className="p-0 overflow-hidden">
+          {/* Header */}
+          <div className="bg-unt-blue text-white px-6 py-5 relative overflow-hidden border-b-4 border-unt-yellow">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+            <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
+            <div className="relative flex items-center gap-4">
+              <div className="flex items-center justify-center rounded-xl h-14 w-14 bg-unt-yellow/20 border border-unt-yellow/50 backdrop-blur-sm">
+                <FileText className="h-7 w-7 text-unt-yellow" aria-hidden="true" />
+              </div>
+              <div>
+                <CardTitle className="text-xl font-bold text-white" id="dialog-title">Confirmar Solicitud</CardTitle>
+                <p className="text-slate-200 text-sm mt-1">Revisa los detalles antes de enviar</p>
+              </div>
+            </div>
           </div>
-          <div className="p-6 space-y-2">
-            <p className="text-sm font-medium">¿Estás seguro de solicitar esta práctica?</p>
+
+          {/* Content */}
+          <div className="p-6 space-y-5">
+            <div className="bg-blue-50 dark:bg-slate-900/50 border border-blue-200 dark:border-blue-900 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <Info className="h-5 w-5 text-unt-blue shrink-0 mt-0.5" aria-hidden="true" />
+                <p className="text-sm text-slate-700 dark:text-slate-300">
+                  Esta acción registrará tu solicitud de práctica con estado "REGISTRADA". 
+                  Podrás completar los documentos requeridos posteriormente.
+                </p>
+              </div>
+            </div>
+
+            {/* Practice Type Summary */}
             {selectedTipo && (
-              <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
-                <strong>Tipo:</strong> {selectedTipo.nombre} ({selectedTipo.horasRequeridas}h)
-              </p>
+              <div className="bg-slate-50 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center justify-center rounded-xl h-12 w-12 bg-unt-blue text-white shadow-md border-2 border-unt-yellow/30">
+                    <div className="text-white">
+                      {tipoIcons[selectedTipo.codigo] || <GraduationCap className="h-6 w-6" aria-hidden="true" />}
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold uppercase tracking-wider text-unt-blue dark:text-unt-yellow mb-1">
+                      Tipo de Práctica
+                    </p>
+                    <h4 className="font-semibold text-foreground">{selectedTipo.nombre}</h4>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge variant="info" size="sm" className="bg-blue-100 text-unt-blue dark:bg-unt-blue/30 dark:text-blue-200">
+                        {selectedTipo.horasRequeridas} horas
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              </div>
             )}
+
+            {/* Sede Summary */}
             {selectedSede && (
-              <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
-                <strong>Sede:</strong> {selectedSede.nombreSede} - {selectedSede.razonSocialEmpresa}
-              </p>
+              <div className="bg-green-50/50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-xl p-4">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center justify-center rounded-xl h-12 w-12 bg-green-600 shadow-md">
+                    <Building2 className="h-6 w-6 text-white" aria-hidden="true" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold uppercase tracking-wider text-green-700 dark:text-green-400 mb-1">
+                      Empresa y Sede
+                    </p>
+                    <h4 className="font-semibold text-foreground">{selectedSede.razonSocialEmpresa}</h4>
+                    <p className="text-sm text-muted-foreground mt-1">{selectedSede.nombreSede}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge variant="success" size="sm" className="bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300">
+                        <CheckCircle className="h-3 w-3 mr-1" aria-hidden="true" /> Elegible
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
-          <DialogFooter>
-            <Button variant="secondary" onClick={() => setConfirmOpen(false)} disabled={solicitarMutation.isPending}>
+
+          {/* Footer */}
+          <DialogFooter className="px-6 py-4 bg-slate-50 dark:bg-slate-900/50 border-t border-border">
+            <Button 
+              variant="secondary" 
+              onClick={() => setConfirmOpen(false)} 
+              disabled={solicitarMutation.isPending}
+              className="flex-1 sm:flex-none"
+            >
               Cancelar
             </Button>
             <Button
               variant="primary"
               onClick={handleSubmit}
               loading={solicitarMutation.isPending}
+              className="flex-1 sm:flex-none bg-unt-blue hover:bg-unt-blue-light text-white"
             >
               {solicitarMutation.isPending ? 'Solicitando...' : 'Confirmar y Solicitar'}
             </Button>

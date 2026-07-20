@@ -37,6 +37,18 @@ export default {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
+        unt: {
+          blue: {
+            DEFAULT: '#1A3A6E',
+            light: '#4A6FA5',
+            dark: '#0E2142',
+          },
+          yellow: {
+            DEFAULT: '#F5C518',
+            light: '#F8D656',
+            dark: '#D4A808',
+          }
+        },
       },
       borderRadius: {
         lg: 'var(--radius)',

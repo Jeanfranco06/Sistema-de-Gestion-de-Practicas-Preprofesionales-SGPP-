@@ -15,6 +15,7 @@ import {
   DialogDescription, DialogFooter,
   Tabs, TabsList, TabsTrigger, TabsContent,
 } from '../../../ui';
+import { cn } from '../../../lib/utils';
 
 const MySwal = withReactContent(Swal);
 
@@ -113,8 +114,8 @@ export const GestionDocumental = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-[50vh]">
-        <svg className="animate-spin h-8 w-8" style={{ color: 'var(--color-primary-600)' }} viewBox="0 0 24 24">
+      <div className="flex justify-center items-center min-h-[60vh]">
+        <svg className="animate-spin h-10 w-10 text-primary-600" viewBox="0 0 24 24">
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" fill="none" />
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
         </svg>
@@ -124,10 +125,21 @@ export const GestionDocumental = () => {
 
   if (!expediente) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3">
-        <FolderArchive className="h-16 w-16" style={{ color: 'var(--color-muted-foreground)' }} />
-        <h2 className="text-lg font-semibold" style={{ color: 'var(--color-foreground)' }}>Sin expediente activo</h2>
-        <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>No tienes ninguna práctica registrada para gestionar documentos.</p>
+      <div className="flex min-h-[60vh] items-center justify-center p-4 animate-in">
+        <Card className="max-w-2xl w-full text-center px-8 py-16 md:px-16 md:py-20">
+          <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
+            <FolderArchive className="h-12 w-12 text-slate-500 dark:text-slate-400" />
+          </div>
+          <h2 className="text-3xl md:text-4xl font-extrabold text-foreground mb-4 tracking-tight">
+            Sin expediente activo
+          </h2>
+          <p className="text-foreground/70 leading-relaxed mb-8 text-base md:text-lg max-w-lg mx-auto">
+            No tienes ninguna práctica registrada o activa en el sistema. Debes solicitar o iniciar una práctica para gestionar tus documentos.
+          </p>
+          <Button size="lg" onClick={() => navigate('/estudiante/solicitar-practica')}>
+            Ir a Solicitar Práctica
+          </Button>
+        </Card>
       </div>
     );
   }
@@ -369,173 +381,221 @@ export const GestionDocumental = () => {
   const pendientes = Math.max(docObligatorios.length - documentosConsolidados.length, 0);
 
   const stats = [
-    { label: 'Documentos cargados', value: documentosConsolidados.length, color: 'var(--color-primary-600)' },
-    { label: 'Pendientes', value: pendientes, color: 'var(--color-amber-500)' },
-    { label: 'Anexos', value: anexosList.length, color: 'var(--color-emerald-600)' },
+    { label: 'Documentos cargados', value: documentosConsolidados.length, color: 'bg-primary-500 text-white dark:bg-primary-600', icon: CloudUpload },
+    { label: 'Pendientes', value: pendientes, color: 'bg-amber-500 text-white dark:bg-amber-600', icon: FileText },
+    { label: 'Anexos subidos', value: anexosList.length, color: 'bg-emerald-500 text-white dark:bg-emerald-600', icon: Plus },
   ];
 
   return (
-    <div className="px-4 sm:px-6 lg:px-10 py-4 md:py-8 w-full">
-      <div className="mb-6">
-        <div className="flex justify-between items-start gap-2 flex-wrap">
-          <div className="flex items-center gap-3">
-            <Folder className="h-10 w-10" style={{ color: 'var(--color-primary-600)' }} />
-            <div>
-              <h1 className="text-2xl font-bold" style={{ color: 'var(--color-foreground)' }}>Gestor documental</h1>
-              <p className="text-sm mt-0.5" style={{ color: 'var(--color-muted-foreground)' }}>Expediente: {expediente.nombreTipoPractica}</p>
-            </div>
-          </div>
-          <Badge variant="default" size="md">{pctCargados}% completado</Badge>
+    <div className="px-4 sm:px-6 lg:px-10 py-4 md:py-8 w-full animate-in fade-in-50 duration-500">
+      <div className="mb-6 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-extrabold text-foreground tracking-tight flex items-center gap-3">
+            <Folder className="h-8 w-8 text-primary-600" />
+            Gestión Documental
+          </h1>
+          <p className="text-muted-foreground mt-2 max-w-2xl">
+            Administra los documentos obligatorios y anexos de tu expediente: <strong className="text-foreground">{expediente.nombreTipoPractica}</strong>
+          </p>
         </div>
+        <Badge variant="primary" size="md" className="self-start md:self-auto shrink-0 bg-primary-100 text-primary-700 dark:bg-primary-900/50 dark:text-primary-300">
+          Avance: {pctCargados}%
+        </Badge>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        {stats.map(stat => (
-          <div key={stat.label} className="rounded-xl border" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-card)' }}>
-            <div className="p-5">
-              <p className="text-xs uppercase tracking-wide" style={{ color: 'var(--color-muted-foreground)' }}>{stat.label}</p>
-              <p className="text-2xl font-bold mt-1" style={{ color: stat.color }}>{stat.value}</p>
-            </div>
-          </div>
-        ))}
+        {stats.map((stat, i) => {
+          const Icon = stat.icon;
+          return (
+            <Card key={i} variant="hover" className="p-5 flex flex-col gap-2 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-hover">
+              <div className="flex justify-between items-start">
+                <span className="text-[0.65rem] uppercase tracking-wider font-bold text-muted-foreground">{stat.label}</span>
+                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${stat.color}`}>
+                  <Icon className="h-5 w-5" />
+                </div>
+              </div>
+              <p className="text-2xl md:text-3xl font-extrabold text-foreground leading-tight">{stat.value}</p>
+            </Card>
+          );
+        })}
       </div>
 
-      <Card className="p-5 mb-6">
-        <div className="flex justify-between items-center gap-2 mb-2">
-          <p className="text-sm font-semibold" style={{ color: 'var(--color-foreground)' }}>Avance documental</p>
-          <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>{pctCargados}%</p>
+      <Card className="p-5 mb-8 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-950/10 dark:to-indigo-950/10 border-blue-100 dark:border-blue-900/30">
+        <div className="flex justify-between items-center gap-2 mb-3">
+          <p className="text-sm font-semibold text-foreground">Avance documental del expediente</p>
+          <p className="text-sm font-bold text-primary-700 dark:text-primary-400">{pctCargados}%</p>
         </div>
-        <Progress value={pctCargados} size="md" />
+        <Progress value={pctCargados} size="md" className="h-2.5" />
       </Card>
 
-      <div className="rounded-2xl border overflow-hidden" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-card)' }}>
-        <Tabs value={tabValue} onValueChange={handleTabChange}>
-          <TabsList className="w-full rounded-none border-b px-4 justify-start" style={{ borderColor: 'var(--color-border)' }}>
-            <TabsTrigger value="obligatorios">Documentos obligatorios</TabsTrigger>
-            <TabsTrigger value="anexos">Anexos adicionales</TabsTrigger>
+      <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+        <Tabs value={tabValue} onValueChange={handleTabChange} className="flex-col">
+          <TabsList className="w-full flex rounded-none border-b border-border bg-muted/30 px-4 justify-start overflow-x-auto overflow-y-hidden hide-scrollbar">
+            <TabsTrigger 
+              value="obligatorios" 
+              className={cn("py-3", tabValue === "obligatorios" && "border-b-2 border-primary-600")}
+              onClick={() => handleTabChange("obligatorios")}
+            >
+              Documentos obligatorios
+            </TabsTrigger>
+            <TabsTrigger 
+              value="anexos" 
+              className={cn("py-3", tabValue === "anexos" && "border-b-2 border-primary-600")}
+              onClick={() => handleTabChange("anexos")}
+            >
+              Anexos adicionales
+            </TabsTrigger>
           </TabsList>
 
           <div className="p-4 md:p-6">
-            <TabsContent value="obligatorios" className="mt-0">
-              <div className="flex flex-col gap-1.5">
-                {docObligatorios.map((docType) => {
-                  const docCargado = documentosConsolidados.find(d => d.tipoId === docType.id);
-                  return (
-                    <div
-                      key={docType.id}
-                      className={`flex flex-wrap gap-2 items-center py-3 px-4 rounded-xl border ${docCargado ? 'shadow-sm' : ''}`}
-                      style={{
-                        borderColor: docCargado ? 'var(--color-emerald-200)' : 'var(--color-border)',
-                        backgroundColor: docCargado ? 'var(--color-emerald-50)' : 'var(--color-card)',
-                      }}
-                    >
-                      <div className="flex items-center gap-1.5 flex-[1_1_220px]">
-                        <FileText className="h-4 w-4 shrink-0" style={{ color: docCargado ? 'var(--color-emerald-600)' : 'var(--color-muted-foreground)' }} />
-                        <div>
-                          <p className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>{docType.nombre}</p>
-                          <p className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
-                            {docType.formato} &middot; m&aacute;x. {docType.maxMB}MB
-                          </p>
+            {tabValue === 'obligatorios' && (
+              <TabsContent value="obligatorios" className="mt-0">
+                <div className="relative border-l-2 border-slate-200 dark:border-slate-800 ml-5 sm:ml-6 pl-6 sm:pl-8 py-2 space-y-6">
+                  {docObligatorios.map((docType, index) => {
+                    const docCargado = documentosConsolidados.find(d => d.tipoId === docType.id);
+                    return (
+                      <div key={docType.id} className="relative">
+                        {/* Timeline dot */}
+                        <div className={cn(
+                          "absolute -left-[35px] sm:-left-[43px] top-1/2 -translate-y-1/2 flex h-4 w-4 rounded-full border-2 ring-4 ring-card",
+                          docCargado 
+                            ? "bg-emerald-500 border-emerald-500" 
+                            : index === 0 || documentosConsolidados.find(d => d.tipoId === docObligatorios[index-1]?.id)
+                              ? "bg-primary-500 border-primary-500 ring-primary-50 dark:ring-primary-900/20"
+                              : "bg-slate-200 border-slate-300 dark:bg-slate-700 dark:border-slate-600"
+                        )} />
+                        
+                        <div
+                          className={cn(
+                            "grid grid-cols-1 sm:grid-cols-12 gap-3 items-center py-4 px-5 rounded-xl border transition-all duration-200 group relative bg-card hover:shadow-sm",
+                            docCargado 
+                              ? "border-emerald-200 hover:border-emerald-300 dark:border-emerald-800/60 dark:hover:border-emerald-700/80" 
+                              : "border-border hover:border-primary-300 dark:hover:border-primary-700"
+                          )}
+                        >
+                          {docCargado && (
+                             <div className="absolute inset-0 bg-gradient-to-r from-emerald-50/50 to-transparent dark:from-emerald-950/20 rounded-xl pointer-events-none" />
+                          )}
+                          <div className="sm:col-span-5 flex items-center gap-3 min-w-0 relative z-[1]">
+                            <div className={cn(
+                              "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
+                              docCargado 
+                                ? "bg-emerald-500 text-white dark:bg-emerald-600" 
+                                : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 group-hover:bg-primary-50 dark:group-hover:bg-primary-900/30 group-hover:text-primary-600"
+                            )}>
+                              <FileText className="h-5 w-5" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-bold text-foreground truncate">{docType.nombre}</p>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {docType.formato} &middot; m&aacute;x. {docType.maxMB}MB
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="sm:col-span-4 min-w-0 relative z-[1]">
+                            {docType.id === 'PLAN_PRACTICA' ? (
+                              <Button variant="secondary" size="sm" onClick={() => navigate('/estudiante/plan-practicas')} className="w-full sm:w-auto">
+                                Gestionar plan
+                              </Button>
+                            ) : docCargado ? (
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium text-foreground truncate" title={docCargado.nombreOriginal}>
+                                  {docCargado.nombreOriginal}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  Subido el {new Date(docCargado.fechaSubida).toLocaleDateString()}
+                                </p>
+                              </div>
+                            ) : (
+                              <p className="text-sm italic text-muted-foreground">Documento pendiente</p>
+                            )}
+                          </div>
+
+                          <div className="sm:col-span-3 flex items-center sm:justify-end gap-2 shrink-0 mt-2 sm:mt-0 relative z-[1]">
+                            {docCargado && getEstadoChip(docCargado.estado, docType.id)}
+                            {docCargado ? (
+                              <div className="flex gap-1">
+                                <button
+                                  className="flex items-center justify-center h-8 w-8 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors text-slate-600 dark:text-slate-300"
+                                  onClick={() => handleDownload(docCargado)}
+                                  title="Descargar"
+                                >
+                                  <Download className="h-4 w-4" />
+                                </button>
+                                {docCargado.estado !== 'APROBADO' && !docCargado.fileName?.startsWith('registro:') && (
+                                  <button
+                                    className="flex items-center justify-center h-8 w-8 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors text-red-600 dark:text-red-400"
+                                    onClick={() => handleDelete(docCargado.id)}
+                                    title="Eliminar"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                )}
+                              </div>
+                            ) : puedeSubirDocumento(docType.id) ? (
+                              <Button variant="primary" size="sm" onClick={() => handleOpenUpload(docType)} className="shrink-0 bg-primary-600 text-white">
+                                <CloudUpload className="h-4 w-4 mr-1.5" /> Subir
+                              </Button>
+                            ) : (
+                              <p className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">
+                                {mensajeDocumentoBloqueado(docType.id)}
+                              </p>
+                            )}
+                          </div>
                         </div>
                       </div>
+                    );
+                  })}
+                </div>
+              </TabsContent>
+            )}
 
-                      <div className="flex-[1_1_200px]">
-                        {docType.id === 'PLAN_PRACTICA' ? (
-                          <Button variant="secondary" size="sm" onClick={() => navigate('/estudiante/plan-practicas')}>
-                            Gestionar plan
-                          </Button>
-                        ) : docCargado ? (
-                          <>
-                            <p className="text-sm truncate" title={docCargado.nombreOriginal} style={{ color: 'var(--color-foreground)' }}>
-                              {docCargado.nombreOriginal}
-                            </p>
-                            <p className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
-                              {new Date(docCargado.fechaSubida).toLocaleDateString()}
-                            </p>
-                          </>
-                        ) : (
-                          <p className="text-sm italic" style={{ color: 'var(--color-muted-foreground)' }}>Pendiente</p>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-1.5">
-                        {docCargado && getEstadoChip(docCargado.estado, docType.id)}
-                        {docCargado ? (
-                          <>
-                            <button
-                              className="p-1.5 rounded-lg hover:bg-muted transition-colors"
-                              onClick={() => handleDownload(docCargado)}
-                              title="Descargar"
-                            >
-                              <Download className="h-4 w-4" style={{ color: 'var(--color-muted-foreground)' }} />
-                            </button>
-                            {docCargado.estado !== 'APROBADO' && !docCargado.fileName?.startsWith('registro:') && (
-                              <button
-                                className="p-1.5 rounded-lg hover:bg-red-100 transition-colors"
-                                onClick={() => handleDelete(docCargado.id)}
-                                title="Eliminar"
-                              >
-                                <Trash2 className="h-4 w-4" style={{ color: 'var(--color-red-500)' }} />
-                              </button>
-                            )}
-                          </>
-                        ) : puedeSubirDocumento(docType.id) ? (
-                          <Button variant="secondary" size="sm" onClick={() => handleOpenUpload(docType)}>
-                            <CloudUpload className="h-4 w-4" /> Subir
-                          </Button>
-                        ) : (
-                          <p className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
-                            {mensajeDocumentoBloqueado(docType.id)}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </TabsContent>
-
+            {tabValue === 'anexos' && (
             <TabsContent value="anexos" className="mt-0">
-              <div className="flex justify-between items-center mb-4">
-                <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>Archivos adicionales</p>
-                <Button variant="secondary" size="sm" onClick={() => handleOpenUpload(null, true)}>
-                  <CloudUpload className="h-4 w-4" /> Nuevo anexo
+              <div className="flex justify-between items-center mb-5">
+                <p className="text-sm text-muted-foreground">Gestiona archivos complementarios a tu práctica.</p>
+                <Button variant="secondary" size="sm" onClick={() => handleOpenUpload(null, true)} className="border-primary-200 text-primary-700 hover:bg-primary-50 dark:border-primary-800 dark:text-primary-300 dark:hover:bg-primary-900/30">
+                  <Plus className="h-4 w-4 mr-1.5" /> Nuevo anexo
                 </Button>
               </div>
 
               {anexosList.length === 0 ? (
-                <div className="rounded-xl border p-4" style={{ borderColor: 'var(--color-blue-200)', backgroundColor: 'var(--color-blue-50)' }}>
-                  <p className="text-sm font-medium" style={{ color: 'var(--color-blue-700)' }}>No hay anexos cargados.</p>
+                <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-8 text-center">
+                  <FolderArchive className="h-10 w-10 text-slate-400 mx-auto mb-3" />
+                  <p className="text-sm font-medium text-slate-600 dark:text-slate-300">Aún no hay anexos adicionales cargados.</p>
+                  <p className="text-xs text-muted-foreground mt-1">Sube archivos complementarios si tu docente o coordinador te lo solicita.</p>
                 </div>
               ) : (
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-2">
                   {anexosList.map((anexo) => (
                     <div
                       key={anexo.id}
-                      className="flex flex-wrap gap-2 items-center py-3 px-4 rounded-xl border"
-                      style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-card)' }}
+                      className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center py-3 px-4 rounded-xl border border-border bg-card hover:border-emerald-300 dark:hover:border-emerald-700 transition-all group"
                     >
-                      <div className="flex items-center gap-1.5 flex-1">
-                        <FileText className="h-4 w-4 shrink-0" style={{ color: 'var(--color-muted-foreground)' }} />
-                        <div>
-                          <p className="text-sm font-medium" style={{ color: 'var(--color-foreground)' }}>{anexo.nombreOriginal}</p>
-                          <p className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>{anexo.fileName}</p>
+                      <div className="sm:col-span-9 md:col-span-10 flex items-center gap-3 min-w-0">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-400">
+                          <FileText className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold text-foreground truncate">{anexo.nombreOriginal}</p>
+                          <p className="text-xs text-muted-foreground truncate">{anexo.fileName}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1">
+                      <div className="sm:col-span-3 md:col-span-2 flex items-center sm:justify-end gap-1 shrink-0 mt-2 sm:mt-0">
                         <button
-                          className="p-1.5 rounded-lg hover:bg-muted transition-colors"
+                          className="flex items-center justify-center h-8 w-8 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors text-slate-600 dark:text-slate-300"
                           onClick={() => handleDownload(anexo)}
                           title="Descargar"
                         >
-                          <Download className="h-4 w-4" style={{ color: 'var(--color-muted-foreground)' }} />
+                          <Download className="h-4 w-4" />
                         </button>
                         <button
-                          className="p-1.5 rounded-lg hover:bg-red-100 transition-colors"
+                          className="flex items-center justify-center h-8 w-8 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors text-red-600 dark:text-red-400"
                           onClick={() => handleDelete(anexo.id, true)}
                           title="Eliminar"
                         >
-                          <Trash2 className="h-4 w-4" style={{ color: 'var(--color-red-500)' }} />
+                          <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
                     </div>
@@ -543,48 +603,79 @@ export const GestionDocumental = () => {
                 </div>
               )}
             </TabsContent>
+            )}
           </div>
         </Tabs>
       </div>
 
       <Dialog open={uploadDialog.open} onOpenChange={() => handleCloseUpload()}>
-        <DialogContent size="sm">
-          <DialogHeader>
-            <DialogTitle>Subir {uploadDialog.isAnexo ? 'anexo' : uploadDialog.docType?.nombre}</DialogTitle>
+        <DialogContent size="md" className="p-0 overflow-hidden">
+          <DialogHeader className="bg-primary-600 text-white border-b-0 py-5">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20">
+                <CloudUpload className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <DialogTitle className="text-white text-lg">Subir Documento</DialogTitle>
+                <DialogDescription className="text-primary-100 text-sm mt-0.5">
+                  {uploadDialog.isAnexo ? 'anexo adicional' : uploadDialog.docType?.nombre}
+                </DialogDescription>
+              </div>
+            </div>
           </DialogHeader>
-          {uploadDialog.isAnexo && (
-            <div className="px-6">
-              <Input
-                label="Título del anexo"
-                value={anexoNombre}
-                onChange={(e) => setAnexoNombre(e.target.value)}
-              />
+
+          <div className="p-6 space-y-4">
+            {uploadDialog.isAnexo && (
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-foreground">Título del anexo</label>
+                <Input
+                  placeholder="Ej. Constancia de salud..."
+                  value={anexoNombre}
+                  onChange={(e) => setAnexoNombre(e.target.value)}
+                />
+              </div>
+            )}
+            
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold text-foreground">Archivo PDF</label>
+              <div
+                className="mt-1 p-8 rounded-xl border-2 border-dashed border-primary-200 dark:border-primary-800 bg-primary-50/50 dark:bg-primary-950/20 hover:bg-primary-50 dark:hover:bg-primary-900/30 transition-colors text-center group"
+              >
+                <input accept="application/pdf" className="hidden" id="raised-button-file" type="file" onChange={handleFileChange} />
+                <label htmlFor="raised-button-file" className="cursor-pointer block w-full">
+                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900/50 mb-3 group-hover:scale-110 transition-transform">
+                    <FileText className="h-7 w-7 text-primary-600 dark:text-primary-400" />
+                  </div>
+                  <p className="text-sm font-medium text-primary-700 dark:text-primary-300">
+                    Haz clic para seleccionar el documento
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Solo formato PDF (máx. {uploadDialog.isAnexo ? '10' : uploadDialog.docType?.maxMB || '5'} MB)
+                  </p>
+                </label>
+              </div>
             </div>
-          )}
-          <div className="px-6 pb-2">
-            <div
-              className="mt-2 p-6 rounded-xl border-2 border-dashed text-center"
-              style={{ borderColor: 'var(--color-border)' }}
-            >
-              <input accept="application/pdf" className="hidden" id="raised-button-file" type="file" onChange={handleFileChange} />
-              <label htmlFor="raised-button-file" className="cursor-pointer block">
-                <CloudUpload className="h-10 w-10 mx-auto mb-2" style={{ color: 'var(--color-muted-foreground)' }} />
-                <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>Seleccionar PDF</p>
-              </label>
-              {selectedFile && (
-                <div className="mt-3 flex items-center justify-center gap-1">
-                  <Badge variant="default" size="md">
-                    <CheckCircle className="h-3 w-3 me-1" />
-                    {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
-                  </Badge>
+
+            {selectedFile && (
+              <div className="flex items-center gap-3 p-3 rounded-lg border border-emerald-200 bg-emerald-50 dark:border-emerald-900/30 dark:bg-emerald-950/20">
+                <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-foreground truncate">{selectedFile.name}</p>
+                  <p className="text-xs text-muted-foreground">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
-          <DialogFooter>
-            <Button variant="secondary" onClick={handleCloseUpload}>Cancelar</Button>
-            <Button onClick={handleUpload} disabled={!selectedFile || (uploadDialog.isAnexo && !anexoNombre.trim())}>
-              Confirmar
+          
+          <DialogFooter className="bg-muted/30 px-6 py-4 border-t border-border">
+            <Button variant="secondary" onClick={handleCloseUpload} className="w-full sm:w-auto">Cancelar</Button>
+            <Button 
+              variant="primary" 
+              onClick={handleUpload} 
+              disabled={!selectedFile || (uploadDialog.isAnexo && !anexoNombre.trim())}
+              className="w-full sm:w-auto bg-primary-600 text-white hover:bg-primary-700"
+            >
+              <CloudUpload className="h-4 w-4 mr-2" /> Confirmar subida
             </Button>
           </DialogFooter>
         </DialogContent>
