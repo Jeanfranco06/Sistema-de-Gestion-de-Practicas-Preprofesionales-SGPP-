@@ -87,4 +87,44 @@ public class PlazoController {
         return ResponseEntity.ok(ApiResponse.<List<ReglaPlazoDTO>>builder()
                 .success(true).data(reglas).timestamp(LocalDateTime.now()).build());
     }
+
+    @PostMapping("/reglas")
+    @Operation(summary = "Crear una regla de plazo")
+    @PreAuthorize("hasRole('ADMIN_SISTEMA')")
+    public ResponseEntity<ApiResponse<ReglaPlazoDTO>> crearRegla(@RequestBody ReglaPlazoDTO dto) {
+        ReglaPlazoDTO creada = plazoService.crearRegla(dto);
+        return ResponseEntity.ok(ApiResponse.<ReglaPlazoDTO>builder()
+                .success(true).data(creada).message("Regla creada correctamente")
+                .timestamp(LocalDateTime.now()).build());
+    }
+
+    @PutMapping("/reglas/{id}")
+    @Operation(summary = "Actualizar una regla de plazo")
+    @PreAuthorize("hasRole('ADMIN_SISTEMA')")
+    public ResponseEntity<ApiResponse<ReglaPlazoDTO>> actualizarRegla(
+            @PathVariable Long id, @RequestBody ReglaPlazoDTO dto) {
+        ReglaPlazoDTO actualizada = plazoService.actualizarRegla(id, dto);
+        return ResponseEntity.ok(ApiResponse.<ReglaPlazoDTO>builder()
+                .success(true).data(actualizada).message("Regla actualizada correctamente")
+                .timestamp(LocalDateTime.now()).build());
+    }
+
+    @GetMapping("/reglas/{id}")
+    @Operation(summary = "Obtener una regla de plazo por id")
+    @PreAuthorize("hasRole('ADMIN_SISTEMA')")
+    public ResponseEntity<ApiResponse<ReglaPlazoDTO>> obtenerRegla(@PathVariable Long id) {
+        ReglaPlazoDTO regla = plazoService.obtenerReglaPorId(id);
+        return ResponseEntity.ok(ApiResponse.<ReglaPlazoDTO>builder()
+                .success(true).data(regla).timestamp(LocalDateTime.now()).build());
+    }
+
+    @DeleteMapping("/reglas/{id}")
+    @Operation(summary = "Eliminar (desactivar) una regla de plazo")
+    @PreAuthorize("hasRole('ADMIN_SISTEMA')")
+    public ResponseEntity<ApiResponse<Void>> eliminarRegla(@PathVariable Long id) {
+        plazoService.eliminarRegla(id);
+        return ResponseEntity.ok(ApiResponse.<Void>builder()
+                .success(true).message("Regla eliminada correctamente")
+                .timestamp(LocalDateTime.now()).build());
+    }
 }

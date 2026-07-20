@@ -385,4 +385,17 @@ public class ExpedienteController {
         return ResponseEntity.ok(ApiResponse.<ExpedienteResponse>builder()
                 .success(true).message("Nota de examen de aplazados registrada").data(response).timestamp(LocalDateTime.now()).build());
     }
+
+    @PostMapping("/{id}/cambiar-estado-manual")
+    @Operation(summary = "Cambiar manualmente el estado del expediente (solo administradores)")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'ADMINISTRADOR')")
+    public ResponseEntity<ApiResponse<ExpedienteResponse>> cambiarEstadoManual(
+            @PathVariable Long id,
+            @Valid @RequestBody CambioEstadoManualRequest request,
+            @RequestAttribute(value = "idUsuario", required = false) Long idUsuario) {
+        Long usuarioActual = Objects.requireNonNull(currentUserService.getCurrentUserId(), "Usuario no autenticado");
+        ExpedienteResponse response = expedienteService.cambiarEstadoManual(id, request, usuarioActual);
+        return ResponseEntity.ok(ApiResponse.<ExpedienteResponse>builder()
+                .success(true).message("Estado actualizado manualmente").data(response).timestamp(LocalDateTime.now()).build());
+    }
 }

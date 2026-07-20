@@ -1,10 +1,12 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
 import {
   FolderOpen, RefreshCw, Search, ChevronRight,
-  FileText, CheckCircle2, Clock
+  FileText, CheckCircle2, Clock, Edit3
 } from 'lucide-react';
-import { useExpedientes } from '../../../hooks/useExpedientes';
+import { useExpedientes, useCambiarEstadoManual } from '../../../hooks/useExpedientes';
 import { ESTADOS_EXPEDIENTE, ESTADOS_FINALIZADOS } from '../../../lib/constants';
 import { Button } from '../../../ui/Button';
 import { Input } from '../../../ui/Input';
@@ -12,7 +14,10 @@ import { Badge } from '../../../ui/Badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../ui/Table';
 import { Card, CardContent } from '../../../ui/Card';
 import { Select } from '../../../ui/Select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../../ui/Dialog';
 import { cn } from '../../../lib/utils';
+
+const MySwal = withReactContent(Swal);
 
 const ESTADOS = Object.values(ESTADOS_EXPEDIENTE);
 
@@ -31,11 +36,16 @@ function getEstadoBadge(estado: string) {
 export function GestionExpedientes() {
   const navigate = useNavigate();
   const { data: expedientes = [], isLoading, refetch } = useExpedientes();
+  const cambiarEstado = useCambiarEstadoManual();
   const [page, setPage] = useState(0);
   const [rowsPerPage] = useState(10);
   const [filtroTipo, setFiltroTipo] = useState('TODOS');
   const [filtroEstado, setFiltroEstado] = useState('TODOS');
   const [searchTerm, setSearchTerm] = useState('');
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedExp, setSelectedExp] = useState<any>(null);
+  const [nuevoEstado, setNuevoEstado] = useState('');
+  const [observacion, setObservacion] = useState('');
 
   const filtered = useMemo(() => expedientes.filter((e: any) => {
     const q = searchTerm.toLowerCase();
@@ -52,6 +62,30 @@ export function GestionExpedientes() {
   }), [expedientes]);
 
   const paginated = filtered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+
+  const openCambioEstado = (exp: any) => {
+    setSelectedExp(exp);
+    setNuevoEstado(exp.estado || '');
+    setObservacion('');
+    setDialogOpen(true);
+  };
+
+  const guardarCambioEstado = async () => {
+    if (!nuevoEstado) {
+      MySwal.fire('Campo requerido', 'Debe seleccionar un estado.', 'warning');
+      return;
+    }
+    try {
+      await cambiarEstado.mutateAsync({
+        id: String(selectedExp.id),
+        payload: { nuevoEstado, observacion },
+      });
+      setDialogOpen(false);
+      MySwal.fire('Actualizado', 'El estado del expediente se actualizó correctamente.', 'success');
+    } catch (e: any) {
+      MySwal.fire('Error', e.response?.data?.message || 'No se pudo cambiar el estado.', 'error');
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -159,9 +193,14 @@ export function GestionExpedientes() {
                         {e.nombreEmpresa && <span className="text-xs block text-muted-foreground">{e.nombreEmpresa}</span>}
                       </TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/expedientes/${e.id}`)}>
-                          <ChevronRight className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/expedientes/${e.id}`)}>
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" title="Cambiar estado" onClick={() => openCambioEstado(e)}>
+                            <Edit3 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -186,6 +225,35 @@ export function GestionExpedientes() {
           </>
         )}
       </Card>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent size="md">
+          <DialogHeader>
+            <DialogTitle>Cambiar estado manualmente</DialogTitle>
+            <DialogDescription>
+              Expediente {selectedExp?.codigoExpediente} — {selectedExp?.nombreEstudiante} {selectedExp?.apellidoEstudiante}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 p-6">
+            <Select
+              label="Nuevo estado"
+              options={ESTADOS.map((s) => ({ value: s, label: s.replace(/_/g, ' ') }))}
+              value={nuevoEstado}
+              onChange={(e) => setNuevoEstado(e.target.value)}
+            />
+            <Input
+              label="Observación"
+              placeholder="Motivo del cambio manual"
+              value={observacion}
+              onChange={(e) => setObservacion(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={guardarCambioEstado} loading={cambiarEstado.isPending}>Guardar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

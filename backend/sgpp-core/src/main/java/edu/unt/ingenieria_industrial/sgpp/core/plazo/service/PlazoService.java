@@ -31,4 +31,12 @@ public interface PlazoService {
     List<ReglaPlazoDTO> listarReglas();
 
     List<ReglaPlazoDTO> listarReglasPorTipoPractica(String codigoTipoPractica);
+
+    ReglaPlazoDTO crearRegla(ReglaPlazoDTO dto);
+
+    ReglaPlazoDTO actualizarRegla(Long id, ReglaPlazoDTO dto);
+
+    ReglaPlazoDTO obtenerReglaPorId(Long id);
+
+    void eliminarRegla(Long id);
 }

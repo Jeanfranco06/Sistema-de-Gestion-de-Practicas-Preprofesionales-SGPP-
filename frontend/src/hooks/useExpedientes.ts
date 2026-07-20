@@ -233,3 +233,12 @@ export function useUploadFile() {
     },
   });
 }
+
+export function useCambiarEstadoManual() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: { nuevoEstado: string; observacion?: string } }) =>
+      expedientesApi.cambiarEstadoManual(id, payload),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['expedientes'] }); },
+  });
+}

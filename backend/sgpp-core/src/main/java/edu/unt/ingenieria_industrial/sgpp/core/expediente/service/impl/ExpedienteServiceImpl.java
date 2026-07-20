@@ -1167,4 +1167,35 @@ List<ExpedienteResponse.ExpedienteDocumentoResponse> docs = new ArrayList<>(e.ge
 
         return builder.build();
     }
+
+    @Override
+    public ExpedienteResponse cambiarEstadoManual(Long idExpediente, CambioEstadoManualRequest request, Long idUsuario) {
+        Expediente expediente = expedienteRepository.findById(idExpediente)
+                .orElseThrow(() -> new ResourceNotFoundException("Expediente no encontrado: " + idExpediente));
+
+        String estadoAnterior = expediente.getEstado();
+        String nuevoEstado = request.getNuevoEstado();
+
+        try {
+            EstadoExpediente.fromCodigo(nuevoEstado);
+        } catch (IllegalArgumentException e) {
+            throw new BusinessException("Estado de expediente no válido: " + nuevoEstado);
+        }
+
+        expediente.setEstado(nuevoEstado);
+        if (EstadoExpediente.CERRADO.equals(nuevoEstado)) {
+            expediente.setFechaCierre(LocalDate.now());
+        }
+        expediente = expedienteRepository.save(expediente);
+
+        String observacion = request.getObservacion() != null && !request.getObservacion().isBlank()
+                ? request.getObservacion()
+                : "Cambio manual de estado administrativo";
+        registrarCambioEstado(expediente, estadoAnterior, nuevoEstado, idUsuario, observacion, "CAMBIO_MANUAL_ADMIN");
+
+        log.warn("Cambio manual de estado realizado por administrador {}: expediente {} de {} a {}",
+                idUsuario, idExpediente, estadoAnterior, nuevoEstado);
+
+        return toResponse(expediente);
+    }
 }

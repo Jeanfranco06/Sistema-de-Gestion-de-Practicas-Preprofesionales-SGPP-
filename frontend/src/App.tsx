@@ -50,6 +50,7 @@ const AdminReportesPage = React.lazy(() => import('./modules/admin/pages/AdminRe
 const GestionExpedientes = React.lazy(() => import('./modules/admin/pages/GestionExpedientes'));
 const GestionUsuarios = React.lazy(() => import('./modules/admin/pages/GestionUsuarios'));
 const GestionTutores = React.lazy(() => import('./modules/admin/pages/GestionTutores'));
+const ConfiguracionSistema = React.lazy(() => import('./modules/admin/pages/ConfiguracionSistema'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -188,6 +189,14 @@ export default function App() {
                     element={
                       <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA']}>
                         <ValidarRequisitos />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/configuracion"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMINISTRADOR']}>
+                        <ConfiguracionSistema />
                       </ProtectedRoute>
                     }
                   />

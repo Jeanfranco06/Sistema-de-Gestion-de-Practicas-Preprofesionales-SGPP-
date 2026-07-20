@@ -9,6 +9,8 @@ import edu.unt.ingenieria_industrial.sgpp.core.plazo.model.ReglaPlazo;
 import edu.unt.ingenieria_industrial.sgpp.core.plazo.repository.ControlPlazoRepository;
 import edu.unt.ingenieria_industrial.sgpp.core.plazo.repository.ReglaPlazoRepository;
 import edu.unt.ingenieria_industrial.sgpp.core.plazo.service.PlazoService;
+import edu.unt.ingenieria_industrial.sgpp.core.practicas.model.TipoPractica;
+import edu.unt.ingenieria_industrial.sgpp.core.practicas.repository.TipoPracticaRepository;
 import edu.unt.ingenieria_industrial.sgpp.shared.exception.BusinessException;
 import edu.unt.ingenieria_industrial.sgpp.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +44,7 @@ public class PlazoServiceImpl implements PlazoService {
     private final ControlPlazoRepository controlPlazoRepository;
     private final ReglaPlazoRepository reglaPlazoRepository;
     private final ExpedienteRepository expedienteRepository;
+    private final TipoPracticaRepository tipoPracticaRepository;
 
     @Override
     public ControlPlazoDTO iniciarPlazo(Long idExpediente, String codigoRegla, LocalDate fechaBase,
@@ -278,6 +281,45 @@ public class PlazoServiceImpl implements PlazoService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public ReglaPlazoDTO crearRegla(ReglaPlazoDTO dto) {
+        if (reglaPlazoRepository.findByCodigoAndActivoTrue(dto.getCodigo()).isPresent()) {
+            throw new IllegalArgumentException("Ya existe una regla activa con el código: " + dto.getCodigo());
+        }
+        ReglaPlazo regla = toReglaEntity(dto, new ReglaPlazo());
+        regla.setActivo(true);
+        return toReglaDTO(reglaPlazoRepository.save(regla));
+    }
+
+    @Override
+    public ReglaPlazoDTO actualizarRegla(Long id, ReglaPlazoDTO dto) {
+        ReglaPlazo regla = reglaPlazoRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Regla de plazo no encontrada con id: " + id));
+        reglaPlazoRepository.findByCodigoAndActivoTrue(dto.getCodigo())
+                .filter(r -> !r.getId().equals(id))
+                .ifPresent(r -> {
+                    throw new IllegalArgumentException("Ya existe otra regla activa con el código: " + dto.getCodigo());
+                });
+        toReglaEntity(dto, regla);
+        return toReglaDTO(reglaPlazoRepository.save(regla));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ReglaPlazoDTO obtenerReglaPorId(Long id) {
+        return reglaPlazoRepository.findById(id)
+                .map(this::toReglaDTO)
+                .orElseThrow(() -> new ResourceNotFoundException("Regla de plazo no encontrada con id: " + id));
+    }
+
+    @Override
+    public void eliminarRegla(Long id) {
+        ReglaPlazo regla = reglaPlazoRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Regla de plazo no encontrada con id: " + id));
+        regla.setActivo(false);
+        reglaPlazoRepository.save(regla);
+    }
+
     private LocalDate calcularFechaLimite(LocalDate fechaBase, int dias) {
         return fechaBase.plusDays(dias);
     }
@@ -329,5 +371,24 @@ public class PlazoServiceImpl implements PlazoService {
                 .activo(r.getActivo())
                 .diasProximoVencer(r.getDiasProximoVencer())
                 .build();
+    }
+
+    private ReglaPlazo toReglaEntity(ReglaPlazoDTO dto, ReglaPlazo regla) {
+        regla.setCodigo(dto.getCodigo());
+        regla.setNombre(dto.getNombre());
+        regla.setDescripcion(dto.getDescripcion());
+        regla.setEtapaExpediente(dto.getEtapaExpediente());
+        regla.setDiasPlazo(dto.getDiasPlazo());
+        regla.setTipoComputo(dto.getTipoComputo() != null ? dto.getTipoComputo() : TIPO_COMPUTO_CALENDARIO);
+        regla.setOrden(dto.getOrden());
+        regla.setDiasProximoVencer(dto.getDiasProximoVencer());
+        if (dto.getIdTipoPractica() != null) {
+            TipoPractica tipo = tipoPracticaRepository.findById(dto.getIdTipoPractica())
+                    .orElseThrow(() -> new ResourceNotFoundException("Tipo de práctica no encontrado: " + dto.getIdTipoPractica()));
+            regla.setTipoPractica(tipo);
+        } else {
+            regla.setTipoPractica(null);
+        }
+        return regla;
     }
 }

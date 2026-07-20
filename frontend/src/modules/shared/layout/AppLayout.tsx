@@ -8,6 +8,7 @@ import {
   UserCheck, ClipboardCheck, FolderOpen,
   Moon, Sun, ClipboardList,
   Briefcase, FileCheck, MapPin,
+  Settings,
 } from 'lucide-react';
 import { useAuth } from '../../../auth/AuthContext';
 import { useThemeContext } from '../../../shared/theme/ThemeContext';
@@ -91,6 +92,7 @@ function getNavGroups(roles: UserRole[] = []): NavGroup[] {
       { group: 'config', label: 'Configuración', items: [
         { label: 'Usuarios', icon: <Users size={22} />, path: '/admin/usuarios' },
         { label: 'Reportes', icon: <BarChart3 size={22} />, path: '/admin/reportes' },
+        { label: 'Sistema', icon: <Settings size={22} />, path: '/admin/configuracion' },
       ]},
     ];
   }

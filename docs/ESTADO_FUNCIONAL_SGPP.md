@@ -300,8 +300,25 @@ Una constancia generada se registra con archivo, hash, fecha, usuario solicitant
 - Frontend: eliminadas dependencias residuales de MUI en vistas que ya tienen equivalentes en el Design System; se conservan MUI solo donde es indispensable (Drawer, Menu, Modal, Tabs, Stepper, etc.).
 - Verificaciones ejecutadas: `mvn -pl sgpp-api -am test` (4 tests), `npm run lint` y `npm run build`.
 
+### 2026-07-20 (continuación) — Corrección de inicio y módulo de configuración administrativa
+
+- Backend: corregido `application.yml` (clave `spring` duplicada en líneas 1 y 42); se unificó el bloque de configuración de correo dentro del único bloque `spring`. La API inicia correctamente y aplica las migraciones pendientes V54–V58.
+- Backend: extendido `PlazoService` / `PlazoServiceImpl` y `PlazoController` con CRUD de reglas de plazo (`POST/PUT/GET/DELETE /plazos/reglas`), restringido a `ADMIN_SISTEMA`.
+- Backend: creado `ParametroSistemaController` con CRUD de parámetros del sistema (`/parametros-sistema`), restringido a `ADMIN_SISTEMA`.
+- Backend: creados `RequisitoAcademicoRepository`, `RequisitoAcademicoDTO`, `RequisitoAcademicoService` y `RequisitoAcademicoController` con CRUD de requisitos académicos por tipo de práctica (`/requisitos-academicos`), restringido a `ADMIN_SISTEMA`.
+- Frontend: creado `frontend/src/api/configuracionApi.js` y `frontend/src/hooks/useConfiguracion.ts` para parámetros, reglas de plazo y requisitos académicos.
+- Frontend: creada la pantalla `ConfiguracionSistema` (`/admin/configuracion`) con pestañas para administrar parámetros, reglas de plazo y requisitos académicos; agregada al menú lateral del administrador.
+- Frontend: actualizadas `App.tsx` (ruta lazy) y `AppLayout.tsx` (enlace en menú admin).
+- Verificaciones ejecutadas: `mvn -pl sgpp-api -am package -DskipTests`, `mvn -pl sgpp-api spring-boot:run` (inicio OK), `npm run lint` y `npm run build`.
+
+### 2026-07-20 (continuación) — Cambio manual de estado para administradores
+
+- Backend: creado `CambioEstadoManualRequest` y método `ExpedienteService.cambiarEstadoManual` que valida el estado destino, actualiza el expediente y registra el cambio en el historial con tipo `CAMBIO_MANUAL_ADMIN`.
+- Backend: creado endpoint `POST /expedientes/{id}/cambiar-estado-manual` restringido a `ADMIN_SISTEMA` / `ADMINISTRADOR`.
+- Frontend: agregado `cambiarEstadoManual` en `expedientesApi.js` y `useCambiarEstadoManual` en `useExpedientes.ts`.
+- Frontend: en `GestionExpedientes` se añadió un botón de edición por fila que abre un diálogo para seleccionar el nuevo estado y registrar la observación; utiliza `ESTADOS_EXPEDIENTE` del backend.
+- Verificaciones ejecutadas: `mvn -pl sgpp-api -am test` (4 tests), `npm run lint` y `npm run build`.
+
 ## Pendientes Técnicos Conocidos
 
-- Ajustar reglas configurables de plazos y requisitos académicos según evolución normativa.
-- Evaluar si se requiere una UI de cambio manual de estado para administradores, tras eliminar `PUT /expedientes/{id}/cambiar-estado`.
 - Revisar visualmente cada rol en modo claro y oscuro para detectar ajustes finos de contraste.
