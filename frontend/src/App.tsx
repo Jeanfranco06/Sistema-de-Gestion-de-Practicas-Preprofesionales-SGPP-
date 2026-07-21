@@ -18,6 +18,7 @@ import ForgotPasswordPage from './modules/auth/ForgotPasswordPage';
 import ResetPasswordPage from './modules/auth/ResetPasswordPage';
 import NoAutorizado from './modules/shared/NoAutorizado';
 import PaginaEnConstruccion from './modules/shared/PaginaEnConstruccion';
+import { ErrorBoundary } from './shared/components/ErrorBoundary';
 
 function lazyNamed<T extends React.ComponentType<any>>(
   importFn: () => Promise<{ default?: T; [key: string]: any }>,
@@ -76,6 +77,7 @@ export default function App() {
         <ThemeProviderWrapper>
           <AuthProvider>
             <BrowserRouter>
+              <ErrorBoundary>
               <Suspense fallback={<div className="flex h-screen items-center justify-center bg-[var(--color-background)]"><div className="h-8 w-8 animate-spin rounded-full border-4 border-[var(--color-primary-600)] border-t-transparent" /></div>}>
                 <Routes>
                   {/* Pública */}
@@ -342,6 +344,7 @@ export default function App() {
                 <Route path="*" element={<Navigate to="/login" replace />} />
                 </Routes>
               </Suspense>
+              </ErrorBoundary>
             </BrowserRouter>
           </AuthProvider>
         </ThemeProviderWrapper>

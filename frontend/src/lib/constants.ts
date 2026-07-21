@@ -98,3 +98,28 @@ export const ESTADOS_FINALIZADOS = [
   ESTADOS_EXPEDIENTE.EVALUADO,
   ESTADOS_EXPEDIENTE.CERRADO,
 ];
+
+// Colores institucionales UNT y del sistema
+export const COLORS = {
+  UNT_BLUE: '#1A3A6E',
+  UNT_BLUE_LIGHT: '#4A6FA5',
+  UNT_BLUE_DARK: '#1a365d',
+  UNT_YELLOW: '#F5A623',
+  SUCCESS: '#10b981',
+  SUCCESS_BG: '#d1fae5',
+  WARNING: '#f59e0b',
+  WARNING_BG: '#fef3c7',
+  DANGER: '#ef4444',
+  DANGER_BG: '#fee2e2',
+  INFO: '#3b82f6',
+  INFO_BG: '#dbeafe',
+  MUTED: '#64748b',
+  MUTED_BG: '#f1f5f9',
+  WHITE: '#ffffff',
+  BLACK: '#000000',
+  BORDER: '#e2e8f0',
+  BG_LIGHT: '#f8fafc',
+} as const;
+
+// Magic strings
+export const FILTRO_TODOS = 'TODOS';

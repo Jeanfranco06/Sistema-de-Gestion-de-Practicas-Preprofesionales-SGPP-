@@ -341,6 +341,7 @@ public class ExpedienteController {
 
     @DeleteMapping("/{id}/disable")
     @Operation(summary = "Deshabilitar expediente")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'ADMINISTRADOR', 'COORDINADOR', 'DIRECTOR')")
     public ResponseEntity<ApiResponse<Void>> disable(@PathVariable Long id,
             @RequestAttribute(value = "idUsuario", required = false) Long idUsuario) {
         expedienteService.disable(id, idUsuario != null ? idUsuario : 1L);

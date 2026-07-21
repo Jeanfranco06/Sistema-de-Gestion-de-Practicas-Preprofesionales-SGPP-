@@ -35,12 +35,15 @@ import edu.unt.ingenieria_industrial.sgpp.shared.enums.AccionAuditoria;
 import edu.unt.ingenieria_industrial.sgpp.shared.enums.TipoEntidadAuditable;
 import edu.unt.ingenieria_industrial.sgpp.shared.exception.BusinessException;
 import edu.unt.ingenieria_industrial.sgpp.shared.exception.ResourceNotFoundException;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.text.Normalizer;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -82,6 +85,9 @@ private final ExpedienteRepository expedienteRepository;
     private final edu.unt.ingenieria_industrial.sgpp.core.evaluacion.service.ComponenteEvaluacionService componenteEvaluacionService;
     private final ExportacionService exportacionService;
     private final PlanGeneralService planGeneralService;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Override
     public ExpedienteResponse crear(CrearExpedienteRequest request, Long idUsuario) {
@@ -376,7 +382,7 @@ private final ExpedienteRepository expedienteRepository;
         ExpedienteDocumento doc = ExpedienteDocumento.builder()
                 .expediente(expediente)
                 .tipoDocumento(tipoDocumento != null ? tipoDocumento : "ANEXO")
-                .nombreArchivo(nombreDoc)
+                .nombreArchivo(toAscii(nombreDoc))
                 .rutaArchivo(fileName)
                 .usuario(usuarioRepository.getReferenceById(idUsuario))
                 .build();
@@ -415,19 +421,30 @@ private final ExpedienteRepository expedienteRepository;
         if (doc.getRutaArchivo() != null && doc.getRutaArchivo().startsWith("registro:")) {
             throw new BusinessException("No se puede eliminar un documento institucional generado por el sistema");
         }
-        if ("CARTA_ACEPTACION".equals(doc.getTipoDocumento())) {
+
+        String tipoDocumento = doc.getTipoDocumento();
+
+        if ("CARTA_ACEPTACION".equals(tipoDocumento)) {
             if (!"CARTA_ACEPTACION_PRESENTADA".equals(expediente.getEstado())) {
                 throw new BusinessException("La Carta de Aceptación solo puede eliminarse antes de asignar asesor o comité");
             }
             expediente.setCartaAceptacionPresentada(false);
             expediente.setEstado(CARTA_PRESENTACION_EMITIDA);
-            expediente = expedienteRepository.save(expediente);
+            expediente = expedienteRepository.saveAndFlush(expediente);
             registrarCambioEstado(expediente, "CARTA_ACEPTACION_PRESENTADA", CARTA_PRESENTACION_EMITIDA, idUsuario,
                     "Estudiante eliminó la Carta de Aceptación para reemplazarla", "ELIMINAR_ACEPTACION");
         }
-        documentoRepository.delete(doc);
+
+        // Delete by ID with explicit flush to ensure deletion before re-fetch
+        documentoRepository.deleteById(idDocumento);
+        documentoRepository.flush();
+
+        // Clear session and re-fetch to get clean state without the deleted document
+        entityManager.clear();
+        expediente = findExpediente(idExpediente);
+
         registrarCambioEstado(expediente, expediente.getEstado(), expediente.getEstado(), idUsuario,
-                "Documento eliminado: " + doc.getTipoDocumento(), "ELIMINAR_DOCUMENTO");
+                "Documento eliminado: " + tipoDocumento, "ELIMINAR_DOCUMENTO");
         return toResponse(expediente);
     }
 
@@ -980,6 +997,13 @@ private final ExpedienteRepository expedienteRepository;
         throw new BusinessException(
                 "Estado inválido: " + actual + ". Se requiere uno de: " + String.join(", ", esperados) +
                 " para transicionar a " + destino);
+    }
+
+    private String toAscii(String input) {
+        if (input == null) return null;
+        return Normalizer.normalize(input, Normalizer.Form.NFD)
+                .replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
+                .replaceAll("[^\\p{ASCII}]", "");
     }
 
     private void registrarCambioEstado(Expediente expediente, String anterior, String nuevo,

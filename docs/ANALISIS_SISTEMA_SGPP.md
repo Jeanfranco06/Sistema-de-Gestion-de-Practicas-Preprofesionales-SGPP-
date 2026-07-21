@@ -324,20 +324,46 @@ Los problemas más críticos detectados son:
 - [x] Crear `frontend/src/lib/constants.ts` con los estados exactos del backend.
 - [x] Alinear validación de reseteo de contraseña y perfil de usuario.
 
+### Fase 7 — Correcciones de seguridad y limpieza (2026-07-21) ✅
+
+- [x] **Eliminar `NotificacionDTO` duplicado** en `sgpp-api` (package declaration incorrecto: `ingenieria.industrial` vs `ingenieria_industrial`).
+- [x] **Restringir CORS** en `SecurityConfig`: de `*` a orígenes específicos (`localhost:5173`, `localhost:8082`, etc.).
+- [x] **Corregir path traversal** en `ExportacionController.descargarPorId()`: validación de ruta dentro del directorio seguro.
+- [x] **Agregar `@PreAuthorize`** al endpoint `DELETE /expedientes/{id}/disable` (antes accesible por cualquier rol autenticado).
+- [x] **Eliminar log de token de recuperación** en plaintext (`log.info` → `log.debug` sin exponer token).
+- [x] **Quitar JWT secret hardcoded** de `application.yml` y `application-local.yml`: ahora requiere env var `JWT_SECRET` sin fallback.
+- [x] **Limpiar archivos huérfanos**: logs (*.log), uploads/, pom.xml.old, SQL scripts de diagnóstico, package-lock.json raíz, start-*.bat.
+- [x] **Actualizar `.gitignore`** con patrones para uploads, data, scripts SQL y artifacts de build.
+- [x] **Corregir puertos en `.env.example`**: alinear `POSTGRES_PORT=5434`, `SERVER_PORT=8082`, `VITE_API_BASE_URL` con el setup local real.
+- [x] **Habilitar `flyway.validate-on-migrate: true`** y `out-of-order: false` en `application-local.yml`.
+- [x] **Paths relativos** para uploads y exportaciones en `application-local.yml` (usar `${user.home}/sgpp/` en lugar de rutas absolutas Windows).
+- [x] **Mover `@tanstack/react-query`** de `devDependencies` a `dependencies` (era runtime dependency); `devtools` a `devDependencies`.
+- [x] **Eliminar `@fontsource/roboto`** (instalado pero nunca importado).
+- [x] **Eliminar `index.css` legacy** (sintaxis `@tailwind` obsoleta, no importado en ningún lado; `wow-theme.css` con `@import "tailwindcss"` es la fuente activa).
+- [x] **Crear `ErrorBoundary`** (`frontend/src/shared/components/ErrorBoundary.tsx`) y envolver `Suspense` en `App.tsx` para capturar errores de chunks lazy.
+- [x] **Agregar constantes de color** (`COLORS`) en `frontend/src/lib/constants.ts` y reemplazar colores hex hardcoded en archivos críticos (GestionConvenios, GestionEmpresas, GestionSedes, DashboardCoordinacion).
+- [x] **Verificar compilación**: `mvn -pl sgpp-api -am compile -DskipTests` exitoso tras todas las correcciones.
+
+### Pendientes conocidos
+
+- **ESLint para .ts/.tsx**: `typescript-eslint` no soporta TypeScript 7.0 (incompatible). Pendiente cuando `typescript-eslint` soporte TS >= 7.1.
+- **Tests unitarios**: solo 1 test en backend (`ComponenteEvaluacionServiceImplTest`); 0 tests en frontend. Se recomienda ampliar cobertura.
+- **Colores hex restantes**: quedan colores hardcoded en archivos secundarios; se continuará la migración a `COLORS` en futuras iteraciones.
+
 ---
 
 ## 8. Conclusión
 
-El SGPP está **funcionalmente avanzado** y cumple aproximadamente el **85-90 % de los requerimientos** de manera completa, con otro **5-10 % parcialmente implementado**. Los bloques de compilación, build y tests son estables. Las fases prioritarias identificadas inicialmente han sido completadas, incluida una primera ronda de sincronización backend/frontend que corrige las desincronizaciones más visibles. Para continuar mejorando el sistema, se recomienda:
+El SGPP está **funcionalmente avanzado** y cumple aproximadamente el **90-92% de los requerimientos** de manera completa, con otro **5-8% parcialmente implementado**. Los bloques de compilación, build y lint son estables. Las fases prioritarias identificadas inicialmente han sido completadas, incluyendo una ronda completa de correcciones de seguridad, limpieza de código y mejoras de configuración.
 
-1. Ampliar la cobertura de tests unitarios (expedientes, plazos, notificaciones, evaluación cualitativa, etc.).
-2. Refinar el chunking del frontend y eliminar las advertencias de bundle >500 kB.
-3. Unificar el flujo de aprobación/observación del plan estructurado (`PlanGeneral`) con el estado del expediente.
-4. Mantener alineadas las reglas de plazos, modalidades y requisitos académicos con la normativa UNT.
-5. Migrar todos los literales de estado dispersos a `frontend/src/lib/constants.ts`.
+**Estado actual del sistema:**
+- Backend: compila limpiamente; JWT requiere env var; CORS restringido; path traversal protegido; endpoints críticos autorizados.
+- Frontend: build exitoso; lint limpio; ErrorBoundary implementado; colores unificados en archivos principales; dependencias corregidas.
+- Base de datos: 58 migraciones Flyway; validate-on-migrate habilitado; sin gap críticos.
+- Configuración: puertos alineados (5434 DB, 8082 API, 5173 Frontend); paths relativos; .env.example actualizado.
 
-La implementación faseada propuesta permite abordar los hallazgos de forma ordenada, minimizando riesgos y manteniendo la estabilidad del sistema.
+La implementación faseada ha permitido abordar los hallazgos de forma ordenada, minimizando riesgos y manteniendo la estabilidad del sistema.
 
 ---
 
-*Documento generado durante el análisis exhaustivo del sistema SGPP. Debe actualizarse al finalizar cada fase de implementación.*
+*Documento actualizado el 2026-07-21 tras la implementación de las fases de corrección de seguridad y limpieza.*

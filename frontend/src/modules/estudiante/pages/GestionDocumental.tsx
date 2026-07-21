@@ -366,8 +366,13 @@ export const GestionDocumental = () => {
       if (isAnexo) {
         setAnexos(anexos.filter(a => a.id !== id));
       } else {
-        await expedientesApi.eliminarDocumento(expediente.id, id);
-        await fetchExpediente();
+        const res = await expedientesApi.eliminarDocumento(expediente.id, id);
+        const updated = res.data?.data;
+        if (updated) {
+          setExpediente(updated);
+        } else {
+          await fetchExpediente();
+        }
       }
       showSuccess('Documento eliminado');
     } catch (error: any) {
@@ -381,12 +386,19 @@ export const GestionDocumental = () => {
     if (tipoDocumento === 'CARTA_PRESENTACION') {
       return <Badge variant="info">Emitida por Dirección</Badge>;
     }
-    if (tipoDocumento === 'CARTA_ACEPTACION') {
-      return <Badge variant="info">Presentada</Badge>;
-    }
-    const variantMap: Record<string, 'success' | 'warning' | 'default'> = { APROBADO: 'success', OBSERVADO: 'warning' };
+    const variantMap: Record<string, 'success' | 'warning' | 'default' | 'info'> = {
+      APROBADO: 'success',
+      OBSERVADO: 'warning',
+      PRESENTADA: 'info',
+    };
     const variant = variantMap[estado] || 'default';
-    const label = estado === 'APROBADO' ? 'Aprobado' : estado === 'OBSERVADO' ? 'Observado' : 'Pendiente de revisión';
+    const label = estado === 'APROBADO'
+      ? 'Aprobado'
+      : estado === 'OBSERVADO'
+        ? 'Observado'
+        : estado === 'PRESENTADA'
+          ? 'Presentada'
+          : 'Pendiente de revisión';
     return <Badge variant={variant}>{label}</Badge>;
   };
 

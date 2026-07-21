@@ -1,5 +1,7 @@
 package edu.unt.ingenieria_industrial.sgpp.core.documental.service;
 
+import edu.unt.ingenieria_industrial.sgpp.shared.exception.BusinessException;
+import edu.unt.ingenieria_industrial.sgpp.shared.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -62,14 +64,18 @@ public class FileStorageService {
         try {
             Path filePath = this.fileStorageLocation.resolve(fileName).normalize();
             if (!filePath.startsWith(this.fileStorageLocation)) {
-                throw new RuntimeException("Ruta de archivo inválida");
+                throw new BusinessException("Ruta de archivo inválida");
             }
             Resource resource = new UrlResource(filePath.toUri());
             if (resource.exists()) {
                 return resource;
             } else {
-                throw new RuntimeException("Archivo no encontrado " + fileName);
+                throw new ResourceNotFoundException("Archivo no encontrado " + fileName);
             }
+        } catch (ResourceNotFoundException ex) {
+            throw ex;
+        } catch (BusinessException ex) {
+            throw ex;
         } catch (Exception ex) {
             throw new RuntimeException("Archivo no encontrado " + fileName, ex);
         }

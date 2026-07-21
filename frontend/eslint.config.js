@@ -18,8 +18,6 @@ export default defineConfig([
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
     rules: {
-      // The application has no React Compiler integration. These compiler-only
-      // diagnostics reject standard data-loading effects used across the app.
       'react-hooks/set-state-in-effect': 'off',
       'react-hooks/immutability': 'off',
       'react-refresh/only-export-components': 'off',

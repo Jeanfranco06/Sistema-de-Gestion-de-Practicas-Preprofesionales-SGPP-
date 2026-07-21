@@ -18,6 +18,7 @@ import {
     Button, Badge, Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
     Select, Avatar, Tooltip, type BadgeProps
 } from '../../../ui';
+import { COLORS } from '@/lib/constants';
 
 const getInitials = (name?: string): string => {
     if (!name) return '?';
@@ -28,8 +29,8 @@ const getInitials = (name?: string): string => {
 };
 
 const statusColorMap = {
-    ACTIVA: { dot: '#10b981', shadow: '#d1fae5', label: 'Activa' },
-    INACTIVA: { dot: '#ef4444', shadow: '#fee2e2', label: 'Inactiva' }
+    ACTIVA: { dot: COLORS.SUCCESS, shadow: COLORS.SUCCESS_BG, label: 'Activa' },
+    INACTIVA: { dot: COLORS.DANGER, shadow: COLORS.DANGER_BG, label: 'Inactiva' }
 } as const;
 
 interface Empresa {
@@ -713,7 +714,7 @@ export const GestionSedes = () => {
     if (sedesLoading && sedes.length === 0) {
         return (
             <div className="flex justify-center items-center h-[60vh] flex-col gap-6">
-                <CircularProgress size={48} thickness={4} sx={{ color: '#1a365d' }} />
+                <CircularProgress size={48} thickness={4} sx={{ color: COLORS.UNT_BLUE_DARK }} />
                 <span className="text-[var(--color-muted-foreground)] font-medium">Cargando catálogo de sedes...</span>
             </div>
         );
@@ -723,7 +724,7 @@ export const GestionSedes = () => {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
             <div className="px-2 sm:px-4 md:px-6 py-4 md:py-8 pb-16 w-full">
                 {/* Banner */}
-                <div className="rounded-2xl md:rounded-3xl p-6 md:p-8 mb-6 md:mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative overflow-hidden" style={{ backgroundColor: '#1a365d', color: 'white' }}>
+                <div className="rounded-2xl md:rounded-3xl p-6 md:p-8 mb-6 md:mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative overflow-hidden bg-[var(--color-primary)] text-white">
                     <div className="absolute right-[-20px] md:right-5 top-2 md:top-[-20px] opacity-10 pointer-events-none">
                         <Building size={180} className="md:w-[220px] md:h-[220px]" />
                     </div>
@@ -733,7 +734,7 @@ export const GestionSedes = () => {
                         <p className="text-sm md:text-base opacity-90">Administra las sedes operativas vinculadas a las empresas aliadas.</p>
                     </div>
                     <div className="relative z-10 flex gap-3 items-center self-end md:self-center">
-                        <Button onClick={() => handleOpenDialog()} style={{ backgroundColor: 'white', color: '#1a365d', fontWeight: 700 }}>
+                        <Button onClick={() => handleOpenDialog()} className="bg-white text-[var(--color-primary)] font-bold">
                             <Plus size={18} /> Nueva Sede
                         </Button>
                         <Tooltip content="Actualizar Catálogo">
@@ -839,7 +840,7 @@ export const GestionSedes = () => {
                 <div className="rounded-2xl border overflow-hidden relative" style={{ borderColor: 'var(--color-border)' }}>
                     {sedesFetching && (
                         <div className="absolute top-0 left-0 right-0 z-10">
-                            <LinearProgress sx={{ height: 3, '& .MuiLinearProgress-bar': { bgcolor: '#1a365d' }, bgcolor: '#e2e8f0' }} />
+                            <LinearProgress sx={{ height: 3, '& .MuiLinearProgress-bar': { bgcolor: COLORS.UNT_BLUE_DARK }, bgcolor: COLORS.BORDER }} />
                         </div>
                     )}
                     <div className="overflow-x-auto" style={{ opacity: sedesFetching ? 0.6 : 1, transition: 'opacity 0.2s ease-in-out' }}>
@@ -1006,11 +1007,11 @@ export const GestionSedes = () => {
                 fullWidth
                 slotProps={{ paper: { sx: { borderRadius: 4, overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' } } }}
             >
-                <DialogTitle sx={{ bgcolor: '#1a365d', color: '#fff', py: 2.5, px: 4, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <DialogTitle sx={{ bgcolor: COLORS.UNT_BLUE_DARK, color: COLORS.WHITE, py: 2.5, px: 4, display: 'flex', alignItems: 'center', gap: 1.5 }}>
                     <Building />
                     <span className="text-lg font-bold">{isEditing ? 'Editar Sede' : 'Registrar Nueva Sede'}</span>
                 </DialogTitle>
-                <DialogContent sx={{ p: { xs: 2, md: 4 }, bgcolor: '#fff' }}>
+                <DialogContent sx={{ p: { xs: 2, md: 4 }, bgcolor: COLORS.WHITE }}>
                     <div className="flex flex-col gap-4 pt-2">
                         <TextField
                             select fullWidth label="Empresa Aliada *"
@@ -1161,7 +1162,7 @@ export const GestionSedes = () => {
                         </TextField>
                     </div>
                 </DialogContent>
-                <DialogActions sx={{ p: 3, bgcolor: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+                <DialogActions sx={{ p: 3, bgcolor: COLORS.BG_LIGHT, borderTop: `1px solid ${COLORS.BORDER}` }}>
                     <Button variant="secondary" onClick={() => setOpenDialog(false)} disabled={createSedeMutation.isPending || updateSedeMutation.isPending}>Cancelar</Button>
                     <Button onClick={handleSave} loading={createSedeMutation.isPending || updateSedeMutation.isPending}>
                         {isEditing ? 'Actualizar' : 'Guardar'}
@@ -1235,7 +1236,7 @@ export const GestionSedes = () => {
                         {selectedSede.tutoresActivos && selectedSede.tutoresActivos.length > 0 ? (
                             <div className="flex flex-col gap-2 mb-4">
                                 {selectedSede.tutoresActivos.map((tutor) => (
-                                    <div key={tutor.id} className="p-3 rounded-xl border" style={{ backgroundColor: '#f8fafc', borderColor: 'var(--color-border)' }}>
+                                    <div key={tutor.id} className="p-3 rounded-xl border" style={{ backgroundColor: COLORS.BG_LIGHT, borderColor: 'var(--color-border)' }}>
                                         <div className="font-bold text-sm">{tutor.nombres} {tutor.apellidoPaterno} {tutor.apellidoMaterno}</div>
                                         <div className="text-xs text-muted-foreground">Cargo: {tutor.cargo}</div>
                                         <div className="text-xs text-muted-foreground">Correo: {tutor.correo}</div>
@@ -1269,12 +1270,12 @@ export const GestionSedes = () => {
             >
                 <DialogTitle sx={{
                     bgcolor: validacionActual?.resultadoValidacion === 'APROBADA' ? '#065f46' : validacionActual?.resultadoValidacion === 'RECHAZADA' ? '#991b1b' : '#92400e',
-                    color: '#fff', py: 2.5, px: 4, display: 'flex', alignItems: 'center', gap: 1.5
+                    color: COLORS.WHITE, py: 2.5, px: 4, display: 'flex', alignItems: 'center', gap: 1.5
                 }}>
                     <ClipboardCheck />
                     <span className="text-lg font-bold">Validación de Sede: {validacionSede?.nombreSede}</span>
                 </DialogTitle>
-                <DialogContent dividers sx={{ p: { xs: 2, md: 4 }, bgcolor: '#fff' }}>
+                <DialogContent dividers sx={{ p: { xs: 2, md: 4 }, bgcolor: COLORS.WHITE }}>
                     {loadingValidacion ? (
                         <div className="flex justify-center py-8"><CircularProgress /></div>
                     ) : (
@@ -1291,7 +1292,7 @@ export const GestionSedes = () => {
                                     <span className="text-sm font-semibold text-muted-foreground block mb-2">Historial de validaciones:</span>
                                     <div className="flex flex-col gap-2">
                                         {historialValidaciones.map(v => (
-                                            <div key={v.id} className="p-3 rounded-xl border flex justify-between items-center" style={{ backgroundColor: '#f8fafc', borderColor: 'var(--color-border)' }}>
+                                            <div key={v.id} className="p-3 rounded-xl border flex justify-between items-center" style={{ backgroundColor: COLORS.BG_LIGHT, borderColor: 'var(--color-border)' }}>
                                                 <Badge variant={v.resultadoValidacion === 'APROBADA' ? 'success' : v.resultadoValidacion === 'RECHAZADA' ? 'danger' : 'warning'}>{v.resultadoValidacion}</Badge>
                                                 <span className="text-xs text-muted-foreground">{v.nombreValidador} — {v.fechaValidacion ? new Date(v.fechaValidacion).toLocaleDateString() : ''}</span>
                                             </div>
@@ -1300,7 +1301,7 @@ export const GestionSedes = () => {
                                 </div>
                             )}
 
-                            <h4 className="text-lg font-bold text-[#1a365d] border-b-2 pb-1" style={{ borderColor: '#1a365d' }}>Criterios de Validación</h4>
+                            <h4 className="text-lg font-bold text-[#1a365d] border-b-2 pb-1" style={{ borderColor: COLORS.UNT_BLUE_DARK }}>Criterios de Validación</h4>
 
                             {[
                                 { key: 'criterioInfraestructuraCumple', obsKey: 'criterioInfraestructuraObservaciones', label: 'Infraestructura adecuada', desc: 'La sede cuenta con espacios físicos adecuados para el desarrollo de prácticas.' },
@@ -1334,7 +1335,7 @@ export const GestionSedes = () => {
                                 </div>
                             ))}
 
-                            <h4 className="text-lg font-bold text-[#1a365d] border-b-2 pb-1" style={{ borderColor: '#1a365d' }}>Resultado</h4>
+                            <h4 className="text-lg font-bold text-[#1a365d] border-b-2 pb-1" style={{ borderColor: COLORS.UNT_BLUE_DARK }}>Resultado</h4>
 
                             <TextField select fullWidth label="Resultado de Validación"
                                 value={validacionForm.resultadoValidacion}
@@ -1367,7 +1368,7 @@ export const GestionSedes = () => {
                         </div>
                     )}
                 </DialogContent>
-                <DialogActions sx={{ p: 3, bgcolor: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+                <DialogActions sx={{ p: 3, bgcolor: COLORS.BG_LIGHT, borderTop: `1px solid ${COLORS.BORDER}` }}>
                     <Button variant="secondary" onClick={() => setValidacionDialogOpen(false)} disabled={createValidacionMutation.isPending || updateValidacionMutation.isPending}>Cancelar</Button>
                     <Button onClick={handleValidacionSave} loading={createValidacionMutation.isPending || updateValidacionMutation.isPending}>
                         {validacionActual?.id ? 'Actualizar Validación' : 'Guardar Validación'}

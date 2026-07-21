@@ -462,14 +462,14 @@ export const RecepcionAdministrativa = () => {
             </div>
             <Select
               label="Seleccionar Docente Asesor *"
-              value={selectedAsesor?.id || ''}
+              value={selectedAsesor ? String(selectedAsesor.id) : ''}
               onChange={(e) => {
-                const doc = docentes.find(d => d.id === e.target.value);
+                const doc = docentes.find(d => String(d.id) === e.target.value);
                 setSelectedAsesor(doc || null);
               }}
               placeholder="Buscar por nombre..."
               options={docentes.map(d => ({
-                value: d.id,
+                value: String(d.id),
                 label: `${d.nombres || ''} ${d.apellidoPaterno || ''} ${d.apellidoMaterno || ''}`.trim() || d.username,
               }))}
             />

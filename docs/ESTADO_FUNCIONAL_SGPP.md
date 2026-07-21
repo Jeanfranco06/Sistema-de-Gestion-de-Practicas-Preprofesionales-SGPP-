@@ -408,4 +408,35 @@ Una constancia generada se registra con archivo, hash, fecha, usuario solicitant
 
 ## Pendientes Técnicos Conocidos
 
-- (ninguno crítico pendiente; se recomienda prueba visual/manual en navegador para validación final).
+- **ESLint para .ts/.tsx**: `typescript-eslint` no soporta TypeScript 7.0. Pendiente soporte TS >= 7.1.
+- **Tests**: solo 1 test unitario en backend; 0 tests en frontend.
+- **Colores hex restantes**: archivos secundarios todavía usan hex hardcoded; se continuará migración a `COLORS`.
+
+### 2026-07-21 — Correcciones de seguridad y limpieza
+
+- **Backend - Seguridad:**
+  - Eliminado `NotificacionDTO` duplicado en `sgpp-api` (package declaration incorrecto).
+  - CORS restringido en `SecurityConfig`: de `*` a orígenes específicos (localhost:5173, 8082, 3000, 80, 8080).
+  - Path traversal corregido en `ExportacionController.descargarPorId()`: validación de ruta dentro del directorio seguro exportado desde `ExportacionProperties`.
+  - Endpoint `DELETE /expedientes/{id}/disable` ahora requiere roles `ADMIN_SISTEMA`, `ADMINISTRADOR`, `COORDINADOR` o `DIRECTOR` (antes era accesible por cualquier rol autenticado).
+  - Token de recuperación de contraseña ya no se loguea en plaintext (`log.info` → `log.debug` sin exponer token).
+  - JWT secret ya no tiene fallback hardcoded: requiere env var `JWT_SECRET` en todos los perfiles.
+- **Backend - Limpieza:**
+  - Eliminados archivos huérfanos: `*.log`, `uploads/`, `pom.xml.old`, 8 scripts SQL de diagnóstico, `package-lock.json` raíz, `start-*.bat`, `cp.txt`, `insert_criterios.sql`.
+  - `.gitignore` actualizado con patrones para uploads, data, scripts SQL y artifacts.
+- **Backend - Configuración:**
+  - `flyway.validate-on-migrate: true` y `out-of-order: false` en `application-local.yml`.
+  - Paths relativos para uploads/exportaciones (usar `${user.home}/sgpp/` en vez de rutas absolutas Windows).
+  - `.env.example` y `frontend/.env.example` actualizados: puertos alineados (5434, 8082, 5173).
+- **Frontend - Dependencias:**
+  - `@tanstack/react-query` movido de `devDependencies` a `dependencies` (runtime dependency).
+  - `@tanstack/react-query-devtools` movido de `dependencies` a `devDependencies`.
+  - `@fontsource/roboto` eliminado (nunca importado).
+- **Frontend - Estructura:**
+  - `index.css` legacy eliminado (sintaxis `@tailwind` obsoleta; `wow-theme.css` es la fuente activa).
+  - `ErrorBoundary` creado y envuelve `Suspense` en `App.tsx` para capturar errores de chunks lazy.
+  - Constantes `COLORS` agregadas a `frontend/src/lib/constants.ts` con colores institucionales UNT y del sistema.
+  - Colores hex hardcoded reemplazados en archivos principales: GestionConvenios, GestionEmpresas, GestionSedes, DashboardCoordinacion.
+- **Verificaciones:**
+  - `mvn -pl sgpp-api -am compile -DskipTests` exitoso.
+  - `npm run lint` y `npm run build` exitosos.

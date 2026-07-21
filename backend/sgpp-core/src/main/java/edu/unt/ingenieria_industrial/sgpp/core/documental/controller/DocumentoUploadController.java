@@ -10,6 +10,7 @@ import edu.unt.ingenieria_industrial.sgpp.shared.exception.BusinessException;
 import edu.unt.ingenieria_industrial.sgpp.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
+import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -19,6 +20,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -54,7 +57,8 @@ public class DocumentoUploadController {
         return ResponseEntity.ok(response);
     }
 
-@GetMapping("/expediente/{idDocumento}/download")
+@Transactional(readOnly = true)
+    @GetMapping("/expediente/{idDocumento}/download")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Resource> downloadExpedienteDocument(
             @PathVariable Long idDocumento, Authentication authentication) {
@@ -73,9 +77,11 @@ public class DocumentoUploadController {
             try {
                 byte[] pdfBytes = exportacionService.generarPlanGeneralPdf(planId);
                 Resource resource = new org.springframework.core.io.ByteArrayResource(pdfBytes);
+                ContentDisposition cd = ContentDisposition.builder("attachment")
+                        .filename("Plan_General_v1.pdf").build();
                 return ResponseEntity.ok()
                         .contentType(MediaType.APPLICATION_PDF)
-                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"Plan_General_v1.pdf\"")
+                        .header(HttpHeaders.CONTENT_DISPOSITION, cd.toString())
                         .body(resource);
             } catch (Exception ex) {
                 throw new BusinessException("No se pudo generar el PDF del plan: " + ex.getMessage());
@@ -99,9 +105,11 @@ public class DocumentoUploadController {
             try {
                 byte[] pdfBytes = exportacionService.generarPlanGeneralPdf(planId);
                 Resource resource = new org.springframework.core.io.ByteArrayResource(pdfBytes);
+                ContentDisposition cd = ContentDisposition.builder("attachment")
+                        .filename(documento.getNombreArchivo()).build();
                 return ResponseEntity.ok()
                         .contentType(MediaType.APPLICATION_PDF)
-                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + documento.getNombreArchivo() + "\"")
+                        .header(HttpHeaders.CONTENT_DISPOSITION, cd.toString())
                         .body(resource);
             } catch (Exception ex) {
                 throw new BusinessException("No se pudo generar el PDF del plan: " + ex.getMessage());
@@ -110,9 +118,11 @@ public class DocumentoUploadController {
 
         Resource resource = fileStorageService.loadFileAsResource(documento.getRutaArchivo());
 
+        ContentDisposition cd = ContentDisposition.builder("attachment")
+                .filename(documento.getNombreArchivo()).build();
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_PDF)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + documento.getNombreArchivo() + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, cd.toString())
                 .body(resource);
     }
 

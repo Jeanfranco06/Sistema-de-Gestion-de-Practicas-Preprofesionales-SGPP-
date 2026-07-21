@@ -13,13 +13,24 @@ api.interceptors.request.use((config) => {
 
 api.interceptors.response.use(
   (res) => res,
-  (error) => {
+  async (error) => {
     const isLoginRequest = error.config?.url?.includes('/auth/login');
     if (error.response?.status === 401 && !isLoginRequest) {
       localStorage.removeItem('sgpp_token');
       localStorage.removeItem('sgpp_user');
       window.location.href = '/login';
     }
+
+    if (error.response?.data instanceof Blob) {
+      try {
+        const text = await error.response.data.text();
+        const json = JSON.parse(text);
+        error.response.data = json;
+      } catch {
+        // blob is not JSON, leave as is
+      }
+    }
+
     return Promise.reject(error);
   }
 );

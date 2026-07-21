@@ -16,6 +16,7 @@ import {
 } from '../../../ui';
 import { convenioApi } from '../../../api/sedesApi';
 import { useEmpresas } from '../../../hooks/useSedes';
+import { COLORS } from '@/lib/constants';
 
 interface Empresa {
   id: number;
@@ -83,8 +84,8 @@ interface StatCardProps {
 
 const StatCard = ({ label, value, icon, accent }: StatCardProps) => {
   const accentMap: Record<string, { bg: string; text: string; icon: string }> = {
-    blue: { bg: '#eff6ff', text: '#1e40af', icon: '#3b82f6' },
-    emerald: { bg: '#ecfdf5', text: '#065f46', icon: '#10b981' },
+    blue: { bg: '#eff6ff', text: '#1e40af', icon: COLORS.INFO },
+    emerald: { bg: '#ecfdf5', text: '#065f46', icon: COLORS.SUCCESS },
     violet: { bg: '#f5f3ff', text: '#5b21b6', icon: '#8b5cf6' },
     orange: { bg: '#fff7ed', text: '#9a3412', icon: '#f97316' },
   };
@@ -328,7 +329,7 @@ export const GestionConvenios = () => {
   if (conveniosLoading && convenios.length === 0) {
     return (
       <div className="flex flex-col justify-center items-center h-[60vh] gap-6">
-        <CircularProgress size={48} thickness={4} sx={{ color: '#1a365d' }} />
+        <CircularProgress size={48} thickness={4} sx={{ color: COLORS.UNT_BLUE_DARK }} />
         <p className="text-[var(--color-muted-foreground)] font-medium">Cargando convenios...</p>
       </div>
     );
@@ -337,7 +338,7 @@ export const GestionConvenios = () => {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
       <div className="px-2 sm:px-4 md:px-6 py-4 md:py-6 w-full pb-8">
-        <div className="relative rounded-3xl p-6 md:p-8 mb-6 overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6" style={{ backgroundColor: '#1a365d', color: 'white' }}>
+        <div className="relative rounded-3xl p-6 md:p-8 mb-6 overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6 bg-[var(--color-primary)] text-white">
           <div className="absolute right-4 md:right-12 top-0 md:-top-6 opacity-10 pointer-events-none">
             <Handshake size={160} />
           </div>
@@ -347,7 +348,7 @@ export const GestionConvenios = () => {
             <p className="text-sm md:text-base opacity-90">Registra y monitorea los convenios activos con las empresas aliadas.</p>
           </div>
           <div className="relative z-10 flex items-center gap-3 self-end md:self-center">
-            <Button onClick={() => handleOpenDialog()} style={{ backgroundColor: 'white', color: '#1a365d', fontWeight: 700 }}>
+            <Button onClick={() => handleOpenDialog()} className="bg-white text-[var(--color-primary)] font-bold">
               <Plus size={18} /> Nuevo Convenio
             </Button>
             <Tooltip content="Actualizar Directorio">
@@ -409,12 +410,12 @@ export const GestionConvenios = () => {
         <DashboardCard className="p-0 overflow-hidden relative">
           {conveniosLoading && (
             <div className="absolute top-0 left-0 right-0 z-10">
-              <LinearProgress sx={{ height: 3, '& .MuiLinearProgress-bar': { backgroundColor: '#1a365d' }, backgroundColor: '#e2e8f0' }} />
+              <LinearProgress sx={{ height: 3, '& .MuiLinearProgress-bar': { backgroundColor: COLORS.UNT_BLUE_DARK }, backgroundColor: COLORS.BORDER }} />
             </div>
           )}
           <div className="overflow-x-auto transition-opacity duration-200" style={{ opacity: conveniosLoading ? 0.6 : 1 }}>
             <Table className="min-w-[700px]">
-              <TableHeader style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+              <TableHeader style={{ backgroundColor: COLORS.BG_LIGHT, borderBottom: `2px solid ${COLORS.BORDER}` }}>
                 <TableRow>
                   {headCells.map((hc) => (
                     <TableHead key={hc.id} className="font-bold text-[#475569] py-3">
@@ -461,20 +462,20 @@ export const GestionConvenios = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: conv.vigente ? '#10b981' : '#ef4444', boxShadow: `0 0 0 2px ${conv.vigente ? '#d1fae5' : '#fee2e2'}` }} />
-                          <span className="text-xs font-bold" style={{ color: conv.vigente ? '#10b981' : '#ef4444' }}>{conv.vigente ? 'Vigente' : 'Vencido'}</span>
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: conv.vigente ? COLORS.SUCCESS : COLORS.DANGER, boxShadow: `0 0 0 2px ${conv.vigente ? COLORS.SUCCESS_BG : COLORS.DANGER_BG}` }} />
+                          <span className="text-xs font-bold" style={{ color: conv.vigente ? COLORS.SUCCESS : COLORS.DANGER }}>{conv.vigente ? 'Vigente' : 'Vencido'}</span>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex justify-center gap-1">
                           <Tooltip content="Editar Convenio">
-                            <Button variant="ghost" size="sm" onClick={() => handleOpenDialog(conv)} style={{ color: '#64748b', backgroundColor: '#f8fafc' }}>
+                            <Button variant="ghost" size="sm" onClick={() => handleOpenDialog(conv)} style={{ color: COLORS.MUTED, backgroundColor: COLORS.BG_LIGHT }}>
                               <Pencil size={16} />
                             </Button>
                           </Tooltip>
                           {conv.activo && (
                             <Tooltip content="Anular Convenio">
-                              <Button variant="ghost" size="sm" onClick={() => handleDisable(conv.id)} style={{ color: '#ef4444', backgroundColor: '#fef2f2' }}>
+                              <Button variant="ghost" size="sm" onClick={() => handleDisable(conv.id)} style={{ color: COLORS.DANGER, backgroundColor: '#fef2f2' }}>
                                 <Trash2 size={16} />
                               </Button>
                             </Tooltip>
@@ -523,10 +524,10 @@ export const GestionConvenios = () => {
       </div>
 
       <Dialog open={openDialog} onClose={() => handleCloseDialog()} maxWidth="md" fullWidth slotProps={{ paper: { sx: { borderRadius: 4, overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' } } }}>
-        <DialogTitle sx={{ bgcolor: '#1a365d', color: '#fff', py: 2.5, px: 4, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+        <DialogTitle sx={{ bgcolor: COLORS.UNT_BLUE_DARK, color: COLORS.WHITE, py: 2.5, px: 4, display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Handshake /> <span className="font-bold text-lg">{isEditing ? 'Editar Convenio' : 'Registrar Nuevo Convenio'}</span>
         </DialogTitle>
-        <DialogContent sx={{ p: { xs: 2, md: 4 }, bgcolor: '#fff' }}>
+        <DialogContent sx={{ p: { xs: 2, md: 4 }, bgcolor: COLORS.WHITE }}>
           <div className="flex flex-col gap-5 pt-2">
             <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-[2]">
@@ -572,7 +573,7 @@ export const GestionConvenios = () => {
             />
           </div>
         </DialogContent>
-        <DialogActions sx={{ p: 3, bgcolor: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+        <DialogActions sx={{ p: 3, bgcolor: COLORS.BG_LIGHT, borderTop: `1px solid ${COLORS.BORDER}` }}>
           <Button variant="secondary" onClick={() => setOpenDialog(false)} disabled={submitting}>Cancelar</Button>
           <Button onClick={handleSave} disabled={submitting} loading={submitting}>
             {submitting ? 'Guardando...' : (isEditing ? 'Actualizar' : 'Guardar')}

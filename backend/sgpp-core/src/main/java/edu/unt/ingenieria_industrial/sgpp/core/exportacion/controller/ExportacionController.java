@@ -1,5 +1,6 @@
 package edu.unt.ingenieria_industrial.sgpp.core.exportacion.controller;
 
+import edu.unt.ingenieria_industrial.sgpp.core.exportacion.config.ExportacionProperties;
 import edu.unt.ingenieria_industrial.sgpp.core.exportacion.dto.ArchivoExportadoDTO;
 import edu.unt.ingenieria_industrial.sgpp.core.exportacion.dto.GenerarDocumentoInternoRequest;
 import edu.unt.ingenieria_industrial.sgpp.core.exportacion.dto.RegistroGeneracionDTO;
@@ -10,10 +11,12 @@ import edu.unt.ingenieria_industrial.sgpp.core.reporte.dto.ReporteFiltroDTO;
 import edu.unt.ingenieria_industrial.sgpp.shared.common.ApiResponse;
 import edu.unt.ingenieria_industrial.sgpp.shared.enums.FormatoExportacion;
 import edu.unt.ingenieria_industrial.sgpp.shared.enums.TipoReporte;
+import edu.unt.ingenieria_industrial.sgpp.shared.exception.BusinessException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
@@ -28,6 +31,7 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/admin/exportacion")
 @RequiredArgsConstructor
@@ -37,6 +41,7 @@ public class ExportacionController {
 
     private final ExportacionService exportacionService;
     private final RegistroGeneracionDocumentalRepository registroRepository;
+    private final ExportacionProperties exportacionProperties;
 
     @GetMapping("/reportes/{tipoReporte}")
     @Operation(summary = "Exportar reporte consolidado a PDF o CSV")
@@ -79,36 +84,25 @@ public class ExportacionController {
         RegistroGeneracionDocumental registro = registroRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Registro de documento no encontrado"));
 
-        Path archivoPath = Paths.get(registro.getRutaArchivo());
+        Path directorioBase = exportacionProperties.resolverDirectorio().toAbsolutePath().normalize();
+        if (registro.getRutaArchivo() == null || registro.getNombreArchivo() == null) {
+            throw new BusinessException("El registro no contiene un archivo descargable");
+        }
+        Path rutaRegistrada = Paths.get(registro.getRutaArchivo());
+        Path archivoPath = rutaRegistrada.isAbsolute()
+                ? rutaRegistrada.toAbsolutePath().normalize()
+                : directorioBase.resolve(registro.getNombreArchivo()).normalize();
+        if (!archivoPath.startsWith(directorioBase)) {
+            throw new BusinessException("Ruta de documento inválida");
+        }
+
         Resource resource = new UrlResource(archivoPath.toUri());
 
         if (!resource.exists() || !resource.isReadable()) {
-            throw new RuntimeException("Archivo no encontrado o no accesible");
+            throw new BusinessException("Archivo no encontrado o no accesible");
         }
 
-        String contentType = registro.getFormatoSalida().equals("PDF") ? "application/pdf" : "text/csv";
-
-        return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(contentType))
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"" + registro.getNombreArchivo() + "\"")
-                .body(resource);
-    }
-
-    @GetMapping("/publico/descargar/{id}")
-    @Operation(summary = "Descargar documento generado por ID de registro (acceso público para estudiantes)")
-    public ResponseEntity<Resource> descargarPorIdPublico(@PathVariable Long id) throws IOException {
-        RegistroGeneracionDocumental registro = registroRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Registro de documento no encontrado"));
-
-        Path archivoPath = Paths.get(registro.getRutaArchivo());
-        Resource resource = new UrlResource(archivoPath.toUri());
-
-        if (!resource.exists() || !resource.isReadable()) {
-            throw new RuntimeException("Archivo no encontrado o no accesible");
-        }
-
-        String contentType = registro.getFormatoSalida().equals("PDF") ? "application/pdf" : "text/csv";
+        String contentType = "PDF".equals(registro.getFormatoSalida()) ? "application/pdf" : "text/csv";
 
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(contentType))

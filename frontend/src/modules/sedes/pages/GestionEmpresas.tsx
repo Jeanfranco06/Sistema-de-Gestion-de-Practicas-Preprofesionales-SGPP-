@@ -15,6 +15,7 @@ import {
   Button, Badge, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Select, Avatar, Tooltip
 } from '../../../ui';
 import { empresaApi } from '../../../api/sedesApi';
+import { COLORS } from '@/lib/constants';
 
 interface Empresa {
   id: number;
@@ -60,9 +61,9 @@ const getInitials = (name?: string): string => {
 };
 
 const statusColorMap = {
-  validada: { badge: 'success' as const, dot: '#10b981', shadow: '#d1fae5', label: 'Validada' },
-  pendiente: { badge: 'warning' as const, dot: '#f59e0b', shadow: '#fef3c7', label: 'Pendiente' },
-  inactiva: { badge: 'danger' as const, dot: '#ef4444', shadow: '#fee2e2', label: 'Inactiva' },
+  validada: { badge: 'success' as const, dot: COLORS.SUCCESS, shadow: COLORS.SUCCESS_BG, label: 'Validada' },
+  pendiente: { badge: 'warning' as const, dot: COLORS.WARNING, shadow: COLORS.WARNING_BG, label: 'Pendiente' },
+  inactiva: { badge: 'danger' as const, dot: COLORS.DANGER, shadow: COLORS.DANGER_BG, label: 'Inactiva' },
 };
 
 interface DashboardCardProps {
@@ -96,8 +97,8 @@ interface StatCardProps {
 
 const StatCard = ({ label, value, icon, accent }: StatCardProps) => {
   const accentMap: Record<string, { bg: string; text: string; icon: string }> = {
-    blue: { bg: '#eff6ff', text: '#1e40af', icon: '#3b82f6' },
-    emerald: { bg: '#ecfdf5', text: '#065f46', icon: '#10b981' },
+    blue: { bg: '#eff6ff', text: '#1e40af', icon: COLORS.INFO },
+    emerald: { bg: '#ecfdf5', text: '#065f46', icon: COLORS.SUCCESS },
     violet: { bg: '#f5f3ff', text: '#5b21b6', icon: '#8b5cf6' },
     orange: { bg: '#fff7ed', text: '#9a3412', icon: '#f97316' },
   };
@@ -454,7 +455,7 @@ export const GestionEmpresas = () => {
   if (empresasLoading && empresas.length === 0) {
     return (
       <div className="flex flex-col justify-center items-center h-[60vh] gap-6">
-        <CircularProgress size={48} thickness={4} sx={{ color: '#1a365d' }} />
+        <CircularProgress size={48} thickness={4} sx={{ color: COLORS.UNT_BLUE_DARK }} />
         <p className="text-[var(--color-muted-foreground)] font-medium">Cargando directorio de empresas...</p>
       </div>
     );
@@ -463,7 +464,7 @@ export const GestionEmpresas = () => {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
       <div className="px-2 sm:px-4 md:px-6 py-4 md:py-6 w-full pb-8">
-        <div className="relative rounded-3xl p-6 md:p-8 mb-6 overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6" style={{ backgroundColor: '#1a365d', color: 'white' }}>
+        <div className="relative rounded-3xl p-6 md:p-8 mb-6 overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6 bg-[var(--color-primary)] text-white">
           <div className="absolute right-4 md:right-12 top-0 md:-top-6 opacity-10 pointer-events-none">
             <Building2 size={160} />
           </div>
@@ -473,7 +474,7 @@ export const GestionEmpresas = () => {
             <p className="text-sm md:text-base opacity-90">Administra el catálogo de empresas aliadas y valida sus perfiles.</p>
           </div>
           <div className="relative z-10 flex items-center gap-3 self-end md:self-center">
-            <Button onClick={() => handleOpenDialog()} style={{ backgroundColor: 'white', color: '#1a365d', fontWeight: 700 }}>
+            <Button onClick={() => handleOpenDialog()} className="bg-white text-[var(--color-primary)] font-bold">
               <Plus size={18} /> Nueva Empresa
             </Button>
             <Tooltip content="Actualizar Directorio">
@@ -523,12 +524,12 @@ export const GestionEmpresas = () => {
         <DashboardCard className="p-0 overflow-hidden relative">
           {empresasLoading && (
             <div className="absolute top-0 left-0 right-0 z-10">
-              <LinearProgress sx={{ height: 3, '& .MuiLinearProgress-bar': { backgroundColor: '#1a365d' }, backgroundColor: '#e2e8f0' }} />
+              <LinearProgress sx={{ height: 3, '& .MuiLinearProgress-bar': { backgroundColor: COLORS.UNT_BLUE_DARK }, backgroundColor: COLORS.BORDER }} />
             </div>
           )}
           <div className="overflow-x-auto transition-opacity duration-200" style={{ opacity: empresasLoading ? 0.6 : 1 }}>
             <Table className="min-w-[800px]">
-              <TableHeader style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+              <TableHeader style={{ backgroundColor: COLORS.BG_LIGHT, borderBottom: `2px solid ${COLORS.BORDER}` }}>
                 <TableRow>
                   {headCells.map((hc) => (
                     <TableHead key={hc.id} className="font-bold text-[#475569] py-3">
@@ -585,19 +586,19 @@ export const GestionEmpresas = () => {
                         <div className="flex justify-center gap-1">
                           {!emp.validado && emp.activo && (
                             <Tooltip content="Validar Perfil">
-                              <Button variant="ghost" size="sm" onClick={() => handleValidate(emp.id)} style={{ color: '#10b981', backgroundColor: '#ecfdf5' }}>
+                              <Button variant="ghost" size="sm" onClick={() => handleValidate(emp.id)} style={{ color: COLORS.SUCCESS, backgroundColor: '#ecfdf5' }}>
                                 <CheckCircle2 size={16} />
                               </Button>
                             </Tooltip>
                           )}
                           <Tooltip content="Editar Empresa">
-                            <Button variant="ghost" size="sm" onClick={() => handleOpenDialog(emp)} style={{ color: '#64748b', backgroundColor: '#f8fafc' }}>
+                            <Button variant="ghost" size="sm" onClick={() => handleOpenDialog(emp)} style={{ color: COLORS.MUTED, backgroundColor: COLORS.BG_LIGHT }}>
                               <Pencil size={16} />
                             </Button>
                           </Tooltip>
                           {emp.activo && (
                             <Tooltip content="Deshabilitar Empresa">
-                              <Button variant="ghost" size="sm" onClick={() => handleDisable(emp.id)} style={{ color: '#ef4444', backgroundColor: '#fef2f2' }}>
+                              <Button variant="ghost" size="sm" onClick={() => handleDisable(emp.id)} style={{ color: COLORS.DANGER, backgroundColor: '#fef2f2' }}>
                                 <Trash2 size={16} />
                               </Button>
                             </Tooltip>
@@ -651,10 +652,10 @@ export const GestionEmpresas = () => {
       </div>
 
       <Dialog open={openDialog} onClose={() => handleCloseDialog()} maxWidth="md" fullWidth slotProps={{ paper: { sx: { borderRadius: 4, overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' } } }}>
-        <DialogTitle sx={{ bgcolor: '#1a365d', color: '#fff', py: 2.5, px: 4, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+        <DialogTitle sx={{ bgcolor: COLORS.UNT_BLUE_DARK, color: COLORS.WHITE, py: 2.5, px: 4, display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <BadgeCheck /> <span className="font-bold text-lg">{isEditing ? 'Editar Empresa' : 'Registrar Nueva Empresa'}</span>
         </DialogTitle>
-        <DialogContent sx={{ p: { xs: 2, md: 4 }, bgcolor: '#fff' }}>
+        <DialogContent sx={{ p: { xs: 2, md: 4 }, bgcolor: COLORS.WHITE }}>
           <div className="flex flex-col gap-5 pt-2">
             <div className="flex flex-col md:flex-row gap-4">
               <TextField
@@ -700,7 +701,7 @@ export const GestionEmpresas = () => {
             </div>
           </div>
         </DialogContent>
-        <DialogActions sx={{ p: 3, bgcolor: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+        <DialogActions sx={{ p: 3, bgcolor: COLORS.BG_LIGHT, borderTop: `1px solid ${COLORS.BORDER}` }}>
           <Button variant="secondary" onClick={() => setOpenDialog(false)} disabled={submitting}>Cancelar</Button>
           <Button onClick={handleSave} disabled={submitting} loading={submitting}>
             {submitting ? 'Guardando...' : (isEditing ? 'Actualizar' : 'Guardar')}

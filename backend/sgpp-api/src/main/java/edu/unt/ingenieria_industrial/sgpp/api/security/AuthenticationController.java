@@ -131,7 +131,7 @@ public class AuthenticationController {
         String token = passwordResetService.generarTokenReset(request.getEmail());
         String message = "Se ha generado un enlace de recuperación para el email proporcionado. "
                 + "En producción se enviaría un correo con el enlace.";
-        log.info("Token de recuperación generado para {}: {}", request.getEmail(), token);
+        log.debug("Token de recuperación generado para usuario: {}", request.getEmail());
         return ResponseEntity.ok(PasswordResetResponse.builder()
                 .message(message)
                 .resetToken(token)
