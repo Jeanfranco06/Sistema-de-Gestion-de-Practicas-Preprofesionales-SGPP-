@@ -4,7 +4,7 @@ import Swal from 'sweetalert2';
 import { expedientesApi } from '@/api/expedientesApi';
 import { planesApi } from '@/api/planesApi';
 import { ESTADOS_PLAN_GENERAL } from '@/lib/constants';
-import { Button, Input, Textarea, Select, Card, CardContent, Badge, type BadgeProps } from '@/ui';
+import { Button, Input, Textarea, Select, Card, CardContent, Badge, type BadgeProps, DatePicker } from '@/ui';
 import { cn } from '@/lib/utils';
 
 interface Caratula {
@@ -428,7 +428,7 @@ export function PlanPracticas() {
             <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
               <div className="md:col-span-6">{field('caratula', 'autor', 'Nombre del practicante', { required: true })}</div>
               <div className="md:col-span-6">
-                <Input type="date" label="Fecha del Plan" value={plan.caratula.fecha} disabled={!editable} required onChange={(e) => update('caratula', 'fecha', e.target.value)} />
+                <DatePicker label="Fecha del Plan" value={plan.caratula.fecha} disabled={!editable} required onChange={(value) => update('caratula', 'fecha', value)} />
               </div>
               <div className="md:col-span-12">{field('caratula', 'institucion', 'Institución', { required: true })}</div>
               <div className="md:col-span-12">{field('caratula', 'nombrePlan', 'Nombre del Plan', { required: true })}</div>
@@ -546,10 +546,24 @@ export function PlanPracticas() {
                       <Input label="Actividad" value={activity.actividad} disabled={!editable} required onChange={(e) => updateList('cronograma', index, 'actividad', e.target.value)} />
                     </div>
                     <div className="md:col-span-2">
-                      <Input type="date" label="Inicio" value={activity.fechaInicioPrevista} disabled={!editable} required onChange={(e) => updateList('cronograma', index, 'fechaInicioPrevista', e.target.value)} />
+                      <DatePicker
+                        label="Inicio"
+                        value={activity.fechaInicioPrevista}
+                        disabled={!editable}
+                        required
+                        max={activity.fechaFinPrevista || undefined}
+                        onChange={(value) => updateList('cronograma', index, 'fechaInicioPrevista', value)}
+                      />
                     </div>
                     <div className="md:col-span-2">
-                      <Input type="date" label="Fin" value={activity.fechaFinPrevista} disabled={!editable} required onChange={(e) => updateList('cronograma', index, 'fechaFinPrevista', e.target.value)} />
+                      <DatePicker
+                        label="Fin"
+                        value={activity.fechaFinPrevista}
+                        disabled={!editable}
+                        required
+                        min={activity.fechaInicioPrevista || undefined}
+                        onChange={(value) => updateList('cronograma', index, 'fechaFinPrevista', value)}
+                      />
                     </div>
                     <div className="md:col-span-2">
                       <Input type="number" label="Duración (semanas)" value={String(activity.duracionSemanas)} disabled={!editable} onChange={(e) => updateList('cronograma', index, 'duracionSemanas', e.target.value)} min={1} />

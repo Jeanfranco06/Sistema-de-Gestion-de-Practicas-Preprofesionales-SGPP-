@@ -5,7 +5,7 @@ import { Search, RefreshCw, FileText, AlertTriangle, Award, FileSearch, UserPlus
 import { motion } from 'framer-motion';
 import { useExpedientes } from '../../../hooks/useExpedientes';
 import { expedientesApi } from '../../../api/expedientesApi';
-import { ESTADOS_EXPEDIENTE } from '../../../lib/constants';
+import { ESTADOS_EXPEDIENTE, COLORS } from '../../../lib/constants';
 import { secretariaApi, usuariosApi } from '../../../api/usuariosApi';
 import { Button, Input, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Badge, Tooltip, Avatar, Dialog, DialogContent, DialogFooter, Select, Textarea } from '../../../ui';
 import { Card, CardContent } from '../../../ui/Card';
@@ -44,21 +44,21 @@ interface EstadoColor {
 }
 
 const estadoColorMap: Record<string, EstadoColor> = {
-  SOLICITADO: { chip: 'info', dot: '#3b82f6', bg: '#eff6ff', label: 'Solicitado' },
+  SOLICITADO: { chip: 'info', dot: COLORS.INFO, bg: '#eff6ff', label: 'Solicitado' },
   EMPRESA_SEDE_ASIGNADA: { chip: 'info', dot: '#06b6d4', bg: '#ecfeff', label: 'Empresa Asignada' },
-  VALIDADO_SECRETARIA: { chip: 'success', dot: '#10b981', bg: '#ecfdf5', label: 'Validado (listo para carta)' },
+  VALIDADO_SECRETARIA: { chip: 'success', dot: COLORS.SUCCESS, bg: '#ecfdf5', label: 'Validado (listo para carta)' },
   CARTA_PRESENTACION_EMITIDA: { chip: 'info', dot: '#6366f1', bg: '#eef2ff', label: 'Carta Emitida' },
   ASESOR_ASIGNADO: { chip: 'info', dot: '#8b5cf6', bg: '#f5f3ff', label: 'Asesor Asignado' },
   COMITE_ASIGNADO: { chip: 'info', dot: '#8b5cf6', bg: '#f5f3ff', label: 'Comité Asignado' },
   CARTA_ACEPTACION_PRESENTADA: { chip: 'info', dot: '#6366f1', bg: '#eef2ff', label: 'Carta Acept. Presentada' },
-  PLAN_PRESENTADO: { chip: 'default', dot: '#f59e0b', bg: '#fef3c7', label: 'Plan Presentado' },
-  EN_REVISION: { chip: 'warning', dot: '#f59e0b', bg: '#fffbeb', label: 'En Revisión' },
-  OBSERVADO: { chip: 'error', dot: '#ef4444', bg: '#fef2f2', label: 'Observado' },
+  PLAN_PRESENTADO: { chip: 'default', dot: COLORS.WARNING, bg: '#fef3c7', label: 'Plan Presentado' },
+  EN_REVISION: { chip: 'warning', dot: COLORS.WARNING, bg: '#fffbeb', label: 'En Revisión' },
+  OBSERVADO: { chip: 'error', dot: COLORS.DANGER, bg: '#fef2f2', label: 'Observado' },
   SUBSANADO: { chip: 'info', dot: '#06b6d4', bg: '#ecfeff', label: 'Subsanado' },
-  APROBADO: { chip: 'success', dot: '#10b981', bg: '#ecfdf5', label: 'Aprobado' },
-  EN_EJECUCION: { chip: 'success', dot: '#10b981', bg: '#ecfdf5', label: 'En Ejecución' },
+  APROBADO: { chip: 'success', dot: COLORS.SUCCESS, bg: '#ecfdf5', label: 'Aprobado' },
+  EN_EJECUCION: { chip: 'success', dot: COLORS.SUCCESS, bg: '#ecfdf5', label: 'En Ejecución' },
   EVALUADO: { chip: 'success', dot: '#059669', bg: '#d1fae5', label: 'Evaluado' },
-  CERRADO: { chip: 'default', dot: '#64748b', bg: '#f1f5f9', label: 'Cerrado' },
+  CERRADO: { chip: 'default', dot: COLORS.MUTED, bg: '#f1f5f9', label: 'Cerrado' },
 };
 
 const getInitials = (nombre: string, apellido: string) => {

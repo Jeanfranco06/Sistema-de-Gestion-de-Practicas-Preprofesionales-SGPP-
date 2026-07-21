@@ -440,3 +440,17 @@ Una constancia generada se registra con archivo, hash, fecha, usuario solicitant
 - **Verificaciones:**
   - `mvn -pl sgpp-api -am compile -DskipTests` exitoso.
   - `npm run lint` y `npm run build` exitosos.
+
+### 2026-07-21 (continuación) — Completitud funcional y correcciones de negocio
+
+- **DashboardEstudiante:** corregido `INFORME_FINAL_APROBADO` (inexistente en backend) → `INFORME_APROBADO`; agregados estados `EVALUACION_PENDIENTE`, `EVALUACION_COMPLETA`, `INFORME_EN_REVISION` al STATUS_MAP.
+- **constants.ts:** agregado `EVALUACION_PENDIENTE` a `ESTADOS_EXPEDIENTE` (faltaba; se usaba como string literal).
+- **Página de evaluación del estudiante:** creado `EvaluacionEstudiante.tsx` reemplazando `PaginaEnConstruccion` en `/estudiante/evaluacion`. Muestra calificación final, notas por unidad (iniciales), evaluaciones registradas y desglose Anexo 4 (finales/profesionales). Hooks backend ya existían (`useNotasUnidad`, `useEvaluacionesPorExpediente`).
+- **Protección de ruta:** `/estudiante/evaluacion` ahora tiene `<ProtectedRoute allowedRoles={['ESTUDIANTE']}>` (antes no tenía).
+- **Menú lateral estudiante:** agregada entrada "Mis Evaluaciones" con ícono `Award`.
+- **Bloqueo informe final (INICIAL):** informe final ahora se bloquea si falta informe parcial 2 (antes solo se bloqueaba parcial 2 si faltaba parcial 1).
+- **Resubida de informe observado:** se agregó botón "Re-enviar" en `InformesPeriodicos` cuando un informe tiene archivo pero está en revisión/observado.
+- **Calificación en MiPractica:** se agrega KPI de calificación final usando `useMisExpedientes` (campo `calificacionFinal` del expediente).
+- **Migración de colores hex:** corregidos colores hardcoded en `ValidarRequisitos.tsx` (~40 reemplazos), `RecepcionAdministrativa.tsx` (~8), `SolicitarPractica.tsx` (~2), `InformesPeriodicos.tsx` (~1).
+- **Limpieza:** eliminados `UNUSED_V35` y `UNUSED_V38` de Flyway; eliminado `frontend/README.md` (default Vite).
+- **Verificaciones:** `mvn -pl sgpp-api -am package -DskipTests` exitoso; `npm run lint` y `npm run build` exitosos.

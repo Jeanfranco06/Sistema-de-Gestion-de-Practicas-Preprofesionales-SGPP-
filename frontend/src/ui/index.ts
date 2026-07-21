@@ -17,3 +17,4 @@ export { DropdownMenu, type DropdownMenuProps, type DropdownMenuItem } from './D
 export { Sheet, type SheetProps } from './Sheet';
 export { HoverCard, type HoverCardProps } from './HoverCard';
 export { InputOtp, type InputOtpProps } from './InputOtp';
+export { DatePicker, type DatePickerProps } from './DatePicker';

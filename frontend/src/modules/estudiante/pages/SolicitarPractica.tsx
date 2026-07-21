@@ -14,6 +14,7 @@ import {
   Dialog, DialogContent, DialogFooter, Input, Select,
 } from '../../../ui';
 import { cn } from '../../../lib/utils';
+import { COLORS } from '../../../lib/constants';
 
 const MySwal = withReactContent(Swal);
 
@@ -157,14 +158,14 @@ export function SolicitarPractica() {
             <p class="mt-3 text-slate-500 dark:text-slate-400">Por favor, completa los requisitos faltantes antes de solicitar la práctica.</p>
           </div>`,
           confirmButtonText: 'Entendido',
-          confirmButtonColor: '#F59E0B',
+          confirmButtonColor: COLORS.WARNING,
         });
       } else {
         MySwal.fire({
           icon: 'error',
           title: 'Error',
           text: msg,
-          confirmButtonColor: '#C62828',
+          confirmButtonColor: COLORS.DANGER,
         });
       }
     }

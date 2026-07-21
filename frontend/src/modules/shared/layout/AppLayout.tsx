@@ -8,7 +8,7 @@ import {
   UserCheck, ClipboardCheck, FolderOpen,
   Moon, Sun, ClipboardList,
   Briefcase, FileCheck, MapPin,
-  Settings,
+  Settings, Award,
 } from 'lucide-react';
 import { useAuth } from '../../../auth/AuthContext';
 import { useThemeContext } from '../../../shared/theme/ThemeContext';
@@ -67,6 +67,7 @@ function getNavGroups(roles: UserRole[] = []): NavGroup[] {
         { label: 'Documentos', icon: <FileText size={22} />, path: '/estudiante/documentos' },
         { label: 'Registro de Horas', icon: <Clock size={22} />, path: '/estudiante/horas' },
         { label: 'Informes', icon: <FileText size={22} />, path: '/estudiante/informes' },
+        { label: 'Mis Evaluaciones', icon: <Award size={22} />, path: '/estudiante/evaluacion' },
       ]},
       { group: 'institutional', label: 'Institucional', items: [
         { label: 'Centros de Práctica', icon: <MapPin size={22} />, path: '/estudiante/sedes' },

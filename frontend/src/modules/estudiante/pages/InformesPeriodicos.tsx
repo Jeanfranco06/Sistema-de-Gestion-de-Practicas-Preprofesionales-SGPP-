@@ -8,7 +8,7 @@ import withReactContent from 'sweetalert2-react-content';
 import { expedientesApi } from '@/api/expedientesApi';
 import { exportacionApi } from '@/api/exportacionApi';
 import api from '@/api/axios';
-import { ESTADOS_EXPEDIENTE } from '@/lib/constants';
+import { ESTADOS_EXPEDIENTE, COLORS } from '@/lib/constants';
 import { useAuth } from '@/auth/AuthContext';
 import { Card, CardContent, Badge, Button, Progress, Separator, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/ui';
 import { cn } from '@/lib/utils';
@@ -114,9 +114,14 @@ export const InformesPeriodicos = () => {
         });
         const idxParcial1 = hitosConEstado.findIndex((h) => h.tipo === 'INFORME_PARCIAL_1');
         const idxParcial2 = hitosConEstado.findIndex((h) => h.tipo === 'INFORME_PARCIAL_2');
+        const idxFinal = hitosConEstado.findIndex((h) => h.tipo === 'INFORME_FINAL_INICIAL');
         if (idxParcial2 >= 0 && idxParcial1 >= 0 && !hitosConEstado[idxParcial1].archivo) {
           hitosConEstado[idxParcial2].bloqueado = true;
           hitosConEstado[idxParcial2].estado = 'BLOQUEADO';
+        }
+        if (idxFinal >= 0 && idxParcial2 >= 0 && !hitosConEstado[idxParcial2].archivo) {
+          hitosConEstado[idxFinal].bloqueado = true;
+          hitosConEstado[idxFinal].estado = 'BLOQUEADO';
         }
         setHitos(hitosConEstado);
       }
@@ -149,7 +154,7 @@ export const InformesPeriodicos = () => {
     const file = event.target.files?.[0] ?? null;
     if (!file) return;
     if (!file.name.toLowerCase().endsWith('.pdf')) {
-      MySwal.fire({ icon: 'error', title: 'Formato Incorrecto', text: 'Solo se permiten archivos en formato PDF.', confirmButtonColor: '#d33' });
+      MySwal.fire({ icon: 'error', title: 'Formato Incorrecto', text: 'Solo se permiten archivos en formato PDF.', confirmButtonColor: COLORS.DANGER });
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
@@ -392,9 +397,16 @@ export const InformesPeriodicos = () => {
                       <span className="text-sm truncate max-w-[65%] text-foreground" title={hito.archivo}>
                         {hito.archivo}
                       </span>
-                      <Button variant="secondary" size="sm" onClick={() => handleDownload(hito)}>
-                        <Download className="h-4 w-4" /> Descargar
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button variant="secondary" size="sm" onClick={() => handleDownload(hito)}>
+                          <Download className="h-4 w-4" />
+                        </Button>
+                        {hito.estado === 'EN_REVISION' && (
+                          <Button variant="primary" size="sm" onClick={() => handleOpenUpload(hito)}>
+                            <CloudUpload className="h-4 w-4" /> Re-enviar
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   ) : (
                     <Button

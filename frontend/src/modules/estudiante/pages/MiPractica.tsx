@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useMiPractica } from '@/hooks/usePracticas';
+import { useMisExpedientes } from '@/hooks/useExpedientes';
 import { useCumplimientoHoras } from '@/hooks/useHoras';
 import { tieneControlHoras } from '@/shared/utils/controlHoras';
 import { Card, CardContent, Badge, Progress, Button, Avatar, type BadgeProps } from '@/ui';
@@ -8,7 +9,7 @@ import { cn } from '@/lib/utils';
 import {
   Building2, TrendingUp, RefreshCw, FileText, Clock, FolderOpen,
   GraduationCap, CheckCircle2, ChevronRight, Play, User, ArrowLeft, MapPin,
-  Loader2, AlertCircle,
+  Loader2, AlertCircle, Award,
 } from 'lucide-react';
 
 const STATUS_VARIANT: Record<string, BadgeProps['variant']> = {
@@ -151,6 +152,7 @@ function QuickAction({ title, subtitle, icon: Icon, onClick }: QuickActionProps)
 export default function MiPractica() {
   const navigate = useNavigate();
   const { data: practica, isLoading, isError, error } = useMiPractica();
+  const { data: expedientes } = useMisExpedientes();
   const { data: cumplimiento } = useCumplimientoHoras(
     practica?.idExpediente || practica?.expedienteId,
   );
@@ -162,6 +164,7 @@ export default function MiPractica() {
   const horasEjecutadas = hasControlHoras ? (cumplimiento?.horasAcumuladas ?? cumplimiento?.horasValidadas ?? 0) : 0;
   const pct = horasTotales > 0 ? Math.min(100, Math.round((horasEjecutadas / horasTotales) * 100)) : 0;
   const statusKey = practica?.estado ?? '';
+  const calificacionFinal = expedientes?.[0]?.calificacionFinal;
 
   if (isLoading) return <LoadingState />;
   if (isError) return <ErrorState message={error instanceof Error ? error.message : 'No se pudo cargar la información de tu práctica.'} />;
@@ -172,6 +175,9 @@ export default function MiPractica() {
     { label: 'Estado', val: getStatusLabel(statusKey), icon: CheckCircle2, color: 'bg-emerald-600 text-white dark:bg-emerald-700 dark:text-white' },
     { label: 'Tipo', val: practica.codigoTipoPractica || 'Práctica', icon: FileText, color: 'bg-primary-600 text-slate-900 dark:bg-primary-700 dark:text-slate-900' },
     { label: 'Sede', val: practica.nombreSede ? (practica.nombreSede.length > 12 ? practica.nombreSede.slice(0, 12) + '...' : practica.nombreSede) : 'No asignada', icon: GraduationCap, color: 'bg-amber-500 text-slate-900 dark:bg-amber-600 dark:text-slate-900' },
+    ...(calificacionFinal != null && calificacionFinal !== '' ? [
+      { label: 'Calificacion', val: Number(calificacionFinal).toFixed(1), icon: Award, color: 'bg-purple-600 text-white dark:bg-purple-700 dark:text-white' }
+    ] : []),
   ];
 
   const quickActions = [

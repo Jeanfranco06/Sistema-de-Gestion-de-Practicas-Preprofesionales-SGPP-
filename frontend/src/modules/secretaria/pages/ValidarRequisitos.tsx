@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { COLORS } from '@/lib/constants';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { useSecretariaEstudiantes, useUpdateDatosAcademicos } from '../../../hooks/useUsuarios';
 import { useValidarAcademico, useUltimoResultado } from '../../../hooks/useValidaciones';
@@ -63,11 +64,11 @@ const TIPO_PRACTICA_OPTS = ['INICIAL', 'FINAL', 'PROFESIONAL'] as const;
 const ESTADOS_ACADEMICOS = ['MATRICULADO', 'ACTIVO', 'REGULAR', 'SUSPENDIDO', 'EGRESADO', 'GRADUADO'] as const;
 
 const ESTADO_ACADEMICO_DOT: Record<string, { dot: string; bg: string }> = {
-  MATRICULADO: { dot: '#3b82f6', bg: '#eff6ff' },
-  ACTIVO: { dot: '#10b981', bg: '#ecfdf5' },
+  MATRICULADO: { dot: COLORS.INFO, bg: '#eff6ff' },
+  ACTIVO: { dot: COLORS.SUCCESS, bg: '#ecfdf5' },
   REGULAR: { dot: '#F5C518', bg: '#fffbeb' },
   SUSPENDIDO: { dot: '#f59e0b', bg: '#fffbeb' },
-  EGRESADO: { dot: '#64748b', bg: '#f1f5f9' },
+  EGRESADO: { dot: COLORS.MUTED, bg: '#f1f5f9' },
   GRADUADO: { dot: '#8b5cf6', bg: '#f5f3ff' },
 };
 
@@ -337,7 +338,7 @@ export const ValidarRequisitos = () => {
         className="flex flex-col items-center justify-center gap-4"
         style={{ height: '60vh', color: 'var(--color-muted-foreground)' }}
       >
-        <Loader2 size={48} className="animate-spin" style={{ color: '#1a365d' }} />
+        <Loader2 size={48} className="animate-spin" style={{ color: COLORS.UNT_BLUE_DARK }} />
         <p className="font-medium">Cargando estudiantes...</p>
       </div>
     );
@@ -353,7 +354,7 @@ export const ValidarRequisitos = () => {
       {/* Banner */}
       <div
         className="mb-6 md:mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-6 rounded-2xl md:rounded-3xl p-4 md:p-8 relative overflow-hidden"
-        style={{ backgroundColor: '#1a365d', color: 'white' }}
+        style={{ backgroundColor: COLORS.UNT_BLUE_DARK, color: 'white' }}
       >
         <div
           className="absolute right-0 top-0 opacity-10 pointer-events-none"
@@ -403,7 +404,7 @@ export const ValidarRequisitos = () => {
           className="rounded-2xl p-4 flex items-center gap-3 border"
           style={{ backgroundColor: '#eff6ff', borderColor: '#3b82f620' }}
         >
-          <div style={{ color: '#3b82f6' }}>
+          <div style={{ color: COLORS.INFO }}>
             <GraduationCap size={20} />
           </div>
           <div>
@@ -419,7 +420,7 @@ export const ValidarRequisitos = () => {
           className="rounded-2xl p-4 flex items-center gap-3 border"
           style={{ backgroundColor: '#ecfdf5', borderColor: '#10b98120' }}
         >
-          <div style={{ color: '#10b981' }}>
+          <div style={{ color: COLORS.SUCCESS }}>
             <CheckCircle2 size={20} />
           </div>
           <div>
@@ -499,8 +500,8 @@ export const ValidarRequisitos = () => {
             <button
               onClick={limpiarFiltros}
               className="p-2.5 rounded-xl transition-colors"
-              style={{ backgroundColor: '#f1f5f9', color: '#64748b' }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#e2e8f0')}
+              style={{ backgroundColor: '#f1f5f9', color: COLORS.MUTED }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = COLORS.BORDER)}
               onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#f1f5f9')}
             >
               <Filter size={20} />
@@ -516,10 +517,10 @@ export const ValidarRequisitos = () => {
       >
         {isLoading && (
           <div className="absolute top-0 left-0 right-0 z-10">
-            <div className="h-1 w-full overflow-hidden" style={{ backgroundColor: '#e2e8f0' }}>
+            <div className="h-1 w-full overflow-hidden" style={{ backgroundColor: COLORS.BORDER }}>
               <div
                 className="h-full animate-pulse"
-                style={{ backgroundColor: '#1a365d', width: '100%' }}
+                style={{ backgroundColor: COLORS.UNT_BLUE_DARK, width: '100%' }}
               />
             </div>
           </div>
@@ -529,7 +530,7 @@ export const ValidarRequisitos = () => {
           style={{ opacity: isLoading ? 0.6 : 1 }}
         >
           <Table className="min-w-[800px]">
-            <TableHeader style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+            <TableHeader style={{ backgroundColor: COLORS.BG_LIGHT, borderBottom: `2px solid ${COLORS.BORDER}` }}>
               <TableRow>
                 {headCells.map((hc) => (
                   <TableHead
@@ -618,13 +619,13 @@ export const ValidarRequisitos = () => {
                           <button
                             onClick={() => handleOpenValidar(est)}
                             className="p-1.5 rounded-lg transition-colors"
-                            style={{ color: '#10b981', backgroundColor: '#ecfdf5' }}
+                            style={{ color: COLORS.SUCCESS, backgroundColor: '#ecfdf5' }}
                             onMouseEnter={(e) => {
                               e.currentTarget.style.color = '#059669';
                               e.currentTarget.style.backgroundColor = '#d1fae5';
                             }}
                             onMouseLeave={(e) => {
-                              e.currentTarget.style.color = '#10b981';
+                              e.currentTarget.style.color = COLORS.SUCCESS;
                               e.currentTarget.style.backgroundColor = '#ecfdf5';
                             }}
                           >
@@ -635,13 +636,13 @@ export const ValidarRequisitos = () => {
                           <button
                             onClick={() => handleOpenHistorial(est)}
                             className="p-1.5 rounded-lg transition-colors"
-                            style={{ color: '#3b82f6', backgroundColor: '#eff6ff' }}
+                            style={{ color: COLORS.INFO, backgroundColor: '#eff6ff' }}
                             onMouseEnter={(e) => {
                               e.currentTarget.style.color = '#2563eb';
                               e.currentTarget.style.backgroundColor = '#dbeafe';
                             }}
                             onMouseLeave={(e) => {
-                              e.currentTarget.style.color = '#3b82f6';
+                              e.currentTarget.style.color = COLORS.INFO;
                               e.currentTarget.style.backgroundColor = '#eff6ff';
                             }}
                           >
@@ -761,8 +762,8 @@ export const ValidarRequisitos = () => {
               ? resultadoValidacion.apto
                 ? '#065f46'
                 : '#9a3412'
-              : '#1a365d',
-            color: '#fff',
+              : COLORS.UNT_BLUE_DARK,
+            color: COLORS.WHITE,
             display: 'flex',
             alignItems: 'center',
             gap: 1.5,
@@ -775,7 +776,7 @@ export const ValidarRequisitos = () => {
             Validación Académica: {selectedEstudiante?.codigoEstudiantil || ''}
           </Typography>
         </DialogTitle>
-        <DialogContent sx={{ p: { xs: 2, md: 4 }, bgcolor: '#fff' }}>
+        <DialogContent sx={{ p: { xs: 2, md: 4 }, bgcolor: COLORS.WHITE }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
             <Box
               sx={{
@@ -908,12 +909,12 @@ export const ValidarRequisitos = () => {
                   variant="h6"
                   sx={{
                     borderBottom: '2px solid',
-                    borderColor: '#1a365d',
+                    borderColor: COLORS.UNT_BLUE_DARK,
                     pb: 1,
                     display: 'flex',
                     alignItems: 'center',
                     gap: 1,
-                    color: '#1a365d',
+                    color: COLORS.UNT_BLUE_DARK,
                   }}
                 >
                   <CheckSquare /> Detalle de Reglas Evaluadas
@@ -926,16 +927,16 @@ export const ValidarRequisitos = () => {
                       key={idx}
                       className="rounded-xl border border-l-4 p-4"
                       style={{
-                        backgroundColor: '#fff',
+                        backgroundColor: COLORS.WHITE,
                         borderColor: 'var(--color-border)',
-                        borderLeftColor: detalle.cumplido ? '#10b981' : '#ef4444',
+                        borderLeftColor: detalle.cumplido ? COLORS.SUCCESS : COLORS.DANGER,
                       }}
                     >
                       <div className="flex items-start gap-3">
                         {detalle.cumplido ? (
-                          <CheckCircle2 size={18} style={{ color: '#10b981', marginTop: 4 }} />
+                          <CheckCircle2 size={18} style={{ color: COLORS.SUCCESS, marginTop: 4 }} />
                         ) : (
-                          <XCircle size={18} style={{ color: '#ef4444', marginTop: 4 }} />
+                          <XCircle size={18} style={{ color: COLORS.DANGER, marginTop: 4 }} />
                         )}
                         <div className="flex-1 min-w-0">
                           <div className="flex justify-between items-center gap-2 flex-wrap">
@@ -960,7 +961,7 @@ export const ValidarRequisitos = () => {
                           {isExpanded && (
                             <div
                               className="mt-3 p-3 rounded-lg text-sm"
-                              style={{ backgroundColor: '#f8fafc' }}
+                              style={{ backgroundColor: COLORS.BG_LIGHT }}
                             >
                               {detalle.descripcion && (
                                 <p className="mb-1" style={{ color: 'var(--color-foreground)' }}>
@@ -1010,12 +1011,12 @@ export const ValidarRequisitos = () => {
             )}
           </Box>
         </DialogContent>
-        <DialogActions sx={{ p: 3, bgcolor: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+        <DialogActions sx={{ p: 3, bgcolor: COLORS.BG_LIGHT, borderTop: `1px solid ${COLORS.BORDER}` }}>
           <MuiButton
             onClick={() => setOpenValidarDialog(false)}
             color="inherit"
             disabled={validarMutation.isPending}
-            sx={{ fontWeight: 600, color: '#64748b' }}
+            sx={{ fontWeight: 600, color: COLORS.MUTED }}
           >
             Cerrar
           </MuiButton>
@@ -1040,8 +1041,8 @@ export const ValidarRequisitos = () => {
       >
         <DialogTitle
           sx={{
-            bgcolor: '#1a365d',
-            color: '#fff',
+            bgcolor: COLORS.UNT_BLUE_DARK,
+            color: COLORS.WHITE,
             display: 'flex',
             alignItems: 'center',
             gap: 1.5,
@@ -1054,10 +1055,10 @@ export const ValidarRequisitos = () => {
             Historial de Validaciones: {selectedEstudiante?.codigoEstudiantil}
           </Typography>
         </DialogTitle>
-        <DialogContent sx={{ p: { xs: 2, md: 4 }, bgcolor: '#fff' }}>
+        <DialogContent sx={{ p: { xs: 2, md: 4 }, bgcolor: COLORS.WHITE }}>
           {historialLoading ? (
             <Box sx={{ textAlign: 'center', py: 4 }}>
-              <Loader2 size={40} className="animate-spin" style={{ color: '#1a365d' }} />
+              <Loader2 size={40} className="animate-spin" style={{ color: COLORS.UNT_BLUE_DARK }} />
             </Box>
           ) : historialValidaciones.length === 0 ? (
             <Box sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
@@ -1077,9 +1078,9 @@ export const ValidarRequisitos = () => {
                   <div className="flex justify-between items-center mb-2 flex-wrap gap-2">
                     <div className="flex items-center gap-2">
                       {h.apto ? (
-                        <CheckCircle2 size={18} style={{ color: '#10b981' }} />
+                        <CheckCircle2 size={18} style={{ color: COLORS.SUCCESS }} />
                       ) : (
-                        <XCircle size={18} style={{ color: '#ef4444' }} />
+                        <XCircle size={18} style={{ color: COLORS.DANGER }} />
                       )}
                       <span
                         className="font-bold text-sm"
@@ -1124,11 +1125,11 @@ export const ValidarRequisitos = () => {
             </Box>
           )}
         </DialogContent>
-        <DialogActions sx={{ p: 3, bgcolor: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+        <DialogActions sx={{ p: 3, bgcolor: COLORS.BG_LIGHT, borderTop: `1px solid ${COLORS.BORDER}` }}>
           <MuiButton
             onClick={() => setOpenHistorialDialog(false)}
             color="inherit"
-            sx={{ fontWeight: 600, color: '#64748b' }}
+            sx={{ fontWeight: 600, color: COLORS.MUTED }}
           >
             Cerrar
           </MuiButton>
@@ -1153,8 +1154,8 @@ export const ValidarRequisitos = () => {
       >
         <DialogTitle
           sx={{
-            bgcolor: '#1a365d',
-            color: '#fff',
+            bgcolor: COLORS.UNT_BLUE_DARK,
+            color: COLORS.WHITE,
             display: 'flex',
             alignItems: 'center',
             gap: 1.5,
@@ -1167,7 +1168,7 @@ export const ValidarRequisitos = () => {
             Editar Datos Académicos
           </Typography>
         </DialogTitle>
-        <DialogContent sx={{ p: { xs: 2, md: 4 }, bgcolor: '#fff' }}>
+        <DialogContent sx={{ p: { xs: 2, md: 4 }, bgcolor: COLORS.WHITE }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, mt: 1 }}>
             <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2 }}>
               <TextField
@@ -1228,11 +1229,11 @@ export const ValidarRequisitos = () => {
             </FormControl>
           </Box>
         </DialogContent>
-        <DialogActions sx={{ p: 3, bgcolor: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+        <DialogActions sx={{ p: 3, bgcolor: COLORS.BG_LIGHT, borderTop: `1px solid ${COLORS.BORDER}` }}>
           <MuiButton
             onClick={() => setOpenEditDialog(false)}
             color="inherit"
-            sx={{ fontWeight: 600, color: '#64748b' }}
+            sx={{ fontWeight: 600, color: COLORS.MUTED }}
           >
             Cancelar
           </MuiButton>
@@ -1251,7 +1252,7 @@ export const ValidarRequisitos = () => {
               px: 4,
               borderRadius: 2,
               fontWeight: 700,
-              bgcolor: '#1a365d',
+              bgcolor: COLORS.UNT_BLUE_DARK,
               '&:hover': { bgcolor: '#1e40af' },
             }}
           >

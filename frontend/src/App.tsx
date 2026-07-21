@@ -41,6 +41,7 @@ const RegistroHoras = lazyNamed(() => import('./modules/estudiante/pages/Registr
 const PerfilEstudiante = lazyNamed(() => import('./modules/estudiante/pages/PerfilEstudiante'), 'PerfilEstudiante');
 const MiPractica = lazyNamed(() => import('./modules/estudiante/pages/MiPractica'), 'MiPractica');
 const PlanPracticas = lazyNamed(() => import('./modules/estudiante/pages/PlanPracticas'), 'PlanPracticas');
+const EvaluacionEstudiante = lazyNamed(() => import('./modules/estudiante/pages/EvaluacionEstudiante'), 'EvaluacionEstudiante');
 const RevisionDocumental = lazyNamed(() => import('./modules/shared/pages/RevisionDocumental'), 'RevisionDocumental');
 const ListaPracticantes = lazyNamed(() => import('./modules/evaluacion/ListaPracticantes'), 'ListaPracticantes');
 const AdminDashboardPage = lazyNamed(() => import('./modules/admin/pages/AdminDashboardPage'), 'AdminDashboardPage');
@@ -138,7 +139,11 @@ export default function App() {
                       <RegistroHoras />
                     </ProtectedRoute>
                   } />
-                  <Route path="/estudiante/evaluacion" element={<PaginaEnConstruccion titulo="Evaluación" />} />
+                  <Route path="/estudiante/evaluacion" element={
+                    <ProtectedRoute allowedRoles={['ESTUDIANTE']}>
+                      <EvaluacionEstudiante />
+                    </ProtectedRoute>
+                  } />
                   <Route
                     path="/estudiante/sedes"
                     element={
