@@ -130,6 +130,29 @@ function getNavGroups(roles: UserRole[] = []): NavGroup[] {
     ];
   }
 
+  if (isDocente) {
+    return [
+      { group: 'tracking', label: 'Seguimiento', items: [
+        { label: 'Dashboard', icon: <LayoutDashboard size={22} />, path: '/docente/dashboard' },
+        { label: 'Mis Practicantes', icon: <GraduationCap size={22} />, path: '/docente/practicantes' },
+        ...(roleNames.includes('COMITE_PRACTICAS')
+          ? [
+              { label: 'Panel Comité', icon: <ClipboardCheck size={22} />, path: '/comite/panel' },
+              { label: 'Coordinación', icon: <LayoutDashboard size={22} />, path: '/coordinacion/dashboard' },
+              { label: 'Reportes Consolidados', icon: <BarChart3 size={22} />, path: '/coordinacion/reportes' }
+            ]
+          : []),
+      ]},
+      ...(roleNames.includes('COMITE_PRACTICAS')
+        ? [{ group: 'queries', label: 'Consultas', items: [
+            { label: 'Expedientes', icon: <ClipboardList size={22} />, path: '/admin/expedientes' },
+            { label: 'Empresas', icon: <Building2 size={22} />, path: '/admin/empresas' },
+            { label: 'Sedes', icon: <Building2 size={22} />, path: '/admin/sedes' },
+          ]}]
+        : [])
+    ];
+  }
+
   if (isComite) {
     return [
       { group: 'comite', label: 'Comité', items: [
@@ -144,15 +167,6 @@ function getNavGroups(roles: UserRole[] = []): NavGroup[] {
         { label: 'Expedientes', icon: <ClipboardList size={22} />, path: '/admin/expedientes' },
         { label: 'Empresas', icon: <Building2 size={22} />, path: '/admin/empresas' },
         { label: 'Sedes', icon: <Building2 size={22} />, path: '/admin/sedes' },
-      ]},
-    ];
-  }
-
-  if (isDocente) {
-    return [
-      { group: 'tracking', label: 'Seguimiento', items: [
-        { label: 'Dashboard', icon: <LayoutDashboard size={22} />, path: '/docente/dashboard' },
-        { label: 'Mis Practicantes', icon: <GraduationCap size={22} />, path: '/docente/practicantes' },
       ]},
     ];
   }
@@ -299,6 +313,23 @@ function UserProfile({
   onProfileClick: () => void;
   onLogout: () => void;
 }) {
+  const primaryRole = useMemo(() => {
+    if (!user?.roles || user.roles.length === 0) return 'Usuario';
+    const priorityList = ['ESTUDIANTE', 'DOCENTE_ASESOR', 'TUTOR_EXTERNO', 'COORDINADOR', 'DIRECTOR', 'COMITE_PRACTICAS', 'SECRETARIA', 'ADMIN_SISTEMA', 'ADMINISTRADOR'];
+    let bestIndex = 999;
+    let bestRole = user.roles[0];
+    
+    user.roles.forEach(role => {
+      const name = (typeof role === 'string' ? role : role.authority || role.nombre || '').replace(/^ROLE_/, '');
+      const idx = priorityList.indexOf(name);
+      if (idx !== -1 && idx < bestIndex) {
+        bestIndex = idx;
+        bestRole = role;
+      }
+    });
+    return formatRole(bestRole);
+  }, [user?.roles]);
+
   return (
     <div className={cn('transition-all duration-200 border-t border-[var(--color-border)]', collapsed ? 'p-2' : 'p-3')}>
       <button
@@ -321,7 +352,7 @@ function UserProfile({
               {user?.nombres ? `${user.nombres.split(' ')[0]} ${user.apellidos?.split(' ')[0] || ''}` : user?.username}
             </span>
             <span className="text-xs text-muted-foreground truncate leading-tight capitalize">
-              {user?.roles?.[0] ? formatRole(user.roles[0]) : 'Usuario'}
+              {primaryRole}
             </span>
           </div>
         )}

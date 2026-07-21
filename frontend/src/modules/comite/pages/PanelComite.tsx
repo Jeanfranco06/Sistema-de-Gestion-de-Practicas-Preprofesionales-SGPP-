@@ -5,7 +5,7 @@ import {
   CheckCircle2, Scale, Eye, AlertTriangle,
   Users, ClipboardList, FileEdit, ListChecks, RefreshCw,
   ChevronRight, Building2, Search, FileText, X, BarChart3,
-  Loader2, Info,
+  Loader2, Info, Clock,
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';

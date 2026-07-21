@@ -41,47 +41,52 @@ services:
       - pgadmin_data:/var/lib/pgadmin
 
   # ---- Backend (Spring Boot) ----
-  # backend:
-  #   build:
-  #     context: ./backend
-  #     dockerfile: Dockerfile
-  #   container_name: sgpp-backend
-  #   restart: unless-stopped
-  #   depends_on:
-  #     db:
-  #       condition: service_healthy
-  #   ports:
-  #     # 8081 en el host evita conflicto con XAMPP/Apache en 8080
-  #     - "8081:8080"
-  #   environment:
-  #     - SPRING_PROFILES_ACTIVE=docker
-  #     - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/${POSTGRES_DB:-sgpp_db}
-  #     - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-postgres}
-  #     - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-postgres}
-  #   volumes:
-  #     - sgpp_uploads:/app/uploads
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: sgpp-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      # Puerto 8082 expuesto en el host para coincidir con la configuración del backend local
+      - "8082:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/${POSTGRES_DB:-sgpp_db}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-postgres}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - JWT_SECRET=${JWT_SECRET:-SGPPSECRETKEY2024UNTIngenieriaIndustrialSistemaGestionPracticasPreprofesionalesBase64ValidKeyForJWTTokenGeneration}
+      - JWT_EXPIRATION=${JWT_EXPIRATION:-86400000}
+    volumes:
+      - sgpp_uploads:/app/uploads
 
   # ---- Frontend (React / Vite para Desarrollo) ----
-  # frontend:
-  #   image: node:20-alpine
-  #   container_name: sgpp-frontend
-  #   restart: unless-stopped
-  #   working_dir: /app
-  #   depends_on:
-  #     - backend
-  #   command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
-  #   ports:
-  #     - "80:3002"
-  #   volumes:
-  #     - ./frontend:/app
-  #     - frontend_node_modules:/app/node_modules
+  frontend:
+    image: node:20-alpine
+    container_name: sgpp-frontend
+    restart: unless-stopped
+    working_dir: /app
+    depends_on:
+      - backend
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    ports:
+      # Puerto 5173 expuesto en el host para coincidir con la configuración de Vite
+      - "5173:5173"
+    environment:
+      - BACKEND_URL=http://backend:8080
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
 
 volumes:
   pgdata:
     driver: local
   pgadmin_data: 
     driver: local
-  # sgpp_uploads:
-  #   driver: local
-  # frontend_node_modules:
-  #   driver: local
+  sgpp_uploads:
+    driver: local
+  frontend_node_modules:
+    driver: local
