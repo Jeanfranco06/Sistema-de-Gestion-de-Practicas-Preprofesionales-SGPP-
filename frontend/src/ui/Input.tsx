@@ -14,7 +14,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="w-full">
         {label && (
-          <label htmlFor={inputId} className="block text-sm font-medium text-text-main mb-1.5">
+          <label htmlFor={inputId} className="block text-sm font-medium text-foreground mb-1.5">
             {label}
           </label>
         )}
@@ -22,10 +22,10 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           ref={ref}
           id={inputId}
           className={cn(
-            'w-full rounded-xl border bg-surface-card px-4 py-2.5 text-sm text-text-main placeholder:text-text-muted transition-all duration-150',
+            'w-full rounded-xl border bg-card px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground transition-all duration-150',
             'focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 focus:outline-none',
             'disabled:opacity-50 disabled:pointer-events-none',
-            error ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-surface-border hover:border-primary-400',
+            error ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-border hover:border-primary-400',
             className
           )}
           aria-invalid={!!error}
@@ -38,7 +38,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           </p>
         )}
         {helperText && !error && (
-          <p id={`${inputId}-helper`} className="mt-1.5 text-sm text-text-muted">
+          <p id={`${inputId}-helper`} className="mt-1.5 text-sm text-muted-foreground">
             {helperText}
           </p>
         )}

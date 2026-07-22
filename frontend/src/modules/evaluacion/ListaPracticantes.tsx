@@ -104,10 +104,10 @@ export const ListaPracticantes = () => {
     { label: 'Por evaluar', value: stats.porEvaluar, icon: FileText, color: 'var(--color-success)' },
   ];
 
-  const estadoOptions = [
-    { value: 'TODOS', label: 'Todos' },
-    ...ESTADOS_FILTRO.map((s) => ({ value: s, label: s === 'TODOS' ? 'Todos' : s.replace(/_/g, ' ') })),
-  ];
+  const estadoOptions = ESTADOS_FILTRO.map((s) => ({
+    value: s,
+    label: s === 'TODOS' ? 'Todos' : s.replace(/_/g, ' '),
+  }));
 
   const tipoOptions = [
     { value: 'TODOS', label: 'Todas' },

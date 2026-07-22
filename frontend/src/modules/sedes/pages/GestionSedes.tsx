@@ -769,7 +769,7 @@ export const GestionSedes = () => {
 
                 {/* Filters */}
                 <div className="rounded-2xl border p-4 flex flex-wrap gap-3 mb-6" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }}>
-                    <div className="flex items-center gap-2 bg-white rounded-xl px-3 py-2 border min-w-[260px] flex-1" style={{ borderColor: 'var(--color-border)' }}>
+                    <div className="flex items-center gap-2 bg-[var(--color-card)] rounded-xl px-3 py-2 border min-w-[260px] flex-1" style={{ borderColor: 'var(--color-border)' }}>
                         <Search size={16} className="text-muted-foreground shrink-0" />
                         <input
                             type="text"
@@ -848,10 +848,10 @@ export const GestionSedes = () => {
                             <TableHeader>
                                 <TableRow>
                                     {headCells.map((hc) => (
-                                        <TableHead key={hc.id} className="font-bold text-[#475569] py-4">
+                                        <TableHead key={hc.id} className="font-bold text-[var(--color-muted-foreground)] py-4">
                                             {hc.sortable !== false
                                                 ? (
-                                                    <button className="flex items-center gap-1 font-bold text-[#475569] bg-transparent border-none cursor-pointer" onClick={() => handleSort(hc.id)}>
+                                                    <button className="flex items-center gap-1 font-bold text-[var(--color-muted-foreground)] bg-transparent border-none cursor-pointer" onClick={() => handleSort(hc.id)}>
                                                         {hc.label}
                                                         {orderBy === hc.id ? (
                                                             <span>{order === 'asc' ? '↑' : '↓'}</span>
@@ -1162,7 +1162,7 @@ export const GestionSedes = () => {
                         </TextField>
                     </div>
                 </DialogContent>
-                <DialogActions sx={{ p: 3, bgcolor: COLORS.BG_LIGHT, borderTop: `1px solid ${COLORS.BORDER}` }}>
+                <DialogActions sx={{ p: 3, bgcolor: 'var(--color-muted)', borderTop: '1px solid var(--color-border)' }}>
                     <Button variant="secondary" onClick={() => setOpenDialog(false)} disabled={createSedeMutation.isPending || updateSedeMutation.isPending}>Cancelar</Button>
                     <Button onClick={handleSave} loading={createSedeMutation.isPending || updateSedeMutation.isPending}>
                         {isEditing ? 'Actualizar' : 'Guardar'}
@@ -1236,7 +1236,7 @@ export const GestionSedes = () => {
                         {selectedSede.tutoresActivos && selectedSede.tutoresActivos.length > 0 ? (
                             <div className="flex flex-col gap-2 mb-4">
                                 {selectedSede.tutoresActivos.map((tutor) => (
-                                    <div key={tutor.id} className="p-3 rounded-xl border" style={{ backgroundColor: COLORS.BG_LIGHT, borderColor: 'var(--color-border)' }}>
+                                    <div key={tutor.id} className="p-3 rounded-xl border bg-muted" style={{ borderColor: 'var(--color-border)' }}>
                                         <div className="font-bold text-sm">{tutor.nombres} {tutor.apellidoPaterno} {tutor.apellidoMaterno}</div>
                                         <div className="text-xs text-muted-foreground">Cargo: {tutor.cargo}</div>
                                         <div className="text-xs text-muted-foreground">Correo: {tutor.correo}</div>
@@ -1292,7 +1292,7 @@ export const GestionSedes = () => {
                                     <span className="text-sm font-semibold text-muted-foreground block mb-2">Historial de validaciones:</span>
                                     <div className="flex flex-col gap-2">
                                         {historialValidaciones.map(v => (
-                                            <div key={v.id} className="p-3 rounded-xl border flex justify-between items-center" style={{ backgroundColor: COLORS.BG_LIGHT, borderColor: 'var(--color-border)' }}>
+                                            <div key={v.id} className="p-3 rounded-xl border flex justify-between items-center bg-muted" style={{ borderColor: 'var(--color-border)' }}>
                                                 <Badge variant={v.resultadoValidacion === 'APROBADA' ? 'success' : v.resultadoValidacion === 'RECHAZADA' ? 'danger' : 'warning'}>{v.resultadoValidacion}</Badge>
                                                 <span className="text-xs text-muted-foreground">{v.nombreValidador} — {v.fechaValidacion ? new Date(v.fechaValidacion).toLocaleDateString() : ''}</span>
                                             </div>
@@ -1368,7 +1368,7 @@ export const GestionSedes = () => {
                         </div>
                     )}
                 </DialogContent>
-                <DialogActions sx={{ p: 3, bgcolor: COLORS.BG_LIGHT, borderTop: `1px solid ${COLORS.BORDER}` }}>
+                <DialogActions sx={{ p: 3, bgcolor: 'var(--color-muted)', borderTop: '1px solid var(--color-border)' }}>
                     <Button variant="secondary" onClick={() => setValidacionDialogOpen(false)} disabled={createValidacionMutation.isPending || updateValidacionMutation.isPending}>Cancelar</Button>
                     <Button onClick={handleValidacionSave} loading={createValidacionMutation.isPending || updateValidacionMutation.isPending}>
                         {validacionActual?.id ? 'Actualizar Validación' : 'Guardar Validación'}

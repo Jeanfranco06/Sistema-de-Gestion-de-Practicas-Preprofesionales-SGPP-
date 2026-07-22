@@ -1,24 +1,21 @@
 import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Download, FileText, User, Building2, BarChart3, ArrowLeft,
 } from 'lucide-react';
 import { evaluacionesApi } from '@/api/evaluacionesApi';
 import api from '@/api/axios';
-import { useAuth } from '@/auth/AuthContext';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useExpedienteById } from '@/hooks/useExpedientes';
 import { useNotasUnidad } from '@/hooks/useNotasUnidad';
 import { EvaluacionComponentesAnexo4 } from '@/modules/evaluacion/EvaluacionComponentesAnexo4';
 import {
   Button, Input, Badge, Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
-  Tabs, TabsList, TabsTrigger, TabsContent, Card, CardContent, Textarea,
+  Card, CardContent, Textarea,
 } from '@/ui';
 import { cn } from '@/lib/utils';
 import Swal from 'sweetalert2';
 import { showSuccess, showError, showWarning, showLoading, closeLoading } from '@/lib/toast';
-
-type Componente = 'DOCENTE' | 'INFORME' | 'SUSTENTACION';
 
 interface Documento {
   id: number;
@@ -38,49 +35,9 @@ interface Expediente {
   calificacionFinal?: number;
 }
 
-interface Criterio {
-  id: number;
-  nombre: string;
-  descripcion: string;
-  puntajeMaximo: number;
-}
 
-interface Detalle {
-  idCriterio: number;
-  puntajeObtenido: number;
-  comentarios: string;
-}
-
-interface Evaluacion {
-  id: number;
-  fechaEvaluacion: string;
-  componente: string;
-  tipoEvaluador: string;
-  promedioFinal?: number;
-  detalles?: Array<{
-    idCriterio: number;
-    nombreCriterio?: string;
-    puntajeObtenido: number;
-  }>;
-}
-
-interface EvaluacionForm {
-  componente: Componente;
-  detalles: Detalle[];
-  comentarios: string;
-}
-
-interface EvaluacionPayload {
-  idExpediente: number;
-  tipoEvaluador: string;
-  evaluadorId: number | string;
-  componente: Componente;
-  detalles: Detalle[];
-  comentarios: string;
-}
 
 export const EvaluacionDocenteAsesor = () => {
-  const auth = useAuth() as { user?: { id?: number | string } | null };
   const { id: idExpedienteParams } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -88,40 +45,8 @@ export const EvaluacionDocenteAsesor = () => {
   const idExpediente = idExpedienteParams ? Number(idExpedienteParams) : NaN;
   const expedienteIdValido = Number.isSafeInteger(idExpediente) && idExpediente > 0;
 
-  const [componenteActual, setComponenteActual] = useState<Componente>('DOCENTE');
-  const [evaluacion, setEvaluacion] = useState<EvaluacionForm>({
-    componente: 'DOCENTE',
-    detalles: [],
-    comentarios: '',
-  });
-
   const { data: expediente } = useExpedienteById(idExpedienteParams);
   const { data: notasUnidad = [] } = useNotasUnidad(idExpedienteParams);
-  const { data: criterios = [] } = useQuery<Criterio[]>({
-    queryKey: ['evaluaciones', 'criterios', componenteActual],
-    queryFn: async () => {
-      const res = await evaluacionesApi.obtenerCriteriosPorTipo(componenteActual);
-      const payload = res.data as { data?: Criterio[] } | Criterio[] | undefined;
-      return Array.isArray(payload) ? payload : payload?.data ?? [];
-    },
-    enabled: expedienteIdValido,
-  });
-  const { data: evaluaciones = [] } = useQuery<Evaluacion[]>({
-    queryKey: ['evaluaciones', 'expediente', idExpediente],
-    queryFn: async () => {
-      const res = await evaluacionesApi.obtenerEvaluacionesPorPractica(idExpediente);
-      const payload = res.data as { data?: Evaluacion[] } | Evaluacion[] | undefined;
-      return Array.isArray(payload) ? payload : payload?.data ?? [];
-    },
-    enabled: expedienteIdValido,
-  });
-
-  const crearMutation = useMutation({
-    mutationFn: (payload: EvaluacionPayload) => evaluacionesApi.crearEvaluacion(payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['evaluaciones', 'expediente', idExpediente] });
-    },
-  });
 
   const registrarNotaUnidadMutation = useMutation({
     mutationFn: (payload: { numeroUnidad: number; notaPlan?: number; notaInforme: number; comentarios?: string }) =>
@@ -141,18 +66,6 @@ export const EvaluacionDocenteAsesor = () => {
     unidad2: { informe: '', comentarios: '' },
     unidad3: { informe: '', comentarios: '' },
   });
-
-  useEffect(() => {
-    setEvaluacion((prev) => ({
-      ...prev,
-      componente: componenteActual,
-      detalles: criterios.map((c) => ({
-        idCriterio: c.id,
-        puntajeObtenido: 0,
-        comentarios: '',
-      })),
-    }));
-  }, [criterios, componenteActual]);
 
   useEffect(() => {
     if (!notasUnidad || notasUnidad.length === 0) return;
@@ -178,70 +91,6 @@ export const EvaluacionDocenteAsesor = () => {
     });
     setNotasForm(nextForm);
   }, [notasUnidad]);
-
-  const handleTabChange = (value: string) => {
-    setComponenteActual(value as Componente);
-  };
-
-  const handlePuntajeChange = (index: number, value: string) => {
-    setEvaluacion((prev) => {
-      const newDetalles = [...prev.detalles];
-      const current = newDetalles[index];
-      if (!current) return prev;
-      const numValue = parseFloat(value) || 0;
-      newDetalles[index] = {
-        ...current,
-        puntajeObtenido: Math.min(Math.max(numValue, 0), 20),
-      };
-      return { ...prev, detalles: newDetalles };
-    });
-  };
-
-  const handleComentarioChange = (index: number, value: string) => {
-    setEvaluacion((prev) => {
-      const newDetalles = [...prev.detalles];
-      const current = newDetalles[index];
-      if (!current) return prev;
-      newDetalles[index] = { ...current, comentarios: value };
-      return { ...prev, detalles: newDetalles };
-    });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const confirmResult = await Swal.fire({
-      title: '¿Confirmar Evaluación?',
-      text: `Vas a registrar la evaluación de la sección ${componenteActual}.`,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, registrar',
-      cancelButtonText: 'Cancelar',
-      customClass: { confirmButton: 'wow-btn' },
-    });
-
-    if (!confirmResult.isConfirmed) return;
-
-    if (!auth.user?.id) {
-      showError('Sesión no disponible', 'Vuelve a iniciar sesión antes de registrar la evaluación.');
-      return;
-    }
-
-    try {
-      showLoading('Guardando...');
-      await crearMutation.mutateAsync({
-        ...evaluacion,
-        idExpediente,
-        evaluadorId: auth.user.id,
-        tipoEvaluador: 'DOCENTE_ASESOR',
-      });
-      closeLoading();
-      showSuccess('Evaluación Registrada');
-    } catch {
-      closeLoading();
-      showError('Error', 'No se pudo guardar la evaluación.');
-    }
-  };
 
   const handleNotaUnidadChange = (unidad: 'unidad1' | 'unidad2' | 'unidad3', campo: string, value: string) => {
     setNotasForm((prev) => ({
@@ -309,9 +158,8 @@ export const EvaluacionDocenteAsesor = () => {
     }
   };
 
-  const ultimaEvaluacion = evaluaciones.length > 0 ? evaluaciones[evaluaciones.length - 1] : null;
   const notaUnidadPromedio = notasUnidad.find((n: any) => n.promedioFinal != null)?.promedioFinal ?? null;
-  const promedioFinal = notaUnidadPromedio ?? ultimaEvaluacion?.promedioFinal ?? expediente?.calificacionFinal ?? 0;
+  const promedioFinal = notaUnidadPromedio ?? expediente?.calificacionFinal ?? 0;
 
   const progresoColorClass =
     promedioFinal >= 14
@@ -433,77 +281,7 @@ export const EvaluacionDocenteAsesor = () => {
         </Card>
       )}
 
-      {/* ── Tabs ─────────────────────────────────────────────── */}
-      <Tabs value={componenteActual} onValueChange={handleTabChange}>
-        <TabsList className="w-full sm:w-auto">
-          <TabsTrigger
-            value="DOCENTE"
-            aria-selected={componenteActual === 'DOCENTE'}
-            onClick={() => handleTabChange('DOCENTE')}
-          >
-            1. Seguimiento docente (30%)
-          </TabsTrigger>
-          <TabsTrigger
-            value="INFORME"
-            aria-selected={componenteActual === 'INFORME'}
-            onClick={() => handleTabChange('INFORME')}
-          >
-            2. Informe final (30%)
-          </TabsTrigger>
-          <TabsTrigger
-            value="SUSTENTACION"
-            aria-selected={componenteActual === 'SUSTENTACION'}
-            onClick={() => handleTabChange('SUSTENTACION')}
-          >
-            3. Sustentación (10%)
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value={componenteActual}>
-          <Card>
-            <CardContent className="p-4 sm:p-6">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                {criterios.map((criterio, index) => (
-                  <div
-                    key={criterio.id}
-                    className="flex h-full flex-col rounded-xl border border-border bg-blue-50 dark:bg-blue-950/30 p-4"
-                  >
-                    <div className="mb-2 flex items-start justify-between gap-2">
-                      <span className="text-sm font-semibold text-foreground">
-                        {criterio.nombre}
-                      </span>
-                      <Badge variant="neutral" size="sm">Peso: {criterio.puntajeMaximo}%</Badge>
-                    </div>
-                    <p className="mb-3 block text-xs text-muted-foreground">
-                      {criterio.descripcion}
-                    </p>
-                    <Input
-                      label="Nota (0-20)"
-                      type="number"
-                      min={0}
-                      max={20}
-                      value={evaluacion.detalles[index]?.puntajeObtenido || ''}
-                      onChange={(e) => handlePuntajeChange(index, e.target.value)}
-                      className="mb-3"
-                    />
-                    <Textarea
-                      label="Observaciones"
-                      rows={2}
-                      value={evaluacion.detalles[index]?.comentarios || ''}
-                      onChange={(e) => handleComentarioChange(index, e.target.value)}
-                    />
-                  </div>
-                ))}
-              </div>
 
-              <div className="mt-6 flex justify-end">
-                <Button onClick={handleSubmit} disabled={crearMutation.isPending}>
-                  {crearMutation.isPending ? 'Registrando...' : `Registrar ${componenteActual}`}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
 
       {/* ── Notas por unidades ───────────────────────────────── */}
       {expediente?.codigoTipoPractica === 'INICIAL' && (
@@ -568,49 +346,7 @@ export const EvaluacionDocenteAsesor = () => {
         </Card>
       )}
 
-      {/* ── Historial ────────────────────────────────────────── */}
-      {evaluaciones.length > 0 && (
-        <Card>
-          <CardContent className="p-4 sm:p-6">
-            <h3 className="mb-4 text-base font-bold text-foreground">
-              Historial de registros
-            </h3>
-            <div className="rounded-xl border border-border overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted hover:bg-muted">
-                    <TableHead className="text-foreground">Fecha</TableHead>
-                    <TableHead className="text-foreground">Componente</TableHead>
-                    <TableHead className="text-foreground">Evaluador</TableHead>
-                    <TableHead className="text-foreground">Detalles</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {evaluaciones.map((ev) => (
-                    <TableRow key={ev.id}>
-                      <TableCell className="text-foreground">{ev.fechaEvaluacion}</TableCell>
-                      <TableCell>
-                        <Badge variant="neutral" size="sm">{ev.componente}</Badge>
-                      </TableCell>
-                      <TableCell className="text-foreground">{ev.tipoEvaluador}</TableCell>
-                      <TableCell>
-                        {ev.detalles?.map((d) => (
-                          <span
-                            key={d.idCriterio}
-                            className="block text-xs text-muted-foreground"
-                          >
-                            {d.nombreCriterio}: {d.puntajeObtenido}/20
-                          </span>
-                        ))}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+
     </div>
   );
 };

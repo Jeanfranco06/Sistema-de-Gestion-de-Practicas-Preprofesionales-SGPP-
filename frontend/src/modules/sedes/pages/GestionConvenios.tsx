@@ -415,12 +415,12 @@ export const GestionConvenios = () => {
           )}
           <div className="overflow-x-auto transition-opacity duration-200" style={{ opacity: conveniosLoading ? 0.6 : 1 }}>
             <Table className="min-w-[700px]">
-              <TableHeader style={{ backgroundColor: COLORS.BG_LIGHT, borderBottom: `2px solid ${COLORS.BORDER}` }}>
+              <TableHeader style={{ backgroundColor: 'var(--color-muted)', borderBottom: `1px solid var(--color-border)` }}>
                 <TableRow>
                   {headCells.map((hc) => (
-                    <TableHead key={hc.id} className="font-bold text-[#475569] py-3">
+                    <TableHead key={hc.id} className="font-bold text-[var(--color-muted-foreground)] py-3">
                       {hc.sortable ? (
-                        <button className="flex items-center gap-1 font-bold text-[#475569] bg-transparent border-none cursor-pointer" onClick={() => handleSort(hc.id as keyof Convenio)}>
+                        <button className="flex items-center gap-1 font-bold text-[var(--color-muted-foreground)] bg-transparent border-none cursor-pointer" onClick={() => handleSort(hc.id as keyof Convenio)}>
                           {hc.label}
                           {orderBy === hc.id ? (
                             <span>{order === 'asc' ? '↑' : '↓'}</span>
@@ -469,7 +469,7 @@ export const GestionConvenios = () => {
                       <TableCell>
                         <div className="flex justify-center gap-1">
                           <Tooltip content="Editar Convenio">
-                            <Button variant="ghost" size="sm" onClick={() => handleOpenDialog(conv)} style={{ color: COLORS.MUTED, backgroundColor: COLORS.BG_LIGHT }}>
+                            <Button variant="ghost" size="sm" onClick={() => handleOpenDialog(conv)} style={{ color: 'var(--color-muted-foreground)', backgroundColor: 'var(--color-muted)' }}>
                               <Pencil size={16} />
                             </Button>
                           </Tooltip>
@@ -573,7 +573,7 @@ export const GestionConvenios = () => {
             />
           </div>
         </DialogContent>
-        <DialogActions sx={{ p: 3, bgcolor: COLORS.BG_LIGHT, borderTop: `1px solid ${COLORS.BORDER}` }}>
+        <DialogActions sx={{ p: 3, bgcolor: 'var(--color-muted)', borderTop: '1px solid var(--color-border)' }}>
           <Button variant="secondary" onClick={() => setOpenDialog(false)} disabled={submitting}>Cancelar</Button>
           <Button onClick={handleSave} disabled={submitting} loading={submitting}>
             {submitting ? 'Guardando...' : (isEditing ? 'Actualizar' : 'Guardar')}
