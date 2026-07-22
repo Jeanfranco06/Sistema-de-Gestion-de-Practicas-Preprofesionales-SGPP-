@@ -2,10 +2,10 @@ import { useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod/v4';
-import { Clock, CheckCircle, Hourglass, Plus, Loader2 } from 'lucide-react';
+import { Clock, CheckCircle, Hourglass, Plus, Loader2, Calendar, AlertCircle, Info } from 'lucide-react';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
-import { useMisExpedientes } from '@/hooks/useExpedientes';
+import { useMisExpedientes, useExpedienteById, useHistorialEstados } from '@/hooks/useExpedientes';
 import { useControlHoras, useRegistrosHoras, useCumplimientoHoras, useRegistrarHoras } from '@/hooks/useHoras';
 import { tieneControlHoras } from '@/shared/utils/controlHoras';
 import { ESTADOS_EXPEDIENTE } from '@/lib/constants';
@@ -16,8 +16,8 @@ const MySwal = withReactContent(Swal);
 
 const registroFormSchema = z.object({
   fecha: z.string().min(1, 'La fecha es requerida'),
-  horaInicio: z.string().optional().default(''),
-  horaFin: z.string().optional().default(''),
+  horaInicio: z.string().min(1, 'La hora de inicio es requerida'),
+  horaFin: z.string().min(1, 'La hora de fin es requerida'),
   horas: z.coerce.number({ invalid_type_error: 'Debe ser un número' }).min(1, 'Mínimo 1 hora').max(24, 'Máximo 24 horas'),
   descripcionActividad: z.string().min(1, 'La descripción es requerida').max(500, 'Máximo 500 caracteres'),
   tipoRegistro: z.enum(['PRESENCIAL', 'VIRTUAL', 'CAMPO', 'EXTRAORDINARIO']),
@@ -38,6 +38,9 @@ interface ExpedienteItem {
   codigoExpediente: string;
   codigoTipoPractica: string;
   estado: string;
+  fechaInicioPractica?: string;
+  fechaFinPractica?: string;
+  duracionSemanas?: number;
 }
 
 interface ControlData {
@@ -98,6 +101,11 @@ export default function RegistroHoras() {
   const { data: control } = useControlHoras(horasId);
   const { data: registros = [] } = useRegistrosHoras(horasId);
   const { data: cumplimiento } = useCumplimientoHoras(horasId);
+
+  // Obtener detalles completos del expediente para mostrar fechas
+  const { data: expedienteDetalle } = useExpedienteById(idExpediente);
+  // Obtener historial de cambios de estado
+  const { data: historialEstados = [] } = useHistorialEstados(idExpediente);
 
   const registrarMutation = useRegistrarHoras();
 
@@ -169,6 +177,8 @@ export default function RegistroHoras() {
 
   const horasRequeridas = cumplData?.horasRequeridas ?? (expediente.codigoTipoPractica === 'INICIAL' ? 64 : 360);
   const horasValidadas = cumplData?.horasAcumuladas ?? ctrlData?.horasAcumuladas ?? 0;
+  const horasRegistradas = regList.reduce((sum, r) => sum + r.horas, 0);
+  const horasPendientes = horasRegistradas - horasValidadas;
   const progreso = Math.min(100, Math.round((horasValidadas / horasRequeridas) * 100));
   const cumplido = horasValidadas >= horasRequeridas;
 
@@ -202,6 +212,104 @@ export default function RegistroHoras() {
         </div>
       </div>
 
+      {/* Estado del Expediente */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-start gap-3">
+            <Info className="h-5 w-5 text-blue-600 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="font-semibold text-foreground mb-1">Estado del Expediente</h3>
+              <div className="flex items-center gap-2 mb-2">
+                <Badge variant={expediente.estado === ESTADOS_EXPEDIENTE.EN_EJECUCION ? 'success' : 'neutral'} size="sm">
+                  {expediente.estado}
+                </Badge>
+                {expediente.estado !== ESTADOS_EXPEDIENTE.EN_EJECUCION && (
+                  <span className="text-sm text-muted-foreground">
+                    {expediente.estado === ESTADOS_EXPEDIENTE.PLAN_APROBADO 
+                      ? 'El expediente está listo para iniciar ejecución. Contacta a la secretaría o coordinación para iniciar la ejecución.'
+                      : 'El registro de horas solo está disponible durante la ejecución de la práctica.'}
+                  </span>
+                )}
+              </div>
+              {expedienteDetalle?.fechaInicioPractica && (
+                <div className="text-sm text-muted-foreground mb-2">
+                  <span className="font-medium">Fecha inicio:</span> {expedienteDetalle.fechaInicioPractica}
+                  {expedienteDetalle.fechaFinPractica && (
+                    <span className="ml-4"><span className="font-medium">Fecha fin estimada:</span> {expedienteDetalle.fechaFinPractica}</span>
+                  )}
+                </div>
+              )}
+              {/* Mostrar último cambio de estado */}
+              {historialEstados.length > 0 && (
+                <div className="mt-2 pt-2 border-t border-border">
+                  <p className="text-xs text-muted-foreground">
+                    Último cambio: {new Date(historialEstados[historialEstados.length - 1].fechaCambio).toLocaleDateString('es-ES')}
+                    {historialEstados[historialEstados.length - 1].observacion && (
+                      <span className="ml-2">- {historialEstados[historialEstados.length - 1].observacion}</span>
+                    )}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Cuadros Informativos */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <Calendar className="h-5 w-5 text-primary-600" />
+              <div>
+                <p className="text-xs text-muted-foreground">Fecha inicio</p>
+                <p className="font-semibold text-foreground">{expedienteDetalle?.fechaInicioPractica || 'No definida'}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <Calendar className="h-5 w-5 text-primary-600" />
+              <div>
+                <p className="text-xs text-muted-foreground">Fecha fin estimada</p>
+                <p className="font-semibold text-foreground">{expedienteDetalle?.fechaFinPractica || 'No definida'}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <Clock className="h-5 w-5 text-primary-600" />
+              <div>
+                <p className="text-xs text-muted-foreground">Duración</p>
+                <p className="font-semibold text-foreground">{expedienteDetalle?.duracionSemanas ? `${expedienteDetalle.duracionSemanas} semanas` : 'No definida'}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Alerta de rango de fechas */}
+      {expedienteDetalle?.fechaInicioPractica && expedienteDetalle?.fechaFinPractica && (
+        <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950/40">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-blue-900 dark:text-blue-200 mb-1">Rango permitido para registrar horas</h3>
+                <p className="text-sm text-blue-800 dark:text-blue-300">
+                  Solo puedes registrar horas entre el <span className="font-medium">{expedienteDetalle.fechaInicioPractica}</span> 
+                  {' '}y el <span className="font-medium">{expedienteDetalle.fechaFinPractica}</span>.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
         <div className="md:col-span-4">
           <Card>
@@ -209,11 +317,21 @@ export default function RegistroHoras() {
               <h3 className="font-bold text-base text-foreground">Resumen</h3>
 
               <div>
-                <p className="text-xs text-muted-foreground">Horas validadas</p>
-                <p className="text-3xl font-bold text-primary-700 dark:text-primary-400">
-                  {horasValidadas}{' '}
+                <p className="text-xs text-muted-foreground">Horas registradas (total)</p>
+                <p className="text-2xl font-bold text-primary-700 dark:text-primary-400">
+                  {horasRegistradas}{' '}
                   <span className="text-sm font-normal text-muted-foreground">
                     / {horasRequeridas}
+                  </span>
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs text-muted-foreground">Horas validadas por tutor</p>
+                <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                  {horasValidadas}{' '}
+                  <span className="text-sm font-normal text-muted-foreground">
+                    ({horasPendientes} pendientes)
                   </span>
                 </p>
               </div>
@@ -261,13 +379,13 @@ export default function RegistroHoras() {
                     <Input label="Fecha" type="date" required {...register('fecha')} error={errors.fecha?.message} />
                   </div>
                   <div className="sm:col-span-3">
-                    <Input label="Hora inicio" type="time" {...register('horaInicio')} />
+                    <Input label="Hora inicio" type="time" required {...register('horaInicio')} error={errors.horaInicio?.message} />
                   </div>
                   <div className="sm:col-span-3">
-                    <Input label="Hora fin" type="time" {...register('horaFin')} />
+                    <Input label="Hora fin" type="time" required {...register('horaFin')} error={errors.horaFin?.message} />
                   </div>
                   <div className="sm:col-span-4">
-                    <Input label="Horas" type="number" required {...register('horas')} error={errors.horas?.message} />
+                    <Input label="Horas (calculado)" type="number" {...register('horas')} error={errors.horas?.message} disabled />
                   </div>
                   <div className="sm:col-span-8">
                     <Select

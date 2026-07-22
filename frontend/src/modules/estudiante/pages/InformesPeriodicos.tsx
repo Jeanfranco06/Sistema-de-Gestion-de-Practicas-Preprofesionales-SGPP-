@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import {
   CloudUpload, Download, Clock, CheckCircle, Lock, FileText, Calendar,
-  FileSpreadsheet, Loader2, FolderArchive,
+  FileSpreadsheet, Loader2, FolderArchive, Trash2,
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
@@ -182,10 +182,14 @@ export const InformesPeriodicos = () => {
         params: { tipoDocumento: uploadDialog.hito.tipo, nombreDoc: selectedFile.name, fileName },
       });
 
-      if (uploadDialog.hito.tipo === 'INFORME_PARCIAL_1' || uploadDialog.hito.tipo === 'INFORME_PARCIAL_2') {
-        await expedientesApi.presentarInformeParcial(expediente.id);
-      } else {
-        await expedientesApi.presentarInformeFinal(expediente.id);
+      // Solo cambiar estado si no está ya en el estado correspondiente
+      const estadoEsperado = ESTADOS_EXPEDIENTE_HITO[uploadDialog.hito.tipo];
+      if (expediente.estado !== estadoEsperado) {
+        if (uploadDialog.hito.tipo === 'INFORME_PARCIAL_1' || uploadDialog.hito.tipo === 'INFORME_PARCIAL_2') {
+          await expedientesApi.presentarInformeParcial(expediente.id);
+        } else {
+          await expedientesApi.presentarInformeFinal(expediente.id);
+        }
       }
 
       await fetchExpediente();
@@ -210,7 +214,10 @@ export const InformesPeriodicos = () => {
   };
 
   const handleDownload = async (hito: HitoConEstado) => {
-    if (!hito.idDocumento) return;
+    if (!hito.idDocumento) {
+      MySwal.fire('Error', 'No se encontró el ID del documento.', 'error');
+      return;
+    }
     try {
       MySwal.fire({ title: 'Descargando...', allowOutsideClick: false, didOpen: () => MySwal.showLoading() });
       const res = await api.get(`/documentos/expediente/${hito.idDocumento}/download`, { responseType: 'blob' });
@@ -220,11 +227,61 @@ export const InformesPeriodicos = () => {
       link.setAttribute('download', hito.archivo || hito.fileName || 'informe.pdf');
       document.body.appendChild(link);
       link.click();
-      link.parentNode.removeChild(link);
+      link.parentNode?.removeChild(link);
       MySwal.close();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Download error:', error);
-      MySwal.fire('Error', 'No tienes permisos o el archivo no existe.', 'error');
+      const axiosErr = error as { response?: { status?: number; data?: { message?: string } } };
+      const status = axiosErr.response?.status;
+      let message = 'No se pudo descargar el archivo.';
+      if (status === 404) {
+        message = 'El archivo no fue encontrado en el servidor.';
+      } else if (status === 403 || status === 401) {
+        message = 'No tienes permiso para descargar este archivo.';
+      } else if (status === 400) {
+        message = axiosErr.response?.data?.message || 'Solicitud de descarga inválida.';
+      } else if (status && status >= 500) {
+        message = 'Error interno del servidor al descargar el archivo.';
+      }
+      MySwal.fire('Error', message, 'error');
+    }
+  };
+
+  const handleDelete = async (hito: HitoConEstado) => {
+    if (!hito.idDocumento || !expediente) return;
+
+    const result = await MySwal.fire({
+      title: '¿Eliminar informe?',
+      text: 'Esta acción es irreversible y el informe dejará de estar disponible para revisión.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#d33',
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      MySwal.fire({
+        title: 'Eliminando...',
+        allowOutsideClick: false,
+        didOpen: () => MySwal.showLoading(),
+      });
+
+      await expedientesApi.eliminarDocumento(expediente.id, hito.idDocumento);
+      await fetchExpediente();
+
+      MySwal.fire({
+        icon: 'success',
+        title: 'Informe eliminado',
+        text: 'El informe ha sido eliminado correctamente.',
+        timer: 2000,
+        showConfirmButton: false,
+      });
+    } catch (error) {
+      console.error('Delete error:', error);
+      MySwal.fire('Error', 'No se pudo eliminar el informe. Intente nuevamente.', 'error');
     }
   };
 
@@ -402,9 +459,14 @@ export const InformesPeriodicos = () => {
                           <Download className="h-4 w-4" />
                         </Button>
                         {hito.estado === 'EN_REVISION' && (
-                          <Button variant="primary" size="sm" onClick={() => handleOpenUpload(hito)}>
-                            <CloudUpload className="h-4 w-4" /> Re-enviar
-                          </Button>
+                          <>
+                            <Button variant="primary" size="sm" onClick={() => handleOpenUpload(hito)}>
+                              <CloudUpload className="h-4 w-4" /> Re-enviar
+                            </Button>
+                            <Button variant="ghost" size="sm" className="text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30" onClick={() => handleDelete(hito)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
                         )}
                       </div>
                     </div>

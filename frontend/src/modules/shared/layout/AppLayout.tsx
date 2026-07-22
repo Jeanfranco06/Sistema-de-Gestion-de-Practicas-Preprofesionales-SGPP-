@@ -175,6 +175,8 @@ function getNavGroups(roles: UserRole[] = []): NavGroup[] {
     return [
       { group: 'supervision', label: 'Supervisión', items: [
         { label: 'Dashboard', icon: <LayoutDashboard size={22} />, path: '/tutor/dashboard' },
+        { label: 'Mis Practicantes', icon: <GraduationCap size={22} />, path: '/tutor/practicantes' },
+        { label: 'Validación de Horas', icon: <Clock size={22} />, path: '/tutor/horas' },
         { label: 'Evaluaciones', icon: <BarChart3 size={22} />, path: '/tutor/evaluaciones' },
       ]},
     ];

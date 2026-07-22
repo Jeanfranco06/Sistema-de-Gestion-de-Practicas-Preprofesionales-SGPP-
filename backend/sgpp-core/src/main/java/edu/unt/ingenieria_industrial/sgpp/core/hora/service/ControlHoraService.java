@@ -26,4 +26,6 @@ public interface ControlHoraService {
     ApiResponse<Void> actualizarHorasAcumuladas(Long idExpediente, Long idUsuario);
 
     ApiResponse<Boolean> puedeCerrarExpediente(Long idExpediente);
+
+    boolean existeControlHoraActivo(Long idExpediente);
 }

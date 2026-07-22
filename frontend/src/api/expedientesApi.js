@@ -24,6 +24,7 @@ export const expedientesApi = {
     habilitarExamenAplazados: (id) => api.post(`/expedientes/${id}/habilitar-examen-aplazados`),
     registrarExamenAplazados: (id, payload) => api.post(`/expedientes/${id}/registrar-examen-aplazados`, payload),
     cambiarEstadoManual: (id, payload) => api.post(`/expedientes/${id}/cambiar-estado-manual`, payload),
+    getHistorialEstados: (id) => api.get(`/expedientes/${id}/historial-estados`),
     eliminarDocumento: (id, idDocumento) => api.delete(`/expedientes/${id}/documentos/${idDocumento}`),
     evaluarDocumento: (id, idDocumento, estado, observaciones) => api.put(`/expedientes/${id}/documentos/${idDocumento}/evaluar`, null, {
         params: { estado, observaciones }

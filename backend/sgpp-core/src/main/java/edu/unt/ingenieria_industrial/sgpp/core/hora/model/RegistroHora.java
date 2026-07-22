@@ -51,6 +51,10 @@ public class RegistroHora extends BaseEntity {
     @Builder.Default
     private Boolean validadoPorTutor = false;
 
+    @Column(name = "rechazado_por_tutor")
+    @Builder.Default
+    private Boolean rechazadoPorTutor = false;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_tutor_valida")
     @ToString.Exclude

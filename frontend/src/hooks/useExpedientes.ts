@@ -242,3 +242,15 @@ export function useCambiarEstadoManual() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['expedientes'] }); },
   });
 }
+
+export function useHistorialEstados(id: string | undefined) {
+  return useQuery({
+    queryKey: ['expedientes', id, 'historial-estados'],
+    queryFn: async () => {
+      const res = await expedientesApi.getHistorialEstados(id!);
+      return res.data?.data ?? [];
+    },
+    enabled: !!id,
+    staleTime: 5 * 60 * 1000,
+  });
+}

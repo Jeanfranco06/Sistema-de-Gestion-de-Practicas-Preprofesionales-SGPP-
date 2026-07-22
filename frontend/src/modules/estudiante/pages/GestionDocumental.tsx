@@ -556,7 +556,8 @@ export const GestionDocumental = () => {
                                 <Download className="h-4 w-4" />
                               </Button>
                               {docCargado.estado !== 'APROBADO' && !docCargado.fileName?.startsWith('registro:')
-                                && (docType.id !== 'CARTA_ACEPTACION' || expediente.estado === ESTADOS_EXPEDIENTE.CARTA_ACEPTACION_PRESENTADA) && (
+                                && (docType.id !== 'CARTA_ACEPTACION' || expediente.estado === ESTADOS_EXPEDIENTE.CARTA_ACEPTACION_PRESENTADA)
+                                && !['INFORME_PARCIAL_1', 'INFORME_PARCIAL_2', 'INFORME_FINAL', 'INFORME_FINAL_INICIAL'].includes(docType.id) && (
                                 <Button
                                   variant="ghost"
                                   size="sm"

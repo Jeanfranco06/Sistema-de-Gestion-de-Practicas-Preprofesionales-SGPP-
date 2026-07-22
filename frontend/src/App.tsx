@@ -47,6 +47,7 @@ const ListaPracticantes = lazyNamed(() => import('./modules/evaluacion/ListaPrac
 const AdminDashboardPage = lazyNamed(() => import('./modules/admin/pages/AdminDashboardPage'), 'AdminDashboardPage');
 const DashboardTutor = lazyNamed(() => import('./modules/tutor/pages/DashboardTutor'), 'DashboardTutor');
 const ValidacionHorasTutor = lazyNamed(() => import('./modules/tutor/pages/ValidacionHorasTutor'), 'ValidacionHorasTutor');
+const ListaValidacionHoras = lazyNamed(() => import('./modules/tutor/pages/ListaValidacionHoras'), 'ListaValidacionHoras');
 const EvaluacionTutorExterno = lazyNamed(() => import('./modules/evaluacion/EvaluacionTutorExterno'), 'EvaluacionTutorExterno');
 const EvaluacionDocenteAsesor = lazyNamed(() => import('./modules/evaluacion/EvaluacionDocenteAsesor'), 'EvaluacionDocenteAsesor');
 const EvaluacionComite = lazyNamed(() => import('./modules/evaluacion/EvaluacionComite'), 'EvaluacionComite');
@@ -331,6 +332,14 @@ export default function App() {
                     element={
                       <ProtectedRoute allowedRoles={['TUTOR_EXTERNO']}>
                         <EvaluacionTutorExterno />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/tutor/horas"
+                    element={
+                      <ProtectedRoute allowedRoles={['TUTOR_EXTERNO']}>
+                        <ListaValidacionHoras />
                       </ProtectedRoute>
                     }
                   />

@@ -105,10 +105,24 @@ const planInitial = (expediente: Expediente): PlanForm => ({
   cronograma: [emptyActivity()],
 });
 
-const mapPlan = (plan: Record<string, unknown>): PlanForm => ({
+const mapPlan = (plan: Record<string, unknown>, expediente?: Expediente): PlanForm => ({
   idExpediente: plan.idExpediente as string,
-  caratula: plan.caratula as Caratula,
-  datosEmpresa: plan.datosEmpresa as DatosEmpresa,
+  caratula: (plan.caratula as Caratula) ?? {
+    institucion: 'Universidad Nacional de Trujillo - Facultad de Ingeniería',
+    nombrePlan: 'Plan de Actividades de Prácticas Preprofesionales',
+    autor: expediente?.nombreEstudiante || '',
+    asesor: expediente?.nombreAsesor || '',
+    fecha: today(),
+  },
+  datosEmpresa: (plan.datosEmpresa as DatosEmpresa) ?? {
+    razonSocial: expediente?.nombreEmpresa || '',
+    direccion: '',
+    representanteLegal: '',
+    telefono: '',
+    correo: '',
+    celular: '',
+    descripcionGeneral: '',
+  },
   areaDepartamento: (plan.areaDepartamento as AreaDepartamento) ?? { areaDepartamento: '', funcionarioACargo: '' },
   situacionProblematica: plan.situacionProblematica as string,
   objetivos: (plan.objetivos as Objetivo[]) ?? [],
@@ -163,11 +177,11 @@ export function PlanPracticas() {
             const obs = (existente.observaciones as Array<{ id?: string | number; descripcion?: string; subsanado?: boolean }> | undefined) ?? [];
             setObservacionesPendientes(obs.filter((o) => !o.subsanado && o.id && o.descripcion) as Array<{ id: string | number; descripcion: string }>);
             if (estado === ESTADOS_PLAN_GENERAL.BORRADOR && existente.caratula) {
-              setPlan(mapPlan(existente));
+              setPlan(mapPlan(existente, activo));
             } else if (estado === ESTADOS_PLAN_GENERAL.BORRADOR && !existente.caratula) {
               setPlan(planInitial(activo));
             } else {
-              setPlan(mapPlan(existente));
+              setPlan(mapPlan(existente, activo));
             }
           } else {
             setPlan(planInitial(activo));

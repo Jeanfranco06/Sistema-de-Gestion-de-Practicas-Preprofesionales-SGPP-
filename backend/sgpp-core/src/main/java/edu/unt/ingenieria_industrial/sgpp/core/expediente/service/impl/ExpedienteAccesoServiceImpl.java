@@ -84,13 +84,13 @@ public class ExpedienteAccesoServiceImpl implements ExpedienteAccesoService {
     private boolean tutorTieneAcceso(Expediente expediente, Long idUsuario) {
         return tutorExternoRepository.findByUsuarioId(idUsuario)
                 .map(tutor -> {
+                    // Solo permitir acceso si el tutor está asignado específicamente al expediente
                     if (expediente.getTutorEmpresa() != null
                             && expediente.getTutorEmpresa().getId().equals(tutor.getId())) {
                         return true;
                     }
-                    return expediente.getEmpresa() != null
-                            && tutor.getEmpresa() != null
-                            && expediente.getEmpresa().getId().equals(tutor.getEmpresa().getId());
+                    // No permitir acceso solo por pertenecer a la misma empresa
+                    return false;
                 })
                 .orElse(false);
     }

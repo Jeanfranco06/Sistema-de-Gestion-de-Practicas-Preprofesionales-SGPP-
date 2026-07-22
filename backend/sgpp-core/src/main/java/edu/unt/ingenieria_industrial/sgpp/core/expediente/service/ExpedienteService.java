@@ -38,4 +38,5 @@ public interface ExpedienteService {
     ExpedienteResponse habilitarExamenAplazados(Long idExpediente, Long idUsuario);
     ExpedienteResponse registrarExamenAplazados(Long idExpediente, RegistrarExamenAplazadosRequest request, Long idUsuario);
     ExpedienteResponse cambiarEstadoManual(Long idExpediente, CambioEstadoManualRequest request, Long idUsuario);
+    java.util.List<edu.unt.ingenieria_industrial.sgpp.core.expediente.model.ExpedienteEstado> obtenerHistorialEstados(Long idExpediente);
 }

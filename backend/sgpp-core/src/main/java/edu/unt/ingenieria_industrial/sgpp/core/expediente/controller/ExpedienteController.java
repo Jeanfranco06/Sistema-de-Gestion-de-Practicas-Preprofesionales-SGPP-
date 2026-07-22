@@ -397,6 +397,15 @@ public class ExpedienteController {
         Long usuarioActual = Objects.requireNonNull(currentUserService.getCurrentUserId(), "Usuario no autenticado");
         ExpedienteResponse response = expedienteService.cambiarEstadoManual(id, request, usuarioActual);
         return ResponseEntity.ok(ApiResponse.<ExpedienteResponse>builder()
-                .success(true).message("Estado actualizado manualmente").data(response).timestamp(LocalDateTime.now()).build());
+                .success(true).message("Estado cambiado manualmente").data(response).timestamp(LocalDateTime.now()).build());
+    }
+
+    @GetMapping("/{id}/historial-estados")
+    @Operation(summary = "Obtener historial de cambios de estado del expediente")
+    public ResponseEntity<ApiResponse<List<edu.unt.ingenieria_industrial.sgpp.core.expediente.model.ExpedienteEstado>>> obtenerHistorialEstados(
+            @PathVariable Long id) {
+        List<edu.unt.ingenieria_industrial.sgpp.core.expediente.model.ExpedienteEstado> historial = expedienteService.obtenerHistorialEstados(id);
+        return ResponseEntity.ok(ApiResponse.<List<edu.unt.ingenieria_industrial.sgpp.core.expediente.model.ExpedienteEstado>>builder()
+                .success(true).message("Historial de estados obtenido").data(historial).timestamp(LocalDateTime.now()).build());
     }
 }

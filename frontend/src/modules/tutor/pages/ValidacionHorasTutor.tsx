@@ -15,6 +15,7 @@ interface RegistroHora {
   descripcionActividad: string;
   tipoRegistro: string;
   validadoPorTutor: boolean;
+  rechazadoPorTutor: boolean;
   observacionesTutor?: string;
 }
 
@@ -95,7 +96,12 @@ export default function ValidacionHorasTutor() {
     }
   };
 
-  const pendientes = registros.filter((r) => !r.validadoPorTutor);
+  const pendientes = registros.filter((r) => !r.validadoPorTutor && !r.rechazadoPorTutor);
+  const validados = registros.filter((r) => r.validadoPorTutor);
+  const rechazados = registros.filter((r) => r.rechazadoPorTutor);
+  const totalHorasValidadas = validados.reduce((sum, r) => sum + r.horas, 0);
+  const horasRequeridas = expediente?.codigoTipoPractica === 'INICIAL' ? 64 : 360;
+  const limiteAlcanzado = totalHorasValidadas >= horasRequeridas;
 
   return (
     <div className="space-y-6 animate-in p-4 sm:p-6 lg:p-8">
@@ -118,7 +124,7 @@ export default function ValidacionHorasTutor() {
       </div>
 
       {/* ── KPIs ─────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <KpiCard
           label="Total de registros"
           value={registros.length}
@@ -126,18 +132,40 @@ export default function ValidacionHorasTutor() {
           variant="default"
         />
         <KpiCard
-          label="Pendientes de validación"
+          label="Pendientes"
           value={pendientes.length}
           icon={Clock}
           variant="warning"
         />
         <KpiCard
           label="Validados"
-          value={registros.length - pendientes.length}
+          value={validados.length}
           icon={CheckCircle}
           variant="success"
         />
+        <KpiCard
+          label="Horas validadas"
+          value={`${totalHorasValidadas} / ${horasRequeridas}`}
+          icon={CheckCircle}
+          variant={limiteAlcanzado ? 'success' : 'default'}
+        />
       </div>
+
+      {limiteAlcanzado && (
+        <Card className="border-green-500 bg-green-50 dark:bg-green-900/20">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+              <div>
+                <p className="font-bold text-green-900 dark:text-green-100">Límite de horas alcanzado</p>
+                <p className="text-sm text-green-700 dark:text-green-300">
+                  El estudiante ha completado las {horasRequeridas} horas requeridas. No se pueden validar más horas.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* ── Tabla ────────────────────────────────────────────── */}
       <Card>
@@ -180,12 +208,16 @@ export default function ValidacionHorasTutor() {
                       <TableCell className="text-foreground">{registro.descripcionActividad}</TableCell>
                       <TableCell className="text-muted-foreground">{registro.tipoRegistro}</TableCell>
                       <TableCell>
-                        <Badge variant={registro.validadoPorTutor ? 'success' : 'neutral'} size="sm">
-                          {registro.validadoPorTutor ? 'Validado' : 'Pendiente'}
-                        </Badge>
+                        {registro.rechazadoPorTutor ? (
+                          <Badge variant="danger" size="sm">Rechazado</Badge>
+                        ) : (
+                          <Badge variant={registro.validadoPorTutor ? 'success' : 'neutral'} size="sm">
+                            {registro.validadoPorTutor ? 'Validado' : 'Pendiente'}
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell className="text-right">
-                        {!registro.validadoPorTutor && (
+                        {!registro.validadoPorTutor && !registro.rechazadoPorTutor && !limiteAlcanzado && (
                           <div className="flex justify-end gap-2">
                             <Button size="sm" variant="secondary" onClick={() => handleValidar(registro, false)}>
                               <XCircle className="h-4 w-4" />

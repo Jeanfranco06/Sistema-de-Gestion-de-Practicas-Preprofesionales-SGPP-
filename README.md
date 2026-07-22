@@ -75,9 +75,9 @@ npm run dev
 | Servicio       | URL                                          |
 | -------------- | -------------------------------------------- |
 | Frontend       | http://localhost:5173                          |
-| Backend API    | http://localhost:8080/api/v1                   |
-| Swagger UI     | http://localhost:8080/api/v1/swagger-ui.html   |
-| pgAdmin        | http://localhost:5050                           |
+| Backend API    | http://localhost:8082/api/v1                   |
+| Swagger UI     | http://localhost:8082/api/v1/swagger-ui.html   |
+| pgAdmin        | http://localhost:5051                           |
 
 > 📘 **Guía detallada paso a paso:** consulta [`GUIA_EJECUCION_LOCAL.md`](GUIA_EJECUCION_LOCAL.md) para instrucciones completas, troubleshooting y configuración de IDE.
 

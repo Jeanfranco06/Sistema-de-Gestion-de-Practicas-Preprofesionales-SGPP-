@@ -591,8 +591,9 @@ private final ExpedienteRepository expedienteRepository;
             throw new BusinessException("Estado inválido: " + expediente.getEstado() + ". Se requiere " + estadoEsperado + " para iniciar ejecución");
         }
 
-        if (!Boolean.TRUE.equals(expediente.getPlanTrabajoAprobado())) {
-            throw new BusinessException("El plan de trabajo debe estar aprobado antes de iniciar la ejecución");
+        // Validar que no exista un control de horas previo
+        if (controlHoraService.existeControlHoraActivo(idExpediente)) {
+            throw new BusinessException("Ya existe un control de horas activo para este expediente. No se puede iniciar ejecución nuevamente.");
         }
 
         String estadoAnterior = expediente.getEstado();
@@ -1217,9 +1218,11 @@ List<ExpedienteResponse.ExpedienteDocumentoResponse> docs = new ArrayList<>(e.ge
                 : "Cambio manual de estado administrativo";
         registrarCambioEstado(expediente, estadoAnterior, nuevoEstado, idUsuario, observacion, "CAMBIO_MANUAL_ADMIN");
 
-        log.warn("Cambio manual de estado realizado por administrador {}: expediente {} de {} a {}",
-                idUsuario, idExpediente, estadoAnterior, nuevoEstado);
-
         return toResponse(expediente);
+    }
+
+    @Override
+    public java.util.List<ExpedienteEstado> obtenerHistorialEstados(Long idExpediente) {
+        return estadoRepository.findByExpedienteIdOrderByFechaCambioAsc(idExpediente);
     }
 }
