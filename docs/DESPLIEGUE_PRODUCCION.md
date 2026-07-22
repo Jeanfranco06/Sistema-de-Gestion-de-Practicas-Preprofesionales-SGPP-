@@ -46,13 +46,7 @@ Los documentos no se guardan en el disco de Render, porque este puede ser efimer
 
 ### Reparar un primer despliegue fallido
 
-Si el log muestra `Migration V2__insert_seed_data.sql failed` y `relation "rol" does not exist`, el esquema fue marcado erróneamente con una línea base y V1 no llegó a ejecutarse. Después de publicar esta configuración, que desactiva `baseline-on-migrate` en producción, abra el SQL Editor de Supabase y ejecute solo en una base nueva sin datos reales:
-
-```sql
-DROP TABLE IF EXISTS public.flyway_schema_history;
-```
-
-Después haga un despliegue manual en Render. Flyway ejecutará V1, creará `rol` y continuará con V2. No ejecute esta sentencia en una base que ya tenga datos de producción o un historial Flyway válido.
+Si el log muestra `Migration V2__insert_seed_data.sql failed` y `relation "rol" does not exist`, la aplicación arrancó con una configuración antigua que creó una línea base en el esquema `public`. La configuración de producción actual usa el esquema exclusivo `sgpp`, que Flyway crea automáticamente y migra desde V1. Después de publicar el último commit, haga un despliegue manual en Render. No borre tablas ni ejecute SQL en Supabase: el intento fallido en `public` no afecta al nuevo esquema `sgpp`.
 
 ## 3. Desplegar el frontend en Vercel
 
