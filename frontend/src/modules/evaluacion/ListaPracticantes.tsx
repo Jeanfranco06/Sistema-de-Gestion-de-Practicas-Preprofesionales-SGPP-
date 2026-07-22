@@ -62,6 +62,9 @@ export const ListaPracticantes = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const isTutor = hasAnyRole(user?.roles, ['TUTOR_EXTERNO']);
+  const isAdmin = hasAnyRole(user?.roles, ['ADMIN_SISTEMA', 'ADMINISTRADOR']);
+  const isComite = hasAnyRole(user?.roles, ['COMITE_PRACTICAS']);
+  console.log("DEBUG - ListaPracticantes:", { roles: user?.roles, isAdmin, isComite });
   const location = useLocation();
   const isOnTutorPath = location.pathname.startsWith('/tutor');
   const basePath = (isTutor || isOnTutorPath) ? '/tutor' : '/docente';
@@ -77,9 +80,10 @@ export const ListaPracticantes = () => {
         || p.nombreEmpresa?.toLowerCase().includes(q);
       const matchEstado = filtroEstado === 'TODOS' || p.estado === filtroEstado;
       const matchTipo = filtroTipo === 'TODOS' || p.codigoTipoPractica === filtroTipo;
-      return matchSearch && matchEstado && matchTipo;
+      const matchTutorRuta = !isOnTutorPath || p.codigoTipoPractica !== 'INICIAL';
+      return matchSearch && matchEstado && matchTipo && matchTutorRuta;
     });
-  }, [practicantes, search, filtroEstado, filtroTipo]);
+  }, [practicantes, search, filtroEstado, filtroTipo, isOnTutorPath]);
 
   const stats = useMemo(() => ({
     total: practicantes.length,
@@ -308,7 +312,7 @@ export const ListaPracticantes = () => {
                             </Button>
                           </Tooltip>
                         )}
-                        {(!(isTutor || isOnTutorPath) || (p.codigoTipoPractica !== 'INICIAL' && ESTADOS_PARA_EVALUAR.includes(p.estado))) && (
+                        {(isAdmin || isComite || !(isTutor || isOnTutorPath) || (p.codigoTipoPractica !== 'INICIAL' && ESTADOS_PARA_EVALUAR.includes(p.estado))) && (
                           <Button
                             size="sm"
                             onClick={() => handleEvaluar(p.id)}

@@ -962,6 +962,12 @@ private final ExpedienteRepository expedienteRepository;
             throw new BusinessException("Estado inválido: " + estadoActual + ". Se requiere evaluación completa o informe aprobado para emitir dictamen");
         }
 
+        if (!TIPO_INICIAL.equals(expediente.getTipoPractica().getCodigo())) {
+            if (expediente.getCalificacionFinal() == null) {
+                throw new BusinessException("No se puede emitir dictamen sin registrar primero la calificación del Anexo 4 (Plan e Informe)");
+            }
+        }
+
         Usuario usuario = usuarioRepository.getReferenceById(idUsuario);
 
         try {

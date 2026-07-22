@@ -253,32 +253,46 @@ export const DetalleExpediente = () => {
 
   const { mutateAsync: aprobarInforme } = useMutation({
     mutationFn: () => expedientesApi.aprobarInformeFinal(id!),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['expedientes', id] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expediente', id] });
+    },
   });
 
   const { mutateAsync: emitirDictamen } = useMutation({
     mutationFn: (dictamen: string) => expedientesApi.emitirDictamen(id!, dictamen),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['expedientes', id] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expediente', id] });
+      queryClient.invalidateQueries({ queryKey: ['historialGeneracion', id] });
+    },
   });
 
   const { mutateAsync: emitirConstancia } = useMutation({
     mutationFn: () => coordinacionApi.emitirConstancia(id!),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['expedientes', id] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expediente', id] });
+      queryClient.invalidateQueries({ queryKey: ['historialGeneracion', id] });
+    },
   });
 
   const { mutateAsync: asignarComite } = useMutation({
     mutationFn: (payload: { miembros: Array<{ idUsuario: string; rolComite: string }> }) => expedientesApi.asignarComite(id!, payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['expedientes', id] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expediente', id] });
+    },
   });
 
   const { mutateAsync: habilitarExamenAplazados } = useMutation({
     mutationFn: () => expedientesApi.habilitarExamenAplazados(id!),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['expedientes', id] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expediente', id] });
+    },
   });
 
   const { mutateAsync: registrarExamenAplazados } = useMutation({
     mutationFn: (nota: string) => expedientesApi.registrarExamenAplazados(id!, { nota: Number(nota), comentarios: '' }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['expedientes', id] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expediente', id] });
+    },
   });
 
   const ejecutarAccion = async (tipo: string) => {
