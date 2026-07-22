@@ -6,6 +6,7 @@ import edu.unt.ingenieria_industrial.sgpp.shared.enums.RolSistema;
 import edu.unt.ingenieria_industrial.sgpp.shared.enums.TipoDocumento;
 import edu.unt.ingenieria_industrial.sgpp.shared.enums.TipoUsuario;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.dto.*;
+import edu.unt.ingenieria_industrial.sgpp.core.seguridad.event.UsuarioCreadoEvent;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.model.Docente;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.model.Estudiante;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.model.Rol;
@@ -28,6 +29,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -51,6 +53,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     private final SedePracticaRepository sedePracticaRepository;
     private final ParametroSistemaService parametroSistemaService;
     private final PasswordEncoder passwordEncoder;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -105,6 +108,10 @@ public class UsuarioServiceImpl implements UsuarioService {
 
         if (hasRole(dto.getRoles(), RolSistema.TUTOR_EXTERNO)) {
             upsertTutorExterno(savedUsuario, dto);
+        }
+
+        if (dto.isEnviarBienvenida()) {
+            eventPublisher.publishEvent(new UsuarioCreadoEvent(savedUsuario.getId()));
         }
 
         return toDto(savedUsuario);

@@ -44,6 +44,16 @@ Los documentos no se guardan en el disco de Render, porque este puede ser efimer
 4. Espere que Flyway complete las migraciones y compruebe `https://<api>.onrender.com/api/v1/actuator/health`. La respuesta debe contener `"status":"UP"`.
 5. Mantenga `SUPABASE_STORAGE_BUCKET` privado. La API descarga los archivos autenticando al usuario, por lo que no se deben crear politicas publicas para ese bucket.
 
+### Reparar un primer despliegue fallido
+
+Si el log muestra `Migration V2__insert_seed_data.sql failed` y `relation "rol" does not exist`, el esquema fue marcado erróneamente con una línea base y V1 no llegó a ejecutarse. Después de publicar esta configuración, que desactiva `baseline-on-migrate` en producción, abra el SQL Editor de Supabase y ejecute solo en una base nueva sin datos reales:
+
+```sql
+DROP TABLE IF EXISTS public.flyway_schema_history;
+```
+
+Después haga un despliegue manual en Render. Flyway ejecutará V1, creará `rol` y continuará con V2. No ejecute esta sentencia en una base que ya tenga datos de producción o un historial Flyway válido.
+
 ## 3. Desplegar el frontend en Vercel
 
 1. Importe el mismo repositorio en Vercel.
@@ -62,4 +72,23 @@ Los documentos no se guardan en el disco de Render, porque este puede ser efimer
 
 ## Variables que no van al frontend
 
-Solo `VITE_API_BASE_URL` pertenece a Vercel. Cualquier variable prefijada con `VITE_` queda incluida en el JavaScript publico. Nunca use ese prefijo para contrasenas, `JWT_SECRET`, la clave `service_role` ni credenciales de base de datos.
+Solo `VITE_API_BASE_URL` pertenece a Vercel. Cualquier variable prefijada con `VITE_` queda incluida en el JavaScript publico. Nunca use ese prefijo para contrasenas, `JWT_SECRET`, la Secret key de Supabase ni credenciales de base de datos.
+
+## Correo con Gmail
+
+Para habilitar la bienvenida y recuperación de cuentas, use una cuenta de Gmail exclusiva para el sistema. Active la verificación en dos pasos y genere una contraseña de aplicación; Gmail no permite usar la contraseña normal de la cuenta para SMTP.
+
+En Render configure:
+
+```text
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USER=cuenta.del.sistema@gmail.com
+MAIL_PASS=contraseña_de_aplicacion_de_16_caracteres
+MAIL_SMTP_AUTH=true
+MAIL_STARTTLS=true
+SGPP_EMAIL_ENABLED=true
+SGPP_FRONTEND_BASE_URL=https://<su-proyecto>.vercel.app
+```
+
+`SGPP_FRONTEND_BASE_URL` debe ser la URL HTTPS final de Vercel, sin `/api/v1`. La casilla **Enviar correo de bienvenida** al crear un usuario envía el nombre de usuario y un enlace de un solo uso para que la persona elija su contraseña; una contraseña nunca se envía por correo.

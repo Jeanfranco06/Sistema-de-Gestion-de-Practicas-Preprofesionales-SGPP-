@@ -77,5 +77,7 @@ public class UsuarioCreateDTO {
     private String cargo;
 
     private String area;
+
+    private boolean enviarBienvenida;
 }
 

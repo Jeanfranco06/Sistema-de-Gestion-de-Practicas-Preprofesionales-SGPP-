@@ -16,7 +16,8 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
   flyway:
     enabled: true
-    baseline-on-migrate: true
+    # A new production schema must execute V1; baselining would skip it.
+    baseline-on-migrate: false
     locations: classpath:db/migration
     validate-on-migrate: true
 
@@ -38,6 +39,8 @@ app:
       bucket: ${SUPABASE_STORAGE_BUCKET:sgpp-documentos}
 
 sgpp:
+  frontend:
+    base-url: ${SGPP_FRONTEND_BASE_URL:}
   exportacion:
     directorio: /tmp/sgpp/exportaciones
   scheduler:

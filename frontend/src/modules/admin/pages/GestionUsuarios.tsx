@@ -157,6 +157,7 @@ interface FormDataState {
   empresaNombre: string;
   cargo: string;
   area: string;
+  enviarBienvenida: boolean;
 }
 
 interface FieldErrors {
@@ -234,6 +235,7 @@ const normalizeUsuarioForForm = (usuario: Usuario): FormDataState => {
     empresaNombre: String(firstValue(usuario.empresaNombre, tutor.empresaNombre, tutor.razonSocialEmpresa)),
     cargo: String(firstValue(usuario.cargo, tutor.cargo)),
     area: String(firstValue(usuario.area, tutor.area)),
+    enviarBienvenida: false,
   };
 };
 
@@ -258,6 +260,7 @@ const initialFormData: FormDataState = {
   codigoMatricula: '', semestre: '', codigoDocente: '', categoria: '',
   especialidad: '', departamento: '',
   empresaNombre: '', cargo: '', area: '',
+  enviarBienvenida: false,
 };
 
 function GestionUsuarios() {
@@ -581,8 +584,10 @@ function GestionUsuarios() {
 
   const handleGeneratePassword = () => {
     const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+    const randomValues = new Uint32Array(12);
+    crypto.getRandomValues(randomValues);
     let pwd = '';
-    for (let i = 0; i < 10; i++) pwd += chars.charAt(Math.floor(Math.random() * Math.random()));
+    for (const value of randomValues) pwd += chars.charAt(value % chars.length);
     pwd += 'A1!';
     setFormData((prev) => ({ ...prev, password: pwd, confirmPassword: pwd }));
   };
@@ -636,7 +641,10 @@ function GestionUsuarios() {
         MySwal.fire({ icon: 'success', title: 'Usuario Actualizado', text: `El usuario ${formData.nombres} ha sido actualizado con éxito.`, timer: 2000, showConfirmButton: false });
       } else {
         await createUsuario.mutateAsync(finalPayload);
-        MySwal.fire({ icon: 'success', title: 'Usuario Creado', text: `Se ha creado el usuario @${finalPayload.username} exitosamente.`, timer: 2500, showConfirmButton: false });
+        const mensaje = formData.enviarBienvenida
+          ? `Se creó @${finalPayload.username} y se envió un enlace para configurar su contraseña.`
+          : `Se ha creado el usuario @${finalPayload.username} exitosamente.`;
+        MySwal.fire({ icon: 'success', title: 'Usuario Creado', text: mensaje, timer: 2500, showConfirmButton: false });
       }
       setOpenDialog(false);
     } catch (error: unknown) {
@@ -1347,6 +1355,20 @@ function GestionUsuarios() {
                       </div>
                     </div>
                   </div>
+                  {!isEditing && (
+                    <label className="flex items-start gap-3 rounded-xl border border-primary-200 bg-primary-50 p-4 text-sm dark:border-primary-800 dark:bg-primary-950/30">
+                      <input
+                        type="checkbox"
+                        checked={formData.enviarBienvenida}
+                        onChange={(event) => setFormData((prev) => ({ ...prev, enviarBienvenida: event.target.checked }))}
+                        className="mt-0.5 h-4 w-4 accent-primary-700"
+                      />
+                      <span>
+                        <strong className="block text-foreground">Enviar correo de bienvenida</strong>
+                        Se enviará el nombre de usuario y un enlace único para que la persona configure su propia contraseña. No se enviará la contraseña por correo.
+                      </span>
+                    </label>
+                  )}
                 </div>
               )}
             </div>
