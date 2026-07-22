@@ -134,17 +134,17 @@ export default function DashboardSecretaria() {
                 </div>
                 <div>
                   <p className="text-sm font-bold mb-4 text-center text-foreground">Distribución por Etapa</p>
-                  <div className="h-48 flex items-end justify-between gap-1 px-2 border-b-2 border-border">
+                  <div className="h-44 flex items-end justify-between gap-2 px-2 border-b-2 border-border">
                     {estadoChart.map(item => (
-                      <div key={item.name} className="w-1/5 flex flex-col items-center">
+                      <div key={item.name} className="w-1/5 flex flex-col items-center justify-end h-full">
                         <span className={cn('text-xs font-bold mb-1', item.value > 0 ? 'text-foreground' : 'text-muted-foreground opacity-40')}>{item.value}</span>
-                        <div className="w-full flex justify-center" style={{ height: 180 }}>
+                        <div className="w-full flex-1 flex items-end justify-center min-h-[20px]">
                           <div
                             className="w-4/5 rounded-t-md transition-all duration-1000"
                             style={{ height: `${Math.max((item.value / maxEstado) * 100, item.value > 0 ? 10 : 2)}%`, backgroundColor: item.color, boxShadow: `0 4px 12px ${item.color}40` }}
                           />
                         </div>
-                        <span className="text-[0.65rem] font-semibold text-center mt-2 leading-tight h-6 text-muted-foreground">{item.name}</span>
+                        <span className="text-[0.65rem] font-semibold text-center mt-2 leading-tight h-8 text-muted-foreground overflow-hidden flex items-center justify-center">{item.name}</span>
                       </div>
                     ))}
                   </div>

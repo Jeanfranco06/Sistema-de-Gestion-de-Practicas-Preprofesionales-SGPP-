@@ -56,17 +56,17 @@ const DatePicker = React.forwardRef<HTMLDivElement, DatePickerProps>(
               fullWidth: true,
             },
             openPickerButton: {
-              className: 'text-text-muted',
+              className: 'text-muted-foreground',
             },
           }}
           sx={{
             '& .MuiInputBase-root': {
               borderRadius: '0.75rem',
-              backgroundColor: 'var(--color-surface-card)',
+              backgroundColor: 'var(--color-card)',
               padding: '0.25rem 1rem',
               fontSize: '0.875rem',
-              color: 'var(--color-text-main)',
-              border: '1px solid var(--color-surface-border)',
+              color: 'var(--color-foreground)',
+              border: '1px solid var(--color-border)',
               transition: 'all 150ms ease-in-out',
               '&:hover': {
                 borderColor: 'var(--color-primary-400)',
@@ -88,19 +88,19 @@ const DatePicker = React.forwardRef<HTMLDivElement, DatePickerProps>(
             },
             '& .MuiInputLabel-root': {
               fontSize: '0.875rem',
-              color: 'var(--color-text-main)',
+              color: 'var(--color-foreground)',
               transform: 'translate(0, -1.5rem) scale(1)',
               position: 'relative',
               marginBottom: '0.375rem',
               '&.Mui-focused, &.MuiFormLabel-filled': {
                 transform: 'translate(0, -1.5rem) scale(1)',
-                color: 'var(--color-text-main)',
+                color: 'var(--color-foreground)',
               },
             },
             '& .MuiFormHelperText-root': {
               fontSize: '0.875rem',
               marginLeft: 0,
-              color: error ? 'var(--color-red-600)' : 'var(--color-text-muted)',
+              color: error ? 'var(--color-red-600)' : 'var(--color-muted-foreground)',
             },
           }}
         />

@@ -10,7 +10,7 @@ const Skeleton = React.forwardRef<HTMLDivElement, SkeletonProps>(
     return (
       <div
         ref={ref}
-        className={cn('animate-pulse rounded bg-surface-border', {
+        className={cn('animate-pulse rounded bg-muted', {
           'h-4 w-full max-w-[200px]': variant === 'text',
           'h-10 w-10 rounded-full': variant === 'circular',
           'h-32 w-full rounded-xl': variant === 'rectangular',

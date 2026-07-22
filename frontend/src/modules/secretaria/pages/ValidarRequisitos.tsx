@@ -530,13 +530,13 @@ export const ValidarRequisitos = () => {
           style={{ opacity: isLoading ? 0.6 : 1 }}
         >
           <Table className="min-w-[800px]">
-            <TableHeader style={{ backgroundColor: COLORS.BG_LIGHT, borderBottom: `2px solid ${COLORS.BORDER}` }}>
+            <TableHeader style={{ backgroundColor: 'var(--color-muted)', borderBottom: `1px solid var(--color-border)` }}>
               <TableRow>
                 {headCells.map((hc) => (
                   <TableHead
                     key={hc.id}
                     className="py-4 cursor-pointer select-none"
-                    style={{ fontWeight: 700, color: '#475569' }}
+                    style={{ fontWeight: 700, color: 'var(--color-muted-foreground)' }}
                     onClick={() => hc.sortable !== false && handleSort(hc.id)}
                   >
                     <div className="flex items-center gap-1">
@@ -961,7 +961,7 @@ export const ValidarRequisitos = () => {
                           {isExpanded && (
                             <div
                               className="mt-3 p-3 rounded-lg text-sm"
-                              style={{ backgroundColor: COLORS.BG_LIGHT }}
+                              style={{ backgroundColor: 'var(--color-muted)' }}
                             >
                               {detalle.descripcion && (
                                 <p className="mb-1" style={{ color: 'var(--color-foreground)' }}>
@@ -1011,7 +1011,7 @@ export const ValidarRequisitos = () => {
             )}
           </Box>
         </DialogContent>
-        <DialogActions sx={{ p: 3, bgcolor: COLORS.BG_LIGHT, borderTop: `1px solid ${COLORS.BORDER}` }}>
+        <DialogActions sx={{ p: 3, bgcolor: 'var(--color-muted)', borderTop: '1px solid var(--color-border)' }}>
           <MuiButton
             onClick={() => setOpenValidarDialog(false)}
             color="inherit"
@@ -1125,7 +1125,7 @@ export const ValidarRequisitos = () => {
             </Box>
           )}
         </DialogContent>
-        <DialogActions sx={{ p: 3, bgcolor: COLORS.BG_LIGHT, borderTop: `1px solid ${COLORS.BORDER}` }}>
+        <DialogActions sx={{ p: 3, bgcolor: 'var(--color-muted)', borderTop: '1px solid var(--color-border)' }}>
           <MuiButton
             onClick={() => setOpenHistorialDialog(false)}
             color="inherit"
@@ -1229,7 +1229,7 @@ export const ValidarRequisitos = () => {
             </FormControl>
           </Box>
         </DialogContent>
-        <DialogActions sx={{ p: 3, bgcolor: COLORS.BG_LIGHT, borderTop: `1px solid ${COLORS.BORDER}` }}>
+        <DialogActions sx={{ p: 3, bgcolor: 'var(--color-muted)', borderTop: '1px solid var(--color-border)' }}>
           <MuiButton
             onClick={() => setOpenEditDialog(false)}
             color="inherit"
