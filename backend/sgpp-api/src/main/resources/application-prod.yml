@@ -55,6 +55,11 @@ sgpp:
     email:
       enabled: ${SGPP_EMAIL_ENABLED:false}
 
+management:
+  health:
+    mail:
+      enabled: false
+
 logging:
   level:
     root: INFO
