@@ -15,6 +15,7 @@ public class DetalleEvaluacionDTO {
     private String nombreCriterio;
     private Integer puntajeMaximo;
     private Integer puntajeObtenido;
+    private String calificacionCualitativa;
     private String comentarios;
 }
 

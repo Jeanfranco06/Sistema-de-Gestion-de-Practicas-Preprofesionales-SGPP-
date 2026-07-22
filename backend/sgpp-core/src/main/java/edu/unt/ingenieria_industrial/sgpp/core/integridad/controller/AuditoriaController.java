@@ -33,6 +33,7 @@ public class AuditoriaController {
 
     @GetMapping("/expediente/{idExpediente}/trazabilidad")
     @Operation(summary = "Reconstruir trazabilidad integral del expediente")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR', 'DOCENTE_ASESOR', 'TUTOR_EXTERNO')")
     public ResponseEntity<ApiResponse<TrazabilidadExpedienteDTO>> trazabilidadExpediente(
             @PathVariable Long idExpediente) {
         return ok("Trazabilidad del expediente reconstruida",

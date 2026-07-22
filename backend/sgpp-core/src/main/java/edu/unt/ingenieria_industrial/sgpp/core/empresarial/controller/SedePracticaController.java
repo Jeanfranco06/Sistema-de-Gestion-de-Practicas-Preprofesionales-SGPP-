@@ -49,6 +49,7 @@ public class SedePracticaController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Obtener una sede por ID")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR', 'DOCENTE_ASESOR', 'TUTOR_EXTERNO', 'ESTUDIANTE')")
     public ResponseEntity<SedePracticaDTO> findById(@PathVariable Long id) {
         return ResponseEntity.ok(sedePracticaService.findById(id));
     }
@@ -151,7 +152,7 @@ public class SedePracticaController {
 
     @GetMapping("/{id}/detalle")
     @Operation(summary = "Obtener detalle de una sede")
-    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'ADMINISTRADOR', 'ESTUDIANTE', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR')")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'ADMINISTRADOR', 'ESTUDIANTE', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR', 'DOCENTE_ASESOR', 'TUTOR_EXTERNO')")
     public ResponseEntity<SedeCatalogoDTO> getDetalleSede(@PathVariable Long id) {
         return ResponseEntity.ok(sedePracticaService.getDetalleSede(id));
     }

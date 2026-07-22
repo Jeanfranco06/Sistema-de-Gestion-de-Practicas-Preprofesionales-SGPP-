@@ -28,6 +28,9 @@ public class DetalleEvaluacion extends BaseEntity {
     @Column(name = "puntaje_obtenido")
     private Integer puntajeObtenido;
 
+    @Column(name = "calificacion_cualitativa", length = 50)
+    private String calificacionCualitativa;
+
     @Column(name = "comentarios", columnDefinition = "TEXT")
     private String comentarios;
 }

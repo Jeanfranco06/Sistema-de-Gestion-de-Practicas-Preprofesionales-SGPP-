@@ -76,6 +76,7 @@ public class EvaluacionServiceImpl implements EvaluacionService {
                             .evaluacion(evaluacion)
                             .criterio(criterio)
                             .puntajeObtenido(dto.getPuntajeObtenido())
+                            .calificacionCualitativa(dto.getCalificacionCualitativa())
                             .comentarios(dto.getComentarios())
                             .build();
                 })
@@ -326,6 +327,7 @@ public class EvaluacionServiceImpl implements EvaluacionService {
                 .nombreCriterio(detalle.getCriterio().getNombre())
                 .puntajeMaximo(detalle.getCriterio().getPuntajeMaximo())
                 .puntajeObtenido(detalle.getPuntajeObtenido())
+                .calificacionCualitativa(detalle.getCalificacionCualitativa())
                 .comentarios(detalle.getComentarios())
                 .build();
     }

@@ -306,12 +306,14 @@ export const ListaPracticantes = () => {
                             </Button>
                           </Tooltip>
                         )}
-                        <Button
-                          size="sm"
-                          onClick={() => handleEvaluar(p.id)}
-                        >
-                          Evaluar <ChevronRight className="h-4 w-4 ml-1" />
-                        </Button>
+                        {(!isTutor || (p.codigoTipoPractica !== 'INICIAL' && ESTADOS_PARA_EVALUAR.includes(p.estado))) && (
+                          <Button
+                            size="sm"
+                            onClick={() => handleEvaluar(p.id)}
+                          >
+                            Evaluar <ChevronRight className="h-4 w-4 ml-1" />
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}

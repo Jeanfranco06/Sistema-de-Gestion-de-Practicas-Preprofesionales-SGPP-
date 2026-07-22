@@ -17,6 +17,8 @@ public class DetalleEvaluacionRequestDTO {
     
     @NotNull(message = "El puntajeObtenido no puede ser nulo")
     private Integer puntajeObtenido;
+
+    private String calificacionCualitativa;
     
     private String comentarios;
 }

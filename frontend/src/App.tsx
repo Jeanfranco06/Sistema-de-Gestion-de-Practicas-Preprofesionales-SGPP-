@@ -235,7 +235,7 @@ export default function App() {
                     </ProtectedRoute>
                   } />
                   <Route path="/coordinacion/expedientes/:id" element={
-                    <ProtectedRoute allowedRoles={['COORDINADOR', 'DIRECTOR', 'ADMIN_SISTEMA', 'COMITE_PRACTICAS']}>
+                    <ProtectedRoute allowedRoles={['COORDINADOR', 'DIRECTOR', 'ADMIN_SISTEMA', 'COMITE_PRACTICAS', 'DOCENTE_ASESOR', 'TUTOR_EXTERNO']}>
                       <DetalleExpediente />
                     </ProtectedRoute>
                   } />
