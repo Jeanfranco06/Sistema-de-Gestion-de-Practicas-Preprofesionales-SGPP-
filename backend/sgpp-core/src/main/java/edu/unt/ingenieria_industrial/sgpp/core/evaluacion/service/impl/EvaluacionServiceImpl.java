@@ -109,6 +109,68 @@ public class EvaluacionServiceImpl implements EvaluacionService {
     }
 
     @Override
+    public EvaluacionResponseDTO actualizarEvaluacion(Long idEvaluacion, EvaluacionRequestDTO request) {
+        Evaluacion evaluacion = evaluacionRepository.findById(idEvaluacion)
+                .orElseThrow(() -> new ResourceNotFoundException("Evaluación", "id", idEvaluacion));
+
+        int puntajeTotal = request.getDetalles().stream()
+                .mapToInt(DetalleEvaluacionRequestDTO::getPuntajeObtenido)
+                .sum();
+
+        String tipoCalificacion = request.getTipoCalificacion() != null ? request.getTipoCalificacion()
+                : evaluacion.getTipoCalificacion();
+
+        evaluacion.setPuntajeTotal(puntajeTotal);
+        evaluacion.setComentarios(request.getComentarios());
+        evaluacion.setHorasRegistradas(request.getHorasRegistradas() != null ? request.getHorasRegistradas() : evaluacion.getHorasRegistradas());
+        evaluacion.setRutaConstancia(request.getRutaConstancia() != null ? request.getRutaConstancia() : evaluacion.getRutaConstancia());
+        evaluacion.setTipoCalificacion(tipoCalificacion);
+        evaluacion.setCalificacionCualitativa(request.getCalificacionCualitativa());
+        evaluacion.setFechaEvaluacion(LocalDate.now());
+        evaluacionRepository.save(evaluacion);
+
+        // Reemplazar los detalles
+        List<DetalleEvaluacion> detallesExistentes = detalleEvaluacionRepository.findByEvaluacionId(idEvaluacion);
+        detalleEvaluacionRepository.deleteAll(detallesExistentes);
+
+        final Evaluacion evaluacionFinal = evaluacion;
+        List<DetalleEvaluacion> nuevosDetalles = request.getDetalles().stream()
+                .map(dto -> {
+                    CriterioEvaluacion criterio = buscarCriterio(dto.getIdCriterio());
+                    return DetalleEvaluacion.builder()
+                            .evaluacion(evaluacionFinal)
+                            .criterio(criterio)
+                            .puntajeObtenido(dto.getPuntajeObtenido())
+                            .calificacionCualitativa(dto.getCalificacionCualitativa())
+                            .comentarios(dto.getComentarios())
+                            .build();
+                })
+                .collect(Collectors.toList());
+        detalleEvaluacionRepository.saveAll(nuevosDetalles);
+
+        // Sincronizar componente EMPRESA en Anexo 4
+        if ("EMPRESA".equals(evaluacion.getComponente())) {
+            try {
+                componenteEvaluacionService.registrarEvaluacion(
+                        evaluacion.getExpediente().getId(),
+                        "EMPRESA",
+                        puntajeTotal,
+                        evaluacion.getEvaluadorId(),
+                        evaluacion.getTipoEvaluador(),
+                        request.getComentarios());
+            } catch (Exception e) {
+                log.warn("No se pudo re-sincronizar componente EMPRESA para expediente {}: {}",
+                        evaluacion.getExpediente().getId(), e.getMessage());
+            }
+        }
+
+        BigDecimal promedio = calcularPromedioFinal(evaluacion.getExpediente().getId());
+        String calificacionCualitativa = calcularCalificacionCualitativa(promedio.doubleValue(), tipoCalificacion);
+
+        return toResponse(evaluacion, nuevosDetalles, promedio, calificacionCualitativa);
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public EvaluacionResponseDTO obtenerEvaluacionPorId(Long id) {
         Evaluacion evaluacion = evaluacionRepository.findById(id)
@@ -174,6 +236,11 @@ public class EvaluacionServiceImpl implements EvaluacionService {
         }
         if (!Set.of("INFORME_FINAL_PRESENTADO", "INFORME_APROBADO").contains(expediente.getEstado())) {
             throw new BusinessException("La evaluación de empresa se habilita al presentar el informe final");
+        }
+        boolean yaEvaluado = componenteEvaluacionService.obtenerComponentesPorExpediente(expediente.getId()).stream()
+                .anyMatch(c -> "EMPRESA".equals(c.getTipoComponente()) && "COMPLETADO".equals(c.getEstado()));
+        if (yaEvaluado) {
+            throw new BusinessException("La evaluación de empresa ya ha sido registrada para este expediente");
         }
 
         Set<Long> criteriosRecibidos = new HashSet<>();

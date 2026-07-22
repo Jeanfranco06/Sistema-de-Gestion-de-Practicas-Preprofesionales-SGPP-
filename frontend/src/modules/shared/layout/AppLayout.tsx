@@ -88,6 +88,21 @@ function getNavGroups(roles: UserRole[] = []): NavGroup[] {
         { label: 'Validar Requisitos', icon: <ClipboardCheck size={22} />, path: '/admin/validar-requisitos' },
         { label: 'Expedientes', icon: <ClipboardList size={22} />, path: '/admin/expedientes' },
       ]},
+      { group: 'coordination', label: 'Coordinación y Comité', items: [
+        { label: 'Coordinación', icon: <LayoutDashboard size={22} />, path: '/coordinacion/dashboard' },
+        { label: 'Reportes Consolidados', icon: <BarChart3 size={22} />, path: '/coordinacion/reportes' },
+        { label: 'Panel Comité', icon: <ClipboardCheck size={22} />, path: '/comite/panel' },
+      ]},
+      { group: 'docente', label: 'Vista Docente', items: [
+        { label: 'Dashboard Docente', icon: <LayoutDashboard size={22} />, path: '/docente/dashboard' },
+        { label: 'Practicantes (Docente)', icon: <GraduationCap size={22} />, path: '/docente/practicantes' },
+      ]},
+      { group: 'tutor', label: 'Vista Tutor Externo', items: [
+        { label: 'Dashboard Tutor', icon: <LayoutDashboard size={22} />, path: '/tutor/dashboard' },
+        { label: 'Practicantes (Tutor)', icon: <GraduationCap size={22} />, path: '/tutor/practicantes' },
+        { label: 'Validación de Horas', icon: <Clock size={22} />, path: '/tutor/horas' },
+        { label: 'Evaluaciones (Tutor)', icon: <Award size={22} />, path: '/tutor/evaluaciones' },
+      ]},
       { group: 'external', label: 'Entidades Externas', items: [
         { label: 'Tutores Externos', icon: <UserCheck size={22} />, path: '/admin/tutores' },
         { label: 'Empresas', icon: <Building2 size={22} />, path: '/admin/empresas' },

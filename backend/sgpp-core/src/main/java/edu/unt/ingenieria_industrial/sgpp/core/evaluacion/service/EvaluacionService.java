@@ -10,6 +10,7 @@ import java.util.List;
 public interface EvaluacionService {
     EvaluacionResponseDTO crearEvaluacion(EvaluacionRequestDTO request, Long idUsuario, Collection<String> roles);
     EvaluacionResponseDTO obtenerEvaluacionPorId(Long id);
+    EvaluacionResponseDTO actualizarEvaluacion(Long idEvaluacion, EvaluacionRequestDTO request);
     List<EvaluacionResponseDTO> obtenerEvaluacionesPorPractica(Long idPractica);
     List<CriterioEvaluacionDTO> obtenerCriteriosPorTipoEvaluador(String tipoEvaluador);
 }

@@ -105,7 +105,7 @@ INSERT INTO expediente (
     numero_informes_parciales, informe_final_presentado, activo, creado_por, condicion_solicitante
 ) VALUES (
     102, 2, 'EXP-2026-FINAL-0001', 'EXP-2026-FINAL-0001', '2026-03-01', 
-    'EN_EJECUCION', 2, 1, 1, 
+    'INFORME_FINAL_PRESENTADO', 2, 1, 1, 
     1, true, true, 
     '2026-03-01', '2026-06-15', 15, 
     0, true, true, 'SYSTEM', 'ESTUDIANTE'
@@ -194,8 +194,19 @@ INSERT INTO expediente_comite (id, id_expediente, id_usuario, rol_comite, fecha_
 (1003, 102, 16, 'MIEMBRO', '2026-03-05 10:00:00', true, 'SYSTEM');
 
 -- 8. Historial de Estado
+ALTER TABLE expediente_estado DISABLE TRIGGER trg_expediente_estado_inmutable;
+
 INSERT INTO expediente_estado (id_expediente, estado_anterior, estado_nuevo, id_usuario, tipo_cambio, creado_por) VALUES
-(102, 'PLAN_APROBADO', 'EN_EJECUCION', 4, 'AUTOMATICO', 'SYSTEM');
+(102, 'PLAN_APROBADO', 'EN_EJECUCION', 4, 'AUTOMATICO', 'SYSTEM'),
+(102, 'EN_EJECUCION', 'INFORME_FINAL_PRESENTADO', 9, 'AUTOMATICO', 'SYSTEM');
+
+ALTER TABLE expediente_estado ENABLE TRIGGER trg_expediente_estado_inmutable;
+
+-- 9. Componentes de Evaluacion
+INSERT INTO componente_evaluacion (id_expediente, tipo_componente, puntaje_maximo, porcentaje, estado, activo, creado_por) VALUES
+(102, 'PLAN', 10, 10, 'PENDIENTE', true, 'SYSTEM'),
+(102, 'EMPRESA', 50, 50, 'PENDIENTE', true, 'SYSTEM'),
+(102, 'INFORME', 40, 40, 'PENDIENTE', true, 'SYSTEM');
 
 
 -- ==========================================
