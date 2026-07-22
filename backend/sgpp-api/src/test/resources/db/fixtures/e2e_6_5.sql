@@ -1,22 +1,24 @@
--- V61: Poblar datos para pruebas E2E del punto 6.5
+-- Fixtures opcionales para pruebas E2E del punto 6.5.
+-- Ejecutar únicamente sobre una base aislada de pruebas.
 
--- Limpiar datos operativos de estudiante1 y estudiante2 para evitar conflictos
-DELETE FROM registro_generacion_documental WHERE id_expediente IN (101, 102);
-DELETE FROM componente_evaluacion WHERE id_expediente IN (101, 102);
-DELETE FROM control_plazo WHERE id_expediente IN (101, 102);
-DELETE FROM evaluacion WHERE id_expediente IN (101, 102);
-DELETE FROM plan_cronograma_actividad WHERE id_plan IN (101, 102);
-DELETE FROM plan_objetivo WHERE id_plan IN (101, 102);
-DELETE FROM plan_seccion WHERE id_plan IN (101, 102);
-DELETE FROM plan_historial_estado WHERE id_plan IN (101, 102);
-DELETE FROM plan_general WHERE id_expediente IN (101, 102);
-DELETE FROM registro_hora WHERE id_control_hora IN (101, 102);
-DELETE FROM control_hora WHERE id_expediente IN (101, 102);
-DELETE FROM expediente_documento WHERE id_expediente IN (101, 102);
-DELETE FROM expediente_comite WHERE id_expediente IN (101, 102);
-DELETE FROM expediente_estado WHERE id_expediente IN (101, 102);
+-- Limpiar datos operativos de estudiante1 y estudiante2 para evitar conflictos.
+-- También se usan los códigos, porque instalaciones existentes pueden tener IDs distintos.
+DELETE FROM registro_generacion_documental WHERE id_expediente IN (SELECT id FROM expediente WHERE id IN (101, 102) OR codigo_expediente IN ('EXP-2026-INICIAL-0001', 'EXP-2026-FINAL-0001'));
+DELETE FROM componente_evaluacion WHERE id_expediente IN (SELECT id FROM expediente WHERE id IN (101, 102) OR codigo_expediente IN ('EXP-2026-INICIAL-0001', 'EXP-2026-FINAL-0001'));
+DELETE FROM control_plazo WHERE id_expediente IN (SELECT id FROM expediente WHERE id IN (101, 102) OR codigo_expediente IN ('EXP-2026-INICIAL-0001', 'EXP-2026-FINAL-0001'));
+DELETE FROM evaluacion WHERE id_expediente IN (SELECT id FROM expediente WHERE id IN (101, 102) OR codigo_expediente IN ('EXP-2026-INICIAL-0001', 'EXP-2026-FINAL-0001'));
+DELETE FROM plan_cronograma_actividad WHERE id_plan IN (SELECT id FROM plan_general WHERE id IN (101, 102) OR id_expediente IN (SELECT id FROM expediente WHERE codigo_expediente IN ('EXP-2026-INICIAL-0001', 'EXP-2026-FINAL-0001')));
+DELETE FROM plan_objetivo WHERE id_plan IN (SELECT id FROM plan_general WHERE id IN (101, 102) OR id_expediente IN (SELECT id FROM expediente WHERE codigo_expediente IN ('EXP-2026-INICIAL-0001', 'EXP-2026-FINAL-0001')));
+DELETE FROM plan_seccion WHERE id_plan IN (SELECT id FROM plan_general WHERE id IN (101, 102) OR id_expediente IN (SELECT id FROM expediente WHERE codigo_expediente IN ('EXP-2026-INICIAL-0001', 'EXP-2026-FINAL-0001')));
+DELETE FROM plan_historial_estado WHERE id_plan IN (SELECT id FROM plan_general WHERE id IN (101, 102) OR id_expediente IN (SELECT id FROM expediente WHERE codigo_expediente IN ('EXP-2026-INICIAL-0001', 'EXP-2026-FINAL-0001')));
+DELETE FROM plan_general WHERE id IN (101, 102) OR id_expediente IN (SELECT id FROM expediente WHERE codigo_expediente IN ('EXP-2026-INICIAL-0001', 'EXP-2026-FINAL-0001'));
+DELETE FROM registro_hora WHERE id_control_hora IN (SELECT id FROM control_hora WHERE id IN (101, 102) OR id_expediente IN (SELECT id FROM expediente WHERE codigo_expediente IN ('EXP-2026-INICIAL-0001', 'EXP-2026-FINAL-0001')));
+DELETE FROM control_hora WHERE id IN (101, 102) OR id_expediente IN (SELECT id FROM expediente WHERE codigo_expediente IN ('EXP-2026-INICIAL-0001', 'EXP-2026-FINAL-0001'));
+DELETE FROM expediente_documento WHERE id_expediente IN (SELECT id FROM expediente WHERE id IN (101, 102) OR codigo_expediente IN ('EXP-2026-INICIAL-0001', 'EXP-2026-FINAL-0001'));
+DELETE FROM expediente_comite WHERE id_expediente IN (SELECT id FROM expediente WHERE id IN (101, 102) OR codigo_expediente IN ('EXP-2026-INICIAL-0001', 'EXP-2026-FINAL-0001'));
+DELETE FROM expediente_estado WHERE id_expediente IN (SELECT id FROM expediente WHERE id IN (101, 102) OR codigo_expediente IN ('EXP-2026-INICIAL-0001', 'EXP-2026-FINAL-0001'));
 DELETE FROM practica WHERE id IN (101, 102);
-DELETE FROM expediente WHERE id IN (101, 102);
+DELETE FROM expediente WHERE id IN (101, 102) OR codigo_expediente IN ('EXP-2026-INICIAL-0001', 'EXP-2026-FINAL-0001');
 
 -- ==========================================
 -- CASO 1: estudiante1 (Práctica Inicial)
