@@ -54,12 +54,15 @@ interface Evaluacion {
   horasRegistradas?: number;
   puntajeTotal?: number;
   promedioFinal?: number;
+  tipoCalificacion?: string;
+  calificacionCualitativa?: string;
   detalles?: Array<{
     idCriterio?: number;
     id?: number;
     nombreCriterio?: string;
     criterio?: string;
     puntajeObtenido: number;
+    calificacionCualitativa?: string;
   }>;
 }
 
@@ -597,8 +600,8 @@ export const EvaluacionTutorExterno = () => {
                         <TableCell className="text-foreground">{ev.horasRegistradas} hrs</TableCell>
                         <TableCell className="text-foreground">{ev.tipoEvaluador}</TableCell>
                         <TableCell>
-                          <span className="text-sm font-semibold text-foreground">
-                            {ev.puntajeTotal ?? ev.promedioFinal ?? '—'}/{totalMaximo}
+                          <span className="text-sm font-bold text-foreground">
+                            {ev.tipoCalificacion === 'CUALITATIVA' ? (ev.calificacionCualitativa || '—') : `${ev.puntajeTotal ?? ev.promedioFinal ?? '—'}/${totalMaximo}`}
                           </span>
                         </TableCell>
                         <TableCell>
@@ -607,7 +610,7 @@ export const EvaluacionTutorExterno = () => {
                               key={d.idCriterio || d.id}
                               className="block text-xs text-muted-foreground"
                             >
-                              {d.nombreCriterio || d.criterio}: {d.puntajeObtenido}
+                              {d.nombreCriterio || d.criterio}: <span className="font-bold text-foreground">{ev.tipoCalificacion === 'CUALITATIVA' ? (d.calificacionCualitativa || '—') : d.puntajeObtenido}</span>
                             </span>
                           ))}
                         </TableCell>

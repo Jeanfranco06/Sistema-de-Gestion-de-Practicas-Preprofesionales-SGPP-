@@ -3,6 +3,8 @@
 
 -- Limpiar datos operativos de estudiante1 y estudiante2 para evitar conflictos.
 -- También se usan los códigos, porque instalaciones existentes pueden tener IDs distintos.
+ALTER TABLE expediente_estado DISABLE TRIGGER trg_expediente_estado_inmutable;
+
 DELETE FROM registro_generacion_documental WHERE id_expediente IN (SELECT id FROM expediente WHERE id IN (101, 102) OR codigo_expediente IN ('EXP-2026-INICIAL-0001', 'EXP-2026-FINAL-0001'));
 DELETE FROM componente_evaluacion WHERE id_expediente IN (SELECT id FROM expediente WHERE id IN (101, 102) OR codigo_expediente IN ('EXP-2026-INICIAL-0001', 'EXP-2026-FINAL-0001'));
 DELETE FROM control_plazo WHERE id_expediente IN (SELECT id FROM expediente WHERE id IN (101, 102) OR codigo_expediente IN ('EXP-2026-INICIAL-0001', 'EXP-2026-FINAL-0001'));
@@ -19,6 +21,8 @@ DELETE FROM expediente_comite WHERE id_expediente IN (SELECT id FROM expediente 
 DELETE FROM expediente_estado WHERE id_expediente IN (SELECT id FROM expediente WHERE id IN (101, 102) OR codigo_expediente IN ('EXP-2026-INICIAL-0001', 'EXP-2026-FINAL-0001'));
 DELETE FROM practica WHERE id IN (101, 102);
 DELETE FROM expediente WHERE id IN (101, 102) OR codigo_expediente IN ('EXP-2026-INICIAL-0001', 'EXP-2026-FINAL-0001');
+
+ALTER TABLE expediente_estado ENABLE TRIGGER trg_expediente_estado_inmutable;
 
 -- ==========================================
 -- CASO 1: estudiante1 (Práctica Inicial)

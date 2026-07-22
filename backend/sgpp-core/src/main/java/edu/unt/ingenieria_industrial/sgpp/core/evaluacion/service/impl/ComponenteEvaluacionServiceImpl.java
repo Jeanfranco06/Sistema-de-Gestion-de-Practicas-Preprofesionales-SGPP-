@@ -89,7 +89,15 @@ public class ComponenteEvaluacionServiceImpl implements ComponenteEvaluacionServ
             Integer puntaje, Long evaluadorId, String tipoEvaluador, String observaciones) {
         ComponenteEvaluacion componente = componenteRepository
                 .findByExpedienteIdAndTipoComponenteAndActivoTrue(expedienteId, tipoComponente)
-                .orElseThrow(() -> new ResourceNotFoundException("Componente de evaluación no encontrado"));
+                .orElseGet(() -> {
+                    Expediente exp = expedienteRepository.findById(expedienteId)
+                            .orElseThrow(() -> new ResourceNotFoundException("Expediente", "id", expedienteId));
+                    String tpCod = exp.getTipoPractica() != null ? exp.getTipoPractica().getCodigo() : "FINAL";
+                    inicializarComponentes(expedienteId, tpCod);
+                    return componenteRepository
+                            .findByExpedienteIdAndTipoComponenteAndActivoTrue(expedienteId, tipoComponente)
+                            .orElseThrow(() -> new ResourceNotFoundException("Componente de evaluación no encontrado: " + tipoComponente));
+                });
 
         if (puntaje < 0 || puntaje > componente.getPuntajeMaximo()) {
             throw new BusinessException(

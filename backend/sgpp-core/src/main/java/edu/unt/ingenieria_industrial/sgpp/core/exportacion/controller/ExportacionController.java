@@ -65,6 +65,7 @@ public class ExportacionController {
 
     @GetMapping("/historial")
     @Operation(summary = "Consultar trazabilidad de documentos generados")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR', 'DOCENTE_ASESOR', 'TUTOR_EXTERNO')")
     public ResponseEntity<ApiResponse<List<RegistroGeneracionDTO>>> historial(
             @RequestParam(required = false) Long idExpediente,
             @RequestParam(required = false) Long idUsuario) {

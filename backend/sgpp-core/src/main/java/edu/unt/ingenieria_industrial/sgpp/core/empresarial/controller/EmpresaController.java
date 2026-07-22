@@ -39,6 +39,7 @@ public class EmpresaController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Obtener una empresa por ID")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR', 'DOCENTE_ASESOR', 'TUTOR_EXTERNO', 'ESTUDIANTE')")
     public ResponseEntity<EmpresaDTO> findById(@PathVariable Long id) {
         return ResponseEntity.ok(empresaService.findById(id));
     }
