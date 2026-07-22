@@ -368,7 +368,7 @@ El SGPP está **funcionalmente completo** y cumple aproximadamente el **95% de l
 - **Frontend:** build exitoso (837ms); lint limpio; ErrorBoundary implementado; colores unificados en archivos principales; dependencias corregidas; página de evaluación del estudiante funcional.
 - **Base de datos:** migraciones validadas; validate-on-migrate habilitado; sin gap críticos.
 - **Configuración:** puertos alineados (5434 DB, 8082 API, 5173 Frontend); paths relativos; .env.example actualizado.
-- **Funcionalidad:** flujo completo de expediente (solicitud → validación → carta → aceptación → plan → ejecución → informes → evaluación → cierre → constancia) operativo para prácticas Inicial, Final y Profesional.
+- **Funcionalidad:** flujo completo de expediente (solicitud → validación → carta → aceptación → plan → ejecución → informes → evaluación → cierre → constancia) operativo para prácticas Inicial, Final y Profesional. Flujo de corrección de plan (observar → ver observaciones → corregir → reenviar) completamente visible y funcional desde GestionDocumental.
 
 **Pendientes menores conocidos:**
 - ESLint para .ts/.tsx bloqueado por incompatibilidad de TypeScript 7 con typescript-eslint

@@ -115,6 +115,7 @@ public class PlanGeneralController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Obtener Plan General por ID")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR', 'DOCENTE_ASESOR', 'ESTUDIANTE')")
     public ResponseEntity<ApiResponse<PlanGeneralResponse>> findById(@PathVariable Long id) {
         PlanGeneralResponse response = planService.findById(id);
         return ResponseEntity.ok(ApiResponse.<PlanGeneralResponse>builder()
@@ -123,6 +124,7 @@ public class PlanGeneralController {
 
     @GetMapping("/expediente/{expedienteId}/activo")
     @Operation(summary = "Obtener el Plan General activo de un expediente")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR', 'DOCENTE_ASESOR', 'ESTUDIANTE')")
     public ResponseEntity<ApiResponse<PlanGeneralResponse>> findActivoByExpediente(
             @PathVariable Long expedienteId) {
         PlanGeneralResponse response = planService.findActivoByExpedienteId(expedienteId);
@@ -137,6 +139,7 @@ public class PlanGeneralController {
 
     @GetMapping("/expediente/{expedienteId}")
     @Operation(summary = "Listar todas las versiones del plan de un expediente")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR', 'DOCENTE_ASESOR', 'ESTUDIANTE')")
     public ResponseEntity<ApiResponse<List<PlanGeneralResponse>>> listarPorExpediente(
             @PathVariable Long expedienteId) {
         List<PlanGeneralResponse> responses = planService.listarPorExpediente(expedienteId);
@@ -146,6 +149,7 @@ public class PlanGeneralController {
 
     @GetMapping("/{id}/validar-estructura")
     @Operation(summary = "Validar la estructura mínima del Plan General")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR', 'DOCENTE_ASESOR', 'ESTUDIANTE')")
     public ResponseEntity<ApiResponse<PlanGeneralService.ValidacionEstructuraResponse>> validarEstructura(
             @PathVariable Long id) {
         PlanGeneralService.ValidacionEstructuraResponse validacion = planService.validarEstructura(id);

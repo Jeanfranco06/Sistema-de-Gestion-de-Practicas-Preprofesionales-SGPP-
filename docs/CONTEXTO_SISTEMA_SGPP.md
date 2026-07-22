@@ -410,4 +410,30 @@ El flujo del **estudiante** debe reflejar fielmente las etapas: solicitud → va
 
 ---
 
-*Documento generado a partir de: Reglamento de Prácticas Preprofesionales UNT-Ingeniería Industrial (PP-RG-01.09), RCU N° 0010-2025-UNT, expediente real de prácticas (Castillo García, Nelson Jhoel), y plan de trabajo técnico del sistema SGPP.*
+---
+
+## 19. Notas de implementación técnica
+
+### 19.1 Arquitectura y base de datos
+
+**Migraciones Flyway:**
+- La migración **V59** añade claves foráneas con `ON DELETE CASCADE` para corregir integridad referencial, e índices de rendimiento para consultas frecuentes (expedientes por usuario, planes por expediente, etc.).
+- La migración **V38** fue aplicada en bases de datos existentes pero el archivo SQL fue eliminado del repositorio. No debe re-ejecutarse ni recrearse sin verificación del estado actual de la base.
+
+### 19.2 Seguridad y autorización
+
+- `GET /expedientes/{id}` requiere autenticación (userId en JWT). Previamente era accesible sin credenciales.
+- `GET /planes/{id}` y endpoints relacionados ahora incluyen anotaciones explícitas `@PreAuthorize` para validar ownership antes de retornar datos.
+- Se implementó verificación de duplicados al asignar usuarios a comités, evitando registros repetidos.
+
+### 19.3 Backend — Validaciones de negocio
+
+- Se valida el **mínimo de horas diarias** al registrar horas de práctica: el sistema rechaza registros que no cumplan el umbral configurado.
+- Se implementó un **guardia contra horas negativas**: cualquier intento de registrar un valor negativo es rechazado en capa de servicio antes de llegar a persistencia.
+
+### 19.4 Frontend — Mejoras de usabilidad y accesibilidad
+
+- **Migración de notificaciones:** se reemplazó SweetAlert2 por toast notifications (react-hot-toast / equivalent) en todas las páginas del módulo de estudiante, mejorando consistencia visual y experiencia de usuario.
+- **Accesibilidad:** etiquetas `<label>` conectadas correctamente a sus inputs mediante `htmlFor`/`id`; se añadió soporte de teclado (Enter/Space) en componentes de carga de archivos que previamente solo respondían a click.
+- **Corrección de anti-patrón React:** en `DetalleExpediente`, se migró de `useMemo` a `useEffect` para operaciones con efectos secundarios (llamadas API, setState), resolviendo un problema de rendering incorrecto.
+- **RecepcionAdministrativa:** se reorganizaron imports usando barrel exports, se reemplazó paginación textual por paginación con iconos, y se corrigieron labels descriptivos en la tabla de expedientes.

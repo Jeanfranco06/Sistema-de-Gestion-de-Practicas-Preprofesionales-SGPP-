@@ -5,6 +5,8 @@ export const login = (username, password) =>
 
 export const getMe = () => api.get('/auth/me');
 
+export const updateMe = (data) => api.put('/auth/me', data);
+
 export const forgotPassword = (email) =>
   api.post('/auth/forgot-password', { email });
 

@@ -1,9 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Users, ClipboardList, ListChecks, AlertTriangle,
   FileEdit, Building2, RefreshCw, ChevronRight,
-  FileText, Eye, Building, Loader2,
+  FileText, Eye, Building, Loader2, TrendingUp, TrendingDown, Minus,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,

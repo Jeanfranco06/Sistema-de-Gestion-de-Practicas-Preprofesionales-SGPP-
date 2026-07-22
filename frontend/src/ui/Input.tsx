@@ -5,10 +5,12 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
   helperText?: string;
+  leftIcon?: React.ReactNode;
+  rightElement?: React.ReactNode;
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, label, error, helperText, id, ...props }, ref) => {
+  ({ className, label, error, helperText, leftIcon, rightElement, id, ...props }, ref) => {
     const inputId = id || React.useId();
 
     return (
@@ -18,20 +20,37 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             {label}
           </label>
         )}
-        <input
-          ref={ref}
-          id={inputId}
-          className={cn(
-            'w-full rounded-xl border bg-card px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground transition-all duration-150',
-            'focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 focus:outline-none',
-            'disabled:opacity-50 disabled:pointer-events-none',
-            error ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-border hover:border-primary-400',
-            className
+        <div className="relative">
+          {leftIcon && (
+            <div
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+              aria-hidden="true"
+            >
+              {leftIcon}
+            </div>
           )}
-          aria-invalid={!!error}
-          aria-describedby={error ? `${inputId}-error` : helperText ? `${inputId}-helper` : undefined}
-          {...props}
-        />
+          <input
+            ref={ref}
+            id={inputId}
+            className={cn(
+              'w-full rounded-xl border bg-card px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground transition-all duration-150',
+              'focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 focus:outline-none',
+              'disabled:opacity-50 disabled:pointer-events-none',
+              error ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-border hover:border-primary-400',
+              leftIcon && 'pl-10',
+              rightElement && 'pr-10',
+              className
+            )}
+            aria-invalid={!!error}
+            aria-describedby={error ? `${inputId}-error` : helperText ? `${inputId}-helper` : undefined}
+            {...props}
+          />
+          {rightElement && (
+            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+              {rightElement}
+            </div>
+          )}
+        </div>
         {error && (
           <p id={`${inputId}-error`} className="mt-1.5 text-sm text-red-600" role="alert">
             {error}

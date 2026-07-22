@@ -33,6 +33,8 @@ El sistema debe permitir el inicio de sesión mediante correo institucional (@un
 ### RF-02: Gestión de perfiles por rol (RBAC)
 **Prioridad:** Alta | **Actor(es):** Coordinador/Director, Sistema
 
+> **Estado de implementación:** ✅ Los endpoints de expediente y plan de prácticas cuentan con verificación de autorización por rol implementada.
+
 El sistema debe implementar control de acceso basado en roles (RBAC), con los siguientes roles: Estudiante, Docente Asesor, Tutor Externo, Secretaría, Comité de Prácticas, Director de Escuela/Coordinador.
 
 **Criterios de aceptación:**
@@ -45,6 +47,8 @@ El sistema debe implementar control de acceso basado en roles (RBAC), con los si
 
 ### RF-03: Administración de usuarios y asignación de roles
 **Prioridad:** Alta | **Actor(es):** Secretaría, Coordinador/Director
+
+> **Estado de implementación:** ✅ Se valida que un usuario no pueda ser asignado dos veces al mismo Comité de Prácticas (duplicación de miembros bloqueada).
 
 El sistema debe permitir crear, editar, deshabilitar y reasignar roles a los usuarios (docentes, secretaría, comité, estudiantes).
 
@@ -250,6 +254,8 @@ Una vez aprobado el plan, el sistema debe habilitar el estado de ejecución y co
 
 ### RF-19: Registro y contador automático de horas ejecutadas
 **Prioridad:** Alta | **Actor(es):** Estudiante, Docente Asesor, Sistema
+
+> **Estado de implementación:** ✅ Se valida un mínimo de 6 horas diarias al registrar horas de práctica.
 
 El sistema debe permitir registrar avances de horas ejecutadas por el estudiante y calcular automáticamente el acumulado.
 
@@ -533,6 +539,8 @@ El sistema debe bloquear automáticamente cualquier acción del estudiante sobre
 
 ### RF-41: Dashboard principal del estudiante
 **Prioridad:** Alta | **Actor(es):** Estudiante
+
+> **Estado de implementación:** ✅ Toast notifications estandarizadas (componente reutilizable) y mejoras de accesibilidad (aria-labels, navegación por teclado, contraste) aplicadas.
 
 El sistema debe mostrar un dashboard con: estado del expediente, horas acumuladas vs. requeridas, documentos pendientes, observaciones activas, barra de progreso del trámite, lista de tareas con fechas límite, notificaciones recientes y accesos rápidos.
 

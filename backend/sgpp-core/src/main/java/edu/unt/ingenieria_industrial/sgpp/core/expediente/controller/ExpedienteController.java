@@ -263,9 +263,10 @@ public class ExpedienteController {
     public ResponseEntity<ApiResponse<ExpedienteResponse>> findById(@PathVariable Long id) {
         Long idUsuario = currentUserService.getCurrentUserId();
         List<String> roles = currentUserService.getCurrentRoles();
-        ExpedienteResponse response = idUsuario != null
-                ? expedienteService.findByIdForUser(id, idUsuario, roles)
-                : expedienteService.findById(id);
+        if (idUsuario == null) {
+            throw new edu.unt.ingenieria_industrial.sgpp.shared.exception.BusinessException("Usuario no autenticado");
+        }
+        ExpedienteResponse response = expedienteService.findByIdForUser(id, idUsuario, roles);
         return ResponseEntity.ok(ApiResponse.<ExpedienteResponse>builder()
                 .success(true).data(response).timestamp(LocalDateTime.now()).build());
     }

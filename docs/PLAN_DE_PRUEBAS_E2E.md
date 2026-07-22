@@ -259,12 +259,15 @@ Antes de probar el flujo de un estudiante, un administrador o secretaria debe co
 - Los integrantes seleccionados ven el expediente en `Panel Comité`.
 - Se inicia el plazo para presentar el Plan Final/Profesional.
 
+**Nota:** La validación de duplicidad de integrantes del comité se aplica actualmente a nivel de backend, no solo en la UI. Si se intenta enviar un mismo usuario más de una vez en la solicitud, el backend rechazará la operación.
+
 **Casos negativos:**
 
 - Asignar comité a práctica Inicial → debe rechazarse.
 - Seleccionar más de 3 integrantes → debe rechazarse.
 - Seleccionar integrante inactivo → debe rechazarse.
 - Segunda asignación de comité → debe rechazarse.
+- Seleccionar el mismo integrante dos veces → rechazado con mensaje de error (validación en backend).
 
 #### 6.2.3 Estudiante - Habilitación del plan
 
@@ -404,11 +407,15 @@ Antes de probar el flujo de un estudiante, un administrador o secretaria debe co
 - El registro no suma al acumulado hasta que el tutor lo valide.
 - Acumular al menos 64 horas validadas para Inicial y 360 para Final/Profesional.
 
+**Nota:** El backend ahora valida un mínimo diario de 6 horas por registro. Si se intentan registrar menos de 6 horas en un solo día, el sistema debe advertir o rechazar.
+
 **Casos negativos:**
 
 - Fecha futura → rechazada.
 - Fecha anterior al inicio de ejecución → rechazada.
 - Más de 24 horas en un día → rechazada.
+- Registrar menos de 6 horas → advertencia o rechazo (validación de mínimo diario en backend).
+- Registrar horas negativas → rechazado.
 - Registrar horas fuera de ejecución → menú deshabilitado o error.
 
 #### 6.4.3 Validación de coherencia temporal (Final/Profesional)
@@ -542,6 +549,8 @@ Antes de probar el flujo de un estudiante, un administrador o secretaria debe co
 
 ## 7. Verificación de reglas de negocio normativas
 
+**Nota de seguridad:** El endpoint `GET /expedientes/{id}` ahora requiere autenticación. Sin un token válido, se devuelve `401 Unauthorized`. Además, los endpoints de consulta de plan (`GET`) ahora cuentan con autorización adecuada que impide que usuarios no autorizados accedan a planes ajenos.
+
 Durante el flujo anterior se deben validar las siguientes reglas duras:
 
 | # | Regla | Cómo probar | Resultado esperado |
@@ -574,6 +583,7 @@ Durante el flujo anterior se deben validar las siguientes reglas duras:
 | 2 | Con token de estudiante, llamar a `GET /api/v1/expedientes/{idAjeno}`. | `403 Forbidden` o `404 Not Found`. |
 | 3 | Con token de secretaria, intentar eliminar un usuario. | `403 Forbidden`. |
 | 4 | Sin token, llamar a cualquier endpoint protegido. | `401 Unauthorized`. |
+| 5 | Intentar asignar comité con usuario duplicado (mismo integrante dos veces). | Rechazado con error de validación del backend. |
 
 ---
 

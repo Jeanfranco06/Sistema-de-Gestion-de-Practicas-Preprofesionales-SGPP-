@@ -332,7 +332,11 @@ export const PanelComite = () => {
                   <div
                     className="w-36 h-36 rounded-full flex items-center justify-center"
                     style={{
-                      background: `conic-gradient(#10b981 0 ${kpis.total ? (kpis.cerrados / kpis.total) * 100 : 0}%, #f59e0b 0 ${kpis.total ? ((kpis.cerrados + kpis.pendientes) / kpis.total) * 100 : 0}%, #e2e8f0 0 100%)`,
+                      background: (() => {
+                        const cerradoPct = kpis.total ? (kpis.cerrados / kpis.total) * 100 : 0;
+                        const pendPct = kpis.total ? ((kpis.cerrados + kpis.pendientes) / kpis.total) * 100 : 0;
+                        return `conic-gradient(#10b981 0% ${cerradoPct}%, #f59e0b ${cerradoPct}% ${pendPct}%, #e2e8f0 ${pendPct}% 100%)`;
+                      })(),
                     }}
                   >
                     <div className="w-24 h-24 rounded-full flex flex-col items-center justify-center bg-card">

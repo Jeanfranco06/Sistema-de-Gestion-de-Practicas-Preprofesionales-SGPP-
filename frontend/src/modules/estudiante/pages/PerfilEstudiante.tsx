@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod/v4';
@@ -13,15 +13,13 @@ import {
   ArrowLeft,
   Award,
   Loader2,
+  Camera,
 } from 'lucide-react';
-import Swal from 'sweetalert2';
-import withReactContent from 'sweetalert2-react-content';
 import { useAuth } from '@/auth/AuthContext';
-import { usePerfilAcademico, useActualizarPerfilAcademico } from '@/hooks/useUsuarios';
-import { Card, CardContent, Badge, Button, Avatar, Separator, Input, Select } from '@/ui';
+import { useActualizarFotoPerfil, useActualizarPerfilAcademico, useFotoPerfil, usePerfilAcademico } from '@/hooks/useUsuarios';
+import { Card, CardContent, Badge, Button, Avatar, Separator, Input, Select, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/ui';
 import { cn } from '@/lib/utils';
-
-const MySwal = withReactContent(Swal);
+import { showError, showSuccess } from '@/lib/toast';
 
 const perfilAcademicoFormSchema = z.object({
   semestreActual: z.coerce
@@ -109,14 +107,70 @@ function LoadingState() {
   );
 }
 
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
 function PerfilEstudiante() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const userData = user as UserData | null;
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: perfil, isLoading, refetch } = usePerfilAcademico();
   const mutation = useActualizarPerfilAcademico();
+  const fotoPerfilQuery = useFotoPerfil(user?.id);
+  const actualizarFotoMutation = useActualizarFotoPerfil();
   const perfilData = perfil as PerfilData | null;
+
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [fotoPersistida, setFotoPersistida] = useState<string | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const photoUploading = actualizarFotoMutation.isPending;
+
+  useEffect(() => {
+    if (!fotoPerfilQuery.data) return;
+    const objectUrl = URL.createObjectURL(fotoPerfilQuery.data);
+    setFotoPersistida(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [fotoPerfilQuery.data]);
+
+  const handlePhotoSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      showError('Formato no válido', 'Solo se permiten archivos JPG, PNG o WEBP.');
+      return;
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      showError('Archivo muy grande', 'El tamaño máximo permitido es 5 MB.');
+      return;
+    }
+
+    if (photoPreview) URL.revokeObjectURL(photoPreview);
+    const previewUrl = URL.createObjectURL(file);
+    setPhotoPreview(previewUrl);
+    setPhotoFile(file);
+  }, []);
+
+  const handlePhotoUpload = useCallback(async () => {
+    if (!photoFile) return;
+
+    try {
+      await actualizarFotoMutation.mutateAsync(photoFile);
+      showSuccess('Foto actualizada', 'Tu foto de perfil ha sido actualizada exitosamente.');
+
+      setPhotoFile(null);
+    } catch {
+      showError('No se pudo subir la foto', 'Por favor, intenta nuevamente.');
+    }
+  }, [actualizarFotoMutation, photoFile]);
+
+  const handleSaveWithConfirm = useCallback(() => {
+    setConfirmDialogOpen(true);
+  }, []);
 
   const {
     register,
@@ -172,20 +226,15 @@ function PerfilEstudiante() {
   const onSubmit = async (data: PerfilAcademicoFormData) => {
     try {
       await mutation.mutateAsync(data as unknown as Record<string, unknown>);
-      await MySwal.fire({
-        icon: 'success',
-        title: 'Perfil actualizado',
-        text: 'Tu información académica ha sido actualizada exitosamente.',
-        timer: 3000,
-        showConfirmButton: false,
-      });
+
+      if (photoFile) {
+        await handlePhotoUpload();
+      }
+
+      showSuccess('Perfil actualizado', 'Tu información académica ha sido actualizada exitosamente.');
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
-      await MySwal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: error?.response?.data?.message || 'Error al actualizar el perfil. Por favor, intenta nuevamente.',
-      });
+      showError('No se pudo actualizar el perfil', error?.response?.data?.message || 'Por favor, intenta nuevamente.');
     }
   };
 
@@ -229,11 +278,30 @@ function PerfilEstudiante() {
             <div className="h-24 rounded-t-2xl bg-gradient-to-br from-primary-700 to-primary-900" />
             <CardContent className="pt-0 px-6 pb-6">
               <div className="flex flex-col items-center -mt-12 text-center">
-                <Avatar
-                  size="xl"
-                  className="border-4 border-white shadow-lg mb-3 bg-muted"
-                  fallback={userData?.nombres?.charAt(0) || 'E'}
-                />
+                <div className="relative group cursor-pointer mb-3" onClick={() => fileInputRef.current?.click()}>
+                  <Avatar
+                    size="xl"
+                     src={photoPreview ?? fotoPersistida ?? undefined}
+                    className="border-4 border-white shadow-lg bg-muted w-20 h-20 text-2xl"
+                    fallback={userData?.nombres?.charAt(0) || 'E'}
+                  />
+                  <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <Camera className="h-6 w-6 text-white" />
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={handlePhotoSelect}
+                  />
+                </div>
+                {photoUploading && (
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Subiendo foto...
+                  </div>
+                )}
                 <h2 className="text-xl font-bold text-foreground">
                   {userData?.nombres} {userData?.apellidoPaterno}
                 </h2>
@@ -350,6 +418,11 @@ function PerfilEstudiante() {
                     variant="secondary"
                     type="button"
                     onClick={() => {
+                      if (photoPreview) {
+                        URL.revokeObjectURL(photoPreview);
+                      }
+                      setPhotoPreview(null);
+                      setPhotoFile(null);
                       if (perfilData) {
                         reset({
                           semestreActual: perfilData.semestreActual ?? 0,
@@ -367,9 +440,10 @@ function PerfilEstudiante() {
                     Cancelar
                   </Button>
                   <Button
-                    type="submit"
+                    type="button"
                     loading={isSubmitting}
                     className="px-6"
+                    onClick={handleSaveWithConfirm}
                   >
                     {isSubmitting ? 'Guardando...' : (
                       <>
@@ -474,6 +548,42 @@ function PerfilEstudiante() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Confirmation Dialog */}
+      <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+        <DialogContent size="sm">
+          <DialogHeader>
+            <DialogTitle>Confirmar cambios</DialogTitle>
+            <DialogDescription>
+              ¿Estás seguro de que deseas guardar los cambios en tu perfil académico?
+              {photoFile && (
+                <span className="block mt-2 font-medium text-foreground">
+                  Se subirá una nueva foto de perfil.
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="secondary"
+              onClick={() => setConfirmDialogOpen(false)}
+              disabled={isSubmitting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => {
+                setConfirmDialogOpen(false);
+                handleSubmit(onSubmit)();
+              }}
+              loading={isSubmitting}
+            >
+              <CheckCircle className="h-4 w-4" />
+              Confirmar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -277,6 +277,13 @@ private final ExpedienteRepository expedienteRepository;
             throw new BusinessException("El comité no puede tener más de 3 miembros");
         }
 
+        Set<Long> idsMiembros = request.getMiembros().stream()
+                .map(AsignarComiteRequest.MiembroComite::getIdUsuario)
+                .collect(java.util.stream.Collectors.toSet());
+        if (idsMiembros.size() != request.getMiembros().size()) {
+            throw new BusinessException("No se permiten miembros duplicados en el comité");
+        }
+
         for (AsignarComiteRequest.MiembroComite miembro : request.getMiembros()) {
             Usuario usuario = usuarioRepository.findById(miembro.getIdUsuario())
                     .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado: " + miembro.getIdUsuario()));
@@ -425,14 +432,17 @@ private final ExpedienteRepository expedienteRepository;
         String tipoDocumento = doc.getTipoDocumento();
 
         if ("CARTA_ACEPTACION".equals(tipoDocumento)) {
-            if (!"CARTA_ACEPTACION_PRESENTADA".equals(expediente.getEstado())) {
+            if ("OBSERVADO".equals(doc.getEstado())) {
+                // Documento observado: permitir reemplazo sin retroceder el estado del expediente
+            } else if (!"CARTA_ACEPTACION_PRESENTADA".equals(expediente.getEstado())) {
                 throw new BusinessException("La Carta de Aceptación solo puede eliminarse antes de asignar asesor o comité");
+            } else {
+                expediente.setCartaAceptacionPresentada(false);
+                expediente.setEstado(CARTA_PRESENTACION_EMITIDA);
+                expediente = expedienteRepository.saveAndFlush(expediente);
+                registrarCambioEstado(expediente, "CARTA_ACEPTACION_PRESENTADA", CARTA_PRESENTACION_EMITIDA, idUsuario,
+                        "Estudiante eliminó la Carta de Aceptación para reemplazarla", "ELIMINAR_ACEPTACION");
             }
-            expediente.setCartaAceptacionPresentada(false);
-            expediente.setEstado(CARTA_PRESENTACION_EMITIDA);
-            expediente = expedienteRepository.saveAndFlush(expediente);
-            registrarCambioEstado(expediente, "CARTA_ACEPTACION_PRESENTADA", CARTA_PRESENTACION_EMITIDA, idUsuario,
-                    "Estudiante eliminó la Carta de Aceptación para reemplazarla", "ELIMINAR_ACEPTACION");
         }
 
         // Delete by ID with explicit flush to ensure deletion before re-fetch

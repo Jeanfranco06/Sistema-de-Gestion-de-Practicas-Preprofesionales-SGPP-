@@ -1,26 +1,27 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   CloudUpload, Trash2, Download, CheckCircle,
-  FileText, Folder, FolderArchive, Plus, Loader2,
+  FileText, Folder, FolderArchive, Plus,
 } from 'lucide-react';
 import Swal from 'sweetalert2';
-import withReactContent from 'sweetalert2-react-content';
+import { useQueryClient } from '@tanstack/react-query';
 import { expedientesApi } from '@/api/expedientesApi';
 import { planesApi } from '@/api/planesApi';
 import api from '@/api/axios';
 import { useAuth } from '@/auth/AuthContext';
-import { ESTADOS_EXPEDIENTE } from '@/lib/constants';
-import { showError, showSuccess } from '@/lib/toast';
+import { useMisExpedientes } from '@/hooks/useExpedientes';
+import { usePlanActivo } from '@/hooks/usePlanes';
+import { ESTADOS_EXPEDIENTE, ESTADOS_PLAN_GENERAL, COLORS } from '@/lib/constants';
+import { showError, showSuccess, showWarning, showLoading, closeLoading } from '@/lib/toast';
 import {
   Badge, Button, Card, Input, Progress,
   Dialog, DialogContent, DialogHeader, DialogTitle,
   DialogDescription, DialogFooter,
   Tabs, TabsList, TabsTrigger, TabsContent,
+  CardSkeleton, EmptyState,
 } from '@/ui';
 import { cn } from '@/lib/utils';
-
-const MySwal = withReactContent(Swal);
 
 interface DocType {
   id: string;
@@ -38,6 +39,14 @@ interface Documento {
   tamanio: string;
   fileName?: string;
   rutaArchivo?: string;
+  observaciones?: string;
+}
+
+interface PlanActivo {
+  id: string;
+  estado: string;
+  version: number;
+  observaciones?: Array<{ id: string; descripcion: string; subsanado: boolean }>;
 }
 
 interface Expediente {
@@ -52,6 +61,7 @@ interface Expediente {
     fechaSubida: string;
     estado?: string;
     rutaArchivo?: string;
+    observaciones?: string;
   }>;
 }
 
@@ -86,8 +96,14 @@ const DOCUMENTOS_OBLIGATORIOS_PROFESIONAL: DocType[] = [
 export const GestionDocumental = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [expediente, setExpediente] = useState<Expediente | null>(null);
+  const queryClient = useQueryClient();
+
+  const expedientesQuery = useMisExpedientes();
+  const expediente = expedientesQuery.data?.[0];
+  const planActivoQuery = usePlanActivo(expediente?.id);
+  const planActivo = planActivoQuery.data;
+
+  const loading = expedientesQuery.isLoading || planActivoQuery.isLoading;
 
   const [tabValue, setTabValue] = useState('obligatorios');
   const [anexos, setAnexos] = useState<Documento[]>([]);
@@ -95,31 +111,10 @@ export const GestionDocumental = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [anexoNombre, setAnexoNombre] = useState('');
 
-  const fetchExpediente = async () => {
-    try {
-      setLoading(true);
-      const res = await expedientesApi.getMisExpedientes();
-      const list: Expediente[] = res.data?.data || [];
-      if (list.length > 0) {
-        setExpediente(list[0]);
-      }
-    } catch (err) {
-      console.error('Error fetching expediente:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    const timeout = setTimeout(() => fetchExpediente(), 0);
-    return () => clearTimeout(timeout);
-  }, [user]);
-
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <Loader2 className="h-10 w-10 animate-spin text-primary-600" aria-hidden="true" />
-        <p className="text-sm text-muted-foreground">Cargando documentos...</p>
+      <div className="space-y-6 p-4 sm:p-6 lg:p-8">
+        <CardSkeleton lines={7} />
       </div>
     );
   }
@@ -127,20 +122,12 @@ export const GestionDocumental = () => {
   if (!expediente) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center p-4 animate-in">
-        <Card className="max-w-2xl w-full text-center px-8 py-16 md:px-16 md:py-20">
-          <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900/20">
-            <FolderArchive className="h-12 w-12 text-primary-700 dark:text-primary-300" />
-          </div>
-          <h2 className="text-3xl md:text-4xl font-extrabold text-foreground mb-4 tracking-tight">
-            Sin expediente activo
-          </h2>
-          <p className="text-foreground/70 leading-relaxed mb-8 text-base md:text-lg max-w-lg mx-auto">
-            No tienes ninguna práctica registrada o activa en el sistema. Debes solicitar o iniciar una práctica para gestionar tus documentos.
-          </p>
-          <Button size="lg" onClick={() => navigate('/estudiante/solicitar-practica')}>
-            Ir a Solicitar Práctica
-          </Button>
-        </Card>
+        <EmptyState
+          icon={<FolderArchive className="h-6 w-6" />}
+          title="Sin expediente activo"
+          description="No tienes ninguna práctica registrada o activa en el sistema. Debes solicitar o iniciar una práctica para gestionar tus documentos."
+          action={{ label: 'Ir a Solicitar Práctica', onClick: () => navigate('/estudiante/solicitar-practica') }}
+        />
       </div>
     );
   }
@@ -161,6 +148,7 @@ export const GestionDocumental = () => {
       tamanio: 'N/A',
       fileName: d.rutaArchivo || d.nombreArchivo,
       rutaArchivo: d.rutaArchivo,
+      observaciones: d.observaciones,
     })),
   ];
 
@@ -221,25 +209,13 @@ export const GestionDocumental = () => {
     if (file) {
       const extension = file.name.split('.').pop()?.toLowerCase();
       if (extension !== 'pdf') {
-        MySwal.fire({
-          icon: 'error',
-          title: 'Formato Incorrecto',
-          text: 'Solo se permiten archivos en formato PDF.',
-          confirmButtonColor: '#d33',
-          customClass: { popup: 'wow-glass-card' },
-        });
+        showError('Formato Incorrecto', 'Solo se permiten archivos en formato PDF.');
         return;
       }
 
       const maxMB = uploadDialog.isAnexo ? 10 : uploadDialog.docType?.maxMB || 5;
       if (file.size > maxMB * 1024 * 1024) {
-        MySwal.fire({
-          icon: 'warning',
-          title: 'Archivo Demasiado Pesado',
-          text: `El archivo excede el tamaño máximo permitido de ${maxMB}MB.`,
-          confirmButtonColor: '#f8bb86',
-          customClass: { popup: 'wow-glass-card' },
-        });
+        showWarning('Archivo Demasiado Pesado', `El archivo excede el tamaño máximo permitido de ${maxMB}MB.`);
         return;
       }
 
@@ -251,18 +227,12 @@ export const GestionDocumental = () => {
     if (!selectedFile) return;
 
     if (uploadDialog.isAnexo && !anexoNombre.trim()) {
-      MySwal.fire({ icon: 'error', title: 'Falta nombre', text: 'Debe ingresar un nombre descriptivo para el anexo.' });
+      showError('Falta nombre', 'Debe ingresar un nombre descriptivo para el anexo.');
       return;
     }
 
     try {
-      MySwal.fire({
-        title: 'Subiendo Documento...',
-        html: 'Asegurando y validando archivo...',
-        allowOutsideClick: false,
-        didOpen: () => { MySwal.showLoading(); },
-        customClass: { popup: 'wow-glass-card' },
-      });
+      showLoading('Subiendo Documento...');
 
       const response = await expedientesApi.uploadFile(selectedFile);
       const { fileName } = response.data;
@@ -275,6 +245,16 @@ export const GestionDocumental = () => {
       });
 
       if (tipoDoc === 'CARTA_ACEPTACION') {
+        const refreshRes = await expedientesApi.getMisExpedientes();
+        const refreshed = refreshRes.data?.data?.[0];
+        if (refreshed &&
+            refreshed.estado !== ESTADOS_EXPEDIENTE.CARTA_PRESENTACION_EMITIDA &&
+            refreshed.estado !== ESTADOS_EXPEDIENTE.CARTA_ACEPTACION_PRESENTADA) {
+          await expedientesQuery.refetch();
+          handleCloseUpload();
+          showWarning('Estado no permitido', 'El expediente ya no está en un estado que permita cargar la Carta de Aceptación. Estado actual: ' + refreshed.estado);
+          return;
+        }
         await expedientesApi.presentarCartaAceptacion(expediente.id);
       }
 
@@ -286,26 +266,20 @@ export const GestionDocumental = () => {
         }
       }
 
-      await fetchExpediente();
+      await expedientesQuery.refetch();
 
       handleCloseUpload();
-      MySwal.fire({
-        icon: 'success',
-        title: '¡Subida Exitosa!',
-        text: 'Documento en revisión.',
-        timer: 2000,
-        showConfirmButton: false,
-        customClass: { popup: 'wow-glass-card' },
-      });
-    } catch (error) {
+      showSuccess('¡Subida Exitosa!', 'Documento en revisión.');
+    } catch (error: unknown) {
       console.error(error);
-      MySwal.fire({ icon: 'error', title: 'Error', text: 'No se pudo subir. Intente nuevamente.' });
+      const apiError = error as { response?: { data?: { message?: string } } };
+      showError('Error', apiError.response?.data?.message || 'No se pudo subir. Intente nuevamente.');
     }
   };
 
   const handleDownload = async (doc: Documento) => {
     try {
-      MySwal.fire({ title: 'Descargando...', allowOutsideClick: false, didOpen: () => MySwal.showLoading() });
+      showLoading('Descargando...');
 
       const isRegistroDoc = (doc.rutaArchivo && doc.rutaArchivo.startsWith('registro:')) ||
                            (doc.fileName && doc.fileName.startsWith('registro:'));
@@ -320,7 +294,7 @@ export const GestionDocumental = () => {
         document.body.appendChild(link);
         link.click();
         link.parentNode.removeChild(link);
-        MySwal.close();
+        closeLoading();
       } else {
         const res = await api.get(`/documentos/expediente/${doc.id}/download`, { responseType: 'blob' });
         const url = window.URL.createObjectURL(new Blob([res.data]));
@@ -330,7 +304,7 @@ export const GestionDocumental = () => {
         document.body.appendChild(link);
         link.click();
         link.parentNode.removeChild(link);
-        MySwal.close();
+        closeLoading();
       }
     } catch (error: unknown) {
       console.error('Download error:', error);
@@ -346,19 +320,19 @@ export const GestionDocumental = () => {
       } else if (status && status >= 500) {
         message = 'Error interno del servidor al descargar el archivo.';
       }
-      MySwal.fire('Error', message, 'error');
+      showError('Error', message);
     }
   };
 
   const handleDelete = async (id: string, isAnexo: boolean = false) => {
-    const result = await MySwal.fire({
+    const result = await Swal.fire({
       title: '¿Eliminar documento?',
       text: 'Esta acción es irreversible.',
       icon: 'warning',
       showCancelButton: true,
       confirmButtonText: 'Sí, eliminar',
       cancelButtonText: 'Cancelar',
-      customClass: { confirmButton: 'wow-btn' },
+      confirmButtonColor: COLORS.DANGER,
     });
     if (!result.isConfirmed) return;
 
@@ -366,13 +340,8 @@ export const GestionDocumental = () => {
       if (isAnexo) {
         setAnexos(anexos.filter(a => a.id !== id));
       } else {
-        const res = await expedientesApi.eliminarDocumento(expediente.id, id);
-        const updated = res.data?.data;
-        if (updated) {
-          setExpediente(updated);
-        } else {
-          await fetchExpediente();
-        }
+        await expedientesApi.eliminarDocumento(expediente.id, id);
+        await expedientesQuery.refetch();
       }
       showSuccess('Documento eliminado');
     } catch (error: any) {
@@ -525,9 +494,28 @@ export const GestionDocumental = () => {
 
                         <div className="sm:col-span-4 min-w-0">
                           {docType.id === 'PLAN_PRACTICA' ? (
-                            <Button variant="secondary" size="sm" onClick={() => navigate('/estudiante/plan-practicas')} className="w-full sm:w-auto">
-                              Gestionar plan
-                            </Button>
+                            <div className="space-y-1">
+                              <Button variant="secondary" size="sm" onClick={() => navigate('/estudiante/plan-practicas')} className="w-full sm:w-auto">
+                                {planActivo?.estado === ESTADOS_PLAN_GENERAL.OBSERVADO ? 'Corregir plan' : 'Gestionar plan'}
+                              </Button>
+                              {planActivo && (
+                                <p className="text-xs text-muted-foreground">
+                                  Version {planActivo.version} &middot; Estado: {
+                                    planActivo.estado === ESTADOS_PLAN_GENERAL.BORRADOR ? 'Borrador' :
+                                    planActivo.estado === ESTADOS_PLAN_GENERAL.PRESENTADO ? 'Presentado' :
+                                    planActivo.estado === ESTADOS_PLAN_GENERAL.EN_REVISION ? 'En revision' :
+                                    planActivo.estado === ESTADOS_PLAN_GENERAL.OBSERVADO ? 'Observado' :
+                                    planActivo.estado === ESTADOS_PLAN_GENERAL.APROBADO ? 'Aprobado' :
+                                    planActivo.estado
+                                  }
+                                </p>
+                              )}
+                              {planActivo?.estado === ESTADOS_PLAN_GENERAL.OBSERVADO && planActivo.observaciones && (
+                                <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+                                  {planActivo.observaciones.filter(o => !o.subsanado).length} observacion(es) pendiente(s)
+                                </p>
+                              )}
+                            </div>
                           ) : docCargado ? (
                             <div className="min-w-0">
                               <p className="text-sm font-medium text-foreground truncate" title={docCargado.nombreOriginal}>
@@ -536,6 +524,11 @@ export const GestionDocumental = () => {
                               <p className="text-xs text-muted-foreground">
                                 Subido el {new Date(docCargado.fechaSubida).toLocaleDateString()}
                               </p>
+                              {docCargado.estado === 'OBSERVADO' && docCargado.observaciones && (
+                                <p className="mt-1 text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded px-2 py-1">
+                                  Observacion: {docCargado.observaciones}
+                                </p>
+                              )}
                             </div>
                           ) : (
                             <p className="text-sm italic text-muted-foreground">Documento pendiente</p>
@@ -555,7 +548,20 @@ export const GestionDocumental = () => {
                               >
                                 <Download className="h-4 w-4" />
                               </Button>
-                              {docCargado.estado !== 'APROBADO' && !docCargado.fileName?.startsWith('registro:')
+                              {docCargado.estado === 'OBSERVADO' && !docCargado.fileName?.startsWith('registro:') && (
+                                <Button
+                                  variant="primary"
+                                  size="sm"
+                                  onClick={async () => {
+                                    await handleDelete(docCargado.id);
+                                    handleOpenUpload(docType);
+                                  }}
+                                >
+                                  <CloudUpload className="h-4 w-4 mr-1" /> Reemplazar
+                                </Button>
+                              )}
+                              {docCargado.estado !== 'APROBADO' && docCargado.estado !== 'OBSERVADO'
+                                && !docCargado.fileName?.startsWith('registro:')
                                 && (docType.id !== 'CARTA_ACEPTACION' || expediente.estado === ESTADOS_EXPEDIENTE.CARTA_ACEPTACION_PRESENTADA)
                                 && !['INFORME_PARCIAL_1', 'INFORME_PARCIAL_2', 'INFORME_FINAL', 'INFORME_FINAL_INICIAL'].includes(docType.id) && (
                                 <Button
@@ -588,9 +594,9 @@ export const GestionDocumental = () => {
 
             {tabValue === 'anexos' && (
               <TabsContent value="anexos" className="mt-0">
-                <div className="flex justify-between items-center mb-5">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-5">
                   <p className="text-sm text-muted-foreground">Gestiona archivos complementarios a tu práctica.</p>
-                  <Button variant="secondary" size="sm" onClick={() => handleOpenUpload(null, true)}>
+                  <Button variant="secondary" size="sm" onClick={() => handleOpenUpload(null, true)} className="shrink-0">
                     <Plus className="h-4 w-4 mr-1.5" /> Nuevo anexo
                   </Button>
                 </div>
@@ -667,8 +673,9 @@ export const GestionDocumental = () => {
           <div className="p-6 space-y-4">
             {uploadDialog.isAnexo && (
               <div className="space-y-1.5">
-                <label className="text-sm font-semibold text-foreground">Título del anexo</label>
+                <label htmlFor="anexo-name" className="text-sm font-semibold text-foreground">Título del anexo</label>
                 <Input
+                  id="anexo-name"
                   placeholder="Ej. Constancia de salud..."
                   value={anexoNombre}
                   onChange={(e) => setAnexoNombre(e.target.value)}
@@ -681,8 +688,19 @@ export const GestionDocumental = () => {
               <div
                 className="mt-1 p-8 rounded-xl border-2 border-dashed border-primary-200 dark:border-primary-800 bg-primary-50/50 dark:bg-primary-950/20 hover:bg-primary-50 dark:hover:bg-primary-900/30 transition-colors text-center group"
               >
-                <input accept="application/pdf" className="hidden" id="raised-button-file" type="file" onChange={handleFileChange} />
-                <label htmlFor="raised-button-file" className="cursor-pointer block w-full">
+                <input accept="application/pdf" className="hidden" id="file-upload-input" type="file" onChange={handleFileChange} />
+                <label
+                  htmlFor="file-upload-input"
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      document.getElementById('file-upload-input')?.click();
+                    }
+                  }}
+                  className="cursor-pointer block w-full"
+                >
                   <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900/50 mb-3 group-hover:scale-110 transition-transform">
                     <FileText className="h-7 w-7 text-primary-600 dark:text-primary-400" />
                   </div>

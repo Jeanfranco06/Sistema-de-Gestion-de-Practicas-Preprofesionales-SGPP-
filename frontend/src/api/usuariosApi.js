@@ -14,7 +14,15 @@ export const usuariosApi = {
         params: { field, value, excludeId: excludeId ?? undefined }
     }),
     actualizarPerfilAcademico: (data) => api.put('/estudiante/perfil-academico', data),
-    obtenerPerfilAcademico: () => api.get('/estudiante/perfil-academico')
+    obtenerPerfilAcademico: () => api.get('/estudiante/perfil-academico'),
+    obtenerFotoPerfil: () => api.get('/estudiante/foto-perfil', { responseType: 'blob' }),
+    actualizarFotoPerfil: (foto) => {
+        const formData = new FormData();
+        formData.append('foto', foto);
+        return api.post('/estudiante/foto-perfil', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+    }
 };
 
 export const tutoresApi = {

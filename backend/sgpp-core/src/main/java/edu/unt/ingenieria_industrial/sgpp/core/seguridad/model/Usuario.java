@@ -53,6 +53,9 @@ public class Usuario extends BaseEntity {
     @Column(name = "telefono", length = 20)
     private String telefono;
 
+    @Column(name = "foto_perfil", length = 255)
+    private String fotoPerfil;
+
     @Column(name = "activo", nullable = false)
     @Builder.Default
     private Boolean activo = true;

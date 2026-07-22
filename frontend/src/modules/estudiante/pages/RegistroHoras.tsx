@@ -1,18 +1,15 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod/v4';
 import { Clock, CheckCircle, Hourglass, Plus, Loader2, Calendar, AlertCircle, Info } from 'lucide-react';
-import Swal from 'sweetalert2';
-import withReactContent from 'sweetalert2-react-content';
+import { showSuccess, showError, showWarning } from '@/lib/toast';
 import { useMisExpedientes, useExpedienteById, useHistorialEstados } from '@/hooks/useExpedientes';
 import { useControlHoras, useRegistrosHoras, useCumplimientoHoras, useRegistrarHoras } from '@/hooks/useHoras';
 import { tieneControlHoras } from '@/shared/utils/controlHoras';
 import { ESTADOS_EXPEDIENTE } from '@/lib/constants';
 import { Card, CardContent, Badge, Progress, Button, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Input, Select, Textarea } from '@/ui';
-import { cn } from '@/lib/utils';
-
-const MySwal = withReactContent(Swal);
+import { Pagination } from '@/components/Pagination';
 
 const registroFormSchema = z.object({
   fecha: z.string().min(1, 'La fecha es requerida'),
@@ -139,14 +136,17 @@ export default function RegistroHoras() {
     }
   }, [horaInicio, horaFin, setValue]);
 
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
   const onSubmit = useCallback(
     async (data: RegistroFormData) => {
       if (!expediente || !control) {
-        await MySwal.fire({ icon: 'warning', title: 'Control no iniciado', text: 'Primero inicie el control de horas.' });
+        showWarning('Primero inicie el control de horas.');
         return;
       }
       if (expediente.estado !== ESTADOS_EXPEDIENTE.EN_EJECUCION) {
-        await MySwal.fire({ icon: 'warning', title: 'Registro no habilitado', text: 'Solo puedes registrar horas mientras la práctica está en ejecución.' });
+        showWarning('Solo puedes registrar horas mientras la práctica está en ejecución.');
         return;
       }
       try {
@@ -155,25 +155,33 @@ export default function RegistroHoras() {
         if (!payload.horaFin) delete payload.horaFin;
         await registrarMutation.mutateAsync({ idExpediente: expediente.id, payload });
         reset();
-        await MySwal.fire({ icon: 'success', title: 'Horas registradas', timer: 1500, showConfirmButton: false });
+        showSuccess('Horas registradas');
       } catch (error: unknown) {
         const err = error as { response?: { data?: { mensaje?: string; message?: string } } };
-        await MySwal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: err?.response?.data?.mensaje || err?.response?.data?.message || 'No se pudieron registrar las horas',
-        });
+        showError(err?.response?.data?.mensaje || err?.response?.data?.message || 'No se pudieron registrar las horas');
       }
     },
     [expediente, control, registrarMutation, reset],
   );
+
+  const regList = registros as RegistroItem[];
+
+  const paginatedRegistros = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return regList.slice(start, start + pageSize);
+  }, [regList, page, pageSize]);
+
+  const totalPages = Math.max(1, Math.ceil(regList.length / pageSize));
+
+  useEffect(() => {
+    setPage(1);
+  }, [regList.length]);
 
   if (expLoading) return <LoadingState />;
   if (!expediente) return <SinExpedienteState />;
 
   const cumplData = cumplimiento as CumplimientoData | undefined;
   const ctrlData = control as ControlData | undefined;
-  const regList = registros as RegistroItem[];
 
   const horasRequeridas = cumplData?.horasRequeridas ?? (expediente.codigoTipoPractica === 'INICIAL' ? 64 : 360);
   const horasValidadas = cumplData?.horasAcumuladas ?? ctrlData?.horasAcumuladas ?? 0;
@@ -415,7 +423,7 @@ export default function RegistroHoras() {
                 </div>
 
                 <div className="flex justify-end mt-6">
-                  <Button type="submit" disabled={!control} loading={registrarMutation.isPending}>
+                  <Button type="submit" disabled={!control} loading={registrarMutation.isPending} className="w-full sm:w-auto">
                     <Plus className="h-4 w-4" />
                     Registrar horas
                   </Button>
@@ -447,7 +455,7 @@ export default function RegistroHoras() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {regList.map((r) => (
+                      {paginatedRegistros.map((r) => (
                         <TableRow key={r.id}>
                           <TableCell>{r.fecha}</TableCell>
                           <TableCell>{r.horas}</TableCell>
@@ -463,6 +471,20 @@ export default function RegistroHoras() {
                     </TableBody>
                   </Table>
                 </div>
+              )}
+
+              {regList.length > 0 && (
+                <Pagination
+                  currentPage={page}
+                  totalPages={totalPages}
+                  onPageChange={setPage}
+                  pageSize={pageSize}
+                  onPageSizeChange={(size) => {
+                    setPageSize(size);
+                    setPage(1);
+                  }}
+                  totalItems={regList.length}
+                />
               )}
             </CardContent>
           </Card>

@@ -1,19 +1,23 @@
 import { useState, useCallback, useMemo } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { Search } from 'lucide-react';
+import { CommandPalette } from '../../../components/CommandPalette';
+import { useKeyboardShortcuts } from '../../../hooks/useKeyboardShortcuts';
 import { Box, Drawer, Menu, MenuItem, Tooltip, useTheme, useMediaQuery } from '@mui/material';
 import {
   LayoutDashboard, FileText, BarChart3,
   Building2, UserCircle, LogOut, Menu as MenuIcon,
   GraduationCap, Clock, Users,
   UserCheck, ClipboardCheck, FolderOpen,
-  Moon, Sun, ClipboardList,
+  ClipboardList,
   Briefcase, FileCheck, MapPin,
   Settings, Award,
 } from 'lucide-react';
 import { useAuth } from '../../../auth/AuthContext';
-import { useThemeContext } from '../../../shared/theme/ThemeContext';
 import { NotificationsMenu } from '../components/NotificationsMenu';
-import { Button, Avatar, Badge } from '../../../ui';
+import { ThemeToggle } from '../../../components/ThemeToggle';
+import { CurrentUserAvatar } from '../../../components/CurrentUserAvatar';
+import { Button, Badge } from '../../../ui';
 import { cn } from '../../../lib/utils';
 
 const TOP_BAR_HEIGHT = 64;
@@ -36,6 +40,7 @@ interface NavGroup {
 }
 
 interface User {
+  id?: number;
   nombres?: string;
   apellidoPaterno?: string;
   apellidos?: string;
@@ -190,16 +195,7 @@ function getInitials(nombres = '', apellido = ''): string {
 }
 
 function getPerfilRoute(roles: UserRole[] = []): string {
-  const roleNames = roles
-    .map(r => (typeof r === 'string' ? r : r.authority || r.nombre || ''))
-    .map(r => r.replace(/^ROLE_/, ''));
-  if (roleNames.includes('ESTUDIANTE')) return '/estudiante/perfil';
-  if (roleNames.includes('DOCENTE_ASESOR')) return '/docente/dashboard';
-  if (roleNames.includes('TUTOR_EXTERNO')) return '/tutor/dashboard';
-  if (roleNames.includes('COORDINADOR') || roleNames.includes('DIRECTOR')) return '/coordinacion/dashboard';
-  if (roleNames.includes('COMITE_PRACTICAS')) return '/comite/panel';
-  if (roleNames.includes('SECRETARIA')) return '/admin/dashboard';
-  return '/admin/dashboard';
+  return '/perfil';
 }
 
 function formatRole(role: UserRole): string {
@@ -341,13 +337,12 @@ function UserProfile({
           collapsed ? 'justify-center p-2' : 'justify-start p-2.5'
         )}
       >
-        <Avatar
+        <CurrentUserAvatar
+          userId={user?.id}
           fallback={getInitials(user?.nombres, user?.apellidoPaterno)}
           size="md"
           className="bg-[var(--color-unt-blue)] text-white font-bold hover:bg-[var(--color-unt-blue-light)] dark:bg-[var(--color-unt-blue-light)] dark:hover:bg-[var(--color-unt-blue)]"
-        >
-          <span className="text-sm tracking-wider">{user?.nombres?.charAt(0) || user?.username?.charAt(0) || 'U'}</span>
-        </Avatar>
+        />
         {!collapsed && (
           <div className="flex-1 min-w-0 flex flex-col justify-center">
             <span className="text-sm font-bold text-foreground truncate leading-tight">
@@ -478,13 +473,11 @@ function DrawerContent({
 function TopBar({
   currentPage,
   onMenuClick,
-  onThemeToggle,
-  mode,
+  onSearchOpen,
 }: {
   currentPage: string;
   onMenuClick: () => void;
-  onThemeToggle: () => void;
-  mode: 'light' | 'dark';
+  onSearchOpen: () => void;
 }) {
   return (
     <header
@@ -505,15 +498,17 @@ function TopBar({
           {currentPage}
         </h1>
         <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onThemeToggle}
-            aria-label={mode === 'light' ? 'Activar modo oscuro' : 'Activar modo claro'}
-            className="h-9 w-9"
+          <button
+            onClick={onSearchOpen}
+            className="hidden sm:flex items-center gap-2 h-9 rounded-xl border border-border bg-muted/50 px-3 text-sm text-muted-foreground transition-colors hover:bg-muted"
           >
-            {mode === 'light' ? <Moon size={22} /> : <Sun size={22} />}
-          </Button>
+            <Search size={16} />
+            <span className="text-xs">Buscar...</span>
+            <kbd className="ml-1 inline-flex items-center rounded border border-border bg-background px-1 py-0.5 text-[10px] font-medium text-muted-foreground">
+              {navigator.platform?.includes('Mac') ? '\u2318' : 'Ctrl+'}K
+            </kbd>
+          </button>
+          <ThemeToggle />
           <NotificationsMenu />
         </div>
       </div>
@@ -523,11 +518,11 @@ function TopBar({
 
 export default function AppLayout() {
   const { user, logout } = useAuth();
-  const { mode, toggleTheme } = useThemeContext();
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const { isCommandPaletteOpen, setCommandPaletteOpen } = useKeyboardShortcuts();
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -584,8 +579,7 @@ export default function AppLayout() {
       <TopBar
         currentPage={currentPage}
         onMenuClick={handleDrawerToggle}
-        onThemeToggle={toggleTheme}
-        mode={mode}
+        onSearchOpen={() => setCommandPaletteOpen(true)}
       />
 
       {/* Side Drawer - Starts below TopBar */}
@@ -663,6 +657,11 @@ export default function AppLayout() {
           <Outlet />
         </div>
       </main>
+
+      <CommandPalette
+        open={isCommandPaletteOpen}
+        onOpenChange={setCommandPaletteOpen}
+      />
     </div>
   );
 }

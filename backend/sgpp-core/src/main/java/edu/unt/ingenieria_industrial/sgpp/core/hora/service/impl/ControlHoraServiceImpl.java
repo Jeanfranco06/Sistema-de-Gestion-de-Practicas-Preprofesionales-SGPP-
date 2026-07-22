@@ -143,8 +143,12 @@ public class ControlHoraServiceImpl implements ControlHoraService {
                 throw new BusinessException("El registro excedería el máximo de horas requeridas. Horas actuales: " + totalHorasRegistradas + ", máximo: " + horasRequeridas);
             }
         }
-        if (request.getHoras() == null || request.getHoras() > 24) {
+        if (request.getHoras() == null || request.getHoras() < 1 || request.getHoras() > 24) {
             throw new BusinessException("Las horas registradas deben estar entre 1 y 24");
+        }
+        if (request.getHoras() < HORAS_MINIMAS_DIARIAS) {
+            throw new BusinessException("Se recomienda registrar al menos " + HORAS_MINIMAS_DIARIAS
+                    + " horas por día para cumplir con los requisitos de la práctica");
         }
 
         RegistroHora registro = RegistroHora.builder()

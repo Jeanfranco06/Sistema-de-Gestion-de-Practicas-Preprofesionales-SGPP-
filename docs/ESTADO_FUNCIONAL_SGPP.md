@@ -454,3 +454,21 @@ Una constancia generada se registra con archivo, hash, fecha, usuario solicitant
 - **Migración de colores hex:** corregidos colores hardcoded en `ValidarRequisitos.tsx` (~40 reemplazos), `RecepcionAdministrativa.tsx` (~8), `SolicitarPractica.tsx` (~2), `InformesPeriodicos.tsx` (~1).
 - **Limpieza:** eliminados `UNUSED_V35` y `UNUSED_V38` de Flyway; eliminado `frontend/README.md` (default Vite).
 - **Verificaciones:** `mvn -pl sgpp-api -am package -DskipTests` exitoso; `npm run lint` y `npm run build` exitosos.
+
+### 2026-07-21 (continuación) — Visibilidad del flujo de plan observado
+
+- **GestionDocumental (estudiante):** la fila del documento "Plan de Prácticas" ahora muestra el estado real del plan activo (Borrador, Presentado, En Revisión, Observado, Aprobado), la versión actual y el conteo de observaciones pendientes. Cuando el plan está OBSERVADO, el botón cambia de "Gestionar plan" a "Corregir plan".
+- **Flujo completo visible:** el estudiante ahora puede ver desde GestionDocumental si su plan tiene observaciones pendientes y navegar directamente a `/estudiante/plan-practicas` para subsanar. El flujo end-to-end (observar → ver observaciones → corregir formulario → reenviar) estaba implementado en backend y frontend, pero no era visible desde la gestión documental.
+- **Verificaciones:** `npm run lint` y `npm run build` exitosos.
+
+### 2026-07-21 (continuación) — Corrección crítica de estados de plan y documentos observados
+
+- **CRÍTICO - Estado del plan corregido:** `PlanGeneralServiceImpl.java` usaba `EstadoExpediente.PLAN_OBSERVADO.getCodigo()` (= `"PLAN_OBSERVADO"`) para el campo `plan_general.estado`, pero el frontend esperaba `"OBSERVADO"`. Corregido a strings plain (`"OBSERVADO"`, `"APROBADO"`, `"RECHAZADO"`) para que coincidan con `ESTADOS_PLAN_GENERAL` del frontend. Esto deshabilitaba todo el flujo de subsanación: el formulario no se habilitaba, las observaciones no se mostraban, el botón "Subsanar y reenviar" no aparecía.
+- **Documentos observados - razón visible:** `GestionDocumental.tsx` ahora muestra la observación del documento (`docCargado.observaciones`) en un badge ambar cuando el estado es `OBSERVADO`.
+- **Documentos observados - botón Reemplazar:** se agregó botón "Reemplazar" que elimina el documento observado y abre el diálogo de carga de nueva versión en una sola acción. El botón de eliminar ya no aparece para documentos OBSERVADO (se reemplaza por "Reemplazar").
+- **Interfaz Documento actualizada:** agregado campo `observaciones?: string` a la interfaz `Documento` en `GestionDocumental.tsx`.
+- **Mapeo de observaciones corregido:** el campo `observaciones` del backend existía en la entidad, DTO y mapeo del `toResponse`, pero el frontend lo descartaba en el mapeo de `documentosConsolidados`. Agregado `observaciones: d.observaciones` al mapeo y `observaciones?: string` al tipo `Expediente.documentos`.
+- **Carta de Aceptación OBSERVADA reemplazable:** `ExpedienteServiceImpl.eliminarDocumento()` ahora permite eliminar documentos CARTA_ACEPTACION en estado OBSERVADO sin importar el estado del expediente. Solo se bloquea la eliminación si el documento NO está observado y el expediente ya avanzó más allá de `CARTA_ACEPTACION_PRESENTADA`. Esto permite al estudiante reemplazar una carta de aceptación observada aunque el expediente tenga asesor o comité asignado.
+- **Botón Reemplazar protegido:** el botón "Reemplazar" en `GestionDocumental.tsx` ahora verifica `!docCargado.fileName?.startsWith('registro:')` para no mostrarse en documentos institucionales generados por el sistema (como Carta de Presentación).
+- **Warning ownerState:** el warning `React does not recognize the ownerState prop` es un warning conocido de MUI (proviene de `CircularProgress`/`LinearProgress`). Es inocuo y no afecta funcionalidad.
+- **Verificaciones:** `mvn -pl sgpp-api -am compile -DskipTests` exitoso; `npm run lint` y `npm run build` exitosos.

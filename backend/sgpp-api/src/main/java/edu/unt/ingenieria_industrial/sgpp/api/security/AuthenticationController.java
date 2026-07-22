@@ -10,6 +10,7 @@ import edu.unt.ingenieria_industrial.sgpp.core.seguridad.repository.EstudianteRe
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.repository.TutorExternoRepository;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.repository.UsuarioRepository;
 import edu.unt.ingenieria_industrial.sgpp.core.seguridad.service.PasswordResetService;
+import edu.unt.ingenieria_industrial.sgpp.shared.exception.BusinessException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -122,6 +123,32 @@ public class AuthenticationController {
         LoginResponse.UsuarioResponse usuarioResponse = buildUsuarioResponse(usuario, userDetails);
 
         return ResponseEntity.ok(usuarioResponse);
+    }
+
+    @PutMapping("/me")
+    @Operation(summary = "Actualizar perfil personal", description = "Permite actualizar únicamente los datos personales del usuario autenticado")
+    public ResponseEntity<LoginResponse.UsuarioResponse> updateCurrentUser(
+            @Valid @RequestBody ActualizarMiPerfilRequest request,
+            Authentication authentication) {
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        Usuario usuario = usuarioRepository.findByUsernameWithRoles(authentication.getName())
+                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado"));
+
+        usuarioRepository.findByEmail(request.email())
+                .filter(existing -> !existing.getId().equals(usuario.getId()))
+                .ifPresent(existing -> {
+                    throw new BusinessException("El correo electrónico ya está registrado");
+                });
+
+        usuario.setNombres(request.nombres().trim());
+        usuario.setApellidoPaterno(request.apellidoPaterno().trim());
+        usuario.setApellidoMaterno(request.apellidoMaterno() == null || request.apellidoMaterno().isBlank()
+                ? null : request.apellidoMaterno().trim());
+        usuario.setEmail(request.email().trim().toLowerCase());
+        usuario.setTelefono(request.telefono() == null || request.telefono().isBlank() ? null : request.telefono().trim());
+        usuarioRepository.save(usuario);
+
+        return ResponseEntity.ok(buildUsuarioResponse(usuario, userDetails));
     }
 
     @PostMapping("/forgot-password")

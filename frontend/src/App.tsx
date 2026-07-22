@@ -61,6 +61,8 @@ const GestionExpedientes = lazyNamed(() => import('./modules/admin/pages/Gestion
 const GestionUsuarios = lazyNamed(() => import('./modules/admin/pages/GestionUsuarios'), 'GestionUsuarios');
 const GestionTutores = lazyNamed(() => import('./modules/admin/pages/GestionTutores'), 'GestionTutores');
 const ConfiguracionSistema = lazyNamed(() => import('./modules/admin/pages/ConfiguracionSistema'), 'ConfiguracionSistema');
+const NotificacionesPage = lazyNamed(() => import('./modules/shared/pages/NotificacionesPage'), 'NotificacionesPage');
+const PerfilUsuarioPage = lazyNamed(() => import('./modules/shared/pages/PerfilUsuarioPage'), 'PerfilUsuarioPage');
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -299,6 +301,17 @@ export default function App() {
                   <Route path="/secretaria/recepcion" element={
                     <ProtectedRoute allowedRoles={['SECRETARIA', 'ADMINISTRADOR', 'ADMIN_SISTEMA']}>
                       <RecepcionAdministrativa />
+                    </ProtectedRoute>
+                  } />
+
+                  <Route path="/notificaciones" element={
+                    <ProtectedRoute allowedRoles={['ESTUDIANTE', 'DOCENTE_ASESOR', 'ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR', 'TUTOR_EXTERNO']}>
+                      <NotificacionesPage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/perfil" element={
+                    <ProtectedRoute allowedRoles={['ESTUDIANTE', 'DOCENTE_ASESOR', 'ADMIN_SISTEMA', 'ADMINISTRADOR', 'SECRETARIA', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR', 'TUTOR_EXTERNO']}>
+                      <PerfilUsuarioPage />
                     </ProtectedRoute>
                   } />
 

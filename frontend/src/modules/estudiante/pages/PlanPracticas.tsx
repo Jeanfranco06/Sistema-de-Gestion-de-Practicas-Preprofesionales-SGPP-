@@ -1,11 +1,14 @@
-import { useEffect, useState } from 'react';
-import { Plus, Trash2, Send, Loader2, ClipboardList, FileText, FolderArchive } from 'lucide-react';
-import Swal from 'sweetalert2';
-import { expedientesApi } from '@/api/expedientesApi';
-import { planesApi } from '@/api/planesApi';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Plus, Trash2, Send, ClipboardList, FileText, FolderArchive } from 'lucide-react';
+import { useMisExpedientes } from '@/hooks/useExpedientes';
+import { usePlanActivo, useRegistrarPlan, useActualizarPlan, usePresentarPlan, useSubsanarPlan } from '@/hooks/usePlanes';
 import { ESTADOS_PLAN_GENERAL } from '@/lib/constants';
 import { Button, Input, Textarea, Select, Card, CardContent, Badge, type BadgeProps, DatePicker } from '@/ui';
+import { CardSkeleton } from '@/ui/SkeletonLoader';
+import { EmptyState } from '@/ui/EmptyState';
 import { cn } from '@/lib/utils';
+import { showSuccess, showError, showWarning } from '@/lib/toast';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 
 interface Caratula {
   institucion: string;
@@ -148,65 +151,49 @@ const estadoBadgeVariant: Record<string, BadgeProps['variant']> = {
 };
 
 export function PlanPracticas() {
-  const [expediente, setExpediente] = useState<Expediente | null>(null);
-  const [plan, setPlan] = useState<PlanForm | null>(null);
-  const [planEstado, setPlanEstado] = useState<string | null>(null);
-  const [existingPlanId, setExistingPlanId] = useState<string | null>(null);
-  const [observacionesPendientes, setObservacionesPendientes] = useState<Array<{ id: string | number; descripcion: string }>>([]);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
+  const expedientesQuery = useMisExpedientes();
+  const expediente = expedientesQuery.data?.[0] as Expediente | undefined;
 
+  const planActivoQuery = usePlanActivo(expediente?.id);
+  const planActivo = planActivoQuery.data as Record<string, unknown> | null | undefined;
+
+  const planEstado = (planActivo?.estado as string) ?? null;
+  const existingPlanId = (planActivo?.id as string) ?? null;
+
+  const observacionesPendientes = useMemo(() => {
+    if (!planActivo) return [];
+    const obs = (planActivo.observaciones as Array<{ id?: string | number; descripcion?: string; subsanado?: boolean }> | undefined) ?? [];
+    return obs.filter((o) => !o.subsanado && o.id && o.descripcion) as Array<{ id: string | number; descripcion: string }>;
+  }, [planActivo]);
+
+  const loading = expedientesQuery.isLoading || planActivoQuery.isLoading;
+
+  const [planForm, setPlanForm] = useState<PlanForm | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  const registrarMutation = useRegistrarPlan();
+  const actualizarMutation = useActualizarPlan();
+  const presentarMutation = usePresentarPlan();
+  const subsanarMutation = useSubsanarPlan();
+
+  const formInitialized = useRef(false);
   useEffect(() => {
-    const load = async () => {
-      try {
-        const response = await expedientesApi.getMisExpedientes();
-        const expedientes: Expediente[] = response.data?.data ?? [];
-        const activo = expedientes[0];
-        if (!activo) {
-          setLoading(false);
-          return;
-        }
-        setExpediente(activo);
-        try {
-          const planResponse = await planesApi.getActivoByExpediente(activo.id);
-          const existente: Record<string, unknown> | undefined = planResponse.data?.data;
-          if (existente) {
-            setExistingPlanId(existente.id as string);
-            const estado = existente.estado as string;
-            setPlanEstado(estado);
-            const obs = (existente.observaciones as Array<{ id?: string | number; descripcion?: string; subsanado?: boolean }> | undefined) ?? [];
-            setObservacionesPendientes(obs.filter((o) => !o.subsanado && o.id && o.descripcion) as Array<{ id: string | number; descripcion: string }>);
-            if (estado === ESTADOS_PLAN_GENERAL.BORRADOR && existente.caratula) {
-              setPlan(mapPlan(existente, activo));
-            } else if (estado === ESTADOS_PLAN_GENERAL.BORRADOR && !existente.caratula) {
-              setPlan(planInitial(activo));
-            } else {
-              setPlan(mapPlan(existente, activo));
-            }
-          } else {
-            setPlan(planInitial(activo));
-          }
-        } catch {
-          setPlan(planInitial(activo));
-        }
-      } catch (error) {
-        console.error('No se pudo cargar el Plan de Prácticas', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, []);
+    if (!formInitialized.current && expediente && planActivoQuery.status === 'success') {
+      setPlanForm(planActivo ? mapPlan(planActivo, expediente) : planInitial(expediente));
+      formInitialized.current = true;
+    }
+  }, [expediente, planActivo, planActivoQuery.status]);
 
   const update = (section: string, field: string, value: string) => {
-    setPlan((current) => {
+    setPlanForm((current) => {
       if (!current) return current;
       return { ...current, [section]: { ...(current[section as keyof PlanForm] as Record<string, unknown>), [field]: value } };
     });
   };
 
   const updateList = (section: string, index: number, field: string, value: string) => {
-    setPlan((current) => {
+    setPlanForm((current) => {
       if (!current) return current;
       const arr = current[section as keyof PlanForm] as Array<Record<string, unknown>>;
       return {
@@ -217,7 +204,7 @@ export function PlanPracticas() {
   };
 
   const addObjective = () => {
-    setPlan((current) => {
+    setPlanForm((current) => {
       if (!current) return current;
       return {
         ...current,
@@ -227,7 +214,7 @@ export function PlanPracticas() {
   };
 
   const removeObjective = (index: number) => {
-    setPlan((current) => {
+    setPlanForm((current) => {
       if (!current) return current;
       return {
         ...current,
@@ -237,14 +224,14 @@ export function PlanPracticas() {
   };
 
   const addActivity = () => {
-    setPlan((current) => {
+    setPlanForm((current) => {
       if (!current) return current;
       return { ...current, cronograma: [...current.cronograma, emptyActivity()] };
     });
   };
 
   const removeActivity = (index: number) => {
-    setPlan((current) => {
+    setPlanForm((current) => {
       if (!current) return current;
       return {
         ...current,
@@ -254,27 +241,27 @@ export function PlanPracticas() {
   };
 
   const validate = (): string | null => {
-    if (!plan) return 'No hay un plan cargado.';
-    const general = plan.objetivos.filter((item) => item.tipo === 'GENERAL').length;
-    const specific = plan.objetivos.filter((item) => item.tipo === 'ESPECIFICO').length;
+    if (!planForm) return 'No hay un plan cargado.';
+    const general = planForm.objetivos.filter((item) => item.tipo === 'GENERAL').length;
+    const specific = planForm.objetivos.filter((item) => item.tipo === 'ESPECIFICO').length;
     if (general < 1 || specific < 2) return 'Registra un objetivo general y al menos dos objetivos específicos.';
-    if (plan.cronograma.some((item) => !item.actividad || !item.fechaInicioPrevista || !item.fechaFinPrevista)) {
+    if (planForm.cronograma.some((item) => !item.actividad || !item.fechaInicioPrevista || !item.fechaFinPrevista)) {
       return 'Completa actividad, fecha de inicio y fecha de fin en todo el cronograma.';
     }
-    if (plan.cronograma.some((item) => item.fechaFinPrevista < item.fechaInicioPrevista)) {
+    if (planForm.cronograma.some((item) => item.fechaFinPrevista < item.fechaInicioPrevista)) {
       return 'La fecha final de una actividad no puede ser anterior a su fecha inicial.';
     }
     return null;
   };
 
   const buildPayload = (): Record<string, unknown> => {
-    if (!plan) return {};
-    const { idExpediente, ...rest } = plan;
+    if (!planForm) return {};
+    const { idExpediente, ...rest } = planForm;
     void idExpediente;
     return {
       ...rest,
-      objetivos: plan.objetivos.map((item, index) => ({ ...item, orden: index + 1 })),
-      cronograma: plan.cronograma.map((item, index) => ({
+      objetivos: planForm.objetivos.map((item, index) => ({ ...item, orden: index + 1 })),
+      cronograma: planForm.cronograma.map((item, index) => ({
         ...item,
         orden: index + 1,
         duracionSemanas: Number(item.duracionSemanas) || null,
@@ -283,61 +270,59 @@ export function PlanPracticas() {
   };
 
   const submit = async () => {
-    if (!plan || !expediente) return;
+    if (!planForm || !expediente) return;
     const error = validate();
     if (error) {
-      await Swal.fire({ icon: 'warning', title: 'Completa el Plan', text: error });
+      showWarning('Completa el Plan', error);
       return;
     }
     try {
       setSubmitting(true);
       const payload = buildPayload();
       if (existingPlanId && planEstado === ESTADOS_PLAN_GENERAL.BORRADOR) {
-        await planesApi.actualizar(existingPlanId, payload);
-        await planesApi.presentar(existingPlanId);
-        setPlanEstado(ESTADOS_PLAN_GENERAL.PRESENTADO);
-        await Swal.fire({ icon: 'success', title: 'Plan presentado', text: 'El Plan de Prácticas fue enviado para revisión.' });
+        await actualizarMutation.mutateAsync({ id: existingPlanId, payload });
+        await presentarMutation.mutateAsync(existingPlanId);
+        showSuccess('Plan presentado', 'El Plan de Prácticas fue enviado para revisión.');
       } else if (existingPlanId && planEstado === ESTADOS_PLAN_GENERAL.OBSERVADO) {
         if (observacionesPendientes.length === 0) {
-          await Swal.fire({ icon: 'warning', title: 'Sin observaciones', text: 'No hay observaciones pendientes para subsanar.' });
+          showWarning('Sin observaciones', 'No hay observaciones pendientes para subsanar.');
           return;
         }
-        await planesApi.subsanar(existingPlanId, {
-          ...payload,
-          observacionIds: observacionesPendientes.map((o) => Number(o.id)),
-          respuesta: 'Subsanación de observaciones del plan',
+        await subsanarMutation.mutateAsync({
+          id: existingPlanId,
+          payload: {
+            ...payload,
+            observacionIds: observacionesPendientes.map((o) => Number(o.id)),
+            respuesta: 'Subsanación de observaciones del plan',
+          },
         });
-        setPlanEstado(ESTADOS_PLAN_GENERAL.PRESENTADO);
-        setObservacionesPendientes([]);
-        await Swal.fire({ icon: 'success', title: 'Plan subsanado', text: 'El Plan de Prácticas fue subsanado y reenviado para revisión.' });
+        showSuccess('Plan subsanado', 'El Plan de Prácticas fue subsanado y reenviado para revisión.');
       } else {
-        const created = await planesApi.registrar({ ...payload, idExpediente: expediente.id });
+        const created = await registrarMutation.mutateAsync({ ...payload, idExpediente: expediente.id });
         const planId = (created.data?.data as { id?: string })?.id;
         if (!planId) throw new Error('No se obtuvo el ID del plan creado');
-        await planesApi.presentar(planId);
-        setPlanEstado(ESTADOS_PLAN_GENERAL.PRESENTADO);
-        await Swal.fire({ icon: 'success', title: 'Plan presentado', text: 'El Plan de Prácticas fue enviado para revisión.' });
+        await presentarMutation.mutateAsync(planId);
+        showSuccess('Plan presentado', 'El Plan de Prácticas fue enviado para revisión.');
       }
     } catch (err: unknown) {
       const apiErr = err as { response?: { data?: { message?: string; mensaje?: string } } };
       const message = apiErr.response?.data?.message ?? apiErr.response?.data?.mensaje ?? '';
       if (message.includes('Ya existe un plan activo')) {
         try {
-          const planResponse = await planesApi.getActivoByExpediente(expediente.id);
-          const activo = planResponse.data?.data as { estado?: string; id?: string } | undefined;
+          const result = await planActivoQuery.refetch();
+          const activo = result.data as Record<string, unknown> | null | undefined;
           if (activo && activo.estado === ESTADOS_PLAN_GENERAL.BORRADOR) {
-            await planesApi.actualizar(activo.id!, buildPayload());
-            await planesApi.presentar(activo.id!);
-            setPlanEstado(ESTADOS_PLAN_GENERAL.PRESENTADO);
-            await Swal.fire({ icon: 'success', title: 'Plan presentado', text: 'El Plan existente fue actualizado y presentado correctamente.' });
+            await actualizarMutation.mutateAsync({ id: activo.id as string, payload: buildPayload() });
+            await presentarMutation.mutateAsync(activo.id as string);
+            showSuccess('Plan presentado', 'El Plan existente fue actualizado y presentado correctamente.');
             return;
           }
         } catch (innerErr: unknown) {
           console.error('Error al recuperar plan activo', innerErr);
         }
-        await Swal.fire({ icon: 'error', title: 'Plan duplicado', text: 'Ya existe un Plan activo que no se pudo presentar. Contacta al administrador.' });
+        showError('Plan duplicado', 'Ya existe un Plan activo que no se pudo presentar. Contacta al administrador.');
       } else {
-        await Swal.fire({ icon: 'error', title: 'No se pudo presentar', text: message || 'Revisa los datos obligatorios e intenta nuevamente.' });
+        showError('No se pudo presentar', message || 'Revisa los datos obligatorios e intenta nuevamente.');
       }
     } finally {
       setSubmitting(false);
@@ -346,27 +331,23 @@ export function PlanPracticas() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <Loader2 className="h-12 w-12 animate-spin text-primary-600" aria-hidden="true" />
-        <p className="font-medium text-muted-foreground">Cargando información de tu plan...</p>
+      <div className="space-y-6 p-4 sm:p-6 lg:p-8 w-full">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary-700 to-primary-900 h-28 md:h-32 animate-pulse" />
+        <CardSkeleton lines={6} />
+        <CardSkeleton lines={4} />
+        <CardSkeleton lines={8} />
       </div>
     );
   }
 
-  if (!expediente || !plan) {
+  if (!expediente || !planForm) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center p-4 animate-in">
-        <Card className="max-w-2xl w-full text-center px-8 py-16 md:px-16 md:py-20">
-          <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900/20">
-            <FolderArchive className="h-12 w-12 text-primary-700 dark:text-primary-300" />
-          </div>
-          <h2 className="text-3xl md:text-4xl font-extrabold text-foreground mb-4 tracking-tight">
-            Sin expediente activo
-          </h2>
-          <p className="text-foreground/70 leading-relaxed mb-8 text-base md:text-lg max-w-lg mx-auto">
-            No tienes una práctica registrada para completar el plan de prácticas.
-          </p>
-        </Card>
+        <EmptyState
+          icon={<FolderArchive className="h-6 w-6" />}
+          title="Sin expediente activo"
+          description="No tienes una práctica registrada para completar el plan de prácticas."
+        />
       </div>
     );
   }
@@ -385,7 +366,7 @@ export function PlanPracticas() {
     label: string,
     options?: { required?: boolean; type?: string; multiline?: boolean; minRows?: number },
   ) => {
-    const value = (plan[section] as Record<string, string | undefined>)[name] ?? '';
+    const value = (planForm[section] as Record<string, string | undefined>)[name] ?? '';
     const onChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => update(section, name, e.target.value);
 
     if (options?.multiline) {
@@ -442,7 +423,7 @@ export function PlanPracticas() {
             <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
               <div className="md:col-span-6">{field('caratula', 'autor', 'Nombre del practicante', { required: true })}</div>
               <div className="md:col-span-6">
-                <DatePicker label="Fecha del Plan" value={plan.caratula.fecha} disabled={!editable} required onChange={(value) => update('caratula', 'fecha', value)} />
+                <DatePicker label="Fecha del Plan" value={planForm.caratula.fecha} disabled={!editable} required onChange={(value) => update('caratula', 'fecha', value)} />
               </div>
               <div className="md:col-span-12">{field('caratula', 'institucion', 'Institución', { required: true })}</div>
               <div className="md:col-span-12">{field('caratula', 'nombrePlan', 'Nombre del Plan', { required: true })}</div>
@@ -483,8 +464,8 @@ export function PlanPracticas() {
               <div className="md:col-span-6">{field('areaDepartamento', 'areaDepartamento', 'Área, departamento o sección', { required: true })}</div>
               <div className="md:col-span-6">{field('areaDepartamento', 'funcionarioACargo', 'Funcionario a cargo')}</div>
             </div>
-            <Textarea label="Situación problemática" value={plan.situacionProblematica} disabled={!editable} required onChange={(e) => setPlan({ ...plan, situacionProblematica: e.target.value })} rows={4} />
-            <Textarea label="Técnicas y procedimientos de Ingeniería Industrial" value={plan.tecnicasProcedimientos} disabled={!editable} required onChange={(e) => setPlan({ ...plan, tecnicasProcedimientos: e.target.value })} rows={4} />
+            <Textarea label="Situación problemática" value={planForm.situacionProblematica} disabled={!editable} required onChange={(e) => setPlanForm((prev) => prev ? { ...prev, situacionProblematica: e.target.value } : prev)} rows={4} />
+            <Textarea label="Técnicas y procedimientos de Ingeniería Industrial" value={planForm.tecnicasProcedimientos} disabled={!editable} required onChange={(e) => setPlanForm((prev) => prev ? { ...prev, tecnicasProcedimientos: e.target.value } : prev)} rows={4} />
           </CardContent>
         </Card>
 
@@ -504,7 +485,7 @@ export function PlanPracticas() {
               )}
             </div>
             <div className="flex flex-col gap-3">
-              {plan.objetivos.map((objective, index) => (
+              {planForm.objetivos.map((objective, index) => (
                 <div key={index} className="flex gap-3 items-start">
                   <Select
                     label="Tipo"
@@ -515,7 +496,7 @@ export function PlanPracticas() {
                       { value: 'GENERAL', label: 'General' },
                       { value: 'ESPECIFICO', label: 'Específico' },
                     ]}
-                    className="w-[150px]"
+                    className="w-full sm:w-[150px] min-w-0"
                   />
                   <div className="flex-1">
                     <Input label={`Objetivo ${index + 1}`} value={objective.descripcion} disabled={!editable} required onChange={(e) => updateList('objetivos', index, 'descripcion', e.target.value)} />
@@ -553,7 +534,7 @@ export function PlanPracticas() {
               )}
             </div>
             <div className="flex flex-col gap-3">
-              {plan.cronograma.map((activity, index) => (
+              {planForm.cronograma.map((activity, index) => (
                 <div key={index} className="border border-border bg-card rounded-xl p-4 transition-colors">
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
                     <div className="md:col-span-5">
@@ -583,7 +564,7 @@ export function PlanPracticas() {
                       <Input type="number" label="Duración (semanas)" value={String(activity.duracionSemanas)} disabled={!editable} onChange={(e) => updateList('cronograma', index, 'duracionSemanas', e.target.value)} min={1} />
                     </div>
                     <div className="md:col-span-1 flex justify-center">
-                      {editable && plan.cronograma.length > 1 && (
+                      {editable && planForm.cronograma.length > 1 && (
                         <Button
                           type="button"
                           variant="ghost"
@@ -617,12 +598,26 @@ export function PlanPracticas() {
 
         {editable && (
           <div className="flex justify-end">
-            <Button size="lg" onClick={submit} disabled={submitting} loading={submitting} className="w-full sm:w-auto">
-              <Send className="h-4 w-4" /> {submitting ? 'Procesando...' : planEstado === ESTADOS_PLAN_GENERAL.OBSERVADO ? 'Subsanar y reenviar Plan' : 'Presentar Plan para revisión'}
+            <Button size="lg" onClick={() => setConfirmOpen(true)} disabled={submitting} className="w-full sm:w-auto">
+              <Send className="h-4 w-4" /> {planEstado === ESTADOS_PLAN_GENERAL.OBSERVADO ? 'Subsanar y reenviar Plan' : 'Presentar Plan para revisión'}
             </Button>
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title={planEstado === ESTADOS_PLAN_GENERAL.OBSERVADO ? 'Subsanar Plan' : 'Presentar Plan'}
+        description={planEstado === ESTADOS_PLAN_GENERAL.OBSERVADO
+          ? '¿Estás seguro de que deseas subsanar las observaciones y reenviar el plan para revisión?'
+          : '¿Estás seguro de que deseas presentar el plan para revisión?'
+        }
+        confirmLabel={planEstado === ESTADOS_PLAN_GENERAL.OBSERVADO ? 'Subsanar y enviar' : 'Presentar'}
+        variant="warning"
+        onConfirm={submit}
+        loading={submitting}
+      />
     </div>
   );
 }

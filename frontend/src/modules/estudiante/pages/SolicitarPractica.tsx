@@ -1,8 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import Swal from 'sweetalert2';
-import withReactContent from 'sweetalert2-react-content';
 import {
   GraduationCap, Building2, CheckCircle, ArrowLeft, ArrowRight,
   FileText, Star, Trophy, XCircle, Loader2, Info, ChevronDown, ChevronUp, Filter,
@@ -15,8 +13,7 @@ import {
 } from '../../../ui';
 import { cn } from '../../../lib/utils';
 import { COLORS } from '../../../lib/constants';
-
-const MySwal = withReactContent(Swal);
+import { showSuccess, showError, showWarning } from '../../../lib/toast';
 
 const STEPS = [
   { id: 'tipo', label: 'Tipo de Práctica', description: 'Selecciona el tipo de práctica' },
@@ -85,21 +82,11 @@ export function SolicitarPractica() {
 
   const handleNext = useCallback(() => {
     if (activeStep === 0 && !selectedTipo) {
-      MySwal.fire({
-        icon: 'warning',
-        title: 'Selecciona un tipo',
-        text: 'Debes seleccionar un tipo de práctica para continuar.',
-        confirmButtonColor: '#F5C518',
-      });
+      showWarning('Selecciona un tipo', 'Debes seleccionar un tipo de práctica para continuar.');
       return;
     }
     if (activeStep === 1 && !selectedSede) {
-      MySwal.fire({
-        icon: 'warning',
-        title: 'Selecciona una sede',
-        text: 'Debes seleccionar una empresa y sede para continuar.',
-        confirmButtonColor: '#F5C518',
-      });
+      showWarning('Selecciona una sede', 'Debes seleccionar una empresa y sede para continuar.');
       return;
     }
     if (activeStep === STEPS.length - 1) {
@@ -118,15 +105,7 @@ export function SolicitarPractica() {
     try {
       setConfirmOpen(false);
       await solicitarMutation.mutateAsync({ sedeId: selectedSede.id, tipoPracticaId: String(selectedTipo.id) });
-      await MySwal.fire({
-        icon: 'success',
-        title: '¡Práctica solicitada!',
-        text: `Has solicitado exitosamente tu práctica ${selectedTipo.nombre} en ${selectedSede.nombreSede} de ${selectedSede.razonSocialEmpresa}.`,
-        timer: 4000,
-        showConfirmButton: false,
-        toast: true,
-        position: 'top-end',
-      });
+      showSuccess('¡Práctica solicitada!', `Has solicitado exitosamente tu práctica ${selectedTipo.nombre} en ${selectedSede.nombreSede} de ${selectedSede.razonSocialEmpresa}.`);
       navigate('/estudiante/practica');
     } catch (err: unknown) {
       const axiosErr = err as {
@@ -142,31 +121,16 @@ export function SolicitarPractica() {
       const detalles = axiosErr.response?.data?.detalles;
 
       if (detalles && detalles.length > 0) {
-        const detallesHtml = detalles
+        const detallesTexto = detalles
           .map((d) => {
-            if (typeof d === 'string') return `<li class="text-left mb-2">${d}</li>`;
-            return `<li class="text-left mb-2">${d.descripcion || d.nombreRegla || ''}</li>`;
+            if (typeof d === 'string') return d;
+            return d.descripcion || d.nombreRegla || '';
           })
-          .join('');
+          .join(', ');
 
-        MySwal.fire({
-          icon: 'warning',
-          title: 'Requisitos académicos no cumplidos',
-          html: `<div class="text-left text-sm text-slate-700 dark:text-slate-300">
-            <p class="mb-3">No cumples con los requisitos académicos para este tipo de práctica:</p>
-            <ul class="list-disc pl-5">${detallesHtml}</ul>
-            <p class="mt-3 text-slate-500 dark:text-slate-400">Por favor, completa los requisitos faltantes antes de solicitar la práctica.</p>
-          </div>`,
-          confirmButtonText: 'Entendido',
-          confirmButtonColor: COLORS.WARNING,
-        });
+        showWarning('Requisitos académicos no cumplidos', `No cumples con los requisitos: ${detallesTexto}. Completa los requisitos faltantes antes de solicitar.`);
       } else {
-        MySwal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: msg,
-          confirmButtonColor: COLORS.DANGER,
-        });
+        showError('Error', msg);
       }
     }
   }, [selectedSede, selectedTipo, solicitarMutation, navigate]);

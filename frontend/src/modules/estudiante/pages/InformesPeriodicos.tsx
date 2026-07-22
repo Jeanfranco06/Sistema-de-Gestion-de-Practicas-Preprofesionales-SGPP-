@@ -1,19 +1,18 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import {
   CloudUpload, Download, Clock, CheckCircle, Lock, FileText, Calendar,
-  FileSpreadsheet, Loader2, FolderArchive, Trash2,
+  FileSpreadsheet, FolderArchive, Trash2,
 } from 'lucide-react';
-import Swal from 'sweetalert2';
-import withReactContent from 'sweetalert2-react-content';
-import { expedientesApi } from '@/api/expedientesApi';
 import { exportacionApi } from '@/api/exportacionApi';
 import api from '@/api/axios';
-import { ESTADOS_EXPEDIENTE, COLORS } from '@/lib/constants';
-import { useAuth } from '@/auth/AuthContext';
+import { ESTADOS_EXPEDIENTE } from '@/lib/constants';
+import { showSuccess, showError, showWarning, showLoading, closeLoading } from '@/lib/toast';
 import { Card, CardContent, Badge, Button, Progress, Separator, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/ui';
 import { cn } from '@/lib/utils';
-
-const MySwal = withReactContent(Swal);
+import { useEliminarDocumento, useMisExpedientes, usePresentarInformeParcial, usePresentarInformeFinal, useUploadFile } from '@/hooks/useExpedientes';
+import { CardSkeleton } from '@/ui/SkeletonLoader';
+import { EmptyState } from '@/ui/EmptyState';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 
 interface HitoBase {
   id: number;
@@ -65,77 +64,66 @@ const ESTADOS_EXPEDIENTE_HITO: Record<string, string> = {
 };
 
 export const InformesPeriodicos = () => {
-  const { user } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [expediente, setExpediente] = useState<Expediente | null>(null);
-  const [hitos, setHitos] = useState<HitoConEstado[]>([]);
   const [uploadDialog, setUploadDialog] = useState<{ open: boolean; hito: HitoConEstado | null }>({ open: false, hito: null });
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; hito: HitoConEstado | null }>({ open: false, hito: null });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const fetchExpediente = async () => {
-    try {
-      setLoading(true);
-      const res = await expedientesApi.getMisExpedientes();
-      const list = res.data?.data || [];
-      const exp = list[0] || null;
-      setExpediente(exp);
-      if (exp) {
-        const baseHitos = exp.codigoTipoPractica === 'INICIAL' ? HITOS_INICIAL : HITOS_FINAL;
-        const docs: DocumentInfo[] = exp.documentos || [];
-        const estadoExp = exp.estado;
-        const hitosConEstado: HitoConEstado[] = baseHitos.map((h) => {
-          const doc = docs.find((d) => d.tipoDocumento === h.tipo);
-          let estadoHito: HitoConEstado['estado'] = 'PENDIENTE';
-          if (doc) {
-            estadoHito = doc.estado === 'APROBADO' ? 'APROBADO' : 'EN_REVISION';
-          }
-          const estadosPosteriores = [
-            'EVALUACION_PENDIENTE',
-            ESTADOS_EXPEDIENTE.EVALUACION_EMPRESA_PENDIENTE,
-            ESTADOS_EXPEDIENTE.EVALUACION_COMPLETA,
-            ESTADOS_EXPEDIENTE.DICTAMEN_EMITIDO,
-            ESTADOS_EXPEDIENTE.EVALUADO,
-            ESTADOS_EXPEDIENTE.CERRADO,
-          ];
-          if (estadoExp === ESTADOS_EXPEDIENTE_HITO[h.tipo]) {
-            estadoHito = doc ? estadoHito : 'EN_REVISION';
-          } else if (doc && (doc.estado === 'APROBADO' || estadosPosteriores.includes(estadoExp))) {
-            estadoHito = 'APROBADO';
-          }
-          return {
-            ...h,
-            estado: estadoHito,
-            archivo: doc ? doc.nombreArchivo : null,
-            fileName: doc ? doc.rutaArchivo : null,
-            idDocumento: doc ? doc.id : null,
-            bloqueado: false,
-          };
-        });
-        const idxParcial1 = hitosConEstado.findIndex((h) => h.tipo === 'INFORME_PARCIAL_1');
-        const idxParcial2 = hitosConEstado.findIndex((h) => h.tipo === 'INFORME_PARCIAL_2');
-        const idxFinal = hitosConEstado.findIndex((h) => h.tipo === 'INFORME_FINAL_INICIAL');
-        if (idxParcial2 >= 0 && idxParcial1 >= 0 && !hitosConEstado[idxParcial1].archivo) {
-          hitosConEstado[idxParcial2].bloqueado = true;
-          hitosConEstado[idxParcial2].estado = 'BLOQUEADO';
-        }
-        if (idxFinal >= 0 && idxParcial2 >= 0 && !hitosConEstado[idxParcial2].archivo) {
-          hitosConEstado[idxFinal].bloqueado = true;
-          hitosConEstado[idxFinal].estado = 'BLOQUEADO';
-        }
-        setHitos(hitosConEstado);
-      }
-    } catch (err) {
-      console.error('Error fetching expediente:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const expedientesQuery = useMisExpedientes();
+  const expediente = expedientesQuery.data?.[0] ?? null;
+  const loading = expedientesQuery.isLoading;
 
-  useEffect(() => {
-    const timeout = setTimeout(() => fetchExpediente(), 0);
-    return () => clearTimeout(timeout);
-  }, [user]);
+  const hitos = useMemo<HitoConEstado[]>(() => {
+    if (!expediente) return [];
+    const baseHitos = expediente.codigoTipoPractica === 'INICIAL' ? HITOS_INICIAL : HITOS_FINAL;
+    const docs: DocumentInfo[] = expediente.documentos || [];
+    const estadoExp = expediente.estado;
+    const hitosConEstado: HitoConEstado[] = baseHitos.map((h) => {
+      const doc = docs.find((d) => d.tipoDocumento === h.tipo);
+      let estadoHito: HitoConEstado['estado'] = 'PENDIENTE';
+      if (doc) {
+        estadoHito = doc.estado === 'APROBADO' ? 'APROBADO' : 'EN_REVISION';
+      }
+      const estadosPosteriores = [
+        'EVALUACION_PENDIENTE',
+        ESTADOS_EXPEDIENTE.EVALUACION_EMPRESA_PENDIENTE,
+        ESTADOS_EXPEDIENTE.EVALUACION_COMPLETA,
+        ESTADOS_EXPEDIENTE.DICTAMEN_EMITIDO,
+        ESTADOS_EXPEDIENTE.EVALUADO,
+        ESTADOS_EXPEDIENTE.CERRADO,
+      ];
+      if (estadoExp === ESTADOS_EXPEDIENTE_HITO[h.tipo]) {
+        estadoHito = doc ? estadoHito : 'EN_REVISION';
+      } else if (doc && (doc.estado === 'APROBADO' || estadosPosteriores.includes(estadoExp))) {
+        estadoHito = 'APROBADO';
+      }
+      return {
+        ...h,
+        estado: estadoHito,
+        archivo: doc ? doc.nombreArchivo : null,
+        fileName: doc ? doc.rutaArchivo : null,
+        idDocumento: doc ? doc.id : null,
+        bloqueado: false,
+      };
+    });
+    const idxParcial1 = hitosConEstado.findIndex((h) => h.tipo === 'INFORME_PARCIAL_1');
+    const idxParcial2 = hitosConEstado.findIndex((h) => h.tipo === 'INFORME_PARCIAL_2');
+    const idxFinal = hitosConEstado.findIndex((h) => h.tipo === 'INFORME_FINAL_INICIAL');
+    if (idxParcial2 >= 0 && idxParcial1 >= 0 && !hitosConEstado[idxParcial1].archivo) {
+      hitosConEstado[idxParcial2].bloqueado = true;
+      hitosConEstado[idxParcial2].estado = 'BLOQUEADO';
+    }
+    if (idxFinal >= 0 && idxParcial2 >= 0 && !hitosConEstado[idxParcial2].archivo) {
+      hitosConEstado[idxFinal].bloqueado = true;
+      hitosConEstado[idxFinal].estado = 'BLOQUEADO';
+    }
+    return hitosConEstado;
+  }, [expediente]);
+
+  const uploadFileMutation = useUploadFile();
+  const presentarParcialMutation = usePresentarInformeParcial();
+  const presentarFinalMutation = usePresentarInformeFinal();
+  const eliminarDocumentoMutation = useEliminarDocumento();
 
   const handleOpenUpload = (hito: HitoConEstado) => {
     setUploadDialog({ open: true, hito });
@@ -154,11 +142,11 @@ export const InformesPeriodicos = () => {
     const file = event.target.files?.[0] ?? null;
     if (!file) return;
     if (!file.name.toLowerCase().endsWith('.pdf')) {
-      MySwal.fire({ icon: 'error', title: 'Formato Incorrecto', text: 'Solo se permiten archivos en formato PDF.', confirmButtonColor: COLORS.DANGER });
+      showError('Formato Incorrecto', 'Solo se permiten archivos en formato PDF.');
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      MySwal.fire({ icon: 'warning', title: 'Archivo Demasiado Pesado', text: 'El informe excede el tamaño maximo de 5MB. Por favor comprimalo.', confirmButtonColor: '#f8bb86' });
+      showWarning('Archivo Demasiado Pesado', 'El informe excede el tamaño máximo de 5MB. Por favor comprímalo.');
       return;
     }
     setSelectedFile(file);
@@ -168,14 +156,9 @@ export const InformesPeriodicos = () => {
     if (!selectedFile || !expediente || !uploadDialog.hito) return;
 
     try {
-      MySwal.fire({
-        title: 'Enviando Informe...',
-        html: 'Guardando el documento y notificando a su docente asesor.',
-        allowOutsideClick: false,
-        didOpen: () => MySwal.showLoading(),
-      });
+      showLoading('Enviando Informe...');
 
-      const uploadRes = await expedientesApi.uploadFile(selectedFile);
+      const uploadRes = await uploadFileMutation.mutateAsync(selectedFile);
       const { fileName } = uploadRes.data as { fileName: string };
 
       await api.post(`/expedientes/${expediente.id}/documentos`, null, {
@@ -186,40 +169,31 @@ export const InformesPeriodicos = () => {
       const estadoEsperado = ESTADOS_EXPEDIENTE_HITO[uploadDialog.hito.tipo];
       if (expediente.estado !== estadoEsperado) {
         if (uploadDialog.hito.tipo === 'INFORME_PARCIAL_1' || uploadDialog.hito.tipo === 'INFORME_PARCIAL_2') {
-          await expedientesApi.presentarInformeParcial(expediente.id);
+          await presentarParcialMutation.mutateAsync(expediente.id);
         } else {
-          await expedientesApi.presentarInformeFinal(expediente.id);
+          await presentarFinalMutation.mutateAsync(expediente.id);
         }
       }
+      await expedientesQuery.refetch();
 
-      await fetchExpediente();
       handleCloseUpload();
 
-      MySwal.fire({
-        icon: 'success',
-        title: 'Informe enviado',
-        text: 'Su docente asesor ha sido notificado para la revision.',
-        timer: 2000,
-        showConfirmButton: false,
-      });
+      showSuccess('Informe enviado', 'Su docente asesor ha sido notificado para la revisión.');
     } catch (error: unknown) {
       console.error(error);
       const apiError = error as { response?: { data?: { message?: string } } };
-      MySwal.fire({
-        icon: 'error',
-        title: 'Error de Conexion',
-        text: apiError.response?.data?.message || 'Hubo un problema al subir el informe. Intente de nuevo.',
-      });
+      closeLoading();
+      showError('Error de Conexión', apiError.response?.data?.message || 'Hubo un problema al subir el informe. Intente de nuevo.');
     }
   };
 
   const handleDownload = async (hito: HitoConEstado) => {
     if (!hito.idDocumento) {
-      MySwal.fire('Error', 'No se encontró el ID del documento.', 'error');
+      showError('Error', 'No se encontró el ID del documento.');
       return;
     }
     try {
-      MySwal.fire({ title: 'Descargando...', allowOutsideClick: false, didOpen: () => MySwal.showLoading() });
+      showLoading('Descargando...');
       const res = await api.get(`/documentos/expediente/${hito.idDocumento}/download`, { responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement('a');
@@ -228,7 +202,7 @@ export const InformesPeriodicos = () => {
       document.body.appendChild(link);
       link.click();
       link.parentNode?.removeChild(link);
-      MySwal.close();
+      closeLoading();
     } catch (error: unknown) {
       console.error('Download error:', error);
       const axiosErr = error as { response?: { status?: number; data?: { message?: string } } };
@@ -243,52 +217,30 @@ export const InformesPeriodicos = () => {
       } else if (status && status >= 500) {
         message = 'Error interno del servidor al descargar el archivo.';
       }
-      MySwal.fire('Error', message, 'error');
+      closeLoading();
+      showError('Error', message);
     }
   };
 
-  const handleDelete = async (hito: HitoConEstado) => {
-    if (!hito.idDocumento || !expediente) return;
-
-    const result = await MySwal.fire({
-      title: '¿Eliminar informe?',
-      text: 'Esta acción es irreversible y el informe dejará de estar disponible para revisión.',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#d33',
-    });
-
-    if (!result.isConfirmed) return;
-
+  const handleDelete = async () => {
+    const hito = deleteDialog.hito;
+    if (!hito?.idDocumento || !expediente) return;
     try {
-      MySwal.fire({
-        title: 'Eliminando...',
-        allowOutsideClick: false,
-        didOpen: () => MySwal.showLoading(),
-      });
-
-      await expedientesApi.eliminarDocumento(expediente.id, hito.idDocumento);
-      await fetchExpediente();
-
-      MySwal.fire({
-        icon: 'success',
-        title: 'Informe eliminado',
-        text: 'El informe ha sido eliminado correctamente.',
-        timer: 2000,
-        showConfirmButton: false,
-      });
-    } catch (error) {
+      await eliminarDocumentoMutation.mutateAsync({ id: expediente.id, idDocumento: hito.idDocumento });
+      await expedientesQuery.refetch();
+      setDeleteDialog({ open: false, hito: null });
+      showSuccess('Informe eliminado', 'El informe ha sido eliminado correctamente.');
+    } catch (error: unknown) {
       console.error('Delete error:', error);
-      MySwal.fire('Error', 'No se pudo eliminar el informe. Intente nuevamente.', 'error');
+      const apiError = error as { response?: { data?: { message?: string } } };
+      showError('Error', apiError.response?.data?.message || 'No se pudo eliminar el informe. Intente nuevamente.');
     }
   };
 
   const handleDownloadPlantilla = async () => {
     if (!expediente) return;
     try {
-      MySwal.fire({ title: 'Descargando plantilla...', allowOutsideClick: false, didOpen: () => MySwal.showLoading() });
+      showLoading('Descargando plantilla...');
       const res = await exportacionApi.descargarPlantillaInformeFinal(expediente.id);
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement('a');
@@ -296,11 +248,12 @@ export const InformesPeriodicos = () => {
       link.setAttribute('download', 'plantilla_informe_final.pdf');
       document.body.appendChild(link);
       link.click();
-      link.parentNode.removeChild(link);
-      MySwal.close();
+      link.parentNode?.removeChild(link);
+      closeLoading();
     } catch (error) {
       console.error('Download template error:', error);
-      MySwal.fire('Error', 'No se pudo descargar la plantilla. Intente de nuevo.', 'error');
+      closeLoading();
+      showError('Error', 'No se pudo descargar la plantilla. Intente de nuevo.');
     }
   };
 
@@ -330,28 +283,31 @@ export const InformesPeriodicos = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
-        <Loader2 className="h-8 w-8 animate-spin text-primary-600" aria-hidden="true" />
-        <p className="text-sm text-muted-foreground">Cargando informes...</p>
+      <div className="space-y-6 p-4 sm:p-6 lg:p-8 w-full">
+        <CardSkeleton className="h-40" lines={2} />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <CardSkeleton key={i} className="h-24" lines={1} />
+          ))}
+        </div>
+        <CardSkeleton className="h-20" lines={1} />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <CardSkeleton key={i} className="h-48" lines={3} />
+          ))}
+        </div>
       </div>
     );
   }
 
   if (!expediente) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center p-4 animate-in">
-        <Card className="max-w-2xl w-full text-center px-8 py-16 md:px-16 md:py-20">
-          <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900/20">
-            <FolderArchive className="h-12 w-12 text-primary-700 dark:text-primary-300" />
-          </div>
-          <h2 className="text-3xl md:text-4xl font-extrabold text-foreground mb-4 tracking-tight">
-            Sin expediente activo
-          </h2>
-          <p className="text-foreground/70 leading-relaxed mb-8 text-base md:text-lg max-w-lg mx-auto">
-            No tienes ninguna práctica registrada para gestionar informes.
-          </p>
-        </Card>
-      </div>
+      <EmptyState
+        icon={<FolderArchive className="h-12 w-12" />}
+        title="Sin expediente activo"
+        description="No tienes ninguna práctica registrada para gestionar informes."
+        className="min-h-[60vh]"
+      />
     );
   }
 
@@ -463,7 +419,7 @@ export const InformesPeriodicos = () => {
                             <Button variant="primary" size="sm" onClick={() => handleOpenUpload(hito)}>
                               <CloudUpload className="h-4 w-4" /> Re-enviar
                             </Button>
-                            <Button variant="ghost" size="sm" className="text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30" onClick={() => handleDelete(hito)}>
+                            <Button variant="ghost" size="sm" className="text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30" onClick={() => setDeleteDialog({ open: true, hito })}>
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </>
@@ -519,10 +475,20 @@ export const InformesPeriodicos = () => {
           </div>
           <DialogFooter className="bg-muted/30 px-6 py-4 border-t border-border">
             <Button variant="secondary" onClick={handleCloseUpload}>Cancelar</Button>
-            <Button onClick={handleUpload} disabled={!selectedFile}>Subir</Button>
+            <Button onClick={handleUpload} disabled={!selectedFile} loading={uploadFileMutation.isPending || presentarParcialMutation.isPending || presentarFinalMutation.isPending}>Subir</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ConfirmDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) => setDeleteDialog((current) => ({ open, hito: open ? current.hito : null }))}
+        title="¿Eliminar informe?"
+        description="Esta acción es irreversible y el informe dejará de estar disponible para revisión."
+        confirmLabel="Sí, eliminar"
+        variant="danger"
+        onConfirm={handleDelete}
+        loading={eliminarDocumentoMutation.isPending}
+      />
     </div>
   );
 };

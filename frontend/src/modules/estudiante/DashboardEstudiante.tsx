@@ -1,8 +1,9 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
+import { CurrentUserAvatar } from '../../components/CurrentUserAvatar';
 import { useExpediente, useCumplimiento } from '../../hooks/useDashboardData';
 import { ESTADOS_EXPEDIENTE } from '../../lib/constants';
-import { Card, CardContent, Badge, Progress, Button, Skeleton, Avatar, Separator } from '../../ui';
+import { Card, CardContent, Badge, Progress, Button, Skeleton, Separator } from '../../ui';
 import { cn } from '../../lib/utils';
 import {
   FileText, Building2, TrendingUp, RefreshCw, Info,
@@ -354,11 +355,11 @@ export default function DashboardEstudiante() {
 
         <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="flex items-center gap-4">
-            <Avatar className="h-14 w-14 md:h-16 md:w-16 border-2 border-white/30 bg-white/20">
-              <span className="text-lg md:text-xl font-bold text-white">
-                {user?.nombres?.split(' ').map(n => n[0]).join('').toUpperCase()}
-              </span>
-            </Avatar>
+            <CurrentUserAvatar
+              userId={user?.id}
+              fallback={user?.nombres?.split(' ').map(n => n[0]).join('').toUpperCase() || 'E'}
+              className="h-14 w-14 border-2 border-white/30 bg-white/20 text-lg font-bold text-white md:h-16 md:w-16 md:text-xl"
+            />
             <div>
               <p className="text-xs uppercase tracking-widest font-semibold opacity-80 mb-1">
                 Panel de Control del Estudiante

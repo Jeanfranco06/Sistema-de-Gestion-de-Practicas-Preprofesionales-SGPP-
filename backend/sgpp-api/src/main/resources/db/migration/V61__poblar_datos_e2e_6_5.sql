@@ -1,4 +1,4 @@
--- V59: Poblar datos para pruebas E2E del punto 6.5
+-- V61: Poblar datos para pruebas E2E del punto 6.5
 
 -- Limpiar datos operativos de estudiante1 y estudiante2 para evitar conflictos
 DELETE FROM registro_generacion_documental WHERE id_expediente IN (101, 102);

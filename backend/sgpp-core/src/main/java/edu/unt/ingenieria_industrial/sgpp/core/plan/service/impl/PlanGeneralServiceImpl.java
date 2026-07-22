@@ -37,9 +37,9 @@ public class PlanGeneralServiceImpl implements PlanGeneralService {
     private static final String ESTADO_BORRADOR = "BORRADOR";
     private static final String ESTADO_PRESENTADO = "PRESENTADO";
     private static final String ESTADO_EN_REVISION = "EN_REVISION";
-    private static final String ESTADO_OBSERVADO = EstadoExpediente.PLAN_OBSERVADO.getCodigo();
-    private static final String ESTADO_APROBADO = EstadoExpediente.PLAN_APROBADO.getCodigo();
-    private static final String ESTADO_RECHAZADO = EstadoExpediente.RECHAZADO.getCodigo();
+    private static final String ESTADO_OBSERVADO = "OBSERVADO";
+    private static final String ESTADO_APROBADO = "APROBADO";
+    private static final String ESTADO_RECHAZADO = "RECHAZADO";
 
     private static final String SECCION_CARATULA = "CARATULA";
     private static final String SECCION_DATOS_EMPRESA = "DATOS_EMPRESA";
@@ -88,7 +88,7 @@ public class PlanGeneralServiceImpl implements PlanGeneralService {
                 .findTopByExpedienteIdAndActivoTrueOrderByVersionDesc(expediente.getId());
         if (activoOpt.isPresent()) {
             PlanGeneral activo = activoOpt.get();
-            if (!EstadoExpediente.PLAN_OBSERVADO.getCodigo().equals(activo.getEstado()) && !EstadoExpediente.RECHAZADO.getCodigo().equals(activo.getEstado())) {
+            if (!ESTADO_OBSERVADO.equals(activo.getEstado()) && !ESTADO_RECHAZADO.equals(activo.getEstado())) {
                 throw new BusinessException("Ya existe un plan activo para este expediente. " +
                         "Debe estar observado o rechazado para crear una nueva versión.");
             }

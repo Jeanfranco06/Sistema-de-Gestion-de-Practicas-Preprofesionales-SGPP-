@@ -1,16 +1,13 @@
 import { useState, useMemo } from 'react';
 import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { showSuccess, showError, showWarning, showLoading, closeLoading } from '../../../lib/toast';
-import { Search, RefreshCw, FileText, AlertTriangle, Award, FileSearch, UserPlus } from 'lucide-react';
+import { Search, RefreshCw, FileText, AlertTriangle, Award, FileSearch, UserPlus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useExpedientes } from '../../../hooks/useExpedientes';
 import { expedientesApi } from '../../../api/expedientesApi';
 import { ESTADOS_EXPEDIENTE, COLORS } from '../../../lib/constants';
 import { secretariaApi, usuariosApi } from '../../../api/usuariosApi';
-import { Button, Input, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Badge, Tooltip, Avatar, Dialog, DialogContent, DialogFooter, Select, Textarea } from '../../../ui';
-import { Card, CardContent } from '../../../ui/Card';
-import { Progress } from '../../../ui/Progress';
-import { Separator } from '../../../ui/Separator';
+import { Button, Input, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Badge, Tooltip, Avatar, Dialog, DialogContent, DialogFooter, Select, Textarea, Card, CardContent, Progress, Separator } from '../../../ui';
 import { cn } from '../../../lib/utils';
 
 interface Expediente {
@@ -265,7 +262,7 @@ export const RecepcionAdministrativa = () => {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
-      <div className="max-w-7xl mx-auto px-4 py-6 w-full" style={{ paddingBottom: 32 }}>
+      <div className="w-full px-4 pb-8">
         {/* Header */}
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary-700 to-primary-900 p-6 md:p-8 mb-4 text-white shadow-lg">
           <div className="absolute right-[-20px] top-[10px] md:right-[20px] md:top-[-20px] opacity-10">
@@ -299,7 +296,7 @@ export const RecepcionAdministrativa = () => {
 
         {/* Search */}
         <Card className="p-4 mb-4">
-          <CardContent className="p-0 w-full md:w-[400px]">
+          <CardContent className="p-0 w-full md:w-[400px] lg:w-[500px]">
             <div className="relative">
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -404,7 +401,7 @@ export const RecepcionAdministrativa = () => {
             <div className="flex items-center gap-2">
               <span>Filas por pág:</span>
               <Select
-                label=""
+                label="Filas por página"
                 value={String(rowsPerPage)}
                 onChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
                 options={[5, 10, 25].map(n => ({ value: String(n), label: String(n) }))}
@@ -413,8 +410,8 @@ export const RecepcionAdministrativa = () => {
             </div>
             <div className="flex items-center gap-2">
               <span>{page * rowsPerPage + 1}-{Math.min((page + 1) * rowsPerPage, filteredExpedientes.length)} de {filteredExpedientes.length}</span>
-              <Button variant="ghost" size="sm" onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}>‹</Button>
-              <Button variant="ghost" size="sm" onClick={() => setPage(p => p + 1)} disabled={(page + 1) * rowsPerPage >= filteredExpedientes.length}>›</Button>
+              <Button variant="ghost" size="sm" onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}><ChevronLeft size={16} /></Button>
+              <Button variant="ghost" size="sm" onClick={() => setPage(p => p + 1)} disabled={(page + 1) * rowsPerPage >= filteredExpedientes.length}><ChevronRight size={16} /></Button>
             </div>
           </div>
         </Card>
@@ -562,7 +559,7 @@ export const RecepcionAdministrativa = () => {
             <Button
               onClick={handleValidarExpediente}
               disabled={!Object.values(validarChecks).every(Boolean)}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              variant="primary"
             >
               Validar y Marcar Listo para Carta
             </Button>

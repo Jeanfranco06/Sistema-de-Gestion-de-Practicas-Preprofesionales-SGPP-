@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -208,7 +208,7 @@ export const DetalleExpediente = () => {
     enabled: !!id,
   });
 
-  useMemo(() => {
+  useEffect(() => {
     const nextWarnings: string[] = [];
     if (empresaQuery.isError) nextWarnings.push('No se pudo cargar el detalle ampliado de la empresa.');
     if (sedeQuery.isError) nextWarnings.push('No se pudo cargar el detalle ampliado de la sede.');
@@ -473,7 +473,7 @@ export const DetalleExpediente = () => {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-7xl px-4 py-6">
+      <div className="w-full px-4 py-6">
         <Card className="p-8 text-center">
           <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary-600" aria-hidden="true" />
           <p className="mt-2 text-sm text-muted-foreground">Cargando expediente...</p>
@@ -484,7 +484,7 @@ export const DetalleExpediente = () => {
 
   if (error || !expediente) {
     return (
-      <div className="mx-auto max-w-7xl px-4 py-6">
+      <div className="w-full px-4 py-6">
         <AlertBox severity="error">
           {error ? 'Error al cargar el expediente.' : 'No se encontró información del expediente.'}
         </AlertBox>
@@ -494,7 +494,7 @@ export const DetalleExpediente = () => {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
-      <div className="mx-auto max-w-7xl px-4 py-6">
+      <div className="w-full px-4 py-6">
         <div className="mb-4">
           <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
             <div>
@@ -508,54 +508,72 @@ export const DetalleExpediente = () => {
             <div className="flex flex-wrap items-center justify-end gap-1">
               <Badge variant={getEstadoColor(expediente.estado)} size="sm">{expediente.estado}</Badge>
               {puedeEmitirDocumentosInstitucionales && expediente.estado === ESTADOS_EXPEDIENTE.VALIDADO_SECRETARIA && (
-                <Button size="sm" className="min-h-10 w-full sm:w-auto" disabled={accionEnCurso === 'carta'} onClick={() => ejecutarAccion('carta')}>
-                  {accionEnCurso === 'carta' ? 'Emitiendo...' : 'Emitir carta'}
-                </Button>
+                <Tooltip content="Genera la Carta de Presentación institucional para el expediente.">
+                  <Button size="sm" className="min-h-10 w-full sm:w-auto" disabled={accionEnCurso === 'carta'} onClick={() => ejecutarAccion('carta')}>
+                    {accionEnCurso === 'carta' ? 'Emitiendo...' : 'Emitir carta'}
+                  </Button>
+                </Tooltip>
               )}
               {puedeAsignarComite
                 && ['FINAL', 'PROFESIONAL'].includes(expediente.codigoTipoPractica)
                 && expediente.estado === ESTADOS_EXPEDIENTE.CARTA_ACEPTACION_PRESENTADA && (
-                  <Button size="sm" variant="secondary" className="min-h-10 w-full sm:w-auto" disabled={cargandoComite} onClick={abrirAsignacionComite}>
-                    {cargandoComite ? 'Cargando comité...' : 'Asignar comité'}
-                  </Button>
+                  <Tooltip content="Designa uno o más docentes para evaluar el informe y la práctica.">
+                    <Button size="sm" variant="secondary" className="min-h-10 w-full sm:w-auto" disabled={cargandoComite} onClick={abrirAsignacionComite}>
+                      {cargandoComite ? 'Cargando comité...' : 'Asignar comité'}
+                    </Button>
+                  </Tooltip>
                 )}
               {puedeRevisarExpediente && expediente.estado === ESTADOS_EXPEDIENTE.PLAN_PRESENTADO && (
-                <Button size="sm" className="min-h-10 w-full sm:w-auto" disabled={accionEnCurso === 'aprobarPlan'} onClick={() => ejecutarAccion('aprobarPlan')}>
-                  {accionEnCurso === 'aprobarPlan' ? 'Aprobando...' : 'Aprobar plan'}
-                </Button>
+                <Tooltip content="Aprueba el plan de trabajo presentado por el estudiante para iniciar la práctica.">
+                  <Button size="sm" className="min-h-10 w-full sm:w-auto" disabled={accionEnCurso === 'aprobarPlan'} onClick={() => ejecutarAccion('aprobarPlan')}>
+                    {accionEnCurso === 'aprobarPlan' ? 'Aprobando...' : 'Aprobar plan'}
+                  </Button>
+                </Tooltip>
               )}
               {puedeRevisarExpediente && expediente.estado === ESTADOS_EXPEDIENTE.PLAN_APROBADO && (
-                <Button size="sm" variant="secondary" className="min-h-10 w-full sm:w-auto" disabled={accionEnCurso === 'iniciarEjecucion'} onClick={() => ejecutarAccion('iniciarEjecucion')}>
-                  {accionEnCurso === 'iniciarEjecucion' ? 'Iniciando...' : 'Iniciar ejecución'}
-                </Button>
+                <Tooltip content="Registra la fecha de inicio y duración en semanas de la práctica.">
+                  <Button size="sm" variant="secondary" className="min-h-10 w-full sm:w-auto" disabled={accionEnCurso === 'iniciarEjecucion'} onClick={() => ejecutarAccion('iniciarEjecucion')}>
+                    {accionEnCurso === 'iniciarEjecucion' ? 'Iniciando...' : 'Iniciar ejecución'}
+                  </Button>
+                </Tooltip>
               )}
               {puedeRevisarExpediente && expediente.estado === ESTADOS_EXPEDIENTE.INFORME_FINAL_PRESENTADO && (
-                <Button size="sm" className="min-h-10 w-full sm:w-auto" disabled={accionEnCurso === 'aprobarInforme'} onClick={() => ejecutarAccion('aprobarInforme')}>
-                  {accionEnCurso === 'aprobarInforme' ? 'Aprobando...' : 'Aprobar informe'}
-                </Button>
+                <Tooltip content="Aprueba el informe final del estudiante para avanzar al dictamen.">
+                  <Button size="sm" className="min-h-10 w-full sm:w-auto" disabled={accionEnCurso === 'aprobarInforme'} onClick={() => ejecutarAccion('aprobarInforme')}>
+                    {accionEnCurso === 'aprobarInforme' ? 'Aprobando...' : 'Aprobar informe'}
+                  </Button>
+                </Tooltip>
               )}
               {puedeRevisarExpediente && ESTADOS_PARA_DICTAMEN.includes(expediente.estado) && (
-                <Button size="sm" variant="secondary" className="min-h-10 w-full sm:w-auto" disabled={accionEnCurso === 'dictamen'} onClick={() => ejecutarAccion('dictamen')}>
-                  {accionEnCurso === 'dictamen' ? 'Emitiendo...' : 'Emitir dictamen'}
-                </Button>
+                <Tooltip content="Emite la decisión colegiada del comité evaluador sobre la práctica.">
+                  <Button size="sm" variant="secondary" className="min-h-10 w-full sm:w-auto" disabled={accionEnCurso === 'dictamen'} onClick={() => ejecutarAccion('dictamen')}>
+                    {accionEnCurso === 'dictamen' ? 'Emitiendo...' : 'Emitir dictamen'}
+                  </Button>
+                </Tooltip>
               )}
               {puedeEmitirDocumentosInstitucionales && ([ESTADOS_EXPEDIENTE.EVALUADO, ESTADOS_EXPEDIENTE.DICTAMEN_EMITIDO].includes(expediente.estado)
                 || (expediente.estado === ESTADOS_EXPEDIENTE.CERRADO && !ultimaConstancia)) ? (
-                  <Button size="sm" className="min-h-10 w-full sm:w-auto" disabled={accionEnCurso === 'constancia'} onClick={() => ejecutarAccion('constancia')}>
-                    {accionEnCurso === 'constancia' ? 'Emitiendo...' : 'Emitir constancia'}
-                  </Button>
+                  <Tooltip content="Genera la constancia oficial de culminación de la práctica.">
+                    <Button size="sm" className="min-h-10 w-full sm:w-auto" disabled={accionEnCurso === 'constancia'} onClick={() => ejecutarAccion('constancia')}>
+                      {accionEnCurso === 'constancia' ? 'Emitiendo...' : 'Emitir constancia'}
+                    </Button>
+                  </Tooltip>
                 ) : null}
               {puedeRevisarExpediente && expediente.codigoTipoPractica === 'INICIAL'
                 && expediente.estado === ESTADOS_EXPEDIENTE.EVALUADO
                 && Number(expediente.calificacionFinal) < 13.5 && (
-                  <Button size="sm" variant="secondary" className="min-h-10 w-full sm:w-auto" disabled={accionEnCurso === 'habilitarExamenAplazados'} onClick={() => ejecutarAccion('habilitarExamenAplazados')}>
-                    {accionEnCurso === 'habilitarExamenAplazados' ? 'Habilitando...' : 'Habilitar examen aplazados'}
-                  </Button>
+                  <Tooltip content="Permite al estudiante rendir el examen de aplazados de la semana 17.">
+                    <Button size="sm" variant="secondary" className="min-h-10 w-full sm:w-auto" disabled={accionEnCurso === 'habilitarExamenAplazados'} onClick={() => ejecutarAccion('habilitarExamenAplazados')}>
+                      {accionEnCurso === 'habilitarExamenAplazados' ? 'Habilitando...' : 'Habilitar examen aplazados'}
+                    </Button>
+                  </Tooltip>
               )}
               {puedeRevisarExpediente && expediente.estado === ESTADOS_EXPEDIENTE.EXAMEN_APLAZADOS_HABILITADO && (
-                <Button size="sm" className="min-h-10 w-full sm:w-auto" disabled={accionEnCurso === 'registrarExamenAplazados'} onClick={() => ejecutarAccion('registrarExamenAplazados')}>
-                  {accionEnCurso === 'registrarExamenAplazados' ? 'Registrando...' : 'Registrar nota aplazados'}
-                </Button>
+                <Tooltip content="Registra la nota del examen de aplazados (escala 0-20).">
+                  <Button size="sm" variant="secondary" className="min-h-10 w-full sm:w-auto" disabled={accionEnCurso === 'registrarExamenAplazados'} onClick={() => ejecutarAccion('registrarExamenAplazados')}>
+                    {accionEnCurso === 'registrarExamenAplazados' ? 'Registrando...' : 'Registrar nota aplazados'}
+                  </Button>
+                </Tooltip>
               )}
               <Button size="sm" variant="secondary" className="min-h-10 w-full sm:w-auto" onClick={() => navigate(-1)}>
                 <ArrowLeft size={16} aria-hidden="true" /> Volver
@@ -661,7 +679,7 @@ export const DetalleExpediente = () => {
                           ? expediente.comite.map((item: any) => `${item.nombreUsuario} (${item.rolComite})`).join(', ')
                           : 'Sin miembros registrados',
                       },
-                      { label: 'Tutor externo', value: 'No disponible en la API actual del expediente' },
+                      { label: 'Tutor externo', value: 'No asignado' },
                     ]}
                   />
                   <InfoBlock
@@ -917,7 +935,7 @@ export const DetalleExpediente = () => {
                       <CardTitle className="text-sm font-bold mb-2">Historial documental</CardTitle>
                       {(historialQuery.data || []).length > 0 ? (
                         <div className="grid gap-2">
-                          {(historialQuery.data || []).slice(0, 6).map((item: any) => (
+                          {(historialQuery.data || []).map((item: any) => (
                             <Card key={item.id}>
                               <CardContent className="py-2">
                                 <div className="text-sm font-bold text-foreground">{item.tipoDocumento || item.tipoReporte || 'Documento institucional'}</div>

@@ -104,6 +104,27 @@ export function useActualizarPerfilAcademico() {
   });
 }
 
+export function useFotoPerfil(userId?: number) {
+  return useQuery({
+    queryKey: ['perfil', 'foto', userId],
+    queryFn: async () => {
+      const res = await usuariosApi.obtenerFotoPerfil();
+      return res.data as Blob;
+    },
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+    enabled: Boolean(userId),
+  });
+}
+
+export function useActualizarFotoPerfil() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (foto: File) => usuariosApi.actualizarFotoPerfil(foto),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['perfil', 'foto'] }); },
+  });
+}
+
 export function useTutores() {
   return useQuery({
     queryKey: ['tutores'],

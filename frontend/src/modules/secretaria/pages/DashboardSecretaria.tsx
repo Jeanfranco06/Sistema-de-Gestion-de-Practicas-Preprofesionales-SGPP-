@@ -134,19 +134,20 @@ export default function DashboardSecretaria() {
                 </div>
                 <div>
                   <p className="text-sm font-bold mb-4 text-center text-foreground">Distribución por Etapa</p>
-                  <div className="h-44 flex items-end justify-between gap-2 px-2 border-b-2 border-border">
-                    {estadoChart.map(item => (
-                      <div key={item.name} className="w-1/5 flex flex-col items-center justify-end h-full">
-                        <span className={cn('text-xs font-bold mb-1', item.value > 0 ? 'text-foreground' : 'text-muted-foreground opacity-40')}>{item.value}</span>
-                        <div className="w-full flex-1 flex items-end justify-center min-h-[20px]">
+                  <div className="h-52 flex items-end justify-center gap-2 px-2 pb-1 border-b border-border">
+                    {estadoChart.map(item => {
+                      const height = Math.max((item.value / maxEstado) * 160, item.value > 0 ? 16 : 4);
+                      return (
+                        <div key={item.name} className="flex-1 min-w-0 flex flex-col items-center text-center">
+                          <span className={cn('text-xs', item.value > 0 ? 'text-foreground' : 'text-muted-foreground')}>{item.value}</span>
                           <div
-                            className="w-4/5 rounded-t-md transition-all duration-1000"
-                            style={{ height: `${Math.max((item.value / maxEstado) * 100, item.value > 0 ? 10 : 2)}%`, backgroundColor: item.color, boxShadow: `0 4px 12px ${item.color}40` }}
+                            className="mt-1 w-8 rounded-t-md transition-all duration-1000"
+                            style={{ height, backgroundColor: item.color, boxShadow: `0 4px 12px ${item.color}40` }}
                           />
+                          <span className="text-[0.6rem] leading-tight block mt-2 text-muted-foreground min-h-[2rem]">{item.name}</span>
                         </div>
-                        <span className="text-[0.65rem] font-semibold text-center mt-2 leading-tight h-8 text-muted-foreground overflow-hidden flex items-center justify-center">{item.name}</span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </div>

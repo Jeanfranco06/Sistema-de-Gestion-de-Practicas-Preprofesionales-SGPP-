@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { expedientesApi } from '../api/expedientesApi';
 
-export function useExpedientes() {
+export function useExpedientes(options?: { refetchInterval?: number }) {
   return useQuery({
     queryKey: ['expedientes'],
     queryFn: async () => {
@@ -9,6 +9,7 @@ export function useExpedientes() {
       return res.data?.data ?? [];
     },
     staleTime: 3 * 60 * 1000,
+    ...options,
   });
 }
 
@@ -24,7 +25,7 @@ export function useExpedienteById(id: string | undefined) {
   });
 }
 
-export function useMisExpedientes() {
+export function useMisExpedientes(options?: { refetchInterval?: number }) {
   return useQuery({
     queryKey: ['expedientes', 'mis-expedientes'],
     queryFn: async () => {
@@ -32,6 +33,7 @@ export function useMisExpedientes() {
       return res.data?.data ?? [];
     },
     staleTime: 3 * 60 * 1000,
+    ...options,
   });
 }
 

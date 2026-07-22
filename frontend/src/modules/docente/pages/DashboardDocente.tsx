@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Users, ListChecks, FileEdit, UserCircle, RefreshCw,
@@ -89,7 +89,22 @@ function QuickAction({ title, icon: Icon, route, onClick }: QuickActionProps) {
 export default function DashboardDocente() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { data: expedientes = [], isLoading, error, refetch } = useMisExpedientes();
+  const { data: expedientes = [], isLoading, error, refetch, dataUpdatedAt } = useMisExpedientes({ refetchInterval: 30000 });
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  useEffect(() => {
+    if (dataUpdatedAt > 0) {
+      setLastUpdated(new Date(dataUpdatedAt));
+    }
+  }, [dataUpdatedAt]);
+
+  const handleRefresh = useCallback(() => {
+    setIsRefreshing(true);
+    refetch().finally(() => {
+      setTimeout(() => setIsRefreshing(false), 600);
+    });
+  }, [refetch]);
 
   const kpis = useMemo(() => {
     const activos = expedientes.filter((e: Expediente) => !ESTADOS_FINALIZADOS.includes(e.estado));
@@ -189,8 +204,13 @@ export default function DashboardDocente() {
           </div>
 
           <div className="flex items-center gap-2 w-full md:w-auto">
-            <Button variant="ghost" size="sm" className="h-9 w-9 bg-white/10 hover:bg-white/20 text-white border-white/20" onClick={() => refetch()} aria-label="Actualizar">
-              <RefreshCw className="h-4 w-4" />
+            {lastUpdated && (
+              <span className="text-[0.65rem] text-white/60 mr-1 hidden sm:inline">
+                Última actualización: {lastUpdated.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            )}
+            <Button variant="ghost" size="sm" className="h-9 w-9 bg-white/10 hover:bg-white/20 text-white border-white/20" onClick={handleRefresh} aria-label="Actualizar">
+              <RefreshCw className={cn('h-4 w-4', isRefreshing && 'animate-spin')} />
             </Button>
             <Button variant="ghost" size="sm" className="h-9 bg-white/10 hover:bg-white/20 text-white border-white/20" onClick={() => navigate('/docente/practicantes')}>
               <Users className="h-4 w-4 mr-2" />
@@ -293,7 +313,7 @@ export default function DashboardDocente() {
                   <div
                     className="w-[148px] h-[148px] rounded-full grid place-items-center"
                     style={{
-                      background: `conic-gradient(var(--color-emerald-500) 0 ${kpis.total ? (kpis.finalizados / kpis.total) * 100 : 0}%, var(--color-border) 0 100%)`,
+                      background: `conic-gradient(var(--color-emerald-500) 0% ${kpis.total ? (kpis.finalizados / kpis.total) * 100 : 0}%, var(--color-border) ${kpis.total ? (kpis.finalizados / kpis.total) * 100 : 0}% 100%)`,
                     }}
                   >
                     <div className="w-[104px] h-[104px] rounded-full grid place-items-center text-center bg-card">
