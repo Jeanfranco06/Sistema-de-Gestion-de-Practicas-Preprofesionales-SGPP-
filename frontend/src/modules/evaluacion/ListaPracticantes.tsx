@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Search, FileText, ChevronRight, Users, X,
@@ -62,7 +62,9 @@ export const ListaPracticantes = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const isTutor = hasAnyRole(user?.roles, ['TUTOR_EXTERNO']);
-  const basePath = isTutor ? '/tutor' : '/docente';
+  const location = useLocation();
+  const isOnTutorPath = location.pathname.startsWith('/tutor');
+  const basePath = (isTutor || isOnTutorPath) ? '/tutor' : '/docente';
 
   const filteredPracticantes = useMemo(() => {
     const q = search.toLowerCase();
@@ -145,7 +147,7 @@ export const ListaPracticantes = () => {
           <div>
             <h1 className="text-2xl font-bold">Mis practicantes</h1>
             <p className="text-sm text-white/80">
-              {isTutor
+              {(isTutor || isOnTutorPath)
                 ? 'Estudiantes asignados a tu tutoría externa'
                 : 'Gestiona y evalúa a los estudiantes bajo tu asesoría'}
             </p>
@@ -294,7 +296,7 @@ export const ListaPracticantes = () => {
                             <Eye className="h-4 w-4" />
                           </Button>
                         </Tooltip>
-                        {!isTutor && (
+                        {!(isTutor || isOnTutorPath) && (
                           <Tooltip content="Documentos">
                             <Button
                               size="sm"
@@ -306,7 +308,7 @@ export const ListaPracticantes = () => {
                             </Button>
                           </Tooltip>
                         )}
-                        {(!isTutor || (p.codigoTipoPractica !== 'INICIAL' && ESTADOS_PARA_EVALUAR.includes(p.estado))) && (
+                        {(!(isTutor || isOnTutorPath) || (p.codigoTipoPractica !== 'INICIAL' && ESTADOS_PARA_EVALUAR.includes(p.estado))) && (
                           <Button
                             size="sm"
                             onClick={() => handleEvaluar(p.id)}

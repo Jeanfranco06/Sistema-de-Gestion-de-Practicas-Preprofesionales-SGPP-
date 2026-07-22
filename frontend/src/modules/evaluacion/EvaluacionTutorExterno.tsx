@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { User, Building2, Upload, ArrowLeft } from 'lucide-react';
+import { User, Building2, Upload, ArrowLeft, Pencil } from 'lucide-react';
 import { evaluacionesApi } from '@/api/evaluacionesApi';
 import { expedientesApi } from '@/api/expedientesApi';
 import { useAuth } from '@/auth/AuthContext';
+import { hasAnyRole } from '@/shared/utils/roleRoutes';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useExpedienteById } from '@/hooks/useExpedientes';
 import { useTiposPractica } from '@/hooks/usePracticas';
@@ -106,10 +107,12 @@ const agruparCriterios = (criterios: Criterio[]): Grupo[] => {
 };
 
 export const EvaluacionTutorExterno = () => {
-  const auth = useAuth() as { user?: { id?: number | string } | null };
+  const auth = useAuth() as { user?: { id?: number | string; roles?: Array<string | { authority?: string; nombre?: string }> } | null };
   const { id: idExpedienteParams } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  const isAdmin = hasAnyRole(auth.user?.roles, ['ADMIN_SISTEMA', 'ADMINISTRADOR']);
 
   const idExpediente = idExpedienteParams ? Number(idExpedienteParams) : NaN;
   const expedienteIdValido = Number.isSafeInteger(idExpediente) && idExpediente > 0;
@@ -122,6 +125,7 @@ export const EvaluacionTutorExterno = () => {
     calificacionCualitativa: '',
   });
   const [file, setFile] = useState<File | null>(null);
+  const [modoEdicion, setModoEdicion] = useState(false);
 
   const { data: expediente } = useExpedienteById(idExpedienteParams);
   const { data: tiposPractica = [] } = useTiposPractica();
@@ -150,12 +154,22 @@ export const EvaluacionTutorExterno = () => {
     enabled: expedienteIdValido,
   });
 
+  const yaEvaluado = evaluaciones.some((ev) => ev.componente === 'EMPRESA');
+
   const grupos = useMemo(() => agruparCriterios(criterios), [criterios]);
 
   const crearMutation = useMutation({
     mutationFn: (payload: EvaluacionPayload) => evaluacionesApi.crearEvaluacion(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['evaluaciones', 'expediente', idExpediente] });
+    },
+  });
+  const actualizarMutation = useMutation({
+    mutationFn: ({ idEvaluacion, payload }: { idEvaluacion: number; payload: EvaluacionPayload }) =>
+      evaluacionesApi.actualizarEvaluacion(idEvaluacion, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['evaluaciones', 'expediente', idExpediente] });
+      setModoEdicion(false);
     },
   });
   const uploadMutation = useMutation({
@@ -172,6 +186,33 @@ export const EvaluacionTutorExterno = () => {
     });
     setDetalles(initial);
   }, [criterios]);
+
+  // Precargar datos de la evaluación existente al activar modo edición (solo Admin)
+  useEffect(() => {
+    if (!modoEdicion) return;
+    const evEmpresa = evaluaciones.find((ev) => ev.componente === 'EMPRESA');
+    if (!evEmpresa) return;
+    setEvaluacion({
+      comentarios: evEmpresa.calificacionCualitativa ? '' : (evEmpresa as any).comentarios || '',
+      horasRegistradas: evEmpresa.horasRegistradas || 0,
+      rutaConstancia: (evEmpresa as any).rutaConstancia || '',
+      calificacionCualitativa: evEmpresa.calificacionCualitativa || '',
+    });
+    if (evEmpresa.detalles) {
+      const preloaded: Record<number, Detalle> = {};
+      evEmpresa.detalles.forEach((d) => {
+        const cid = d.idCriterio || d.id;
+        if (cid) {
+          preloaded[cid] = {
+            puntajeObtenido: d.puntajeObtenido || 0,
+            calificacionCualitativa: d.calificacionCualitativa || '',
+            comentarios: '',
+          };
+        }
+      });
+      setDetalles(preloaded);
+    }
+  }, [modoEdicion, evaluaciones]);
 
   const handlePuntajeChange = (idCriterio: number, value: string, puntajeMaximo: number) => {
     const numValue = parseInt(value, 10) || 0;
@@ -214,6 +255,64 @@ export const EvaluacionTutorExterno = () => {
     if (selected) {
       setFile(selected);
       setEvaluacion((prev) => ({ ...prev, rutaConstancia: selected.name }));
+    }
+  };
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const evEmpresa = evaluaciones.find((ev) => ev.componente === 'EMPRESA');
+    if (!evEmpresa || !auth.user?.id) return;
+
+    if (esCualitativa) {
+      const faltantes = criterios.some((criterio) => !detalles[criterio.id]?.calificacionCualitativa);
+      if (faltantes) {
+        showWarning('Evaluación incompleta', 'Debe registrar una calificación cualitativa para cada criterio.');
+        return;
+      }
+    }
+
+    const confirmResult = await Swal.fire({
+      title: '¿Confirmar cambios?',
+      text: '¿Deseas guardar los cambios en la evaluación?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, guardar',
+      cancelButtonText: 'Cancelar',
+    });
+    if (!confirmResult.isConfirmed) return;
+
+    try {
+      showLoading('Guardando...');
+      let rutaConstancia = evaluacion.rutaConstancia;
+      if (file) {
+        const uploadRes = await uploadMutation.mutateAsync(file);
+        const uploadData = uploadRes.data as { data?: string } | string | undefined;
+        rutaConstancia = typeof uploadData === 'string' ? uploadData : uploadData?.data ?? file.name;
+      }
+      const payload: EvaluacionPayload = {
+        ...evaluacion,
+        idExpediente,
+        tipoEvaluador: 'EMPRESA',
+        evaluadorId: auth.user.id,
+        componente: 'EMPRESA',
+        rutaConstancia,
+        tipoCalificacion: esCualitativa ? 'CUALITATIVA' : 'VIGESIMAL',
+        calificacionCualitativa: esCualitativa ? evaluacion.calificacionCualitativa : '',
+        detalles: criterios.map((c) => ({
+          idCriterio: c.id,
+          puntajeObtenido: detalles[c.id]?.puntajeObtenido || 0,
+          calificacionCualitativa: detalles[c.id]?.calificacionCualitativa || '',
+          comentarios: detalles[c.id]?.comentarios || '',
+        })),
+      };
+      await actualizarMutation.mutateAsync({ idEvaluacion: evEmpresa.id, payload });
+      setFile(null);
+      closeLoading();
+      showSuccess('Evaluación actualizada', 'Los cambios han sido guardados correctamente.');
+    } catch (err) {
+      closeLoading();
+      const error = err as { response?: { data?: { mensaje?: string } } };
+      showError('Error', error.response?.data?.mensaje || 'No se pudo actualizar la evaluación.');
     }
   };
 
@@ -461,14 +560,15 @@ export const EvaluacionTutorExterno = () => {
                         </TableCell>
                         <TableCell className="text-center">
                           {esCualitativa ? (
-                          <Select
-                            id={`criterio-${criterio.id}`}
-                            options={CUALITATIVAS}
-                            placeholder="Seleccionar"
-                            value={detalles[criterio.id]?.calificacionCualitativa || ''}
-                            onChange={(e) => handleCalificacionCualitativaChange(criterio.id, e.target.value)}
-                            className="mx-auto w-32"
-                          />
+                            <Select
+                              id={`criterio-${criterio.id}`}
+                              options={CUALITATIVAS}
+                              placeholder="Seleccionar"
+                              value={detalles[criterio.id]?.calificacionCualitativa || ''}
+                              onChange={(e) => handleCalificacionCualitativaChange(criterio.id, e.target.value)}
+                              className="mx-auto w-32"
+                              disabled={yaEvaluado && !modoEdicion}
+                            />
                           ) : (
                             <Input
                               type="number"
@@ -479,14 +579,16 @@ export const EvaluacionTutorExterno = () => {
                                 handlePuntajeChange(criterio.id, e.target.value, criterio.puntajeMaximo || 5)
                               }
                               className="mx-auto w-20 text-center"
+                              disabled={yaEvaluado && !modoEdicion}
                             />
                           )}
                         </TableCell>
                         <TableCell>
-                          <Input
+                           <Input
                             value={detalles[criterio.id]?.comentarios || ''}
                             onChange={(e) => handleComentarioChange(criterio.id, e.target.value)}
                             placeholder="Opcional"
+                            disabled={yaEvaluado && !modoEdicion}
                           />
                         </TableCell>
                       </TableRow>
@@ -511,9 +613,10 @@ export const EvaluacionTutorExterno = () => {
                     horasRegistradas: parseInt(e.target.value, 10) || 0,
                   }))
                 }
+                disabled={yaEvaluado && !modoEdicion}
               />
               <div className="relative">
-                <Button variant={file ? 'secondary' : 'primary'} className="w-full">
+                <Button variant={file ? 'secondary' : 'primary'} className="w-full" disabled={yaEvaluado && !modoEdicion}>
                   <Upload className="h-4 w-4" />
                   {evaluacion.rutaConstancia || 'Subir constancia de horas'}
                 </Button>
@@ -522,6 +625,7 @@ export const EvaluacionTutorExterno = () => {
                   accept="application/pdf,.pdf"
                   className="absolute inset-0 cursor-pointer opacity-0"
                   onChange={handleFileUpload}
+                  disabled={yaEvaluado && !modoEdicion}
                 />
               </div>
               {esCualitativa ? (
@@ -533,6 +637,7 @@ export const EvaluacionTutorExterno = () => {
                   onChange={(e) =>
                     setEvaluacion((prev) => ({ ...prev, calificacionCualitativa: e.target.value }))
                   }
+                  disabled={yaEvaluado && !modoEdicion}
                 />
               ) : (
                 <div className="py-2 text-center">
@@ -551,6 +656,7 @@ export const EvaluacionTutorExterno = () => {
                 onChange={(e) =>
                   setEvaluacion((prev) => ({ ...prev, comentarios: e.target.value }))
                 }
+                disabled={yaEvaluado && !modoEdicion}
               />
             </div>
           </div>
@@ -560,15 +666,59 @@ export const EvaluacionTutorExterno = () => {
               Lugar y fecha: _______________,{' '}
               {new Date().toLocaleDateString('es-PE', { day: '2-digit', month: 'long', year: 'numeric' })}
             </p>
-            <Button
-              onClick={handleSubmit}
-              disabled={crearMutation.isPending || uploadMutation.isPending}
-              size="lg"
-            >
-              {crearMutation.isPending || uploadMutation.isPending
-                ? 'Registrando...'
-                : 'Firma y Sello del Funcionario a Cargo'}
-            </Button>
+            {yaEvaluado ? (
+              <div className="flex items-center gap-3 flex-wrap">
+                {!modoEdicion && (
+                  <div className="rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 px-4 py-3 text-amber-800 dark:text-amber-300 text-sm font-semibold">
+                    La evaluación de empresa ya ha sido registrada para este expediente.
+                  </div>
+                )}
+                {modoEdicion && (
+                  <div className="rounded-xl bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/50 px-4 py-3 text-blue-800 dark:text-blue-300 text-sm font-semibold">
+                    ✏️ Modo edición activo — Modifica los campos y guarda los cambios.
+                  </div>
+                )}
+                {isAdmin && !modoEdicion && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setModoEdicion(true)}
+                    className="shrink-0"
+                  >
+                    <Pencil className="h-4 w-4 mr-1" />
+                    Editar evaluación
+                  </Button>
+                )}
+                {isAdmin && modoEdicion && (
+                  <div className="flex gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setModoEdicion(false)}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      onClick={handleUpdate}
+                      disabled={actualizarMutation.isPending || uploadMutation.isPending}
+                      size="lg"
+                    >
+                      {actualizarMutation.isPending ? 'Guardando...' : 'Guardar cambios'}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Button
+                onClick={handleSubmit}
+                disabled={crearMutation.isPending || uploadMutation.isPending}
+                size="lg"
+              >
+                {crearMutation.isPending || uploadMutation.isPending
+                  ? 'Registrando...'
+                  : 'Firma y Sello del Funcionario a Cargo'}
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>

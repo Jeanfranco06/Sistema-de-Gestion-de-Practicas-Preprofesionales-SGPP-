@@ -40,6 +40,14 @@ public class EvaluacionController {
         return ResponseEntity.ok(evaluacionService.crearEvaluacion(request, userId, roles));
     }
 
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN_SISTEMA')")
+    public ResponseEntity<EvaluacionResponseDTO> actualizarEvaluacion(
+            @PathVariable Long id,
+            @Valid @RequestBody EvaluacionRequestDTO request) {
+        return ResponseEntity.ok(evaluacionService.actualizarEvaluacion(id, request));
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'DOCENTE_ASESOR', 'TUTOR_EXTERNO', 'COMITE_PRACTICAS', 'COORDINADOR', 'DIRECTOR', 'SECRETARIA', 'ESTUDIANTE')")
     public ResponseEntity<EvaluacionResponseDTO> obtenerEvaluacionPorId(@PathVariable Long id) {

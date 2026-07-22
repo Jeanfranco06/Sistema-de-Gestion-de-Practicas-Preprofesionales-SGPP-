@@ -160,18 +160,18 @@ export default function App() {
                   <Route
                     path="/docente/dashboard"
                     element={
-                      <ProtectedRoute allowedRoles={['DOCENTE_ASESOR']}>
+                      <ProtectedRoute allowedRoles={['DOCENTE_ASESOR', 'ADMIN_SISTEMA', 'ADMINISTRADOR']}>
                         <DashboardDocente />
                       </ProtectedRoute>
                     }
                   />
                   <Route path="/docente/practicantes" element={
-                    <ProtectedRoute allowedRoles={['DOCENTE_ASESOR']}>
+                    <ProtectedRoute allowedRoles={['DOCENTE_ASESOR', 'ADMIN_SISTEMA', 'ADMINISTRADOR']}>
                       <ListaPracticantes />
                     </ProtectedRoute>
                   } />
                   <Route path="/docente/evaluaciones/:id" element={
-                    <ProtectedRoute allowedRoles={['DOCENTE_ASESOR']}>
+                    <ProtectedRoute allowedRoles={['DOCENTE_ASESOR', 'ADMIN_SISTEMA', 'ADMINISTRADOR']}>
                       <EvaluacionDocenteAsesor />
                     </ProtectedRoute>
                   } />
@@ -289,12 +289,12 @@ export default function App() {
                     }
                   />
                   <Route path="/comite/panel" element={
-                    <ProtectedRoute allowedRoles={['COMITE_PRACTICAS']}>
+                    <ProtectedRoute allowedRoles={['COMITE_PRACTICAS', 'ADMIN_SISTEMA', 'ADMINISTRADOR', 'COORDINADOR', 'DIRECTOR']}>
                       <PanelComite />
                     </ProtectedRoute>
                   } />
                   <Route path="/comite/evaluaciones/:id" element={
-                    <ProtectedRoute allowedRoles={['COMITE_PRACTICAS']}>
+                    <ProtectedRoute allowedRoles={['COMITE_PRACTICAS', 'ADMIN_SISTEMA', 'ADMINISTRADOR']}>
                       <EvaluacionComite />
                     </ProtectedRoute>
                   } />
@@ -319,7 +319,7 @@ export default function App() {
                   <Route
                     path="/tutor/dashboard"
                     element={
-                      <ProtectedRoute allowedRoles={['TUTOR_EXTERNO']}>
+                      <ProtectedRoute allowedRoles={['TUTOR_EXTERNO', 'ADMIN_SISTEMA', 'ADMINISTRADOR']}>
                         <DashboardTutor />
                       </ProtectedRoute>
                     }
@@ -327,7 +327,7 @@ export default function App() {
                   <Route
                     path="/tutor/evaluaciones"
                     element={
-                      <ProtectedRoute allowedRoles={['TUTOR_EXTERNO']}>
+                      <ProtectedRoute allowedRoles={['TUTOR_EXTERNO', 'ADMIN_SISTEMA', 'ADMINISTRADOR']}>
                         <ListaPracticantes />
                       </ProtectedRoute>
                     }
@@ -335,7 +335,7 @@ export default function App() {
                   <Route
                     path="/tutor/practicantes"
                     element={
-                      <ProtectedRoute allowedRoles={['TUTOR_EXTERNO']}>
+                      <ProtectedRoute allowedRoles={['TUTOR_EXTERNO', 'ADMIN_SISTEMA', 'ADMINISTRADOR']}>
                         <ListaPracticantes />
                       </ProtectedRoute>
                     }
@@ -343,7 +343,7 @@ export default function App() {
                   <Route
                     path="/tutor/evaluaciones/:id"
                     element={
-                      <ProtectedRoute allowedRoles={['TUTOR_EXTERNO']}>
+                      <ProtectedRoute allowedRoles={['TUTOR_EXTERNO', 'ADMIN_SISTEMA', 'ADMINISTRADOR']}>
                         <EvaluacionTutorExterno />
                       </ProtectedRoute>
                     }
@@ -351,7 +351,7 @@ export default function App() {
                   <Route
                     path="/tutor/horas"
                     element={
-                      <ProtectedRoute allowedRoles={['TUTOR_EXTERNO']}>
+                      <ProtectedRoute allowedRoles={['TUTOR_EXTERNO', 'ADMIN_SISTEMA', 'ADMINISTRADOR']}>
                         <ListaValidacionHoras />
                       </ProtectedRoute>
                     }
@@ -359,7 +359,7 @@ export default function App() {
                   <Route
                     path="/tutor/horas/:idExpediente"
                     element={
-                      <ProtectedRoute allowedRoles={['TUTOR_EXTERNO']}>
+                      <ProtectedRoute allowedRoles={['TUTOR_EXTERNO', 'ADMIN_SISTEMA', 'ADMINISTRADOR']}>
                         <ValidacionHorasTutor />
                       </ProtectedRoute>
                     }
