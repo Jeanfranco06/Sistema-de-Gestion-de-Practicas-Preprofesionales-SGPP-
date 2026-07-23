@@ -12,5 +12,7 @@ RUN mvn clean package -DskipTests
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 COPY --from=build /app/sgpp-api/target/*.jar app.jar
+RUN addgroup -S sgpp && adduser -S sgpp -G sgpp && chown -R sgpp:sgpp /app
+USER sgpp
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]

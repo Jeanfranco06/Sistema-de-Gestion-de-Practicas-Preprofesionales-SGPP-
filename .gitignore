@@ -88,6 +88,7 @@ Desktop.ini
 application-local.yml
 application-dev.yml
 application-prod.yml
+!backend/sgpp-api/src/main/resources/application-prod.yml
 !application.yml
 !application-default.yml
 

@@ -64,7 +64,6 @@ export const ListaPracticantes = () => {
   const isTutor = hasAnyRole(user?.roles, ['TUTOR_EXTERNO']);
   const isAdmin = hasAnyRole(user?.roles, ['ADMIN_SISTEMA', 'ADMINISTRADOR']);
   const isComite = hasAnyRole(user?.roles, ['COMITE_PRACTICAS']);
-  console.log("DEBUG - ListaPracticantes:", { roles: user?.roles, isAdmin, isComite });
   const location = useLocation();
   const isOnTutorPath = location.pathname.startsWith('/tutor');
   const basePath = (isTutor || isOnTutorPath) ? '/tutor' : '/docente';

@@ -1,138 +1,133 @@
-# SGPP - Sistema de Gestión de Prácticas Preprofesionales
+# SGPP - Sistema de Gestion de Practicas Preprofesionales
 
-Sistema integral para la gestión de prácticas preprofesionales de la Escuela Profesional de Ingeniería Industrial de la Universidad Nacional de Trujillo (UNT). Este proyecto proporciona una plataforma unificada para estudiantes, docentes, tutores y personal administrativo.
+Plataforma web para administrar el ciclo de practicas preprofesionales de la Escuela Profesional de Ingenieria Industrial de la Universidad Nacional de Trujillo. Centraliza los tramites, documentos, planes, convenios, seguimiento y control de horas para estudiantes, docentes asesores, tutores externos y personal administrativo.
 
-![Estado](https://img.shields.io/badge/Estado-En%20Desarrollo-yellow)
-![Backend](https://img.shields.io/badge/Backend-Spring_Boot_3-green)
-![Frontend](https://img.shields.io/badge/Frontend-React-blue)
-![Database](https://img.shields.io/badge/Database-PostgreSQL-blue)
-![Docker](https://img.shields.io/badge/Infra-Docker_Compose-2496ED)
+![Estado](https://img.shields.io/badge/estado-en%20desarrollo-yellow)
+![Backend](https://img.shields.io/badge/backend-Spring%20Boot%203-6DB33F)
+![Frontend](https://img.shields.io/badge/frontend-React%2019-149ECA)
+![Database](https://img.shields.io/badge/base%20de%20datos-PostgreSQL%2015-4169E1)
 
----
+## Tecnologias
 
-## 🛠️ Stack Tecnológico
+| Capa | Tecnologias |
+| --- | --- |
+| Backend | Java 17, Spring Boot 3.2, Spring Security, JWT, Spring Data JPA, Flyway y OpenAPI |
+| Frontend | React 19, TypeScript, Vite, React Router, React Query, Tailwind CSS y MUI |
+| Base de datos | PostgreSQL 15 |
+| Infraestructura local | Docker Compose y pgAdmin |
 
-| Capa             | Tecnología                                  |
-| ---------------- | ------------------------------------------- |
-| **Backend**      | Java 17 · Spring Boot 3.2 · Spring Security 6 (JWT) · Spring Data JPA · Flyway · OpenAPI/Swagger |
-| **Frontend**     | React 19 · Vite 8 · MUI 9 · Axios · React Router |
-| **Base de Datos** | PostgreSQL 15+                              |
-| **Infraestructura** | Docker · Docker Compose                  |
-
----
-
-## 📂 Estructura del Proyecto
+## Estructura
 
 ```text
-SGPP/
-├── .env.example            # 🔑 Plantilla de variables de entorno
-├── docker-compose.yml      # 🐳 Infraestructura local (DB + pgAdmin)
-├── .gitignore
-│
-├── backend/                # ☕ Spring Boot (Multi-Módulo Maven)
-│   ├── pom.xml             # POM Padre
-│   ├── sgpp-api/           # Ensamblaje, Config REST, Security, Flyway
-│   ├── sgpp-core/          # Lógica de Dominio (Package-by-Feature)
-│   └── sgpp-shared/        # Componentes compartidos (Excepciones, Enums)
-│
-├── frontend/               # ⚛️ React + Vite
-│   ├── .env.example
-│   ├── package.json
-│   └── src/
-│
-└── README.md
+.
+|-- backend/
+|   |-- sgpp-api/       # Aplicacion Spring Boot, seguridad y migraciones Flyway
+|   |-- sgpp-core/      # Dominio, servicios y controladores REST
+|   `-- sgpp-shared/    # Tipos, excepciones y enumeraciones compartidas
+|-- frontend/           # Aplicacion React + Vite
+|-- docs/               # Guias tecnicas, funcionales y de despliegue
+`-- docker-compose.yml  # PostgreSQL y pgAdmin para desarrollo local
 ```
 
----
+## Requisitos
 
-## ⚡ Inicio Rápido
+- Java 17 o superior
+- Maven 3.8 o superior
+- Node.js 18 o superior
+- Docker y Docker Compose
 
-> **Requisitos previos:** Docker, Java 17+, Maven 3.8+, Node.js 18+
+## Inicio rapido
+
+1. Cree los archivos de entorno a partir de las plantillas:
+
+   ```powershell
+   Copy-Item .env.example .env
+   Copy-Item frontend/.env.example frontend/.env
+   ```
+
+2. Inicie PostgreSQL y pgAdmin:
+
+   ```bash
+   docker compose up -d
+   ```
+
+3. En una terminal, compile e inicie la API:
+
+   ```bash
+   cd backend
+   mvn -pl sgpp-api -am package
+   mvn -pl sgpp-api spring-boot:run
+   ```
+
+4. En otra terminal, instale e inicie el frontend:
+
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+
+El perfil local utiliza PostgreSQL en el puerto `5434`. El archivo `frontend/.env` debe conservar `VITE_API_BASE_URL=http://localhost:8082/api/v1`.
+
+| Servicio | Direccion |
+| --- | --- |
+| Frontend | http://localhost:5173 |
+| API | http://localhost:8082/api/v1 |
+| Swagger UI | http://localhost:8082/api/v1/swagger-ui.html |
+| pgAdmin | http://localhost:5051 |
+
+## Configuracion
+
+Las variables locales se definen en `.env`; no suba este archivo al repositorio. Las principales son:
+
+| Variable | Uso | Valor local predeterminado |
+| --- | --- | --- |
+| `POSTGRES_DB` | Base de datos | `sgpp_db` |
+| `POSTGRES_USER` | Usuario de PostgreSQL | `postgres` |
+| `POSTGRES_PASSWORD` | Contrasena de PostgreSQL | `postgres` |
+| `POSTGRES_PORT` | Puerto publicado de PostgreSQL | `5434` |
+| `JWT_SECRET` | Firma de tokens JWT | Debe reemplazarse por un secreto propio |
+| `VITE_API_BASE_URL` | URL publica de la API para el frontend | `http://localhost:8082/api/v1` |
+
+## Verificacion
+
+Ejecute las comprobaciones antes de abrir un cambio:
 
 ```bash
-# 1. Clonar el repositorio
-git clone <url-del-repositorio>
-cd "SG de Practicas Pre profesionales"
+# Backend, desde backend/
+mvn -pl sgpp-api -am test
 
-# 2. Configurar variables de entorno
-copy .env.example .env                     # Windows
-copy frontend\.env.example frontend\.env   # Windows
-
-# 3. Levantar la base de datos
-docker-compose up -d
-
-# 4. Compilar y ejecutar el backend
-cd backend
-mvn clean install -DskipTests
-mvn -pl sgpp-api spring-boot:run
-
-# 5. En otra terminal, ejecutar el frontend
-cd frontend
-npm install
-npm run dev
+# Frontend, desde frontend/
+npm run lint
+npm run build
 ```
 
-| Servicio       | URL                                          |
-| -------------- | -------------------------------------------- |
-| Frontend       | http://localhost:5173                          |
-| Backend API    | http://localhost:8082/api/v1                   |
-| Swagger UI     | http://localhost:8082/api/v1/swagger-ui.html   |
-| pgAdmin        | http://localhost:5051                           |
+## Usuarios de prueba
 
-> 📘 **Guía detallada paso a paso:** consulta [`GUIA_EJECUCION_LOCAL.md`](GUIA_EJECUCION_LOCAL.md) para instrucciones completas, troubleshooting y configuración de IDE.
+Las migraciones Flyway crean cuentas iniciales con la contrasena `password123`.
 
----
+| Usuario | Rol |
+| --- | --- |
+| `adminsys1` | ADMIN_SISTEMA |
+| `estudiante1` | ESTUDIANTE |
+| `docente1` | DOCENTE_ASESOR |
+| `tutor1` | TUTOR_EXTERNO |
+| `secretaria1` | SECRETARIA |
+| `comite1` | COMITE_PRACTICAS |
+| `director1` | DIRECTOR |
 
-## ⚙️ Variables de Entorno
+Cambie o deshabilite estas credenciales antes de publicar el sistema.
 
-El proyecto utiliza un archivo `.env` centralizado en la raíz. Copia `.env.example` como `.env` y ajusta los valores a tu entorno:
+## Documentacion
 
-| Variable                  | Descripción                        | Valor por defecto          |
-| ------------------------- | ---------------------------------- | -------------------------- |
-| `POSTGRES_DB`             | Nombre de la base de datos         | `sgpp_db`                  |
-| `POSTGRES_USER`           | Usuario de PostgreSQL              | `postgres`                 |
-| `POSTGRES_PASSWORD`       | Contraseña de PostgreSQL           | `postgres`                 |
-| `POSTGRES_PORT`           | Puerto de PostgreSQL               | `5432`                     |
-| `PGADMIN_DEFAULT_EMAIL`   | Email de acceso a pgAdmin          | `admin@sgpp.local`         |
-| `PGADMIN_DEFAULT_PASSWORD`| Contraseña de pgAdmin              | `admin`                    |
-| `JWT_SECRET`              | Clave secreta para firmar tokens   | *(ver .env.example)*       |
-| `JWT_EXPIRATION`          | Duración del token JWT (ms)        | `86400000` (24h)           |
-| `VITE_API_BASE_URL`       | URL base de la API para el frontend| `http://localhost:8080/api/v1` |
+- [Guia de ejecucion local](docs/GUIA_EJECUCION_LOCAL.md)
+- [Manual de usuario](docs/MANUAL_USUARIO_SGPP.md)
+- [Documentacion del codigo fuente](docs/DOCUMENTACION_CODIGO_FUENTE_SGPP.md)
+- [Estado funcional](docs/ESTADO_FUNCIONAL_SGPP.md)
+- [Plan de pruebas E2E](docs/PLAN_DE_PRUEBAS_E2E.md)
+- [Despliegue en produccion](docs/DESPLIEGUE_PRODUCCION.md)
+- [Ejemplos de solicitudes API](docs/API_TEST_EXAMPLES.md)
 
-> **⚠️ Importante:** El archivo `.env` está en `.gitignore` y **nunca** debe subirse al repositorio. Solo `.env.example` se versiona como referencia.
+## Produccion
 
----
-
-## 🔐 Usuarios de Prueba (Datos Semilla)
-
-Flyway inserta usuarios predefinidos la primera vez que se ejecuta. Todos usan la contraseña **`password123`**:
-
-| Username       | Rol              |
-| -------------- | ---------------- |
-| adminsys1      | ADMIN_SISTEMA    |
-| estudiante1    | ESTUDIANTE       |
-| docente1       | DOCENTE_ASESOR   |
-| tutor1         | TUTOR_EXTERNO    |
-| secretaria1    | SECRETARIA       |
-| comite1        | COMITE_PRACTICAS |
-|                                                         .3
-
-| director1      | DIRECTOR         |
-
----
-
-## 📖 Documentación de la API
-
-La API RESTful está documentada con OpenAPI 3. Con el backend en ejecución:
-
-- **Swagger UI:** [http://localhost:8080/api/v1/swagger-ui.html](http://localhost:8080/api/v1/swagger-ui.html)
-- **OpenAPI JSON:** [http://localhost:8080/api/v1/api-docs](http://localhost:8080/api/v1/api-docs)
-- **Ejemplos de Requests:** [`API_TEST_EXAMPLES.md`](API_TEST_EXAMPLES.md)
-
----
-
-## 📞 Contacto
-
-Escuela Profesional de Ingeniería Industrial  
-Universidad Nacional de Trujillo  
-Email: soporte@unt.edu.pe
+La guia de [despliegue en produccion](docs/DESPLIEGUE_PRODUCCION.md) describe la configuracion propuesta con Vercel para el frontend, Render para la API y Supabase para PostgreSQL y archivos. Configure secretos y origenes CORS directamente en el proveedor; nunca exponga credenciales en variables `VITE_*`.

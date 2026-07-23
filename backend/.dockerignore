@@ -4,3 +4,5 @@ target
 .git
 .idea
 *.iml
+data
+uploads
