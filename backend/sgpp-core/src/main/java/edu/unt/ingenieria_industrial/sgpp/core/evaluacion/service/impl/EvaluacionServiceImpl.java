@@ -9,6 +9,10 @@ import edu.unt.ingenieria_industrial.sgpp.core.expediente.repository.ExpedienteR
 import edu.unt.ingenieria_industrial.sgpp.core.expediente.service.ExpedienteAccesoService;
 import edu.unt.ingenieria_industrial.sgpp.shared.exception.BusinessException;
 import edu.unt.ingenieria_industrial.sgpp.shared.exception.ResourceNotFoundException;
+import edu.unt.ingenieria_industrial.sgpp.core.expediente.model.ExpedienteDocumento;
+import edu.unt.ingenieria_industrial.sgpp.core.expediente.repository.ExpedienteDocumentoRepository;
+import edu.unt.ingenieria_industrial.sgpp.core.seguridad.model.Usuario;
+import edu.unt.ingenieria_industrial.sgpp.core.seguridad.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -34,6 +38,8 @@ public class EvaluacionServiceImpl implements EvaluacionService {
     private final ExpedienteAccesoService expedienteAccesoService;
     private final edu.unt.ingenieria_industrial.sgpp.core.evaluacion.service.ComponenteEvaluacionService componenteEvaluacionService;
     private final edu.unt.ingenieria_industrial.sgpp.core.evaluacion.repository.NotaUnidadRepository notaUnidadRepository;
+    private final ExpedienteDocumentoRepository documentoRepository;
+    private final UsuarioRepository usuarioRepository;
 
     private static final String[] CALIFICACIONES_CUALITATIVAS = {"Deficiente", "Regular", "Bueno", "Muy Bueno", "Excelente"};
 
@@ -46,11 +52,23 @@ public class EvaluacionServiceImpl implements EvaluacionService {
             validarEvaluacionEmpresa(expediente, request, idUsuario, roles);
         }
 
-        int puntajeTotal = request.getDetalles().stream()
-                .mapToInt(DetalleEvaluacionRequestDTO::getPuntajeObtenido)
-                .sum();
-
         String tipoCalificacion = determinarTipoCalificacion(expediente, request);
+
+        int puntajeTotal;
+        if ("CUALITATIVA".equals(tipoCalificacion) && "EMPRESA".equals(request.getComponente())) {
+            String calif = request.getCalificacionCualitativa();
+            if ("Logrado".equalsIgnoreCase(calif)) {
+                puntajeTotal = 50;
+            } else if ("En proceso".equalsIgnoreCase(calif)) {
+                puntajeTotal = 30;
+            } else {
+                puntajeTotal = 10;
+            }
+        } else {
+            puntajeTotal = request.getDetalles().stream()
+                    .mapToInt(DetalleEvaluacionRequestDTO::getPuntajeObtenido)
+                    .sum();
+        }
 
         Evaluacion evaluacionToSave = Evaluacion.builder()
                 .expediente(expediente)
@@ -100,6 +118,24 @@ public class EvaluacionServiceImpl implements EvaluacionService {
                 log.warn("No se pudo sincronizar componente EMPRESA para expediente {}: {}",
                         expediente.getId(), e.getMessage());
             }
+
+            try {
+                boolean existeDoc = !documentoRepository.findByExpedienteIdAndTipoDocumento(expediente.getId(), "FICHA_EVALUACION").isEmpty();
+                if (!existeDoc) {
+                    ExpedienteDocumento doc = ExpedienteDocumento.builder()
+                            .expediente(expediente)
+                            .tipoDocumento("FICHA_EVALUACION")
+                            .nombreArchivo("Ficha_Evaluacion_Empresa_" + expediente.getCodigoExpediente() + ".pdf")
+                            .rutaArchivo(request.getRutaConstancia() != null ? request.getRutaConstancia() : "Ficha_Evaluacion_Empresa_" + expediente.getCodigoExpediente() + ".pdf")
+                            .usuario(usuarioRepository.getReferenceById(idUsuario))
+                            .estado("APROBADO")
+                            .build();
+                    documentoRepository.save(doc);
+                }
+            } catch (Exception e) {
+                log.warn("No se pudo registrar documento virtual FICHA_EVALUACION para expediente {}: {}",
+                        expediente.getId(), e.getMessage());
+            }
         }
 
         BigDecimal promedio = calcularPromedioFinal(expediente.getId());
@@ -109,16 +145,28 @@ public class EvaluacionServiceImpl implements EvaluacionService {
     }
 
     @Override
-    public EvaluacionResponseDTO actualizarEvaluacion(Long idEvaluacion, EvaluacionRequestDTO request) {
+    public EvaluacionResponseDTO actualizarEvaluacion(Long idEvaluacion, EvaluacionRequestDTO request, Long idUsuario) {
         Evaluacion evaluacion = evaluacionRepository.findById(idEvaluacion)
                 .orElseThrow(() -> new ResourceNotFoundException("Evaluación", "id", idEvaluacion));
 
-        int puntajeTotal = request.getDetalles().stream()
-                .mapToInt(DetalleEvaluacionRequestDTO::getPuntajeObtenido)
-                .sum();
-
         String tipoCalificacion = request.getTipoCalificacion() != null ? request.getTipoCalificacion()
                 : evaluacion.getTipoCalificacion();
+
+        int puntajeTotal;
+        if ("CUALITATIVA".equals(tipoCalificacion) && "EMPRESA".equals(evaluacion.getComponente())) {
+            String calif = request.getCalificacionCualitativa();
+            if ("Logrado".equalsIgnoreCase(calif)) {
+                puntajeTotal = 50;
+            } else if ("En proceso".equalsIgnoreCase(calif)) {
+                puntajeTotal = 30;
+            } else {
+                puntajeTotal = 10;
+            }
+        } else {
+            puntajeTotal = request.getDetalles().stream()
+                    .mapToInt(DetalleEvaluacionRequestDTO::getPuntajeObtenido)
+                    .sum();
+        }
 
         evaluacion.setPuntajeTotal(puntajeTotal);
         evaluacion.setComentarios(request.getComentarios());
@@ -160,6 +208,24 @@ public class EvaluacionServiceImpl implements EvaluacionService {
                         request.getComentarios());
             } catch (Exception e) {
                 log.warn("No se pudo re-sincronizar componente EMPRESA para expediente {}: {}",
+                        evaluacion.getExpediente().getId(), e.getMessage());
+            }
+
+            try {
+                boolean existeDoc = !documentoRepository.findByExpedienteIdAndTipoDocumento(evaluacion.getExpediente().getId(), "FICHA_EVALUACION").isEmpty();
+                if (!existeDoc) {
+                    ExpedienteDocumento doc = ExpedienteDocumento.builder()
+                            .expediente(evaluacion.getExpediente())
+                            .tipoDocumento("FICHA_EVALUACION")
+                            .nombreArchivo("Ficha_Evaluacion_Empresa_" + evaluacion.getExpediente().getCodigoExpediente() + ".pdf")
+                            .rutaArchivo(request.getRutaConstancia() != null ? request.getRutaConstancia() : "Ficha_Evaluacion_Empresa_" + evaluacion.getExpediente().getCodigoExpediente() + ".pdf")
+                            .usuario(usuarioRepository.getReferenceById(idUsuario))
+                            .estado("APROBADO")
+                            .build();
+                    documentoRepository.save(doc);
+                }
+            } catch (Exception e) {
+                log.warn("No se pudo registrar documento virtual FICHA_EVALUACION para expediente {}: {}",
                         evaluacion.getExpediente().getId(), e.getMessage());
             }
         }

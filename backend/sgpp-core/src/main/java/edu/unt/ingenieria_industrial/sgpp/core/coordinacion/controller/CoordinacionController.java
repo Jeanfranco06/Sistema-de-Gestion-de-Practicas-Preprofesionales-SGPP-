@@ -48,17 +48,19 @@ public class CoordinacionController {
         Long idUsuario = getCurrentUserId();
 
         ExpedienteResponse expedienteActual = expedienteService.findById(id);
-        ExpedienteResponse response = "CERRADO".equals(expedienteActual.getEstado())
-                ? expedienteActual
-                : expedienteService.cerrar(id, idUsuario, "Cierre previo a la emisión de constancia");
+        if (!"CERRADO".equals(expedienteActual.getEstado())) {
+            expedienteService.cerrar(id, idUsuario, "Cierre previo a la emisión de constancia");
+        }
 
         exportacionService.generarDocumentoInterno(GenerarDocumentoInternoRequest.builder()
                 .tipoDocumento(TipoDocumentoInstitucional.CONSTANCIA_CULMINACION)
                 .idExpediente(id)
                 .build());
 
+        ExpedienteResponse response = expedienteService.findById(id);
+
         return ResponseEntity.ok(ApiResponse.<ExpedienteResponse>builder()
-                .success(true).message("Constancia de culminación emitida y firmada electrónicamente")
+                .success(true).message("Constancia de Prácticas emitida y firmada electrónicamente")
                 .data(response).timestamp(LocalDateTime.now()).build());
     }
 

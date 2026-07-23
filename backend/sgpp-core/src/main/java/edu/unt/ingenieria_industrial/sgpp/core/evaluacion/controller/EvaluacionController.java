@@ -44,8 +44,13 @@ public class EvaluacionController {
     @PreAuthorize("hasRole('ADMIN_SISTEMA')")
     public ResponseEntity<EvaluacionResponseDTO> actualizarEvaluacion(
             @PathVariable Long id,
-            @Valid @RequestBody EvaluacionRequestDTO request) {
-        return ResponseEntity.ok(evaluacionService.actualizarEvaluacion(id, request));
+            @Valid @RequestBody EvaluacionRequestDTO request,
+            Authentication authentication) {
+        String username = authentication.getName();
+        Long userId = usuarioRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"))
+                .getId();
+        return ResponseEntity.ok(evaluacionService.actualizarEvaluacion(id, request, userId));
     }
 
     @GetMapping("/{id}")

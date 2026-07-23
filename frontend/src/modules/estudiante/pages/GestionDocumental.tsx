@@ -132,7 +132,7 @@ export const GestionDocumental = () => {
     );
   }
 
-  const docObligatorios: DocType[] = expediente.codigoTipoPractica === 'INICIAL'
+  const baseObligatorios: DocType[] = expediente.codigoTipoPractica === 'INICIAL'
     ? DOCUMENTOS_OBLIGATORIOS_INICIAL
     : expediente.codigoTipoPractica === 'FINAL'
       ? DOCUMENTOS_OBLIGATORIOS_FINAL
@@ -151,6 +151,14 @@ export const GestionDocumental = () => {
       observaciones: d.observaciones,
     })),
   ];
+
+  const docObligatorios = [...baseObligatorios];
+  if (documentosConsolidados.some(d => d.tipoId === 'DICTAMEN_FINAL')) {
+    docObligatorios.push({ id: 'DICTAMEN_FINAL', nombre: 'Dictamen Final (Anexo 4)', formato: 'PDF', maxMB: 5 });
+  }
+  if (documentosConsolidados.some(d => d.tipoId === 'CONSTANCIA_CULMINACION')) {
+    docObligatorios.push({ id: 'CONSTANCIA_CULMINACION', nombre: 'Constancia de Culminación (Escuela)', formato: 'PDF', maxMB: 5 });
+  }
 
   const anexosList = documentosConsolidados.filter(d => d.tipoId === 'ANEXO');
 
